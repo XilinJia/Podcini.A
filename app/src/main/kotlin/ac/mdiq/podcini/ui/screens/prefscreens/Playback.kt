@@ -4,8 +4,8 @@ import ac.mdiq.podcini.PodciniApp.Companion.forceRestart
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.forcePlaybackReset
 import ac.mdiq.podcini.sources.clientsHaveMultiQ
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.streamingCacheSizeMB
@@ -67,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 enum class PrefHardwareForwardButton(val res: Int, val res1: Int) {
     FF(R.string.button_action_fast_forward, R.string.keycode_media_fast_forward),
@@ -79,7 +80,8 @@ private const val TAG = "PlaybackScreen"
 @Composable
 fun PlaybackScreen() {
     val context by rememberUpdatedState(LocalContext.current)
-    
+    val appPrefs by appPrefsFlow!!.collectAsStateWithLifecycle()
+
     BackHandler(enabled = true) { pfBackStack.removeLastOrNull() }
 
     var selectedRingtoneUri by remember { mutableStateOf(appPrefs.ringToneUriString?.toUri()) }
@@ -98,6 +100,8 @@ fun PlaybackScreen() {
             Logd(TAG, "ringtoneName $ringtoneName")
         }
     }
+
+    val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp).verticalScroll(rememberScrollState()).background(MaterialTheme.colorScheme.surface)) {
         Text(stringResource(R.string.interruptions), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)

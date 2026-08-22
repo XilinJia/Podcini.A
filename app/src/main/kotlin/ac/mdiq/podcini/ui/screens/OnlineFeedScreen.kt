@@ -20,7 +20,7 @@ import ac.mdiq.podcini.sources.clientBySearcher
 import ac.mdiq.podcini.sources.isExtFeed
 import ac.mdiq.podcini.sources.sourceClients
 import ac.mdiq.podcini.storage.database.allFeeds
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.getFeed
 import ac.mdiq.podcini.storage.database.realm
@@ -117,6 +117,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -407,7 +408,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
                     runOnIOScope {
                         val feedExisting = getFeed(feedId, true)?: return@runOnIOScope
                         Logd(TAG, "handleUpdatedFeedStatus ${feedExisting.title} ${feedExisting.author}")
-                        if (appPrefs.enableAutoDl && !isExtFeed(feedExisting)) feedExisting.autoDownload = autoDownloadChecked
+                        if (appPrefsFlow!!.value.enableAutoDl && !isExtFeed(feedExisting)) feedExisting.autoDownload = autoDownloadChecked
                         if (!username.isNullOrBlank()) {
                             feedExisting.username = username
                             feedExisting.password = password
@@ -436,6 +437,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
     val lifecycleOwner = LocalLifecycleOwner.current
     val drawerController = LocalDrawerController.current
     val context by rememberUpdatedState(LocalContext.current)
+    val appPrefs by appPrefsFlow!!.collectAsStateWithLifecycle()
 
     val vm: OnlineFeedVM = viewModel(key = url, factory = viewModelFactory { initializer { OnlineFeedVM(url, source, shared) } })
 

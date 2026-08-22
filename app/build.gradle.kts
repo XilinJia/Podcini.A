@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 106
-        versionName = "12.7.1"
+        versionCode = 107
+        versionName = "12.8.0"
 
         ndkVersion = "29.0.14206865"
 
@@ -197,12 +197,15 @@ dependencies {
 
     implementation("androidx.glance:glance-appwidget:1.1.1")
 
+    implementation("org.chromium.net:cronet-embedded:500.0.2")
+
     implementation("androidx.media3:media3-exoplayer:1.11.0")
     implementation("androidx.media3:media3-datasource-okhttp:1.11.0")
     implementation("androidx.media3:media3-ui:1.11.0")
     implementation("androidx.media3:media3-common:1.11.0")
     implementation("androidx.media3:media3-session:1.11.0")
     implementation("androidx.media3:media3-exoplayer-hls:1.11.0")
+    implementation("androidx.media3:media3-datasource-cronet:1.11.0")
 
     implementation("com.google.android.material:material:1.14.0")
 

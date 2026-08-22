@@ -31,7 +31,7 @@ class MediaButtonReceiver : BroadcastReceiver() {
         Logd(TAG, "onReceive keyEvent = $keyEvent" )
 
         if (keyEvent != null && keyEvent.action == KeyEvent.ACTION_DOWN && keyEvent.repeatCount == 0) {
-            ClientConfig.initialize()
+//            ClientConfig.initialize()
             val serviceIntent = Intent(PLAYBACK_SERVICE_INTENT)
             serviceIntent.setPackage(context.packageName)
             serviceIntent.putExtra(EXTRA_KEYCODE, keyEvent.keyCode)
@@ -50,7 +50,6 @@ class MediaButtonReceiver : BroadcastReceiver() {
         const val NOTIFY_BUTTON_RECEIVER: String = "ac.mdiq.podcini.NOTIFY_BUTTON_RECEIVER"
         const val PLAYBACK_SERVICE_INTENT: String = "ac.mdiq.podcini.intents.PLAYBACK_SERVICE"
 
-        
         fun createIntent(context: Context, eventCode: Int): Intent {
             val event = KeyEvent(KeyEvent.ACTION_DOWN, eventCode)
             val startingIntent = Intent(context, MediaButtonReceiver::class.java)

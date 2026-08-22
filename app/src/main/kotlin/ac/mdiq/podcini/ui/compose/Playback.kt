@@ -10,7 +10,7 @@ import ac.mdiq.podcini.playback.base.SleepManager.Companion.lastTimerValue
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fallbackSpeed
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
@@ -164,7 +164,7 @@ fun PlaybackSpeedDialog(feeds: List<Feed>, initSpeed: Float, maxSpeed: Float, is
                         speed = when {
                             useGlobal -> SPEED_USE_GLOBAL
                             feeds.size == 1 -> {
-                                if (feeds[0].playSpeed == SPEED_USE_GLOBAL) appPrefs.playbackSpeed
+                                if (feeds[0].playSpeed == SPEED_USE_GLOBAL) appPrefsFlow!!.value.playbackSpeed
                                 else feeds[0].playSpeed
                             }
                             else -> 1f
@@ -206,7 +206,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
     fun setPlaybackSpeedArray(speeds: List<Float>) {
         val jsonArray = JSONArray()
         for (speed in speeds) jsonArray.put(formatNumberKmp(speed.toDouble()))
-        upsertBlk(appPrefs) { it.playbackSpeedArray = jsonArray.toString()}
+        upsertBlk(appPrefsFlow!!.value) { it.playbackSpeedArray = jsonArray.toString()}
     }
     Dialog(properties = DialogProperties(usePlatformDefaultWidth = false), onDismissRequest = onDismiss) {
         val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
@@ -214,7 +214,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
         Card(modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(top = 10.dp, bottom = 10.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 var speed by remember { mutableFloatStateOf(theatres[playerId].mPlayer?.curPBSpeed?:0f) }
-                val speeds = remember { readPlaybackSpeedArray(appPrefs.playbackSpeedArray).toMutableStateList() }
+                val speeds = remember { readPlaybackSpeedArray(appPrefsFlow!!.value.playbackSpeedArray).toMutableStateList() }
                 var showEdit by remember { mutableStateOf(false) }
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.playback_speed), fontSize = MaterialTheme.typography.headlineSmall.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
@@ -278,7 +278,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                 if (playbackService != null) {
                                     theatres[playerId].mPlayer?.isSpeedForward = false
                                     theatres[playerId].mPlayer?.isFallbackSpeed = false
-                                    if (forGlobal) upsertBlk(appPrefs) { it.playbackSpeed = chipSpeed }
+                                    if (forGlobal) upsertBlk(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
                                     if (forPodcast && theatres[playerId].mPlayer?.curEpisode?.feed != null) upsertBlk(theatres[playerId].mPlayer?.curEpisode!!.feed!!) { it.playSpeed = chipSpeed }
                                     if (forCurrent) {
                                         theatres[playerId].mPlayer?.curSpeed = chipSpeed
@@ -286,7 +286,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                     }
                                 }
                                 else {
-                                    upsertBlk(appPrefs) { it.playbackSpeed = chipSpeed }
+                                    upsertBlk(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
                                     EventFlow.postEvent(FlowEvent.SpeedChangedEvent(playerId, chipSpeed))
                                 }
                                 onDismiss()
@@ -336,7 +336,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                     theatres[playerId].mPlayer?.setPlaybackParams(theatres[playerId].mPlayer!!.curSpeed, pitch)
                                 }
                                 if (feedPitch) upsertBlk(theatres[playerId].mPlayer?.curEpisode!!.feed!!) { it.playPitch = pitch }
-                                if (glPitch) upsertBlk(appPrefs) { it.playbackPitch = pitch }
+                                if (glPitch) upsertBlk(appPrefsFlow!!.value) { it.playbackPitch = pitch }
                             }) }
                         )
                         Checkbox(checked = unit == "Hz", onCheckedChange = { unit = "Hz" })

@@ -25,7 +25,7 @@ import ac.mdiq.podcini.playback.base.TTSEngine.ttsJob
 import ac.mdiq.podcini.playback.base.TTSEngine.ttsTmpFiles
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.sources.clientByEpisode
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
 import ac.mdiq.podcini.storage.database.isMediaDownloadable
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
@@ -149,7 +149,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             ButtonTypes.CANCEL -> {
                 if (typeToCancel == ButtonTypes.DOWNLOAD) {
                     runBlocking { EpisodeAdrDLManager.manager.cancel(item) }
-                    if (appPrefs.enableAutoDl) upsertBlk(item) { it.isAutoDownloadEnabled = false }
+                    if (appPrefsFlow!!.value.enableAutoDl) upsertBlk(item) { it.isAutoDownloadEnabled = false }
                     type = ButtonTypes.DOWNLOAD
                 } else if (typeToCancel == ButtonTypes.TTS) {
                     runOnIOScope { for (p in ttsTmpFiles) p.toUF().delete() }
@@ -250,7 +250,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                         LogeFor(TAG, item.id, "episode downloadUrl is null or blank")
                         return true
                     }
-                    val isDownloading = EpisodeAdrDLManager.manager.isDownloading(item.downloadUrl!!) == true
+                    val isDownloading = EpisodeAdrDLManager.manager.isDownloading(item.downloadUrl!!)
                     return isDownloading || item.downloaded
                 }
                 if (shouldNotDownload()) return
@@ -333,15 +333,12 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
 //        Logd(TAG, "update type: $type ${item.title}")
         item = item_
         fun undownloadedType(): ButtonTypes {
-            fun isDownloadingMedia(): Boolean {
-                return EpisodeAdrDLManager.manager.isDownloading(item.downloadUrl!!) == true
-            }
             return when {
                 item.downloadUrl.isNullOrBlank() -> ButtonTypes.TTS
                 item.feed == null || item.feedId == null || !isMediaDownloadable(item) || (prefStreamOverDownload && item.feed?.prefStreamOverDownload == true) -> {
                     if (preferSingle) ButtonTypes.STREAM_ONE else ButtonTypes.STREAM
                 }
-                isDownloadingMedia() -> ButtonTypes.CANCEL
+                EpisodeAdrDLManager.manager.isDownloading(item.downloadUrl!!) -> ButtonTypes.CANCEL
                 else -> ButtonTypes.DOWNLOAD
             }
         }
@@ -520,7 +517,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
         fun playVideoIfNeeded(item: Episode) {
             for (i in 0..1) {
                 if (item.id != theatres[i].mPlayer?.curEpisode?.id) continue
-                if (item.forceVideo || (item.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefs.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && item.mediaType == MediaType.VIDEO)) {
+                if (item.forceVideo || (item.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && item.mediaType == MediaType.VIDEO)) {
                     theatres[i].mPlayer?.playingVideo = true
                     psState = PSState.Expanded
                 } else theatres[i].mPlayer?.playingVideo = false

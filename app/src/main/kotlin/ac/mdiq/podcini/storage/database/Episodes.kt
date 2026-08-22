@@ -15,7 +15,9 @@ import ac.mdiq.podcini.storage.model.SubscriptionLog
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.feedLogsMap
 import ac.mdiq.podcini.storage.specs.EpisodeFilter
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
+import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.reorderWith
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.sortPairOf
+import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.DATE_DESC
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.durationStringShort
 import ac.mdiq.podcini.storage.utils.toUF
@@ -33,6 +35,7 @@ import io.github.xilinjia.krdb.notifications.ResultsChange
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.min
@@ -68,6 +71,20 @@ fun getEpisodesAsFlow(filter: EpisodeFilter?, sortOrder: EpisodeSortOrder?, feed
     if (feedId >= 0) queryString += " AND feedId == $feedId "
     Logd(TAG, "getEpisodesAsFlow queryString: $queryString sortOrder: $sortOrder")
     return realm.query(Episode::class).query(queryString).sort(sortPairOf(sortOrder)).asFlow()
+}
+
+fun getEpisodesAsListFlow(filter: EpisodeFilter?, sortOrder: EpisodeSortOrder?, feedId: Long = -1): Flow<List<Episode>> {
+    var queryString = filter?.queryString()
+    if (queryString.isNullOrBlank()) queryString = "id > 0"
+    if (feedId >= 0) queryString += " AND feedId == $feedId "
+    Logd(TAG, "getEpisodesAsFlow queryString: $queryString sortOrder: $sortOrder")
+    if (sortOrder != null && sortOrder != DATE_DESC)
+        return realm.query(Episode::class).query(queryString).asFlow().map { result ->
+            val list = result.list.toMutableList()
+            list.reorderWith(sortOrder)
+            list.toMutableList()
+        }
+    return realm.query(Episode::class).query(queryString).sort(sortPairOf(sortOrder)).asFlow().map { it.list }
 }
 
 fun getEpisodesCount(filter: EpisodeFilter?, feedId: Long = -1): Int {
@@ -115,7 +132,7 @@ suspend fun deleteEpisodesWarnLocalRepeat(items: Iterable<Episode>) {
                 if (episode.downloaded) deleteMedia(episode)
             }
         }
-        if (appPrefs.deleteRemovesFromQueue) removeFromAllQueues(items_)
+        if (appPrefsFlow!!.value.deleteRemovesFromQueue) removeFromAllQueues(items_)
     }
     for (item in items) {
         var toConfirm = false

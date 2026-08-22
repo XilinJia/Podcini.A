@@ -1,0 +1,6 @@
+* enabled feed based sorting in most modes of Facets screen
+* enabled "Trending" sorting (if supported) in FeedDetails and Facets screens
+* amended Todo and Timer editing
+* in Overview of Statistics, fixed today's date
+* in Remote tab of Search screen, added Apple searcher for episodes, search strictly on title
+* playback streaming migrated to supporting http/3/2/1.1 auto switch, better for high-latency networks

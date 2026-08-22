@@ -6,10 +6,10 @@ import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.net.utils.NetworkUtils.getURIFromRequestUrl
 import ac.mdiq.podcini.net.utils.NetworkUtils.isNetworkUrl
 import ac.mdiq.podcini.net.utils.NetworkUtils.wasDownloadBlocked
-import ac.mdiq.podcini.storage.database.appPrefs
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.utils.freeSpaceAvailable
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.utils.parseDate
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.utils.Logd
@@ -402,7 +402,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                     downloadStates[request.source] = DownloadStatus(DownloadStatus.State.RUNNING.code, 18)
                     request.statusMsg = (R.string.download_running)
 
-                    if (appPrefs.checkAvailableSpace) {
+                    if (appPrefsFlow!!.value.checkAvailableSpace) {
                         val freeSpace = freeSpaceAvailable
                         Logd(TAG, "Free space is $freeSpace > ${request.size}")
                         timeIt("$TAG after freeSpace")

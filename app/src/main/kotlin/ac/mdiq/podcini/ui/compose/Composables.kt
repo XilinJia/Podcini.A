@@ -2,7 +2,7 @@ package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.storage.database.appAttribs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.ToastMessage
@@ -90,6 +90,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -499,6 +500,7 @@ enum class TagType { Feed, Episode }
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TagSettingDialog(tagType: TagType, existingTags: Set<String>, multiples: Boolean = false, onDismiss: () -> Unit, cb: (List<String>)->Unit) {
+    val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
     CommonPopupCard(onDismiss = onDismiss) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.tags_label), fontSize = MaterialTheme.typography.headlineSmall.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))

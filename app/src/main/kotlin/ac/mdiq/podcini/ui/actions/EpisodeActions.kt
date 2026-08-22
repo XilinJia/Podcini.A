@@ -3,9 +3,10 @@ package ac.mdiq.podcini.ui.actions
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.base.InTheatre.actQueue
+import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.addToQueue
-import ac.mdiq.podcini.storage.database.appAttribs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
@@ -14,13 +15,12 @@ import ac.mdiq.podcini.storage.database.smartRemoveFromQueues
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.specs.EpisodeState
-import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.ui.compose.AddTimerDialog
 import ac.mdiq.podcini.ui.compose.ChooseRatingDialog
 import ac.mdiq.podcini.ui.compose.CommentEditingDialog
 import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
+import ac.mdiq.podcini.ui.compose.EditTimerDialog
 import ac.mdiq.podcini.ui.compose.EraseEpisodesDialog
 import ac.mdiq.podcini.ui.compose.FutureStateDialog
 import ac.mdiq.podcini.ui.compose.IgnoreEpisodesDialog
@@ -30,11 +30,9 @@ import ac.mdiq.podcini.ui.compose.ShelveDialog
 import ac.mdiq.podcini.ui.compose.TagSettingDialog
 import ac.mdiq.podcini.ui.compose.TagType
 import ac.mdiq.podcini.ui.compose.TodoDialog
-
 import ac.mdiq.podcini.ui.compose.commonConfirms
 import ac.mdiq.podcini.ui.screens.Search
 import ac.mdiq.podcini.ui.screens.navTo
-
 import ac.mdiq.podcini.ui.screens.setSearchTerms
 import ac.mdiq.podcini.utils.Logd
 import androidx.compose.foundation.border
@@ -65,7 +63,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.collections.listOf
 
 
 abstract class EpisodeAction {
@@ -308,7 +305,7 @@ class RemoveFromCurQueue : EpisodeAction() {
     override fun performAction(e: Episode) {
         super.performAction(e)
         runOnIOScope {
-            val curQueue = queuesLive.find { it.id == appAttribs.curQueueId }
+            val curQueue = queuesLive.find { it.id == appAttribsFlow!!.value.curQueueId }
             if (curQueue != null) smartRemoveFromQueues(e, listOf(curQueue))
         }
     }
@@ -597,6 +594,6 @@ class Timer : EpisodeAction() {
     }
     @Composable
     override fun ActionOptions() {
-        if (showTimerDialog && onEpisode != null) AddTimerDialog(onEpisode!!) { showTimerDialog = false }
+        if (showTimerDialog && onEpisode != null) EditTimerDialog(episode = onEpisode!!) { showTimerDialog = false }
     }
 }

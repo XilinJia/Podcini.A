@@ -2,7 +2,7 @@ package ac.mdiq.podcini.config
 
 import ac.mdiq.podcini.config.settings.OpmlTransporter
 import ac.mdiq.podcini.net.feed.FeedUpdateManager
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.updateFeedFull
@@ -33,7 +33,7 @@ import java.security.MessageDigest
 class OpmlBackupAgent : BackupAgentHelper() {
 
     override fun onCreate() {
-        val isAutoBackupOPML = appPrefs.OPMLBackup
+        val isAutoBackupOPML = appPrefsFlow!!.value.OPMLBackup
         if (isAutoBackupOPML) {
             Logd(TAG, "Backup of OPML enabled in preferences")
             addHelper(OPML_BACKUP_KEY, OpmlBackupHelper())
@@ -125,7 +125,7 @@ class OpmlBackupAgent : BackupAgentHelper() {
                     mChecksum = digester.digest() ?: byteArrayOf()
                     if (linesRead > 0) {
                         Logd(TAG, "restoreEntity finally $feedCount")
-                        upsertBlk(appPrefs) {
+                        upsertBlk(appPrefsFlow!!.value) {
                             it.OPMLRestored = true
                             it.OPMLFeedsToRestore = feedCount
                         }

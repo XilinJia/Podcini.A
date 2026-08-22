@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.upsertBlk
 import android.app.Activity
 import android.content.res.Configuration
@@ -79,7 +79,7 @@ enum class AppThemes {
 }
 
 var appTheme: AppThemes
-    get() = when (appPrefs.theme) {
+    get() = when (appPrefsFlow!!.value.theme) {
         "0" -> AppThemes.LIGHT
         "1" -> AppThemes.DARK
         else -> AppThemes.SYSTEM
@@ -90,7 +90,7 @@ var appTheme: AppThemes
             AppThemes.DARK -> "1"
             else -> "system"
         }
-        upsertBlk(appPrefs) { it.theme = t }
+        upsertBlk(appPrefsFlow!!.value) { it.theme = t }
     }
 
 @Composable
@@ -113,11 +113,11 @@ fun PodciniTheme(forceTheme: AppThemes? = null, content: @Composable () -> Unit)
     }
 
     val colorScheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && appPrefs.useDynamicThemes -> {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && appPrefsFlow!!.value.useDynamicThemes -> {
             val context = LocalContext.current
             if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        isDark && (appThemes == AppThemes.BLACK || appPrefs.themeBlack) -> DarkColors.copy(surface = Color(0xFF000000))
+        isDark && (appThemes == AppThemes.BLACK || appPrefsFlow!!.value.themeBlack) -> DarkColors.copy(surface = Color(0xFF000000))
         isDark -> DarkColors
         else -> LightColors
     }

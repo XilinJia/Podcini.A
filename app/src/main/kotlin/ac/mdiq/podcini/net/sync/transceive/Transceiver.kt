@@ -1,8 +1,9 @@
 package ac.mdiq.podcini.net.sync.transceive
 
 import ac.mdiq.podcini.net.utils.NetworkUtils.getLocalIpAddress
+import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.allFeeds
-import ac.mdiq.podcini.storage.database.appAttribs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.createSynthetic
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getFeed
@@ -14,12 +15,11 @@ import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.EpisodeDTO
 import ac.mdiq.podcini.storage.model.FeedDTO
 import ac.mdiq.podcini.storage.model.Volume
+import ac.mdiq.podcini.storage.model.allVolumes
 import ac.mdiq.podcini.storage.model.toBasicDTO
 import ac.mdiq.podcini.storage.model.toDTO
 import ac.mdiq.podcini.storage.model.toEpisode
 import ac.mdiq.podcini.storage.model.toFeed
-import ac.mdiq.podcini.storage.model.allVolumes
-import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
@@ -87,7 +87,7 @@ suspend fun broadcastPresence(udpPort: Int, tcpPort: Int) = withContext(Dispatch
     val myIp = getLocalIpAddress() ?: return@withContext
     val mask = computeBroadcast(myIp, 24)
 
-    val message = "PodciniReceiver:$myIp:$tcpPort:${appAttribs.name}:${appAttribs.uniqueId}:$Version"
+    val message = "PodciniReceiver:$myIp:$tcpPort:${appAttribsFlow!!.value.name}:${appAttribsFlow!!.value.uniqueId}:$Version"
 
     try {
         while (isActive) {
@@ -493,7 +493,7 @@ fun sendCatalog(host: String, port: Int, onEnd: ()->Unit): Job {
         if (!f.inNormalVolume || f.isSynthetic() || f.isLocal) continue
         feedsDTO.add(f.toDTO())
     }
-    val pack = CatalogPackage(appAttribs.name, appAttribs.uniqueId, feedsDTO)
+    val pack = CatalogPackage(appAttribsFlow!!.value.name, appAttribsFlow!!.value.uniqueId, feedsDTO)
     Logd(TAG, "sendCatalog built package: ${feedsDTO.size} feeds")
 
     var socket: Socket? = null

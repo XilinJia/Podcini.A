@@ -468,7 +468,7 @@
 
     <string name="view_count">View count</string>
     <string name="like_count">Like count</string>
-    <string name="view_speed">Views per day</string>
+    <string name="trending">Trending</string>
     <string name="date">Date</string>
     <string name="time">Time</string>
     <string name="count">Count</string>
@@ -863,6 +863,7 @@
     <string name="minute">Minute</string>
     <string name="set_due_time">Set due time</string>
     <string name="add_notes">Add notes</string>
+    <string name="notify">Notify</string>
 
     <string name="show_done">Show done</string>
     <string name="show">Show</string>

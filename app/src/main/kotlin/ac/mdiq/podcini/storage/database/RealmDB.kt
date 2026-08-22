@@ -1,6 +1,7 @@
 package ac.mdiq.podcini.storage.database
 
 import ac.mdiq.podcini.BuildConfig
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.storage.model.AppAttribs
 import ac.mdiq.podcini.storage.model.AppPrefs
 import ac.mdiq.podcini.storage.model.AutoDLEQ
@@ -42,7 +43,6 @@ import io.github.xilinjia.krdb.types.TypedRealmObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -50,8 +50,6 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.ContinuationInterceptor
 
 private const val TAG: String = "RealmDB"
-
-private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 val config: RealmConfiguration by lazy {
     RealmConfiguration.Builder(schema = setOf(
@@ -211,8 +209,7 @@ fun <T : RealmObject> upsertBlk(entity: T, block: MutableRealm.(T) -> Unit) : T 
 fun <T : EmbeddedRealmObject> upsertBlkEmb(entity: T, block: MutableRealm.(T) -> Unit) : T {
 //    stackTraceShort()
     return realm.writeBlocking {
-        var result: T = entity
-            result = findLatest(entity)?.let {
+        val result: T = findLatest(entity)?.let {
                 block(it)
                 it
             } ?: entity
@@ -222,7 +219,7 @@ fun <T : EmbeddedRealmObject> upsertBlkEmb(entity: T, block: MutableRealm.(T) ->
 
 
 fun runOnIOScope(block: suspend () -> Unit) : Job {
-    return ioScope.launch {
+    return appIOScope.launch {
         if (Dispatchers.IO == coroutineContext[ContinuationInterceptor]) block()
         else withContext(Dispatchers.IO) { block() }
     }

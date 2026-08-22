@@ -10,7 +10,7 @@ import ac.mdiq.podcini.shared.FeedSearcher
 import ac.mdiq.podcini.shared.MediaSearcher
 import ac.mdiq.podcini.shared.PROVIDER_API_VERSION
 import ac.mdiq.podcini.shared.ProviderAttrs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -157,7 +157,7 @@ object AppGatewayRegistry {
         val resolveInfos = context.packageManager.queryIntentServicesCompat(intent, PackageManager.MATCH_ALL)
         if (resolveInfos.isEmpty()) {
             Loge(TAG, "No external source provider is available. Setting '${context.getString(R.string.pref_use_external_apps)}' is turned off")
-            upsert(appPrefs) { p-> p.loadExternalApp = false }
+            upsert(appPrefsFlow!!.value) { p-> p.loadExternalApp = false }
             return listOf()
         }
 

@@ -3,20 +3,18 @@ package ac.mdiq.podcini.net.feed
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.config.ClientConfig
 import ac.mdiq.podcini.net.feed.FeedUpdater.Companion.createNotification
 import ac.mdiq.podcini.net.utils.NetworkUtils.isFeedRefreshAllowed
 import ac.mdiq.podcini.net.utils.NetworkUtils.mobileAllowFeedRefresh
 import ac.mdiq.podcini.net.utils.NetworkUtils.networkMonitor
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.sources.AppGatewayRegistry
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Feed
-import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sources.AppGatewayRegistry
 import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
-
 import ac.mdiq.podcini.ui.compose.commonConfirms
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
@@ -70,7 +68,7 @@ object FeedUpdateManager {
     const val KEY_IS_PERIODIC = "is_periodic"
 
     private val intervalInMillis: Long
-        get() = appPrefs.autoUpdateInterval.toLong() * 1.minutes.inWholeMilliseconds
+        get() = appPrefsFlow!!.value.autoUpdateInterval.toLong() * 1.minutes.inWholeMilliseconds
 
     var nextRefreshTime by mutableStateOf("")
 
@@ -88,7 +86,7 @@ object FeedUpdateManager {
 
     fun getInitialDelay(now: Boolean = false): Long {
         val initialDelay = if (now) 0L else intervalInMillis
-        val lastUpdateTime = appAttribs.prefLastFullUpdateTime
+        val lastUpdateTime = appAttribsFlow!!.value.prefLastFullUpdateTime
         Logd(TAG, "lastUpdateTime: $lastUpdateTime updateInterval: $intervalInMillis")
         nextRefreshTime = if (lastUpdateTime == 0L) {
             if (initialDelay != 0L) fullDateTimeString(nowInMillis() + initialDelay + intervalInMillis)
@@ -112,7 +110,7 @@ object FeedUpdateManager {
         }
         var policy = ExistingWorkPolicy.KEEP
         if (replace) {
-            upsertBlk(appAttribs) { it.prefLastFullUpdateTime = nowInMillis() }
+            upsertBlk(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() }
             policy = ExistingWorkPolicy.REPLACE
         }
         if (!mobileAllowFeedRefresh && !force) {
@@ -204,8 +202,8 @@ object FeedUpdateManager {
         @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
         override suspend fun doWork(): Result {
             setForegroundAsync(getForegroundInfo())
-            ClientConfig.initialize()
-            if (appPrefs.loadExternalApp) {
+//            ClientConfig.initialize()
+            if (appPrefsFlow!!.value.loadExternalApp) {
                 AppGatewayRegistry.awaitReadyClients()
                 delay(1000.milliseconds)
             }
@@ -230,7 +228,7 @@ object FeedUpdateManager {
             if (attemptCount > 0) Logt(TAG, "Running backoff refresh due to prior errors")
 
             val isPeriodic = inputData.getBoolean(KEY_IS_PERIODIC, false)
-            if (isPeriodic) upsertBlk(appAttribs) { it.prefLastFullUpdateTime = nowInMillis() }
+            if (isPeriodic) upsertBlk(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() }
             when {
                 !networkMonitor.isConnected -> {
                     EventFlow.postEvent(FlowEvent.MessageEvent(applicationContext.getString(R.string.download_error_no_connection)))
@@ -265,7 +263,7 @@ object FeedUpdateManager {
                 Logs(TAG, e,"Some errors occurred during refresh, will retry")
                 if (isPeriodic) {
                     if (attemptCount >= MAX_BACKOFF_ATTEMPTS) {
-                        upsertBlk(appAttribs) { it.feedIdsToRefresh.clear() }
+                        upsertBlk(appAttribsFlow!!.value) { it.feedIdsToRefresh.clear() }
                         rescheduleUpdateTaskOnce()
                         return Result.success()
                     }

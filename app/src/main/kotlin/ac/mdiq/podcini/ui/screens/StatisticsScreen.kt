@@ -2,7 +2,6 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.storage.database.appAttribs
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.upsertBlk
@@ -11,6 +10,7 @@ import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.durationStringShort
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.DatesFilterDialog
 import ac.mdiq.podcini.ui.compose.EpisodeLazyColumn
@@ -125,18 +125,18 @@ import kotlin.time.Instant
 
 
 class StatisticsVM: ViewModel() {
-
     internal var statisticsState by mutableIntStateOf(0)
     internal val selectedTabIndex = mutableIntStateOf(0)
     internal var showFilter by mutableStateOf(false)
 
-    var date: LocalDate by mutableStateOf(LocalDate.fromEpochDays(0))
+    var date: LocalDate by mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date)
+
     var statsOfDay by mutableStateOf(StatisticsResult())
     var statsResult by mutableStateOf(StatisticsResult())
 
     var chartData by mutableStateOf<LineChartData?>(null)
-    var timeFilterFrom by mutableLongStateOf(appAttribs.statisticsFrom)
-    var timeFilterTo by mutableLongStateOf(appAttribs.statisticsUntil.takeIf { it != 0L } ?: Long.MAX_VALUE)
+    var timeFilterFrom by mutableLongStateOf(appAttribsFlow!!.value.statisticsFrom)
+    var timeFilterTo by mutableLongStateOf(appAttribsFlow!!.value.statisticsUntil.takeIf { it != 0L } ?: Long.MAX_VALUE)
     var numDays by mutableIntStateOf(1)
     var periodText by mutableStateOf("")
 
@@ -153,7 +153,7 @@ class StatisticsVM: ViewModel() {
     internal fun setTimeFilter(timeFilterFrom_: Long, timeFilterTo_: Long) {
         timeFilterFrom = timeFilterFrom_
         timeFilterTo = timeFilterTo_
-        upsertBlk(appAttribs) {
+        upsertBlk(appAttribsFlow!!.value) {
             it.statisticsFrom = timeFilterFrom_
             it.statisticsUntil = timeFilterTo_
         }
@@ -235,8 +235,6 @@ fun StatisticsScreen() {
     @Composable
     fun MyTopAppBar() {
         var expanded by remember { mutableStateOf(false) }
-        
-        
         val buttonAltColor = lerp(MaterialTheme.colorScheme.tertiary, Color.Green, 0.5f)
         Box {
             TopAppBar(title = { Text("") }, navigationIcon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_chart_box), contentDescription = "Open Drawer", modifier = Modifier.padding(7.dp).clickable { drawerController?.open() }) },

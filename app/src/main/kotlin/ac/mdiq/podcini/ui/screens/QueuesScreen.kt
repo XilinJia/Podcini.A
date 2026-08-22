@@ -9,8 +9,8 @@ import ac.mdiq.podcini.playback.base.InTheatre.theatres
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.mediaBrowser
 import ac.mdiq.podcini.storage.database.allFeeds
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.buildListInfo
 import ac.mdiq.podcini.storage.database.feedOperationText
 import ac.mdiq.podcini.storage.database.persistOrdered
@@ -187,9 +187,9 @@ class QueuesVM(id_: Long): ViewModel() {
 
     var queues by mutableStateOf<List<PlayQueue>>(listOf())
 
-    var queuesMode by  mutableStateOf( if (appAttribs.queuesMode.isNotBlank()) QueuesScreenMode.valueOf(appAttribs.queuesMode) else QueuesScreenMode.Queue)
+    var queuesMode by  mutableStateOf( if (appAttribsFlow!!.value.queuesMode.isNotBlank()) QueuesScreenMode.valueOf(appAttribsFlow!!.value.queuesMode) else QueuesScreenMode.Queue)
 
-    val curQueueFlow: StateFlow<PlayQueue?> = snapshotFlow { appAttribs.curQueueId }.distinctUntilChanged().flatMapLatest { id ->
+    val curQueueFlow: StateFlow<PlayQueue?> = appAttribsFlow!!.map { it.curQueueId }.distinctUntilChanged().flatMapLatest { id ->
         realm.query(PlayQueue::class).query("id == $id").first().asFlow().map { it.obj }
     }.distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = null)
 
@@ -261,6 +261,7 @@ fun QueuesScreen(id: Long = -1L) {
 
     var swipeActions by remember { mutableStateOf(SwipeActions(TAG)) }
     var listInfoText by remember { mutableStateOf("") }
+    val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
 
     Logd(TAG, "curQueuePosition: ${vm.curQueuePosition} ${vm.curQueue.id}")
 
@@ -772,7 +773,7 @@ fun QueuesScreen(id: Long = -1L) {
                                     CoroutineScope(Dispatchers.IO).launch {
                                         val feeds = vm.curQueue.normalFeeds
                                         AutoEnqueueAlgorithm().run(feeds, true)
-                                        if (vm.curQueue.launchAutoEQDlWhenEmpty && appPrefs.enableAutoDl) AutoDownloadAlgorithm().run(feeds, false, noRefreshing = true)
+                                        if (vm.curQueue.launchAutoEQDlWhenEmpty && appPrefsFlow!!.value.enableAutoDl) AutoDownloadAlgorithm().run(feeds, false, noRefreshing = true)
                                     }
                                 }, neutralRes = R.string.refresh_label, onNeutral = { runOnceOrAsk(feeds = vm.curQueue.normalFeeds) }))
                             }, actionButtonCB = { _, type ->

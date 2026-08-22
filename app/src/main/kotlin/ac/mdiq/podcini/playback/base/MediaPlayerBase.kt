@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.playback.base
 
+import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.net.sync.queue.SynchronizationQueueSink
@@ -23,8 +24,8 @@ import ac.mdiq.podcini.sources.clientByEpisode
 import ac.mdiq.podcini.storage.database.MonitorEntity
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.allowForAutoDelete
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.checkAndMarkDuplicates
 import ac.mdiq.podcini.storage.database.createSynthetic
 import ac.mdiq.podcini.storage.database.curIndexInActQueue
@@ -75,7 +76,6 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -197,14 +197,14 @@ abstract class MediaPlayerBase {
             speed = curSpeed
             if (speed == SPEED_USE_GLOBAL && media.feedId != null && feedsMap.containsKey(media.feedId!!)) speed = feedsMap[media.feedId!!]!!.playSpeed
         }
-        if (speed == SPEED_USE_GLOBAL) speed = appPrefs.playbackSpeed
+        if (speed == SPEED_USE_GLOBAL) speed = appPrefsFlow!!.value.playbackSpeed
 
         var pitch = SPEED_USE_GLOBAL
         if (media != null) {
             pitch = curPitch
             if (pitch == SPEED_USE_GLOBAL && media.feedId != null && feedsMap.containsKey(media.feedId!!)) pitch = feedsMap[media.feedId!!]!!.playPitch
         }
-        if (pitch == SPEED_USE_GLOBAL) pitch = appPrefs.playbackPitch
+        if (pitch == SPEED_USE_GLOBAL) pitch = appPrefsFlow!!.value.playbackPitch
         return Pair(speed, pitch)
     }
 
@@ -252,7 +252,7 @@ abstract class MediaPlayerBase {
                 setAudioStream()
                 useVCodex = null
                 useResolution = null
-                playingVideo = (episode_.forceVideo || (episode_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefs.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && episode_.mediaType == MediaType.VIDEO))
+                playingVideo = (episode_.forceVideo || (episode_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && episode_.mediaType == MediaType.VIDEO))
                 skipSilence = null
                 shouldRepeat = false
                 curSpeed = SPEED_USE_GLOBAL
@@ -397,21 +397,20 @@ abstract class MediaPlayerBase {
     }
 
     private var positionSaverJob: Job? = null
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private var positionSaverInterval: Long = MIN_POSITION_SAVER_INTERVAL.toLong()
 
     protected fun resetPosSaverInterval(speed: Float) {
         curEpisode?.apply {
             Logd(TAG, "resetPosSaverInterval speed: $speed duration: ${this.duration} ${(0.02 * this.duration / speed).toInt()}")
-            positionSaverInterval = (if (appPrefs.useAdaptiveProgressUpdate) max(MIN_POSITION_SAVER_INTERVAL, (0.02 * this.duration / speed).toInt()) else MIN_POSITION_SAVER_INTERVAL).toLong()
+            positionSaverInterval = (if (appPrefsFlow!!.value.useAdaptiveProgressUpdate) max(MIN_POSITION_SAVER_INTERVAL, (0.02 * this.duration / speed).toInt()) else MIN_POSITION_SAVER_INTERVAL).toLong()
         }
     }
 
     @Synchronized
     private fun startPositionSaver() {
         cancelPositionSaver()
-        positionSaverJob = scope.launch {
+        positionSaverJob = appMainScope.launch {
             while (isActive) {
                 delay(positionSaverInterval.milliseconds)
                 val position = getPosition()
@@ -701,8 +700,8 @@ abstract class MediaPlayerBase {
                     if (wasSkipped) setPlayerStatus(PlayerStatus.INDETERMINATE, null)
                     curSpeed = SPEED_USE_GLOBAL
                     cancelPositionSaver()
-                    Logd(TAG, "endPlayback useRingTone: ${appPrefs.useRingTone} ringToneUriString: ${appPrefs.ringToneUriString}")
-                    if (appPrefs.useRingTone && !appPrefs.ringToneUriString.isNullOrBlank() && (nextMedia.feed?.audioType != AudioType.MUSIC.code || !appPrefs.disableRingToneOnMusic)) playChime()
+                    Logd(TAG, "endPlayback useRingTone: ${appPrefsFlow!!.value.useRingTone} ringToneUriString: ${appPrefsFlow!!.value.ringToneUriString}")
+                    if (appPrefsFlow!!.value.useRingTone && !appPrefsFlow!!.value.ringToneUriString.isNullOrBlank() && (nextMedia.feed?.audioType != AudioType.MUSIC.code || !appPrefsFlow!!.value.disableRingToneOnMusic)) playChime()
 
                     val needStreaming = (nextMedia.feed?.isLocal != true && nextMedia.fileUrl.isNullOrBlank())
                     if (needStreaming) {
@@ -814,7 +813,7 @@ abstract class MediaPlayerBase {
             }
         }
         runOnIOScope {
-            if (ended || smartMarkAsPlayed || autoSkipped || (skipped && !appPrefs.skipKeepsEpisode)) {
+            if (ended || smartMarkAsPlayed || autoSkipped || (skipped && !appPrefsFlow!!.value.skipKeepsEpisode)) {
                 Logd(TAG, "onPostPlayback ended: $ended smartMarkAsPlayed: $smartMarkAsPlayed autoSkipped: $autoSkipped skipped: $skipped")
                 // only mark the item as played if we're not keeping it anyway
                 item = upsert(item) {
@@ -828,11 +827,11 @@ abstract class MediaPlayerBase {
                 }
                 val action = item.feed?.autoDeleteAction
                 val shouldAutoDelete = (action == AutoDeleteAction.ALWAYS || (action == AutoDeleteAction.GLOBAL && item.feed != null && allowForAutoDelete(item.feed!!)))
-                val isItemdeletable = (!appPrefs.favoriteKeepsEpisode || (item.rating < Rating.GOOD.code && item.playState != EpisodeState.AGAIN.code && item.playState != EpisodeState.FOREVER.code))
+                val isItemdeletable = (!appPrefsFlow!!.value.favoriteKeepsEpisode || (item.rating < Rating.GOOD.code && item.playState != EpisodeState.AGAIN.code && item.playState != EpisodeState.FOREVER.code))
                 if (shouldAutoDelete && isItemdeletable) {
                     if (!item.fileUrl.isNullOrBlank()) item = deleteMedia(item)
-                    if (appPrefs.deleteRemovesFromQueue) removeFromAllQueues(listOf(item))
-                } else if (appPrefs.removeFromQueueMarkPlayed) removeFromAllQueues(listOf(item))
+                    if (appPrefsFlow!!.value.deleteRemovesFromQueue) removeFromAllQueues(listOf(item))
+                } else if (appPrefsFlow!!.value.removeFromQueueMarkPlayed) removeFromAllQueues(listOf(item))
             }
         }
     }
@@ -955,8 +954,8 @@ abstract class MediaPlayerBase {
         val asl = mutableListOf<AudioSpec>()
 //        Logd(TAG, "useLocale: $useLocale useCodex: $useCodex useABPS: $useABPS audioIndex: $audioIndex")
         Logd(TAG, "setAudioSpec media.feed?.preferredLnaguages: [${media.feed?.preferredLnaguages?.joinToString()}]")
-        Logd(TAG, "setAudioSpec appAttribs.langsPreferred: [${appAttribs.langsPreferred.joinToString()}]")
-        useLocales = media.feed?.preferredLnaguages?.ifEmpty { appAttribs.langsPreferred }?.ifEmpty { setOf("en-US", "en-GB", "en") } ?: setOf("en-US", "en-GB", "en")
+        Logd(TAG, "setAudioSpec appAttribs.langsPreferred: [${appAttribsFlow!!.value.langsPreferred.joinToString()}]")
+        useLocales = media.feed?.preferredLnaguages?.ifEmpty { appAttribsFlow!!.value.langsPreferred }?.ifEmpty { setOf("en-US", "en-GB", "en") } ?: setOf("en-US", "en-GB", "en")
         Logd(TAG, "setAudioSpec useLocales: ${useLocales.joinToString()}")
         curLocales.clear()
         for (s in audioSpecs) {
@@ -974,7 +973,7 @@ abstract class MediaPlayerBase {
         if (curLocales.isNotEmpty()) {
             runOnIOScope {
                 if (media.feed != null && !media.feed!!.langSet.containsAll(curLocales)) upsert(media.feed!!) { it.langSet.addAll(curLocales) }
-                if (!appAttribs.langSet.containsAll(curLocales)) upsertBlk(appAttribs) { it.langSet.addAll(curLocales) }
+                if (!appAttribsFlow!!.value.langSet.containsAll(curLocales)) upsertBlk(appAttribsFlow!!.value) { it.langSet.addAll(curLocales) }
             }
         }
         Logd(TAG, "setAudioSpec asl: ${asl.size}")
@@ -993,7 +992,7 @@ abstract class MediaPlayerBase {
             } else Logt(TAG, "setAudioSpec Requested audio doesn't exist ($useLocale, $useCodex, $useABPS), getting one based on settings.")
         }
 
-        val prefLowQualityMedia: Boolean = appPrefs.lowQualityOnMobile
+        val prefLowQualityMedia: Boolean = appPrefsFlow!!.value.lowQualityOnMobile
         val audioIndex =
             if (networkMonitor.isNetworkRestricted && prefLowQualityMedia && media.feed?.audioQualitySetting == AVQuality.GLOBAL) 0
             else {
@@ -1002,7 +1001,7 @@ abstract class MediaPlayerBase {
                     AVQuality.MEDIUM -> asl.size / 2
                     AVQuality.HIGH -> asl.size - 1
                     else -> {
-                        when (appPrefs.audioQuality) {
+                        when (appPrefsFlow!!.value.audioQuality) {
                             AVQuality.LOW.code -> 0
                             AVQuality.MEDIUM.code -> asl.size / 2
                             AVQuality.HIGH.code -> asl.size - 1
@@ -1035,14 +1034,14 @@ abstract class MediaPlayerBase {
             } else Logt(TAG, "setVideoSpec Requested video with ($useVCodex and $useResolution) doesn't exist, getting one based on settings")
         }
         val videoIndex =
-            if (networkMonitor.isNetworkRestricted && appPrefs.lowQualityOnMobile && media.feed?.videoQualitySetting == AVQuality.GLOBAL) 0
+            if (networkMonitor.isNetworkRestricted && appPrefsFlow!!.value.lowQualityOnMobile && media.feed?.videoQualitySetting == AVQuality.GLOBAL) 0
             else {
                 when (media.feed?.videoQualitySetting) {
                     AVQuality.LOW -> 0
                     AVQuality.MEDIUM -> videoSpecs.size / 2
                     AVQuality.HIGH -> videoSpecs.size - 1
                     else -> {
-                        when (appPrefs.videoQuality) {
+                        when (appPrefsFlow!!.value.videoQuality) {
                             AVQuality.LOW.code -> 0
                             AVQuality.MEDIUM.code -> videoSpecs.size / 2
                             AVQuality.HIGH.code -> videoSpecs.size - 1

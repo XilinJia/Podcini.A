@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.playback.base
 
+import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.storage.database.sleepPrefs
 import ac.mdiq.podcini.shared.nowInMillis
@@ -43,8 +44,6 @@ class SleepManager {
     @get:Synchronized
     val timeLeft: Long
         get() = if (isActive) timer!!.timeLeft else 0
-
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     /**
      * Starts a new sleep timer with the given waiting time. If another sleep timer is already active, it will be cancelled first.
@@ -91,7 +90,7 @@ class SleepManager {
                 EventFlow.postEvent(FlowEvent.SleepTimerUpdatedEvent.updated(timeLeft))
             }
             EventFlow.postEvent(FlowEvent.SleepTimerUpdatedEvent.updated(timeLeft))
-            return scope.launch {
+            return appMainScope.launch {
                 try {
                     while (timeLeft > SLEEP_TIMER_ENDING_THRESHOLD) {
                         delay(SLEEP_TIMER_UPDATE_INTERVAL)

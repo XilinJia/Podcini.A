@@ -86,6 +86,7 @@ class AppAttribs: RealmObject {
         if (feedIdsToRefresh.size != other.feedIdsToRefresh.size) return false
         if (episodeIdsToDownload.size != other.episodeIdsToDownload.size) return false
         if (timetable.size != other.timetable.size) return false
+        for (i in timetable.indices) if (timetable[i] != other.timetable[i]) return false
         if (searchHistory.size != other.searchHistory.size) return false
         if (onlineSearchHistory.size != other.onlineSearchHistory.size) return false
         if (topChartCountryCode != other.topChartCountryCode) return false
@@ -112,7 +113,7 @@ class AppAttribs: RealmObject {
         result = 31 * result + swipeActionsMap.size
         result = 31 * result + feedIdsToRefresh.size
         result = 31 * result + episodeIdsToDownload.size
-        result = 31 * result + timetable.size
+        result = 31 * result + timetable.hashCode()
         result = 31 * result + searchHistory.size
         result = 31 * result + onlineSearchHistory.size
         result = 31 * result + topChartCountryCode.hashCode()

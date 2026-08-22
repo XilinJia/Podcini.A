@@ -12,7 +12,7 @@ import ac.mdiq.podcini.net.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.playback.base.TTSEngine.closeTTS
 import ac.mdiq.podcini.playback.cast.BaseActivity
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
@@ -171,9 +171,9 @@ class MainActivity : BaseActivity() {
         if (savedInstanceState == null) {
             timeIt("$TAG after checking permission")
             val currentVersion = packageManager.getPackageInfo(packageName, 0).versionName ?: "0"
-            val lastScheduledVersion = appPrefs.lastVersion
+            val lastScheduledVersion = appPrefsFlow!!.value.lastVersion
             if (currentVersion != lastScheduledVersion) {
-                upsertBlk(appPrefs) { it.lastVersion = currentVersion }
+                upsertBlk(appPrefsFlow!!.value) { it.lastVersion = currentVersion }
             }
 
             SynchronizationQueueSink.setServiceStarterImpl { SyncService.sync() }
@@ -215,7 +215,7 @@ class MainActivity : BaseActivity() {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    if (dontAskAgain) upsertBlk(appPrefs) { it.dont_ask_again_unrestricted_background = true }
+                    if (dontAskAgain) upsertBlk(appPrefsFlow!!.value) { it.dont_ask_again_unrestricted_background = true }
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = "package:$packageName".toUri() }
                     this@MainActivity.startActivity(intent)
                     onDismiss()
@@ -228,7 +228,7 @@ class MainActivity : BaseActivity() {
     private fun checkAndRequestUnrestrictedBackgroundActivity() {
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         val isIgnoringBatteryOptimizations = powerManager.isIgnoringBatteryOptimizations(packageName)
-        val dontAskAgain = appPrefs.dont_ask_again_unrestricted_background
+        val dontAskAgain = appPrefsFlow!!.value.dont_ask_again_unrestricted_background
         if (!isIgnoringBatteryOptimizations && !dontAskAgain) showUnrestrictedBackgroundPermissionDialog = true
     }
 
@@ -265,11 +265,11 @@ class MainActivity : BaseActivity() {
             forceRestart()
         }
         val curTime = nowInMillis()
-        Logd(TAG, "onResume curTime: $curTime postRepeatsTime: ${appPrefs.postRepeatsTime}")
-        if ((curTime - appPrefs.postRepeatsTime) > 3600000L * 24)
+        Logd(TAG, "onResume curTime: $curTime postRepeatsTime: ${appPrefsFlow!!.value.postRepeatsTime}")
+        if ((curTime - appPrefsFlow!!.value.postRepeatsTime) > 3600000L * 24)
             runOnIOScope {
                 val count = realm.query(Episode::class).query("playState == ${EpisodeState.AGAIN.code} OR playState == ${EpisodeState.FOREVER.code}").query("repeatTime <= $curTime").count().find()
-                upsert(appPrefs) { it.postRepeatsTime = curTime }
+                upsert(appPrefsFlow!!.value) { it.postRepeatsTime = curTime }
                 if (count > 0) withContext(Dispatchers.Main) {
                     commonConfirms.add(CommonConfirmAttrib(title = getString(R.string.repeats_past_due), message = getString(R.string.repeats_past_due_sum, count), confirmRes = R.string.OK, cancelRes = R.string.no,
                         onConfirm = { navTo(Facets(modeName = QuickAccess.Due.name)) }))

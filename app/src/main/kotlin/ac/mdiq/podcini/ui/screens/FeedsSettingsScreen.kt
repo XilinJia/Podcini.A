@@ -8,7 +8,7 @@ import ac.mdiq.podcini.sources.SourceGatewayClient
 import ac.mdiq.podcini.sources.clientByFeed
 import ac.mdiq.podcini.sources.clientsHaveMultiQ
 import ac.mdiq.podcini.sources.typeClientMap
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
@@ -140,9 +140,10 @@ var feedsToSet: List<Feed> = listOf()
 fun FeedsSettingsScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
     val drawerController = LocalDrawerController.current
+    val appPrefs by appPrefsFlow!!.collectAsStateWithLifecycle()
 
     var feedFlow by remember { mutableStateOf<Flow<SingleQueryChange<Feed>>>(emptyFlow()) }
-    var feedToSet by remember { mutableStateOf(if (feedsToSet.size == 1) feedsToSet[0] else Feed()) }
+    var feedToSet by remember { mutableStateOf(if (feedsToSet.isNotEmpty()) feedsToSet[0] else Feed()) }
     val extClient: SourceGatewayClient? = remember(feedToSet.type) { if (feedToSet.type.isNullOrBlank()) null else typeClientMap[feedToSet.type!!] }
 
     var audioType by remember { mutableStateOf(feedToSet.audioTypeSetting.tag) }
@@ -231,212 +232,6 @@ fun FeedsSettingsScreen() {
                 })
             }
             Text(text = stringResource(summaryRes), style = MaterialTheme.typography.bodyMedium, color = textColor)
-        }
-    }
-
-    @Composable
-    fun ConfigAutoDLEQ(index: Int) {
-        Text(text = stringResource(R.string.algorithm) + " ${index+1}: ", style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.padding(start = 20.dp))
-
-        val (selectedPolicy, onPolicySelected) = remember(index) { mutableStateOf(feedToSet.autoDLEQs[index].autoDLPolicy) }
-        var episodesSortOrder by remember { mutableStateOf(feedToSet.autoDLEQs[index].episodesSortOrderADL) }
-        var episodeFilter by remember { mutableStateOf(feedToSet.autoDLEQs[index].episodeFilterADL) }
-        @Composable
-        fun AutoDLEQPolicyDialog(onDismiss: () -> Unit) {
-            AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { onDismiss() },
-                title = { Text(stringResource(R.string.feed_automation_policy), style = CustomTextStyles.titleCustom) },
-                text = {
-                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        AutoDLEQPolicy.entries.forEach { policy ->
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(checked = (policy == selectedPolicy), onCheckedChange = { onPolicySelected(policy) })
-                                Text(text = stringResource(policy.resId), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp))
-                            }
-                            if (selectedPolicy == AutoDLEQPolicy.ONLY_NEW && policy == selectedPolicy)
-                                Row(Modifier.fillMaxWidth().padding(start = 30.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    var replaceChecked by remember { mutableStateOf(selectedPolicy.replace) }
-                                    Checkbox(checked = replaceChecked, onCheckedChange = {
-                                        replaceChecked = it
-                                        selectedPolicy.replace = it
-                                        policy.replace = it
-                                    })
-                                    Text(text = stringResource(R.string.replace), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
-                                }
-                        }
-                        if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) Text(stringResource(R.string.feed_auto_dleq_filter_sort_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        Logd(TAG, "autoDLPolicy: ${selectedPolicy.name} ${selectedPolicy.replace}")
-                        runOnIOScope {
-                            realm.write { for (f in feedsToSet) { findLatest(f)?.let {
-                                Logd(TAG, "feed episodeFilter: ${it.episodeFilter} episodeSortOrder: ${it.episodeSortOrder}")
-                                it.autoDLEQs[index].autoDLPolicy = selectedPolicy
-                                if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) {
-                                    it.autoDLEQs[index].episodeFilterADL = it.episodeFilter
-                                    it.autoDLEQs[index].episodesSortOrderADL = it.episodeSortOrder
-                                    episodesSortOrder = it.episodeSortOrder
-                                    episodeFilter = it.episodeFilter
-                                }
-                            } } }
-                        }
-                        onDismiss()
-                    }) { Text(stringResource(R.string.confirm_label)) }
-                },
-                dismissButton = { TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.cancel_label)) } }
-            )
-        }
-        //                    automation policy
-        Column(modifier = Modifier.padding(start = 20.dp, bottom = 5.dp)) {
-            Row(Modifier.fillMaxWidth()) {
-                val showDialog = remember { mutableStateOf(false) }
-                if (showDialog.value) AutoDLEQPolicyDialog(onDismiss = { showDialog.value = false })
-                Text(text = stringResource(R.string.feed_automation_policy) + ":", style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
-                Text(stringResource(selectedPolicy.resId), modifier = Modifier.padding(start = 20.dp))
-            }
-        }
-        if (selectedPolicy != AutoDLEQPolicy.FILTER_SORT) {
-            @OptIn(ExperimentalLayoutApi::class)
-            @Composable
-            fun AutoDownloadFilterDialog(filter: FeedAutoDLEQFilter, inexcl: ADLIncExc, onDismiss: () -> Unit, onConfirmed: (FeedAutoDLEQFilter) -> Unit) {
-                fun toFilterString(words: List<String>): String {
-                    val result = StringBuilder()
-                    for (word in words) result.append("\"").append(word).append("\" ")
-                    return result.toString()
-                }
-                Dialog(properties = DialogProperties(usePlatformDefaultWidth = false), onDismissRequest = onDismiss) {
-                    Surface(modifier = Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
-                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(stringResource(R.string.episode_filters_label), fontSize = MaterialTheme.typography.headlineSmall.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
-                            val termList = remember { if (inexcl == ADLIncExc.EXCLUDE) filter.excludeTerms.toMutableStateList() else filter.includeTerms.toMutableStateList() }
-                            var filterMinDuration by remember { mutableStateOf(filter.hasMinDurationFilter()) }
-                            var filterMaxDuration by remember { mutableStateOf(filter.hasMaxDurationFilter()) }
-                            var markPlayedChecked by remember { mutableStateOf(filter.markExcludedPlayed) }
-                            fun isFilterEnabled(): Boolean = termList.isNotEmpty() || filterMinDuration || filterMaxDuration || markPlayedChecked
-                            var filtermodifier by remember { mutableStateOf(isFilterEnabled()) }
-                            val textRes = remember { if (inexcl == ADLIncExc.EXCLUDE) R.string.exclude_terms else R.string.include_terms }
-                            Row {
-                                Checkbox(checked = filtermodifier, onCheckedChange = { isChecked ->
-                                    filtermodifier = isChecked
-                                    if (!filtermodifier) {
-                                        termList.clear()
-                                        filterMinDuration = false
-                                        filterMaxDuration = false
-                                        markPlayedChecked = false
-                                    }
-                                })
-                                Text(text = stringResource(textRes), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                            }
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                                termList.forEach {
-                                    FilterChip(onClick = {  }, label = { Text(it) }, selected = false,
-                                        trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon", modifier = Modifier.size(FilterChipDefaults.IconSize).clickable { termList.remove(it) }) })
-                                }
-                            }
-                            var text by remember { mutableStateOf("") }
-                            fun setText() {
-                                if (text.isNotBlank()) {
-                                    val newWord = text.replace("\"", "").trim { it <= ' ' }
-                                    if (newWord.isNotBlank() && newWord !in termList) {
-                                        termList.add(newWord)
-                                        text = ""
-                                    }
-                                    filtermodifier = isFilterEnabled()
-                                }
-                            }
-                            TextField(value = text, onValueChange = { newTerm -> text = newTerm },
-                                placeholder = { Text(stringResource(R.string.add_term_hint)) }, keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(onDone = { setText() }),
-                                trailingIcon = { Icon(imageVector = Icons.Filled.Add, contentDescription = "Add term", modifier = Modifier.size(30.dp).clickable { setText() }) },
-                                textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = MaterialTheme.typography.bodyMedium.fontSize, fontWeight = FontWeight.Bold), modifier = Modifier.fillMaxWidth()
-                            )
-                            HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 5.dp))
-                            var filterMinDurationMinutes by remember { mutableIntStateOf((filter.minDurationFilter / 60)) }
-                            var filterMaxDurationMinutes by remember { mutableIntStateOf((filter.maxDurationFilter / 60)) }
-                            if (inexcl == ADLIncExc.EXCLUDE) {
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Checkbox(checked = filterMinDuration, onCheckedChange = { isChecked ->
-                                        filterMinDuration = isChecked
-                                        filtermodifier = isFilterEnabled()
-                                    })
-                                    Text(text = stringResource(R.string.exclude_shorter_than), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                    if (filterMinDuration) {
-                                        NumberEditor(filterMinDurationMinutes, stringResource(R.string.time_minutes), nz = true, instant = true, modifier = Modifier.width(50.dp).height(30.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)) {
-                                            filterMinDurationMinutes = it
-                                        }
-                                    }
-                                }
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Checkbox(checked = filterMaxDuration, onCheckedChange = { isChecked ->
-                                        filtermodifier = isFilterEnabled()
-                                        filterMaxDuration = isChecked
-                                    })
-                                    Text(text = stringResource(R.string.exclude_longer_than), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                    if (filterMaxDuration) {
-                                        NumberEditor(filterMaxDurationMinutes, stringResource(R.string.time_minutes), nz = true, instant = true, modifier = Modifier.width(50.dp).height(30.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)) {
-                                            filterMaxDurationMinutes = it
-                                        }
-                                    }
-                                }
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Checkbox(checked = markPlayedChecked, onCheckedChange = { isChecked ->
-                                        filtermodifier = isFilterEnabled()
-                                        markPlayedChecked = isChecked
-                                    })
-                                    Text(text = stringResource(R.string.mark_excluded_episodes_played), style = MaterialTheme.typography.bodyMedium)
-                                }
-                            }
-                            Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp)) {
-                                Button(onClick = {
-                                    if (inexcl == ADLIncExc.EXCLUDE) {
-                                        if (filtermodifier) {
-                                            val minDuration = if (filterMinDuration) filterMinDurationMinutes * 60 else -1
-                                            val maxDuration = if (filterMaxDuration) filterMaxDurationMinutes * 60 else -1
-                                            val excludeFilter = toFilterString(termList)
-                                            onConfirmed(FeedAutoDLEQFilter(filter.includeFilterRaw, excludeFilter, minDuration, maxDuration, markPlayedChecked))
-                                        } else onConfirmed(FeedAutoDLEQFilter())
-                                    } else {
-                                        if (filtermodifier) {
-                                            val includeFilter = toFilterString(termList)
-                                            onConfirmed(FeedAutoDLEQFilter(includeFilter, filter.excludeFilterRaw, filter.minDurationFilter, filter.maxDurationFilter, filter.markExcludedPlayed))
-                                        } else onConfirmed(FeedAutoDLEQFilter())
-                                    }
-                                    onDismiss()
-                                }) { Text(stringResource(R.string.confirm_label)) }
-                                Spacer(Modifier.weight(1f))
-                                Button(onClick = { onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
-                            }
-                        }
-                    }
-                }
-            }
-            //                    inclusive filter
-            Column(modifier = Modifier.padding(start = 20.dp)) {
-                Row(Modifier.fillMaxWidth()) {
-                    val showDialog = remember { mutableStateOf(false) }
-                    if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.INCLUDE, onDismiss = { showDialog.value = false }) { filter -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
-                    Text(text = stringResource(R.string.episode_inclusive_filters_label), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
-                }
-                Text(text = stringResource(R.string.episode_filters_description), style = MaterialTheme.typography.bodyMedium, color = textColor)
-            }
-            //                    exclusive filter
-            Column(modifier = Modifier.padding(start = 20.dp)) {
-                Row(Modifier.fillMaxWidth()) {
-                    val showDialog = remember { mutableStateOf(false) }
-                    if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.EXCLUDE, onDismiss = { showDialog.value = false }) { filter -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
-                    Text(text = stringResource(R.string.episode_exclusive_filters_label), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
-                }
-                Text(text = stringResource(R.string.episode_filters_description), style = MaterialTheme.typography.bodyMedium, color = textColor)
-            }
-        } else {
-            Column(modifier = Modifier.padding(start = 20.dp, bottom = 5.dp)) {
-                Text("Sorted by: " + stringResource(episodesSortOrder?.res ?: 0), modifier = Modifier.padding(start = 10.dp))
-                Text("Filtered by: ", modifier = Modifier.padding(start = 10.dp))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.padding(start = 20.dp)) {
-                    episodeFilter.propertySet.forEach { FilterChip(onClick = { }, label = { Text(it) }, selected = false) }
-                }
-            }
         }
     }
 
@@ -1156,6 +951,212 @@ fun FeedsSettingsScreen() {
                         )
                     }
                     Text(text = stringResource(R.string.pref_enable_second_algorithm_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
+                }
+
+                @Composable
+                fun ConfigAutoDLEQ(index: Int) {
+                    Text(text = stringResource(R.string.algorithm) + " ${index+1}: ", style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.padding(start = 20.dp))
+
+                    val (selectedPolicy, onPolicySelected) = remember(index) { mutableStateOf(feedToSet.autoDLEQs[index].autoDLPolicy) }
+                    var episodesSortOrder by remember { mutableStateOf(feedToSet.autoDLEQs[index].episodesSortOrderADL) }
+                    var episodeFilter by remember { mutableStateOf(feedToSet.autoDLEQs[index].episodeFilterADL) }
+                    @Composable
+                    fun AutoDLEQPolicyDialog(onDismiss: () -> Unit) {
+                        AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { onDismiss() },
+                            title = { Text(stringResource(R.string.feed_automation_policy), style = CustomTextStyles.titleCustom) },
+                            text = {
+                                Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    AutoDLEQPolicy.entries.forEach { policy ->
+                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(checked = (policy == selectedPolicy), onCheckedChange = { onPolicySelected(policy) })
+                                            Text(text = stringResource(policy.resId), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp))
+                                        }
+                                        if (selectedPolicy == AutoDLEQPolicy.ONLY_NEW && policy == selectedPolicy)
+                                            Row(Modifier.fillMaxWidth().padding(start = 30.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                var replaceChecked by remember { mutableStateOf(selectedPolicy.replace) }
+                                                Checkbox(checked = replaceChecked, onCheckedChange = {
+                                                    replaceChecked = it
+                                                    selectedPolicy.replace = it
+                                                    policy.replace = it
+                                                })
+                                                Text(text = stringResource(R.string.replace), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
+                                            }
+                                    }
+                                    if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) Text(stringResource(R.string.feed_auto_dleq_filter_sort_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    Logd(TAG, "autoDLPolicy: ${selectedPolicy.name} ${selectedPolicy.replace}")
+                                    runOnIOScope {
+                                        realm.write { for (f in feedsToSet) { findLatest(f)?.let {
+                                            Logd(TAG, "feed episodeFilter: ${it.episodeFilter} episodeSortOrder: ${it.episodeSortOrder}")
+                                            it.autoDLEQs[index].autoDLPolicy = selectedPolicy
+                                            if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) {
+                                                it.autoDLEQs[index].episodeFilterADL = it.episodeFilter
+                                                it.autoDLEQs[index].episodesSortOrderADL = it.episodeSortOrder
+                                                episodesSortOrder = it.episodeSortOrder
+                                                episodeFilter = it.episodeFilter
+                                            }
+                                        } } }
+                                    }
+                                    onDismiss()
+                                }) { Text(stringResource(R.string.confirm_label)) }
+                            },
+                            dismissButton = { TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.cancel_label)) } }
+                        )
+                    }
+                    //                    automation policy
+                    Column(modifier = Modifier.padding(start = 20.dp, bottom = 5.dp)) {
+                        Row(Modifier.fillMaxWidth()) {
+                            val showDialog = remember { mutableStateOf(false) }
+                            if (showDialog.value) AutoDLEQPolicyDialog(onDismiss = { showDialog.value = false })
+                            Text(text = stringResource(R.string.feed_automation_policy) + ":", style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                            Text(stringResource(selectedPolicy.resId), modifier = Modifier.padding(start = 20.dp))
+                        }
+                    }
+                    if (selectedPolicy != AutoDLEQPolicy.FILTER_SORT) {
+                        @OptIn(ExperimentalLayoutApi::class)
+                        @Composable
+                        fun AutoDownloadFilterDialog(filter: FeedAutoDLEQFilter, inexcl: ADLIncExc, onDismiss: () -> Unit, onConfirmed: (FeedAutoDLEQFilter) -> Unit) {
+                            fun toFilterString(words: List<String>): String {
+                                val result = StringBuilder()
+                                for (word in words) result.append("\"").append(word).append("\" ")
+                                return result.toString()
+                            }
+                            Dialog(properties = DialogProperties(usePlatformDefaultWidth = false), onDismissRequest = onDismiss) {
+                                Surface(modifier = Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
+                                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(stringResource(R.string.episode_filters_label), fontSize = MaterialTheme.typography.headlineSmall.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
+                                        val termList = remember { if (inexcl == ADLIncExc.EXCLUDE) filter.excludeTerms.toMutableStateList() else filter.includeTerms.toMutableStateList() }
+                                        var filterMinDuration by remember { mutableStateOf(filter.hasMinDurationFilter()) }
+                                        var filterMaxDuration by remember { mutableStateOf(filter.hasMaxDurationFilter()) }
+                                        var markPlayedChecked by remember { mutableStateOf(filter.markExcludedPlayed) }
+                                        fun isFilterEnabled(): Boolean = termList.isNotEmpty() || filterMinDuration || filterMaxDuration || markPlayedChecked
+                                        var filtermodifier by remember { mutableStateOf(isFilterEnabled()) }
+                                        val textRes = remember { if (inexcl == ADLIncExc.EXCLUDE) R.string.exclude_terms else R.string.include_terms }
+                                        Row {
+                                            Checkbox(checked = filtermodifier, onCheckedChange = { isChecked ->
+                                                filtermodifier = isChecked
+                                                if (!filtermodifier) {
+                                                    termList.clear()
+                                                    filterMinDuration = false
+                                                    filterMaxDuration = false
+                                                    markPlayedChecked = false
+                                                }
+                                            })
+                                            Text(text = stringResource(textRes), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                        }
+                                        FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                            termList.forEach {
+                                                FilterChip(onClick = {  }, label = { Text(it) }, selected = false,
+                                                    trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon", modifier = Modifier.size(FilterChipDefaults.IconSize).clickable { termList.remove(it) }) })
+                                            }
+                                        }
+                                        var text by remember { mutableStateOf("") }
+                                        fun setText() {
+                                            if (text.isNotBlank()) {
+                                                val newWord = text.replace("\"", "").trim { it <= ' ' }
+                                                if (newWord.isNotBlank() && newWord !in termList) {
+                                                    termList.add(newWord)
+                                                    text = ""
+                                                }
+                                                filtermodifier = isFilterEnabled()
+                                            }
+                                        }
+                                        TextField(value = text, onValueChange = { newTerm -> text = newTerm },
+                                            placeholder = { Text(stringResource(R.string.add_term_hint)) }, keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                                            keyboardActions = KeyboardActions(onDone = { setText() }),
+                                            trailingIcon = { Icon(imageVector = Icons.Filled.Add, contentDescription = "Add term", modifier = Modifier.size(30.dp).clickable { setText() }) },
+                                            textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = MaterialTheme.typography.bodyMedium.fontSize, fontWeight = FontWeight.Bold), modifier = Modifier.fillMaxWidth()
+                                        )
+                                        HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 5.dp))
+                                        var filterMinDurationMinutes by remember { mutableIntStateOf((filter.minDurationFilter / 60)) }
+                                        var filterMaxDurationMinutes by remember { mutableIntStateOf((filter.maxDurationFilter / 60)) }
+                                        if (inexcl == ADLIncExc.EXCLUDE) {
+                                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                                Checkbox(checked = filterMinDuration, onCheckedChange = { isChecked ->
+                                                    filterMinDuration = isChecked
+                                                    filtermodifier = isFilterEnabled()
+                                                })
+                                                Text(text = stringResource(R.string.exclude_shorter_than), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                                if (filterMinDuration) {
+                                                    NumberEditor(filterMinDurationMinutes, stringResource(R.string.time_minutes), nz = true, instant = true, modifier = Modifier.width(50.dp).height(30.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)) {
+                                                        filterMinDurationMinutes = it
+                                                    }
+                                                }
+                                            }
+                                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                                Checkbox(checked = filterMaxDuration, onCheckedChange = { isChecked ->
+                                                    filtermodifier = isFilterEnabled()
+                                                    filterMaxDuration = isChecked
+                                                })
+                                                Text(text = stringResource(R.string.exclude_longer_than), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                                if (filterMaxDuration) {
+                                                    NumberEditor(filterMaxDurationMinutes, stringResource(R.string.time_minutes), nz = true, instant = true, modifier = Modifier.width(50.dp).height(30.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)) {
+                                                        filterMaxDurationMinutes = it
+                                                    }
+                                                }
+                                            }
+                                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                                Checkbox(checked = markPlayedChecked, onCheckedChange = { isChecked ->
+                                                    filtermodifier = isFilterEnabled()
+                                                    markPlayedChecked = isChecked
+                                                })
+                                                Text(text = stringResource(R.string.mark_excluded_episodes_played), style = MaterialTheme.typography.bodyMedium)
+                                            }
+                                        }
+                                        Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp)) {
+                                            Button(onClick = {
+                                                if (inexcl == ADLIncExc.EXCLUDE) {
+                                                    if (filtermodifier) {
+                                                        val minDuration = if (filterMinDuration) filterMinDurationMinutes * 60 else -1
+                                                        val maxDuration = if (filterMaxDuration) filterMaxDurationMinutes * 60 else -1
+                                                        val excludeFilter = toFilterString(termList)
+                                                        onConfirmed(FeedAutoDLEQFilter(filter.includeFilterRaw, excludeFilter, minDuration, maxDuration, markPlayedChecked))
+                                                    } else onConfirmed(FeedAutoDLEQFilter())
+                                                } else {
+                                                    if (filtermodifier) {
+                                                        val includeFilter = toFilterString(termList)
+                                                        onConfirmed(FeedAutoDLEQFilter(includeFilter, filter.excludeFilterRaw, filter.minDurationFilter, filter.maxDurationFilter, filter.markExcludedPlayed))
+                                                    } else onConfirmed(FeedAutoDLEQFilter())
+                                                }
+                                                onDismiss()
+                                            }) { Text(stringResource(R.string.confirm_label)) }
+                                            Spacer(Modifier.weight(1f))
+                                            Button(onClick = { onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        //                    inclusive filter
+                        Column(modifier = Modifier.padding(start = 20.dp)) {
+                            Row(Modifier.fillMaxWidth()) {
+                                val showDialog = remember { mutableStateOf(false) }
+                                if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.INCLUDE, onDismiss = { showDialog.value = false }) { filter -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
+                                Text(text = stringResource(R.string.episode_inclusive_filters_label), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                            }
+                            Text(text = stringResource(R.string.episode_filters_description), style = MaterialTheme.typography.bodyMedium, color = textColor)
+                        }
+                        //                    exclusive filter
+                        Column(modifier = Modifier.padding(start = 20.dp)) {
+                            Row(Modifier.fillMaxWidth()) {
+                                val showDialog = remember { mutableStateOf(false) }
+                                if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.EXCLUDE, onDismiss = { showDialog.value = false }) { filter -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
+                                Text(text = stringResource(R.string.episode_exclusive_filters_label), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                            }
+                            Text(text = stringResource(R.string.episode_filters_description), style = MaterialTheme.typography.bodyMedium, color = textColor)
+                        }
+                    } else {
+                        Column(modifier = Modifier.padding(start = 20.dp, bottom = 5.dp)) {
+                            Text("Sorted by: " + stringResource(episodesSortOrder?.res ?: 0), modifier = Modifier.padding(start = 10.dp))
+                            Text("Filtered by: ", modifier = Modifier.padding(start = 10.dp))
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.padding(start = 20.dp)) {
+                                episodeFilter.propertySet.forEach { FilterChip(onClick = { }, label = { Text(it) }, selected = false) }
+                            }
+                        }
+                    }
                 }
 
                 if (feedToSet.autoDLEQs.isNotEmpty()) ConfigAutoDLEQ(0)

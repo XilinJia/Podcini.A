@@ -6,7 +6,7 @@ import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.EPISODE_CACHE_SIZE_UNLIMITED
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.allFeeds
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteMedia
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesCount
@@ -43,7 +43,7 @@ class AutoDownloadAlgorithm {
                     val eids = q.entries.map { it.episodeId }
                     val queueItems = realm.query(Episode::class).query("id IN $0 AND fileUrl == nil", eids).find()
                     Logd(TAG, "run add from queue: ${q.name} ${queueItems.size}")
-                    if (queueItems.isNotEmpty()) queueItems.forEach { if (!appPrefs.streamOverDownload || it.feed?.prefStreamOverDownload != true) candidates.add(it) }
+                    if (queueItems.isNotEmpty()) queueItems.forEach { if (!appPrefsFlow!!.value.streamOverDownload || it.feed?.prefStreamOverDownload != true) candidates.add(it) }
                 }
             }
         }
@@ -62,7 +62,7 @@ class AutoDownloadAlgorithm {
             }
             val downloadedCount = getEpisodesCount(EpisodeFilter(EpisodeFilter.States.downloaded.name))
             val deletedCount = toReplace.size + cleanupAlgorithm().makeRoomForEpisodes(autoDownloadableCount - toReplace.size)
-            val appEpisodeCache = appPrefs.episodeCacheSize
+            val appEpisodeCache = appPrefsFlow!!.value.episodeCacheSize
             val cacheIsUnlimited = appEpisodeCache <= EPISODE_CACHE_SIZE_UNLIMITED
             Logd(TAG, "run cacheIsUnlimited: $cacheIsUnlimited appEpisodeCache: $appEpisodeCache downloadedCount: $downloadedCount autoDownloadableCount: $autoDownloadableCount deletedCount: $deletedCount")
             val allowedCount =

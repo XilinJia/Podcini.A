@@ -16,13 +16,14 @@ import ac.mdiq.podcini.net.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.sources.EPISODE_BATCH_SIZE
 import ac.mdiq.podcini.sources.typeClientMap
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.compileLanguages
 import ac.mdiq.podcini.storage.database.compileTags
 import ac.mdiq.podcini.storage.database.feedOperationText
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.realm
+import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.unmanaged
 import ac.mdiq.podcini.storage.database.updateFeedFull
 import ac.mdiq.podcini.storage.database.updateFeedSimple
@@ -53,16 +54,12 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import io.github.xilinjia.krdb.ext.toRealmSet
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import org.xml.sax.SAXException
 import javax.xml.parsers.ParserConfigurationException
-import kotlin.collections.listOf
 
 class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val doItAnyway: Boolean = false, val removeUnlisted: Boolean = false) {
     private val context = getAppContext()
@@ -79,7 +76,6 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         upsert(feed) { it.lastUpdateFailed = true }
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     suspend fun start() {
         Logd(TAG, "start doItAnyway: $doItAnyway feeds: ${feeds.size}")
         prepare()
@@ -94,9 +90,9 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         }
         Logd(TAG, "start allLocalFeeds: $allLocalFeeds")
         when {
-            allLocalFeeds -> scope.launch { refresh() }
+            allLocalFeeds -> runOnIOScope { refresh() }
             !networkMonitor.isConnected -> EventFlow.postEvent(FlowEvent.MessageEvent(context.getString(R.string.download_error_no_connection)))
-            isFeedRefreshAllowed -> scope.launch { refresh() }
+            isFeedRefreshAllowed -> runOnIOScope { refresh() }
             else -> {
                 commonConfirms.add(CommonConfirmAttrib(
                     title = context.getString(R.string.feed_refresh_title),
@@ -104,10 +100,10 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                     confirmRes = R.string.confirm_mobile_streaming_button_once,
                     cancelRes = R.string.no,
                     neutralRes = R.string.confirm_mobile_streaming_button_always,
-                    onConfirm = { scope.launch { refresh() }  },
+                    onConfirm = { runOnIOScope { refresh() }  },
                     onNeutral = {
                         mobileAllowFeedRefresh = true
-                        scope.launch { refresh() }
+                        runOnIOScope { refresh() }
                     }))
             }
         }
@@ -117,7 +113,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         withContext(Dispatchers.Main) { feedOperationText = context.getString(R.string.preparing) }
         Logd(TAG, "prepare feeds: ${feeds.size}")
         if (feeds.isEmpty()) {
-            val feedIds = appAttribs.feedIdsToRefresh
+            val feedIds = appAttribsFlow!!.value.feedIdsToRefresh
             if (feedIds.isNotEmpty()) {
                 Logt(TAG, "prepare Partial refresh of ${feedIds.size} feeds")
                 feedsToUpdate = realm.query(Feed::class, "id IN $0", feedIds).find().filter { it.inNormalVolume }.toMutableList()
@@ -163,7 +159,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
             } catch (e: Exception) { onFail(feed, "refresh: update failed ${feed.title} ${e.message}") }
             titles.removeAt(0)
             feedIdsToRefresh.removeAt(0)
-            upsertBlk(appAttribs) { it.feedIdsToRefresh = feedIdsToRefresh.toRealmSet() }
+            upsertBlk(appAttribsFlow!!.value) { it.feedIdsToRefresh = feedIdsToRefresh.toRealmSet() }
         }
         // TODO: not sure these need to be here
         compileLanguages()
@@ -176,7 +172,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
             if (feedsToOnlyEnqueue.isNotEmpty()) feedsToUpdate.addAll(feedsToOnlyEnqueue)
             if (feedsToOnlyDownload.isNotEmpty()) feedsToUpdate.addAll(feedsToOnlyDownload)
             AutoEnqueueAlgorithm().run(feedsToUpdate)
-            if (appPrefs.enableAutoDl) AutoDownloadAlgorithm().run(feedsToUpdate)
+            if (appPrefsFlow!!.value.enableAutoDl) AutoDownloadAlgorithm().run(feedsToUpdate)
         } finally {
             feedsToUpdate.clear()
             feedsToOnlyEnqueue.clear()

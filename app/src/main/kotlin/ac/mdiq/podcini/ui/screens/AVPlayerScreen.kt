@@ -18,7 +18,7 @@ import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackServic
 import ac.mdiq.podcini.shared.AudioSpec
 import ac.mdiq.podcini.shared.VideoSpec
 import ac.mdiq.podcini.sources.clientByEpisode
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fallbackSpeed
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.rewindSecs
@@ -168,6 +168,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -601,6 +602,7 @@ fun AVPlayerScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val appPrefs by appPrefsFlow!!.collectAsStateWithLifecycle()
 
     val vm0: AVPlayerVM0 = viewModel()
     val vms: List<AVPlayerVM> = listOf(

@@ -81,24 +81,23 @@ class PodcastIndexSearcher : FeedSearcher {
     override val name: String
         get() = FeedSearchers.PodcastIndex.name
 
-    private fun HttpRequestBuilder.applyPodcastIndexAuth() {
-        val now = nowInMillis()
-        val secondsSinceEpoch = now / 1000L
-        val apiHeaderTime = secondsSinceEpoch.toString()
-        val data4Hash = BuildConfig.PODCASTINDEX_API_KEY + BuildConfig.PODCASTINDEX_API_SECRET + apiHeaderTime
-        val hashString = sha1(data4Hash)
-        header("X-Auth-Date", apiHeaderTime)
-        header("X-Auth-Key", BuildConfig.PODCASTINDEX_API_KEY)
-        header("Authorization", hashString)
-        header(HttpHeaders.UserAgent, USER_AGENT)
-    }
-
     companion object {
         private const val SEARCH_API_URL = "https://api.podcastindex.org/api/1.0/search/byterm?q=%s"
         private fun sha1(clearString: String): String {
             val bytes = clearString.toByteArray(Charsets.UTF_8)
             val digest = sha1(bytes)
             return hex(digest)
+        }
+        fun HttpRequestBuilder.applyPodcastIndexAuth() {
+            val now = nowInMillis()
+            val secondsSinceEpoch = now / 1000L
+            val apiHeaderTime = secondsSinceEpoch.toString()
+            val data4Hash = BuildConfig.PODCASTINDEX_API_KEY + BuildConfig.PODCASTINDEX_API_SECRET + apiHeaderTime
+            val hashString = sha1(data4Hash)
+            header("X-Auth-Date", apiHeaderTime)
+            header("X-Auth-Key", BuildConfig.PODCASTINDEX_API_KEY)
+            header("Authorization", hashString)
+            header(HttpHeaders.UserAgent, USER_AGENT)
         }
     }
 }

@@ -2,11 +2,13 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.settings.MediaFilesTransporter
-import ac.mdiq.podcini.storage.database.appAttribs
+import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.buildListInfo
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesAsFlow
+import ac.mdiq.podcini.storage.database.getEpisodesAsListFlow
 import ac.mdiq.podcini.storage.database.getFeed
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.getHistoryAsFlow
@@ -23,11 +25,11 @@ import ac.mdiq.podcini.storage.model.FacetsPrefs
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.specs.EpisodeFilter
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
+import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.reorderWith
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.sortPairOf
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.UnifiedFile
 import ac.mdiq.podcini.storage.utils.mediaDir
-import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.ui.actions.ButtonTypes
 import ac.mdiq.podcini.ui.actions.SwipeActions
 import ac.mdiq.podcini.ui.compose.AssociatedFeedsGrid
@@ -116,7 +118,6 @@ import io.github.xilinjia.krdb.notifications.PendingObject
 import io.github.xilinjia.krdb.notifications.SingleQueryChange
 import io.github.xilinjia.krdb.notifications.UpdatedObject
 import io.github.xilinjia.krdb.query.RealmQuery
-import io.github.xilinjia.krdb.query.RealmResults
 import io.ktor.http.decodeURLQueryComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -167,6 +168,8 @@ class FacetsVM(modeName_: String): ViewModel() {
 
     var progressing by mutableStateOf(false)
 
+    var incSortConds = listOf<EpisodeSortOrder>()
+
     private var _sortOrder = mutableStateOf(EpisodeSortOrder.fromCode(facetsPrefs.sortCodesMap[facetsMode.name] ?: EpisodeSortOrder.DATE_DESC.code))
     internal var sortOrder: EpisodeSortOrder
         get() = _sortOrder.value
@@ -199,95 +202,121 @@ class FacetsVM(modeName_: String): ViewModel() {
         }
     }
 
-    private fun buildFlow(): Flow<RealmResults<Episode>> {
+    private fun buildFlow(): Flow<List<Episode>> {
         Logd(TAG, "buildFlow() called")
         listIdentity = "Facets.${facetsMode.name}"
+        incSortConds = listOf()
         val realmFlow = when (facetsMode) {
             QuickAccess.New -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.NEW.name).add(filter), sortOrder)
+                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.NEW.name).add(filter), sortOrder).map { it.list }
             }
             QuickAccess.Planned -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.SOON.name, EpisodeFilter.States.LATER.name).add(filter), sortOrder)
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.SOON.name, EpisodeFilter.States.LATER.name).add(filter), sortOrder)
             }
             QuickAccess.Repeats -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.AGAIN.name, EpisodeFilter.States.FOREVER.name).add(filter), sortOrder)
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.AGAIN.name, EpisodeFilter.States.FOREVER.name).add(filter), sortOrder)
             }
             QuickAccess.Due -> {
                 listIdentity += ".${sortOrder.name}"
                 val time = nowInMillis()
-                val sortPair = sortPairOf(sortOrder)
-                realm.query(Episode::class).query("playState == ${EpisodeState.AGAIN.code} OR playState == ${EpisodeState.FOREVER.code}").query("repeatTime <= $time").sort(sortPair).asFlow()
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                realm.query(Episode::class).query("playState == ${EpisodeState.AGAIN.code} OR playState == ${EpisodeState.FOREVER.code}").query("repeatTime <= $time").asFlow().map { result ->
+                    val list = result.list.toMutableList()
+                    list.reorderWith(sortOrder)
+                    list.toMutableList()
+                }
             }
             QuickAccess.Liked -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.good.name, EpisodeFilter.States.superb.name).add(filter), sortOrder)
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.good.name, EpisodeFilter.States.superb.name).add(filter), sortOrder)
             }
             QuickAccess.Commented -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.has_comments.name).add(filter), sortOrder)
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_comments.name).add(filter), sortOrder)
             }
             QuickAccess.Tagged -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.tagged.name).add(filter), sortOrder)
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.tagged.name).add(filter), sortOrder)
             }
             QuickAccess.Timers -> {
                 listIdentity += ".${sortOrder.name}"
                 val time = nowInMillis()
-                val ids = appAttribs.timetable.filter { it.triggerTime > time }.map { it.episodeId }
-                val sortPair = sortPairOf(sortOrder)
-                runOnIOScope { upsert(appAttribs) { it.timetable.removeAll { timer -> timer.triggerTime < time } } }
-                realm.query(Episode::class).query("id IN $0", ids).sort(sortPair).asFlow()
+                val ids = appAttribsFlow!!.value.timetable.filter { it.triggerTime > time }.map { it.episodeId }
+                runOnIOScope { upsert(appAttribsFlow!!.value) { it.timetable.removeAll { timer -> timer.triggerTime < time } } }
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                realm.query(Episode::class).query("id IN $0", ids).asFlow().map { result ->
+                    val list = result.list.toMutableList()
+                    list.reorderWith(sortOrder)
+                    list.toMutableList()
+                }
             }
             QuickAccess.Todos -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.has_todos.name).add(filter), sortOrder)
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_todos.name).add(filter), sortOrder)
             }
             QuickAccess.Recorded -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.has_clips.name, EpisodeFilter.States.has_marks.name, andOr = "OR"), sortOrder)
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_clips.name, EpisodeFilter.States.has_marks.name, andOr = "OR"), sortOrder)
             }
             QuickAccess.Queued -> {
                 val qstr = EpisodeFilter(EpisodeFilter.States.QUEUE.name).add(filter).queryString()
                 val ids = inQueueEpisodeIdSet()
-                val sortPair = sortPairOf(sortOrder)
                 listIdentity += ".${sortOrder.name}"
-                realm.query(Episode::class).query("$qstr OR id IN $0", ids).sort(sortPair).asFlow()
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                realm.query(Episode::class).query("$qstr OR id IN $0", ids).asFlow().map { result ->
+                    val list = result.list.toMutableList()
+                    list.reorderWith(sortOrder)
+                    list.toMutableList()
+                }
             }
             QuickAccess.History -> {
                 listIdentity += ".${historyStartDate}-${historyEndDate}"
-                getHistoryAsFlow(start = historyStartDate, end = historyEndDate, filter = filter)
+                getHistoryAsFlow(start = historyStartDate, end = historyEndDate, filter = filter).map { it.list }
             }
             QuickAccess.Archived -> {
                 listIdentity += ".${sortOrder.name}"
                 val archFeeds = getFeedList("volumeId == $ARCHIVED_VOLUME_ID")
                 val sortPair = sortPairOf(sortOrder)
-                realm.query(Episode::class).query("feedId IN $0", archFeeds.map { it.id }).sort(sortPair).asFlow()
+                realm.query(Episode::class).query("feedId IN $0", archFeeds.map { it.id }).sort(sortPair).asFlow().map { it.list }
             }
             QuickAccess.Frozen -> {
                 listIdentity += ".${sortOrder.name}"
                 val archFeeds = getFeedList("volumeId == $FROZEN_VOLUME_ID")
                 val sortPair = sortPairOf(sortOrder)
-                realm.query(Episode::class).query("feedId IN $0", archFeeds.map { it.id }).sort(sortPair).asFlow()
+                realm.query(Episode::class).query("feedId IN $0", archFeeds.map { it.id }).sort(sortPair).asFlow().map { it.list }
             }
             QuickAccess.Downloaded -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.downloaded.name).add(filter), sortOrder)
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.downloaded.name).add(filter), sortOrder)
             }
             QuickAccess.Custom -> {
                 if (facetsCustomTag.isNotBlank()) {
                     listIdentity += ".${sortOrder.name}"
-                    facetsCustomQuery.query(filter.queryString()).sort(sortPairOf(sortOrder)).asFlow()
-                } else facetsCustomQuery.query("id == 0").asFlow()
+                    incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                    facetsCustomQuery.query(filter.queryString()).asFlow().map { result ->
+                        val list = result.list.toMutableList()
+                        list.reorderWith(sortOrder)
+                        list.toMutableList()
+                    }
+                } else facetsCustomQuery.query("id == 0").asFlow().map { it.list }
             }
-            else -> {
+            else -> {   // All or None
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(facetsPrefs.filtersMap[QuickAccess.All.name] ?: ""), sortOrder)
+                getEpisodesAsFlow(EpisodeFilter(facetsPrefs.filtersMap[QuickAccess.All.name] ?: ""), sortOrder).map { it.list }
             }
         }
-        return realmFlow.map { it.list }
+        return realmFlow
     }
 
     val episodesFlow: StateFlow<List<Episode>> = snapshotFlow { Triple(facetsMode, filterChanged, sortOrder) }.distinctUntilChanged().flatMapLatest { buildFlow() }
@@ -563,7 +592,7 @@ fun FacetsScreen(modeName: String = "") {
             vm.filterChanged++
             resetSwipes()
         }
-        if (showSortDialog) EpisodeSortDialog(initOrder = vm.sortOrder, onDismiss = { showSortDialog = false }) { order ->
+        if (showSortDialog) EpisodeSortDialog(initOrder = vm.sortOrder, includeConditionals = vm.incSortConds , onDismiss = { showSortDialog = false }) { order ->
             Logd(TAG, "EpisodeSortDialog order: $order")
             if (order != null) {
                 vm.sortOrder = order

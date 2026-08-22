@@ -10,7 +10,7 @@ import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sources.EPISODE_BATCH_SIZE
 import ac.mdiq.podcini.sources.clientBySearcher
-import ac.mdiq.podcini.storage.database.appAttribs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.createSynthetic
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -19,10 +19,10 @@ import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.Feed.Companion.EPISODES_LIMIT
-import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.storage.model.SubscriptionLog
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.feedLogsMap
 import ac.mdiq.podcini.storage.model.Volume
+import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.storage.specs.Rating
 import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.ui.screens.FeedDetails
@@ -95,6 +95,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -402,6 +403,7 @@ fun AssociatedFeedsGrid(feedsAssociated: List<Feed>) {
 
 @Composable
 fun SendToDevice(onDismiss: ()->Unit, cb: (String, Int)->Job?) {
+    val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
     var host by remember { mutableStateOf("") }
     var port by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf("") }

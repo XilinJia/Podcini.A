@@ -31,8 +31,8 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
     TRACK_NUMBER_ASC(21, R.string.track_number, false),
     TRACK_NUMBER_DESC(22, R.string.track_number, false),
 
-    VIEWS_SPEED_ASC(31, R.string.view_speed, true),
-    VIEWS_SPEED_DESC(32, R.string.view_speed, true),
+    VIEWS_SPEED_ASC(31, R.string.trending, true),
+    VIEWS_SPEED_DESC(32, R.string.trending, true),
 
     LIKES_ASC(33, R.string.like_count, true),
     LIKES_DESC(34, R.string.like_count, true),

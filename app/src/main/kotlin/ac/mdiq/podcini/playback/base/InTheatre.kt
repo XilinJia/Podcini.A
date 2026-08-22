@@ -4,6 +4,7 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.storage.database.realm
+import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.unsubscribeEpisode
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.CurrentState
@@ -51,7 +52,7 @@ object InTheatre {
         var curStateMonitor: Job? = null
 
         fun monitorState() {
-            if (curStateMonitor == null) curStateMonitor = CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            if (curStateMonitor == null) curStateMonitor = runOnIOScope {
                 val cst = realm.query(CurrentState::class).query("id == $id").first()
                 Logd(TAG, "start monitoring curState: ")
                 val stateFlow = cst.asFlow()

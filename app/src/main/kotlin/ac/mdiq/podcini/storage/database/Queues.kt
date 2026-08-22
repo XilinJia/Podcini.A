@@ -48,7 +48,7 @@ fun initQueues() {
     timeIt("$TAG start of initQueues")
     queuesLive = realm.query(PlayQueue::class).sort("name").find()
 
-    if (queuesJob == null) queuesJob = CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+    if (queuesJob == null) queuesJob = runOnIOScope {
         Logd(TAG, "starting queues queuesLive: ${queuesLive.size}")
         if (queuesLive.isEmpty()) {
             realm.write {

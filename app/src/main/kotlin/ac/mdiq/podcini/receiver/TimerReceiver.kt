@@ -4,7 +4,7 @@ import ac.mdiq.podcini.automation.ALARM_TYPE
 import ac.mdiq.podcini.automation.AlarmTypes
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.sources.AppGatewayRegistry
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.utils.Logd
 import android.content.BroadcastReceiver
@@ -27,7 +27,7 @@ class TimerReceiver : BroadcastReceiver() {
         Logd(TAG, "onReceive: message $message")
         if (message.startsWith(AlarmTypes.PLAY_EPISODE.name)) {
             CoroutineScope(Dispatchers.IO).launch {
-                if (appPrefs.loadExternalApp)  AppGatewayRegistry.awaitReadyClients()
+                if (appPrefsFlow!!.value.loadExternalApp)  AppGatewayRegistry.awaitReadyClients()
                 delay(5.seconds)
                 val msgs = message.split(':')
                 if (msgs.size < 2) return@launch

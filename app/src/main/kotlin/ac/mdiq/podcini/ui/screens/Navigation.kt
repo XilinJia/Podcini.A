@@ -2,7 +2,7 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.storage.database.allFeeds
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.ui.screens.DefaultPages.Companion.toNavKey
 import ac.mdiq.podcini.ui.screens.prefscreens.PrefsScreen
 import ac.mdiq.podcini.utils.Logd
@@ -93,7 +93,7 @@ data object Settings : NavKey()
 val defaultNavKey: NavKey
     get() {
         if (allFeeds.isEmpty()) return FindFeeds
-        val value = appPrefs.defaultPage
+        val value = appPrefsFlow!!.value.defaultPage
         Logd(TAG, "get defaultScreen defaultPage: [$value]")
         fun isValid(): Boolean = runCatching { Screens.valueOf(value) }.isSuccess
         if (value.isBlank() || !isValid()) return Library

@@ -11,7 +11,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.StrictMode
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
 
 class PodciniApp : Application() {
@@ -38,6 +40,10 @@ class PodciniApp : Application() {
 
     companion object {
         private lateinit var podciniApp: PodciniApp
+
+        val appIOScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+        val appMainScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
         fun getApp(): PodciniApp = podciniApp
 

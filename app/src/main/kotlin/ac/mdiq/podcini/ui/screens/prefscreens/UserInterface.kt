@@ -1,8 +1,8 @@
 package ac.mdiq.podcini.ui.screens.prefscreens
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.ui.compose.AppThemes
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
@@ -40,10 +40,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun UserInterfaceScreen() {
-    
+    val appPrefs by appPrefsFlow!!.collectAsStateWithLifecycle()
+
     BackHandler(enabled = true) { pfBackStack.removeLastOrNull() }
 
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp).verticalScroll(rememberScrollState()).background(MaterialTheme.colorScheme.surface)) {
@@ -90,7 +92,7 @@ fun UserInterfaceScreen() {
         TitleSummaryActionColumn(R.string.pref_default_page, R.string.pref_default_page_sum) { showDefaultPageOptions = true }
         if (showDefaultPageOptions) {
             var tempSelectedOption by remember { mutableStateOf(appPrefs.defaultPage) }
-            var restore by remember { mutableStateOf(appAttribs.restoreLastScreen) }
+            var restore by remember { mutableStateOf(appAttribsFlow!!.value.restoreLastScreen) }
             AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { showDefaultPageOptions = false },
                 title = { Text(stringResource(R.string.pref_default_page), style = CustomTextStyles.titleCustom) },
                 text = {
@@ -110,7 +112,7 @@ fun UserInterfaceScreen() {
                 confirmButton = {
                     TextButton(onClick = {
                         upsertBlk(appPrefs) { it.defaultPage = tempSelectedOption }
-                        upsertBlk(appAttribs) { it.restoreLastScreen = restore }
+                        upsertBlk(appAttribsFlow!!.value) { it.restoreLastScreen = restore }
                         showDefaultPageOptions = false
                     }) { Text(text = "OK") }
                 },

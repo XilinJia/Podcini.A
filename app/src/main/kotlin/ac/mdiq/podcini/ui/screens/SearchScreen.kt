@@ -1,13 +1,14 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.net.feed.AppleMediaSearcher
 import ac.mdiq.podcini.playback.base.InTheatre.actQueue
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.MediaSearcher
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.sources.clientBySearcher
 import ac.mdiq.podcini.sources.sourceClients
-import ac.mdiq.podcini.storage.database.appAttribs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.queueToVirtual
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -20,6 +21,7 @@ import ac.mdiq.podcini.storage.model.tmpQueue
 import ac.mdiq.podcini.storage.model.toEpisode
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.reorderWith
+import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.storage.specs.Rating
 import ac.mdiq.podcini.storage.utils.durationInHours
 import ac.mdiq.podcini.ui.actions.ButtonTypes
@@ -90,6 +92,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -116,6 +119,7 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import io.github.xilinjia.krdb.notifications.ResultsChange
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -127,6 +131,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.milliseconds
 
 private var curSearchString by mutableStateOf("")
 fun setSearchTerms(query: String? = null) {
@@ -139,7 +144,7 @@ fun setSearchTerms(query: String? = null) {
 
 private fun saveToSearchHistory() {
     runOnIOScope {
-        upsert(appAttribs) {
+        upsert(appAttribsFlow!!.value) {
             if (curSearchString in it.searchHistory) it.searchHistory.remove(curSearchString)
             it.searchHistory.add(0, curSearchString)
             if (it.searchHistory.size > SearchHistorySize + 4) it.searchHistory.apply { subList(SearchHistorySize, size).clear() }
@@ -155,12 +160,12 @@ class SearchVM: ViewModel() {
     internal var pafeeds by mutableStateOf<List<PAFeed>>(listOf())
     internal var feeds by mutableStateOf<List<Feed>>(listOf())
 
-    var searchersAll = mutableStateListOf<MediaSearcher>()
+    val searchersAll = mutableStateListOf<MediaSearcher>()
 
     var searchers = mutableStateListOf<MediaSearcher>()
 
     var searchingRemote by mutableStateOf(false)
-    internal var remoteMedia = mutableStateListOf<Episode>()
+    internal var remoteMedia by mutableStateOf<List<Episode>>(listOf())
 
     var episodeSortOrder by mutableStateOf(EpisodeSortOrder.DATE_DESC)
 
@@ -173,40 +178,45 @@ class SearchVM: ViewModel() {
         Logd(TAG, "init $curSearchString")
         algo.setSearchByAll()
         searchersAll.addAll(sourceClients.mapNotNull { it.mediaSearcher })
+        searchersAll.add(AppleMediaSearcher())
         searchers.addAll(searchersAll)
         viewModelScope.launch { snapshotFlow { Pair(curSearchString, searchers.size) }.collectLatest {
-            remoteMedia.clear()
+            Logd(TAG, "snapshotFlow { Pair(curSearchString, searchers.size)")
             remoteMediaCache.remove(curSearchString)
-            if (selectedTabIndex == 2) searchRemoteMedia()
+            remoteMedia = listOf()
         } }
         viewModelScope.launch { snapshotFlow { selectedTabIndex }.collectLatest {
-            if (selectedTabIndex == 2 && remoteMedia.isEmpty()) searchRemoteMedia()
+            if (selectedTabIndex == 2) {
+                val fromCache = remoteMediaCache[curSearchString]
+                if (!fromCache.isNullOrEmpty()) remoteMedia = fromCache
+            }
         } }
         viewModelScope.launch { snapshotFlow { episodeSortOrder }.collectLatest {
-            if (selectedTabIndex == 2 && remoteMedia.isNotEmpty()) remoteMedia.reorderWith(episodeSortOrder)
+            if (selectedTabIndex == 2 && remoteMedia.isNotEmpty()) {
+                val list = remoteMedia.toMutableList()
+                list.reorderWith(episodeSortOrder)
+                remoteMedia = list
+            }
         } }
     }
 
     suspend fun searchRemoteMedia() {
         val remoteMediaLimit = 1000
-        val fromCache = remoteMediaCache[curSearchString]
-        if (fromCache != null) {
-            remoteMedia.clear()
-            remoteMedia.addAll(fromCache)
-            return
-        }
         searchingRemote = true
         fun addItems( items: List<EpisodeIPC>, type: String?) {
             if (items.isNotEmpty()) {
-                remoteMedia.addAll(items.map { it.toEpisode().apply {
+                val list = items.map { it.toEpisode().apply {
                     id = getEntityId()
                     feedType = type
-                } })
-                remoteMedia.reorderWith(episodeSortOrder)
+                } }.toMutableList()
+                list.reorderWith(episodeSortOrder)
+                remoteMedia = list
             }
         }
+        remoteMedia = listOf()
+        Logd(TAG, "searchRemoteMedia searchers ${searchers.size}")
         for (s in searchers) {
-            val type = clientBySearcher(s.name)?.attributes?.feedType
+            val type = if (s.name in listOf("Apple", "PodcastIndex")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
             val items = s.searchQuick(curSearchString)
             Logd(TAG, "searchQuick items: ${items.size}")
             addItems(items, type)
@@ -214,10 +224,10 @@ class SearchVM: ViewModel() {
         var counter = remoteMedia.size
         while (remoteMedia.size < remoteMediaLimit) {
             for (s in searchers) {
-                val type = clientBySearcher(s.name)?.attributes?.feedType
+                val type = if (s.name in listOf("Apple", "PodcastIndex")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
                 val items = s.getMoreItems()
                 Logd(TAG, "getMoreItems items: ${items.size}")
-                addItems(items, type)
+                if (items.isNotEmpty()) addItems(items, type)
             }
             if (counter >= remoteMedia.size) break
             counter = remoteMedia.size
@@ -260,6 +270,7 @@ class SearchVM: ViewModel() {
 fun SearchScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
     val drawerController = LocalDrawerController.current
+    val scope = rememberCoroutineScope()
 
     val vm: SearchVM = viewModel()
 
@@ -295,11 +306,16 @@ fun SearchScreen() {
     if (showSearchBy) CommonPopupCard(onDismiss = { showSearchBy = false} ) { vm.algo.SearchByGrid() }
     var showRemoteSearchers by remember { mutableStateOf(false) }
     if (showRemoteSearchers) CommonPopupCard(onDismiss = { showRemoteSearchers = false} ) {
-        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(15.dp)) {
+        if (!vm.searchingRemote) Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(15.dp)) {
             val sNames = remember(vm.searchers.size) { vm.searchers.map { it.name } }
             for (searcher in vm.searchersAll) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = searcher.name in sNames, onCheckedChange = { checked -> if (checked) vm.searchers.add(searcher) else vm.searchers.remove(searcher) })
+                    Checkbox(checked = searcher.name in sNames, onCheckedChange = { checked ->
+                        scope.launch(Dispatchers.Default) {
+                            while (vm.searchingRemote) delay(500.milliseconds)
+                            if (checked) vm.searchers.add(searcher) else vm.searchers.remove(searcher)
+                        }
+                    })
                     Text(searcher.name)
                 }
             }
@@ -325,12 +341,14 @@ fun SearchScreen() {
 
     @Composable
     fun TopBar() {
+        val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
         Box {
             TopAppBar(
                 title = { Row(verticalAlignment = Alignment.CenterVertically) {
                     SearchBarRow(R.string.search_hint, defaultText = curSearchString, modifier = Modifier.weight(1f) , history = appAttribs.searchHistory) { str ->
                         if (str.isBlank()) return@SearchBarRow
                         curSearchString = str
+                        if (vm.selectedTabIndex == 2) scope.launch(Dispatchers.IO) { vm.searchRemoteMedia() }
                         saveToSearchHistory()
                     }
                     if (vm.selectedTabIndex in listOf(0, 2)) Icon(imageVector = ImageVector.vectorResource(R.drawable.arrows_sort), contentDescription = "butSort", modifier = Modifier.padding(start = 7.dp).clickable { showSortDialog = true })
@@ -340,7 +358,7 @@ fun SearchScreen() {
                     var expanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                     DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.show_criteria)) }, onClick = {
+                        if (vm.selectedTabIndex != 2) DropdownMenuItem(text = { Text(stringResource(R.string.show_criteria)) }, onClick = {
                             showSearchBy = true
                             expanded = false
                         })

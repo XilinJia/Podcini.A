@@ -21,7 +21,7 @@ import ac.mdiq.podcini.config.settings.importPA
 import ac.mdiq.podcini.net.sync.SyncService.Companion.isValidGuid
 import ac.mdiq.podcini.net.sync.model.EpisodeAction
 import ac.mdiq.podcini.net.sync.model.EpisodeAction.Companion.readFromJsonObject
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
@@ -41,7 +41,6 @@ import ac.mdiq.podcini.ui.compose.NumberEditor
 import ac.mdiq.podcini.ui.compose.OpmlImportSelectionDialog
 import ac.mdiq.podcini.ui.compose.TitleSummaryActionColumn
 import ac.mdiq.podcini.ui.compose.TitleSummarySwitchRow
-
 import ac.mdiq.podcini.ui.compose.commonConfirms
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
@@ -99,6 +98,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -120,6 +120,8 @@ fun ImportExportScreen() {
     val backupDirName = "Podcini-Backups"
     val mediaFilesDirName = "Podcini-MediaFiles"
     val clipsDirName = "Podcini-Clips"
+
+    val appPrefs by appPrefsFlow!!.collectAsStateWithLifecycle()
 
     BackHandler(enabled = true) { pfBackStack.removeLastOrNull() }
 

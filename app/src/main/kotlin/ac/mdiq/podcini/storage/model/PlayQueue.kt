@@ -4,7 +4,7 @@ import ac.mdiq.podcini.automation.AutoDownloadAlgorithm
 import ac.mdiq.podcini.automation.AutoEnqueueAlgorithm
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.allFeeds
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.persistOrdered
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.specs.EnqueueLocation
@@ -124,7 +124,7 @@ class PlayQueue : RealmObject {
             CoroutineScope(Dispatchers.IO).launch {
                 val feeds = normalFeeds
                 AutoEnqueueAlgorithm().run(feeds, true)
-                if(launchAutoEQDlWhenEmpty && appPrefs.enableAutoDl) AutoDownloadAlgorithm().run(feeds, false, noRefreshing = true)
+                if(launchAutoEQDlWhenEmpty && appPrefsFlow!!.value.enableAutoDl) AutoDownloadAlgorithm().run(feeds, false, noRefreshing = true)
             }
         }
     }

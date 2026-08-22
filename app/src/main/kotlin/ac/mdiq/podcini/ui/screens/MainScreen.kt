@@ -2,11 +2,10 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.base.InTheatre.theatres
-
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
-import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.ui.compose.CommonConfirmDialog
 import ac.mdiq.podcini.ui.compose.CommonToast
 import ac.mdiq.podcini.ui.compose.LargePoster
@@ -65,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
@@ -85,14 +85,15 @@ fun MainScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context by rememberUpdatedState(LocalContext.current)
     val lcScope = rememberCoroutineScope()
+    val appPrefs by appPrefsFlow!!.collectAsStateWithLifecycle()
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             Logd(TAG, "DisposableEffect LifecycleEventObserver: $event")
             when (event) {
                 Lifecycle.Event.ON_CREATE -> {
-                    if (appAttribs.restoreLastScreen) {
-                        val restored: List<NavKey> = Json.decodeFromString(appAttribs.backstack)
+                    if (appAttribsFlow!!.value.restoreLastScreen) {
+                        val restored: List<NavKey> = Json.decodeFromString(appAttribsFlow!!.value.backstack)
                         if (restored.isNotEmpty()) backStack.addAll(restored.take(10))
                     }
                 }
@@ -188,7 +189,7 @@ fun MainScreen() {
     LaunchedEffect(Unit) {
         snapshotFlow { backStack.toList() }.debounce(200.milliseconds).collect { stack ->
             val json = Json.encodeToString(stack)
-            withContext(Dispatchers.IO) { upsert(appAttribs) { it.backstack = json } }
+            withContext(Dispatchers.IO) { upsert(appAttribsFlow!!.value) { it.backstack = json } }
         }
     }
 

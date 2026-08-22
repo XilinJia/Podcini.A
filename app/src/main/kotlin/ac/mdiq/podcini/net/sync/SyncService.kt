@@ -6,10 +6,10 @@ import ac.mdiq.podcini.config.CHANNEL_ID
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.net.feed.FeedUpdater
 import ac.mdiq.podcini.net.sync.LockingAsyncExecutor.executeLockedAsync
-import ac.mdiq.podcini.net.sync.SynchronizationCredentials.hosturl
-import ac.mdiq.podcini.net.sync.SynchronizationCredentials.password
-import ac.mdiq.podcini.net.sync.SynchronizationCredentials.username
 import ac.mdiq.podcini.net.sync.SynchronizationProviderViewData.Companion.fromIdentifier
+import ac.mdiq.podcini.net.sync.SynchronizationSettings.hosturl
+import ac.mdiq.podcini.net.sync.SynchronizationSettings.password
+import ac.mdiq.podcini.net.sync.SynchronizationSettings.username
 import ac.mdiq.podcini.net.sync.model.EpisodeAction
 import ac.mdiq.podcini.net.sync.model.ISyncService
 import ac.mdiq.podcini.net.sync.model.SyncServiceException

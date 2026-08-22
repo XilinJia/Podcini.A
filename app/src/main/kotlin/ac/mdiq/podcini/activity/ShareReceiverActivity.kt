@@ -7,7 +7,7 @@ import ac.mdiq.podcini.sources.AppGatewayRegistry
 import ac.mdiq.podcini.sources.SourceGatewayClient
 import ac.mdiq.podcini.sources.sourceClients
 import ac.mdiq.podcini.storage.database.addToFeed
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
@@ -165,7 +165,7 @@ class ShareReceiverActivity : ComponentActivity() {
                         activity.startActivity(intent)
                         if (finish) activity.finish()
                     }
-                    if (appPrefs.loadExternalApp) AppGatewayRegistry.awaitReadyClients()
+                    if (appPrefsFlow!!.value.loadExternalApp) AppGatewayRegistry.awaitReadyClients()
                     val client = sourceClients.find { it.withProviderBlocking { p-> p.canHandleUrl(sharedText) == 1 } == true }
                     Logd(TAG, "receiveShared canHandleUrl==1 client: ${client!= null}")
                     if (client != null) {

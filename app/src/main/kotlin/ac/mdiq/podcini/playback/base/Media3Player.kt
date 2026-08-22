@@ -5,14 +5,14 @@ import ac.mdiq.podcini.playback.SegmentSavingDataSource
 import ac.mdiq.podcini.playback.SegmentSavingDataSourceFactory
 import ac.mdiq.podcini.playback.base.InTheatre.actQueue
 import ac.mdiq.podcini.playback.base.InTheatre.activeTheatres
-import ac.mdiq.podcini.playback.base.OKHTTP.encodeCredentials
-import ac.mdiq.podcini.playback.base.OKHTTP.getOKHttpClient
 import ac.mdiq.podcini.playback.cast.CastMediaPlayer.buildCastPlayer
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.playback.service.QuickSettingsTileService
 import ac.mdiq.podcini.receiver.PodciniWidget
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.shared.PodciniHttpClient.proxyConfig
+import ac.mdiq.podcini.shared.ProxyConfig
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
 import ac.mdiq.podcini.storage.database.rewindSecs
@@ -46,7 +46,12 @@ import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import android.media.audiofx.LoudnessEnhancer
+import android.net.http.HttpEngine
+import android.os.Build
+import android.os.ext.SdkExtensions
 import android.service.quicksettings.TileService
+import android.util.Base64
+import android.util.Pair
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.appwidget.GlanceAppWidgetManager
@@ -81,15 +86,12 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.audio.BaseAudioProcessor
 import androidx.media3.database.StandaloneDatabaseProvider
-import androidx.media3.datasource.DataSource
-import androidx.media3.datasource.DataSpec
-import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.HttpDataSource
-import androidx.media3.datasource.TransferListener
+import androidx.media3.datasource.HttpEngineDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
-import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.datasource.cronet.CronetDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -121,11 +123,19 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
+import okio.ByteString
 import okio.buffer
+import org.chromium.net.CronetEngine
+import org.chromium.net.Proxy
+import org.chromium.net.ProxyOptions
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.UnsupportedEncodingException
 import java.lang.reflect.Field
+import java.net.Proxy.Type
 import java.nio.ByteBuffer
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.time.Instant
 
@@ -191,6 +201,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             simpleCache = SimpleCache(cacheDir, evictor, databaseProvider)
         }
     }
+    private val networkExecutor = Executors.newSingleThreadExecutor()
 
     init {
         this.playerId = playerId
@@ -563,6 +574,53 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         override fun onReleased(playerId: PlayerId) = delegate.onReleased(playerId)
     }
 
+    fun createCronetEngine(context: Context, config: ProxyConfig?, executor: Executor): CronetEngine {
+        val builder = CronetEngine.Builder(context)
+            .enableHttp2(true)
+            .enableQuic(true)
+            .enableBrotli(true)
+            .setStoragePath(File(context.cacheDir, "cronet").apply { mkdirs() }.absolutePath)
+            .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024)
+        if (config?.type == Type.HTTP && !config.host.isNullOrEmpty()) {
+            val port = if (config.port > 0) config.port else ProxyConfig.DEFAULT_PORT
+            val proxy = Proxy.createHttpProxy(Proxy.SCHEME_HTTP, config.host!!, port, executor,
+                object : Proxy.HttpConnectCallback() {
+                    override fun onBeforeRequest(request: Request) {
+                        if (!config.username.isNullOrEmpty() && config.password != null) {
+                            val credentials = "${config.username}:${config.password}"
+                            val encoded = Base64.encodeToString(credentials.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                            request.proceed(listOf(Pair("Proxy-Authorization", "Basic $encoded")))
+                        } else request.proceed(emptyList())
+                    }
+                    override fun onResponseReceived(responseHeaders: MutableList<Pair<String, String>>, statusCode: Int): Int {
+                        return RESPONSE_ACTION_PROCEED
+                    }
+                }
+            )
+            val proxyOptions = ProxyOptions.fromProxyList(listOf(proxy), ProxyOptions.ALL_PROXIES_FAILED_BEHAVIOR_DISALLOW_DIRECT)
+            builder.setProxyOptions(proxyOptions)
+        }
+        return builder.build()
+    }
+
+    fun createHttpDataSourceFactory(context: Context, executor: Executor): HttpDataSource.Factory {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 7 && proxyConfig == null) {
+            val httpEngine = HttpEngine.Builder(context)
+                .setEnableQuic(true)
+                .setStoragePath(File(context.cacheDir, "httpengine").apply { mkdirs() }.absolutePath)
+                .setEnableHttpCache(HttpEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024)
+                .build()
+            HttpEngineDataSource.Factory(httpEngine, executor)
+                .setConnectionTimeoutMs(8_000)
+                .setReadTimeoutMs(8_000)
+        } else {
+            val cronetEngine = createCronetEngine(context, proxyConfig, executor)
+            CronetDataSource.Factory(cronetEngine, executor)
+                .setConnectionTimeoutMs(8_000)
+                .setReadTimeoutMs(8_000)
+        }
+    }
+
     override fun createNativePlayer() {
         if (exoPlayer != null) return
         timeIt("$TAG createNativePlayer")
@@ -598,25 +656,24 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             .setConstantBitrateSeekingEnabled(true)
 //            .setMp3ExtractorFlags(Mp3Extractor.FLAG_ENABLE_INDEX_SEEKING)
 //            .setMp4ExtractorFlags(Mp4Extractor.FLAG_WORKAROUND_IGNORE_EDIT_LISTS)
-        val baseHttpDataSourceFactory = OkHttpDataSource.Factory(getOKHttpClient())
-        baseHttpDataSourceFactory.setTransferListener(
-            object : TransferListener {
-                override fun onTransferInitializing(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
-                    Logd(TAG, "HTTP INITIALIZING: ${dataSpec.uri}")
-                }
-                override fun onTransferStart(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
-                    Logd(TAG, "HTTP TRANSFER START: ${dataSpec.uri}")
-                }
-                override fun onBytesTransferred(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean, bytesTransferred: Int) {}
-                override fun onTransferEnd(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
-                    Logd(TAG, "HTTP TRANSFER END")
-                }
-            }
-        )
-        val upstreamFactory = DefaultDataSource.Factory(context, baseHttpDataSourceFactory)
-//        val cacheDataSinkFactory = CacheDataSink.Factory()
-//            .setCache(getCache())
-//            .setBufferSize(128 * 1024)
+//        val baseHttpDataSourceFactory = OkHttpDataSource.Factory(getOKHttpClient())
+//        baseHttpDataSourceFactory.setTransferListener(
+//            object : TransferListener {
+//                override fun onTransferInitializing(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
+//                    Logd(TAG, "HTTP INITIALIZING: ${dataSpec.uri}")
+//                }
+//                override fun onTransferStart(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
+//                    Logd(TAG, "HTTP TRANSFER START: ${dataSpec.uri}")
+//                }
+//                override fun onBytesTransferred(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean, bytesTransferred: Int) {}
+//                override fun onTransferEnd(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
+//                    Logd(TAG, "HTTP TRANSFER END")
+//                }
+//            }
+//        )
+//        val upstreamFactory = DefaultDataSource.Factory(context, baseHttpDataSourceFactory)
+
+        val upstreamFactory = createHttpDataSourceFactory(context, networkExecutor)
         val cacheDataSourceFactory = CacheDataSource.Factory()
             .setCache(getCache())
             .setUpstreamDataSourceFactory(upstreamFactory)
@@ -786,6 +843,14 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     private fun setSourceCredentials(user: String?, password: String?) {
+        fun encodeCredentials(username: String, password: String, charset: String?): String {
+            try {
+                val credentials = "$username:$password"
+                val bytes = credentials.toByteArray(charset(charset!!))
+                val encoded: String = ByteString.of(*bytes).base64()
+                return "Basic $encoded"
+            } catch (e: UnsupportedEncodingException) { throw AssertionError(e) }
+        }
         if (!user.isNullOrEmpty() && !password.isNullOrEmpty()) {
             // TODO: need to check
             mediaItem = mediaItem!!.buildUpon().setTag(encodeCredentials(user, password, "ISO-8859-1")).build()
@@ -885,7 +950,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     override fun playChime() {
-        RingtoneManager.getRingtone(context, appPrefs.ringToneUriString!!.toUri()).play()
+        RingtoneManager.getRingtone(context, appPrefsFlow!!.value.ringToneUriString!!.toUri()).play()
     }
 
     override fun notifyWidget() {
@@ -1210,7 +1275,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         exoplayerOffloadListener = null
         bufferingUpdater = null
         loudnessEnhancer = null
-        httpDataSourceFactory = null
+//        httpDataSourceFactory = null
 
         castPlayer = null
         exoPlayer = null
@@ -1231,11 +1296,11 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 
         private var enableFloat = false     // float is not well handled in Android devices
 
-        var httpDataSourceFactory:  OkHttpDataSource.Factory? = null
-            get() {
-                if (field == null) field = OkHttpDataSource.Factory(getOKHttpClient() as okhttp3.Call.Factory)
-                return field
-            }
+//        var httpDataSourceFactory:  OkHttpDataSource.Factory? = null
+//            get() {
+//                if (field == null) field = OkHttpDataSource.Factory(getOKHttpClient() as okhttp3.Call.Factory)
+//                return field
+//            }
 
         var simpleCache: SimpleCache? = null
 

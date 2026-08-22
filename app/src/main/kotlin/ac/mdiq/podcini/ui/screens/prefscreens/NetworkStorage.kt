@@ -8,7 +8,6 @@ import ac.mdiq.podcini.net.feed.FeedUpdateManager.checkAndScheduleUpdateTaskOnce
 import ac.mdiq.podcini.net.feed.FeedUpdateManager.getInitialDelay
 import ac.mdiq.podcini.net.feed.FeedUpdateManager.nextRefreshTime
 import ac.mdiq.podcini.net.sync.SyncService
-import ac.mdiq.podcini.net.sync.SynchronizationCredentials
 import ac.mdiq.podcini.net.sync.SynchronizationProviderViewData
 import ac.mdiq.podcini.net.sync.SynchronizationSettings
 import ac.mdiq.podcini.net.sync.SynchronizationSettings.isProviderConnected
@@ -22,8 +21,8 @@ import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.resetClient
 import ac.mdiq.podcini.shared.ProxyConfig
 import ac.mdiq.podcini.sources.AppGatewayRegistry
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.proxyConfig
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
@@ -106,6 +105,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.xilinjia.krdb.ext.toRealmSet
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
@@ -138,6 +138,8 @@ enum class MobileUpdateOptions(val res: Int) {
 @Composable
 fun NetworkStorageScreen() {
     val context by rememberUpdatedState(LocalContext.current)
+    val appPrefs by appPrefsFlow!!.collectAsStateWithLifecycle()
+
     BackHandler(enabled = true) { pfBackStack.removeLastOrNull() }
 
     @Composable
@@ -353,6 +355,7 @@ fun NetworkStorageScreen() {
 
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp).verticalScroll(rememberScrollState()).background(MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
+            val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.identifier), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.wrapContentWidth())
                 var name by remember(appAttribs.name) { mutableStateOf(appAttribs.name) }
@@ -371,8 +374,8 @@ fun NetworkStorageScreen() {
             Text(stringResource(R.string.network_identifier_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
         }
         TitleSummarySwitchRow(R.string.pref_use_external_apps, R.string.pref_use_external_app_sum, appPrefs.loadExternalApp) {
-            appPrefs = upsertBlk(appPrefs) { p-> p.loadExternalApp = it}
-            AppGatewayRegistry.initialize(appPrefs.loadExternalApp, CoroutineScope(Dispatchers.Default))
+            val appPrefs_ = upsertBlk(appPrefs) { p-> p.loadExternalApp = it}
+            AppGatewayRegistry.initialize(appPrefs_.loadExternalApp, CoroutineScope(Dispatchers.Default))
         }
         Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -568,7 +571,7 @@ fun SynchronizationScreen() {
     fun NextcloudAuthenticationDialog(onDismiss: ()->Unit) {
         var nextcloudLoginFlow = remember<NextcloudLoginFlow?> { null }
         var showUrlEdit by remember { mutableStateOf(true) }
-        var serverUrlText by remember { mutableStateOf(appPrefs.nextcloud_server_address) }
+        var serverUrlText by remember { mutableStateOf(appPrefsFlow!!.value.nextcloud_server_address) }
         var errorText by remember { mutableStateOf("") }
         var showChooseHost by remember { mutableStateOf(serverUrlText.isNotBlank()) }
 
@@ -576,10 +579,10 @@ fun SynchronizationScreen() {
             override fun onNextcloudAuthenticated(server: String, username: String, password: String) {
                 Logd("NextcloudAuthenticationDialog", "onNextcloudAuthenticated: $server")
                 setSelectedSyncProvider(SynchronizationProviderViewData.NEXTCLOUD_GPODDER)
-                SynchronizationCredentials.clear()
-                SynchronizationCredentials.password = password
-                SynchronizationCredentials.hosturl = server
-                SynchronizationCredentials.username = username
+                SynchronizationSettings.clear()
+                SynchronizationSettings.password = password
+                SynchronizationSettings.hosturl = server
+                SynchronizationSettings.username = username
                 SyncService.fullSync()
                 loggedIn = isProviderConnected
                 onDismiss()
@@ -615,7 +618,7 @@ fun SynchronizationScreen() {
             },
             confirmButton = {
                 if (showChooseHost) TextButton(onClick = {
-                    upsertBlk(appPrefs) { it.nextcloud_server_address = serverUrlText}
+                    upsertBlk(appPrefsFlow!!.value) { it.nextcloud_server_address = serverUrlText}
                     nextcloudLoginFlow = NextcloudLoginFlow(getKtorClient(), serverUrlText, getAppContext(), nextCloudAuthCallback)
                     errorText = ""
                     showChooseHost = false
@@ -687,11 +690,11 @@ fun SynchronizationScreen() {
                 }
             }
         }
-        var portNum by remember { mutableIntStateOf(SynchronizationCredentials.hostport) }
+        var portNum by remember { mutableIntStateOf(SynchronizationSettings.hostport) }
         var isGuest by remember { mutableStateOf<Boolean?>(null) }
-        var hostAddress by remember { mutableStateOf(SynchronizationCredentials.hosturl?:"") }
+        var hostAddress by remember { mutableStateOf(SynchronizationSettings.hosturl?:"") }
         var showHostAddress by remember { mutableStateOf(true)  }
-        var portString by remember { mutableStateOf(SynchronizationCredentials.hostport.toString()) }
+        var portString by remember { mutableStateOf(SynchronizationSettings.hostport.toString()) }
         var showProgress by remember { mutableStateOf(false) }
         var showConfirm by remember { mutableStateOf(true)  }
         var showCancel by remember { mutableStateOf(true)  }
@@ -709,15 +712,15 @@ fun SynchronizationScreen() {
                             showHostAddress = false
                             portNum = portString.toInt()
                             isGuest = false
-                            SynchronizationCredentials.hostport = portNum
+                            SynchronizationSettings.hostport = portNum
                         }) { Text(stringResource(R.string.host_butLabel)) }
                         Spacer(Modifier.weight(1f))
                         TextButton(onClick = {
-                            SynchronizationCredentials.hosturl = hostAddress
+                            SynchronizationSettings.hosturl = hostAddress
                             showHostAddress = true
                             portNum = portString.toInt()
                             isGuest = true
-                            SynchronizationCredentials.hostport = portNum
+                            SynchronizationSettings.hostport = portNum
                         }) { Text(stringResource(R.string.guest_butLabel)) }
                     }
                     Row {
@@ -798,7 +801,7 @@ fun SynchronizationScreen() {
         TitleSummaryActionColumn(R.string.synchronization_sync_changes_title, R.string.synchronization_sync_summary) { SyncService.syncImmediately() }
         TitleSummaryActionColumn(R.string.synchronization_full_sync_title, R.string.synchronization_force_sync_summary) { SyncService.fullSync() }
         TitleSummaryActionColumn(R.string.synchronization_logout, 0) {
-            SynchronizationCredentials.clear()
+            SynchronizationSettings.clear()
             Logt("SynchronizationPreferencesScreen", context.getString(R.string.pref_synchronization_logout_toast))
             setSelectedSyncProvider(null)
             loggedIn = isProviderConnected

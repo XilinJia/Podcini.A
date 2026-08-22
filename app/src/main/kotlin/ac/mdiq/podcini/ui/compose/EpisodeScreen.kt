@@ -14,7 +14,7 @@ import ac.mdiq.podcini.net.utils.NetworkUtils.isImageDownloadAllowed
 import ac.mdiq.podcini.playback.base.InTheatre
 import ac.mdiq.podcini.playback.base.InTheatre.theatres
 import ac.mdiq.podcini.sources.isExtFeed
-import ac.mdiq.podcini.storage.database.appAttribs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
@@ -184,14 +184,19 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
     var onTimer by remember { mutableStateOf(Timer()) }
     var showEditTimerDialog by remember { mutableStateOf(false) }
 
+    val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
+
+    val timers = remember(episode.id, appAttribs ) { appAttribs.timetable.filter { it.episodeId == episode.id } }
+    timers.forEach { Logd(TAG, "timer: ${it.triggerTime}") }
+
     @Composable
     fun OpenDialogs() {
         if (futureState in listOf(EpisodeState.AGAIN, EpisodeState.FOREVER, EpisodeState.LATER)) FutureStateDialog(listOf(episode), futureState, onDismiss = { futureState = EpisodeState.UNSPECIFIED })
         if (showShareDialog) ShareDialog(episode) { showShareDialog = false }
 
-        if (showEditTimerDialog) EditTimerDialog(onTimer) { showEditTimerDialog = false }
+        if (showEditTimerDialog) EditTimerDialog(timer = onTimer, onDismiss = { showEditTimerDialog = false },  cb = { onTimer = it })
 
-        if (showAddTimerDialog) AddTimerDialog(episode) { showAddTimerDialog = false }
+        if (showAddTimerDialog) EditTimerDialog(episode = episode) { showAddTimerDialog = false }
 
         if (showTimetableDialog) EpisodeTimetableDialog(episode, { showTimetableDialog = false }) {
             onTimer = it
@@ -278,8 +283,6 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                         }
                         Text("$pubTimeText · $txtvDuration · $txtvSize", color = textColor, style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.weight(1f))
-                        val timers = remember(appAttribs.timetable) { appAttribs.timetable.filter { it.episodeId == episode.id } }
-                        //                        Logd(TAG, "timers: ${timers.size} ${appAttribs.timetable.size}")
                         Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_timer_24), tint = if (timers.isEmpty()) buttonColor else buttonAltColor, contentDescription = "timer", modifier = Modifier.width(28.dp).height(32.dp).combinedClickable(
                             onClick = {
                                 if (timers.isEmpty()) showAddTimerDialog = true

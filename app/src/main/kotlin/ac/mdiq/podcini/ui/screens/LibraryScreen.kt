@@ -20,7 +20,7 @@ import ac.mdiq.podcini.net.sync.transceive.sendCatalog
 import ac.mdiq.podcini.net.sync.transceive.sendFeed
 import ac.mdiq.podcini.net.utils.NetworkUtils.getLocalIpAddress
 import ac.mdiq.podcini.shared.getEntityId
-import ac.mdiq.podcini.storage.database.appAttribs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.feedCount
 import ac.mdiq.podcini.storage.database.feedOperationText
 import ac.mdiq.podcini.storage.database.loadLocalFolder
@@ -455,7 +455,7 @@ class LibraryVM : ViewModel() {
             var qrs  = ""
             when {
                 subPrefs.langsSel.isEmpty() -> qrs = " (langSet.@count > 0) "
-                subPrefs.langsSel.size == appAttribs.langSet.size -> qrs = ""
+                subPrefs.langsSel.size == appAttribsFlow!!.value.langSet.size -> qrs = ""
                 else -> {
                     for (l in subPrefs.langsSel) qrs += if (qrs.isEmpty()) " ( ANY langSet == '$l' " else " OR ANY langSet == '$l' "
                     if (qrs.isNotEmpty()) qrs += " ) "
@@ -469,7 +469,7 @@ class LibraryVM : ViewModel() {
             when {
 //                subPrefs.tagsSel.isEmpty() -> qrs = " (tags.@count == 0 OR (tags.@count != 0 AND ALL tags == $TAG_ROOT )) "
                 subPrefs.tagsSel.isEmpty() -> qrs = " (tags.@count == 0) "
-                subPrefs.tagsSel.size == appAttribs.feedTagSet.size -> qrs = ""
+                subPrefs.tagsSel.size == appAttribsFlow!!.value.feedTagSet.size -> qrs = ""
                 else -> {
                     for (t in subPrefs.tagsSel) {
                         qrs += if (qrs.isEmpty()) " ( ANY tags == '$t' " else " OR ANY tags == '$t' "
@@ -542,9 +542,9 @@ class LibraryVM : ViewModel() {
         }
 
         viewModelScope.launch {
-            snapshotFlow { appAttribs.langSet.size }.distinctUntilChanged().collect {
+            appAttribsFlow!!.map { it.langSet }.distinctUntilChanged().collect {
                 upsert(subPrefs) {
-                    it.langsSel = appAttribs.langSet
+                    it.langsSel = appAttribsFlow!!.value.langSet
                     it.feedsFilteredInc()
                 }
             }
@@ -660,6 +660,8 @@ fun LibraryScreen() {
         isFeedsOptionsExpanded = false
         selectMode = false
     }
+
+    val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
 
     val feedsSelected = remember { mutableStateListOf<Feed>() }
     val feedsOptionsMap = remember { linkedMapOf<String, @Composable ()->Unit>(

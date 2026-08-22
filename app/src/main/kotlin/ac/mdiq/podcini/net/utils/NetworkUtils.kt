@@ -2,7 +2,7 @@ package ac.mdiq.podcini.net.utils
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.ui.screens.prefscreens.MobileUpdateOptions
 import ac.mdiq.podcini.utils.Loge
@@ -77,18 +77,18 @@ object NetworkUtils {
     fun isAllowedOnMobile(type: String): Boolean {
         val defaultValue = HashSet<String>()
         defaultValue.add("images")
-        val allowed = appPrefs.mobileUpdateTypes
+        val allowed = appPrefsFlow!!.value.mobileUpdateTypes
         return allowed.contains(type)
     }
 
     fun setAllowMobileFor(type: String, allow: Boolean) {
         val defaultValue = HashSet<String>()
         defaultValue.add("images")
-        val getValueStringSet = appPrefs.mobileUpdateTypes
+        val getValueStringSet = appPrefsFlow!!.value.mobileUpdateTypes
         val allowed: MutableSet<String> = HashSet(getValueStringSet)
         if (allow) allowed.add(type)
         else allowed.remove(type)
-        upsertBlk(appPrefs) { it.mobileUpdateTypes = allowed.toRealmSet() }
+        upsertBlk(appPrefsFlow!!.value) { it.mobileUpdateTypes = allowed.toRealmSet() }
     }
 
     fun wasDownloadBlocked(throwable: Throwable?): Boolean {

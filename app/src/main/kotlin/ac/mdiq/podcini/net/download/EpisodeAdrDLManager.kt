@@ -3,15 +3,14 @@ package ac.mdiq.podcini.net.download
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.CHANNEL_ID
-import ac.mdiq.podcini.config.ClientConfig
 import ac.mdiq.podcini.net.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.net.download.EpisodeAdrDLManager.Companion.WORK_DATA_PROGRESS
 import ac.mdiq.podcini.net.download.EpisodeDLManager.Companion.updateDB
 import ac.mdiq.podcini.net.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.playback.base.InTheatre.actQueue
 import ac.mdiq.podcini.storage.database.addToAssQueue
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteMedia
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.removeFromAllQueues
@@ -61,7 +60,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class EpisodeAdrDLManager: EpisodeDLManager() {
     private val constraints: Constraints
         get() = Builder()
-            .setRequiresCharging(!appPrefs.enableAutoDownloadOnBattery)
+            .setRequiresCharging(!appPrefsFlow!!.value.enableAutoDownloadOnBattery)
             .setRequiredNetworkType(if (mobileAllowEpisodeDownload) NetworkType.CONNECTED else NetworkType.UNMETERED).build()
 
     override fun downloadNow(episodes: List<Episode>, ignoreConstraints: Boolean) {
@@ -86,7 +85,7 @@ class EpisodeAdrDLManager: EpisodeDLManager() {
         // This needs to be done here, not in the worker. Reason: The worker might or might not be running.
         // Remove partially downloaded file
         val episode_ = deleteMedia(media)
-        if (appPrefs.deleteRemovesFromQueue) removeFromAllQueues(listOf(episode_))
+        if (appPrefsFlow!!.value.deleteRemovesFromQueue) removeFromAllQueues(listOf(episode_))
         val tag = WORK_TAG_EPISODE_URL + media.downloadUrl
         val future: Future<List<WorkInfo>> = WorkManager.getInstance(getAppContext()).getWorkInfosByTag(tag)
 
@@ -104,7 +103,7 @@ class EpisodeAdrDLManager: EpisodeDLManager() {
         val workRequest: OneTimeWorkRequest.Builder = OneTimeWorkRequest.Builder(EpisodesDownloadWorker::class.java)
             .setInitialDelay(0L, TimeUnit.MILLISECONDS)
             .addTag(EpisodesDownload)
-        upsertBlk(appAttribs) {
+        upsertBlk(appAttribsFlow!!.value) {
             episodes.forEach { episode ->
                 if (episode.suitableForDownload()) {
                     workRequest.addTag(WORK_TAG_EPISODE_URL + episode.downloadUrl)
@@ -112,7 +111,7 @@ class EpisodeAdrDLManager: EpisodeDLManager() {
                 }
             }
         }
-        if (appPrefs.enqueueDownloaded) runBlocking { addToAssQueue(episodes) }
+        if (appPrefsFlow!!.value.enqueueDownloaded) runBlocking { addToAssQueue(episodes) }
         return workRequest
     }
 
@@ -144,8 +143,8 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
         getForegroundInfo()
 
         Logd(TAG, "starting doWork")
-        ClientConfig.initialize()
-        val ids = appAttribs.episodeIdsToDownload
+//        ClientConfig.initialize()
+        val ids = appAttribsFlow!!.value.episodeIdsToDownload
         if (ids.isEmpty()) return@coroutineScope Result.Success()
 
         val medias = realm.query(Episode::class).query("id IN $0", ids).find()
@@ -192,7 +191,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
                     nm.cancel(R.id.notification_downloading)
                 }
             }
-            upsert(appAttribs) { it.episodeIdsToDownload.remove(media.id) }
+            upsert(appAttribsFlow!!.value) { it.episodeIdsToDownload.remove(media.id) }
             Logd(TAG, "Worker for " + media.downloadUrl + " returned.")
         }
         return@coroutineScope Result.Success()

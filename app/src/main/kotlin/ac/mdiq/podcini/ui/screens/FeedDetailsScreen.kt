@@ -14,7 +14,7 @@ import ac.mdiq.podcini.storage.database.FeedAssistant
 import ac.mdiq.podcini.storage.database.buildListInfo
 import ac.mdiq.podcini.storage.database.feedOperationText
 import ac.mdiq.podcini.storage.database.getEpisodes
-import ac.mdiq.podcini.storage.database.getEpisodesAsFlow
+import ac.mdiq.podcini.storage.database.getEpisodesAsListFlow
 import ac.mdiq.podcini.storage.database.getHistoryAsFlow
 import ac.mdiq.podcini.storage.database.queueToVirtual
 import ac.mdiq.podcini.storage.database.realm
@@ -170,7 +170,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.collections.get
 
 
 enum class FeedScreenMode {
@@ -213,31 +212,30 @@ class FeedDetailsVM(feedId: Long = 0L, modeName: String = FeedScreenMode.List.na
                 mode == FeedScreenMode.Info -> emptyFlow()
                 mode == FeedScreenMode.History -> {
                     listIdentity += ".History"
-                    getHistoryAsFlow(feed.id)
+                    getHistoryAsFlow(feed.id).map { it.list }
                 }
                 enableFilter && feed.filterString.isNotBlank() -> {
                     listIdentity += ".${feed.filterString}.${feed.episodeSortOrder.name}"
                     try {
-                        getEpisodesAsFlow(feed.episodeFilter, feed.episodeSortOrder, feed.id)
+                        getEpisodesAsListFlow(feed.episodeFilter, feed.episodeSortOrder, feed.id)
                     } catch (e: Throwable) {
                         Loge(TAG, e, "getEpisodesAsFlow error, retry")
                         val feed_ = upsert(feed) {
                             it.episodeFilter = EpisodeFilter("")
                             it.episodeSortOrder = EpisodeSortOrder.DATE_DESC
                         }
-                        getEpisodesAsFlow(feed_.episodeFilter, feed_.episodeSortOrder, feed_.id)
+                        getEpisodesAsListFlow(feed_.episodeFilter, feed_.episodeSortOrder, feed_.id)
                     }
                 }
                 else -> {
                     listIdentity += "..${feed.episodeSortOrder.name}"
-                    getEpisodesAsFlow(EpisodeFilter(""), feed.episodeSortOrder, feed.id)
+                    getEpisodesAsListFlow(EpisodeFilter(""), feed.episodeSortOrder, feed.id)
                 }
             }.map {
-                val list = it.list
                 when (feed.episodeSortOrder) {
-                    EpisodeSortOrder.EPISODE_TITLE_ASC -> list.sortedWith { episode, episode1 -> episode.title?.compareToNatural(episode1.title?:"") ?: -1 }
-                    EpisodeSortOrder.EPISODE_TITLE_DESC -> list.sortedWith { episode, episode1 -> episode1.title?.compareToNatural(episode.title?:"") ?: -1 }
-                    else -> list
+                    EpisodeSortOrder.EPISODE_TITLE_ASC -> it.sortedWith { episode, episode1 -> episode.title?.compareToNatural(episode1.title?:"") ?: -1 }
+                    EpisodeSortOrder.EPISODE_TITLE_DESC -> it.sortedWith { episode, episode1 -> episode1.title?.compareToNatural(episode.title?:"") ?: -1 }
+                    else -> it
                 }
 
             }

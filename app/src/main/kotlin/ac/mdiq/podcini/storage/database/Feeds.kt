@@ -58,14 +58,14 @@ fun compileLanguages() {
         if (langs.isNotEmpty()) langsSet.addAll(langs)
         else langsSet.add("")
     }
-    Logd(TAG, "langsSet: ${langsSet.size} appAttribs.langSet: ${appAttribs.langSet.size}")
-    if (!appAttribs.langSet.containsAll(langsSet)) upsertBlk(appAttribs) { it.langSet.addAll(langsSet) }
+    Logd(TAG, "langsSet: ${langsSet.size} appAttribs.langSet: ${appAttribsFlow!!.value.langSet.size}")
+    if (!appAttribsFlow!!.value.langSet.containsAll(langsSet)) upsertBlk(appAttribsFlow!!.value) { it.langSet.addAll(langsSet) }
 }
 
 fun compileTags() {
     val tagsSet = mutableSetOf<String>()
     for (feed in allFeeds) tagsSet.addAll(feed.tags.filter { it != TAG_ROOT })
-    if (!appAttribs.feedTagSet.containsAll(tagsSet)) upsertBlk(appAttribs) { it.feedTagSet.addAll(tagsSet) }
+    if (!appAttribsFlow!!.value.feedTagSet.containsAll(tagsSet)) upsertBlk(appAttribsFlow!!.value) { it.feedTagSet.addAll(tagsSet) }
 }
 
 private var feedMonitorJob: Job? = null
@@ -178,7 +178,7 @@ suspend fun deleteFeed(feedId: Long, preserve: Boolean = false) {
     }
 }
 
-fun allowForAutoDelete(feed: Feed): Boolean = appPrefs.autoDelete && (!feed.isLocal || appPrefs.autoDeleteLocal)
+fun allowForAutoDelete(feed: Feed): Boolean = appPrefsFlow!!.value.autoDelete && (!feed.isLocal || appPrefsFlow!!.value.autoDeleteLocal)
 
 suspend fun shelveToFeed(episodes: List<Episode>, toFeed: Feed, removeChecked: Boolean = false) {
     val toFeedEpisodes = getEpisodes(null, null, feedId=toFeed.id, copy = false)
@@ -432,7 +432,7 @@ suspend fun updateFeedFull(newFeed: Feed, removeUnlistedItems: Boolean = false, 
             nNew++
             episode.id = idLong++
             episode.feedId = savedFeed.id
-            if (appPrefs.fetchmediaSizes && !savedFeed.isLocal && !savedFeed.prefStreamOverDownload) episode.fetchMediaSize(false)
+            if (appPrefsFlow!!.value.fetchmediaSizes && !savedFeed.isLocal && !savedFeed.prefStreamOverDownload) episode.fetchMediaSize(false)
             if (!savedFeed.hasVideoMedia && episode.mediaType == MediaType.VIDEO) savedFeed.hasVideoMedia = true
             savedFeedAssistant.addidvToMap(episode)
             val pubDate = episode.pubDate
@@ -527,7 +527,7 @@ suspend fun updateFeedSimple(newFeed: Feed, downloadStatus: DownloadResult? = nu
         Logd(TAG, "Found new episode: ${episode.title}")
         episode.id = idLong++
         episode.feedId = savedFeed.id
-        if (appPrefs.fetchmediaSizes && !savedFeed.isLocal && !savedFeed.prefStreamOverDownload) episode.fetchMediaSize(persist = false)
+        if (appPrefsFlow!!.value.fetchmediaSizes && !savedFeed.isLocal && !savedFeed.prefStreamOverDownload) episode.fetchMediaSize(persist = false)
         if (!savedFeed.hasVideoMedia && episode.mediaType == MediaType.VIDEO) savedFeed.hasVideoMedia = true
 
         Logd(TAG, "Marking episode published on $pubDate new, prior most recent date = $priorMostRecentDate")

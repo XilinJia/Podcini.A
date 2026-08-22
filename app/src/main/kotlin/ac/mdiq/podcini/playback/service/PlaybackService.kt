@@ -13,7 +13,7 @@ import ac.mdiq.podcini.playback.base.Media3Player.Companion.buildMetadata
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.releaseCache
 import ac.mdiq.podcini.playback.base.SleepManager
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.rewindSecs
@@ -158,7 +158,7 @@ class PlaybackService : MediaLibraryService() {
             Logd(TAG, "Pausing playback because audio is becoming noisy")
 //            pauseIfPauseOnDisconnect()
             transientPause = theatres[0].mPlayer!!.isPlaying
-            if (appPrefs.pauseOnHeadsetDisconnect && !isCasting) theatres[0].mPlayer?.pause(false)
+            if (appPrefsFlow!!.value.pauseOnHeadsetDisconnect && !isCasting) theatres[0].mPlayer?.pause(false)
         }
     }
 
@@ -214,7 +214,7 @@ class PlaybackService : MediaLibraryService() {
             when (customCommand.customAction) {
                 NotificationCustomButton.REWIND.customAction -> theatres[0].mPlayer?.seekDelta(-rewindSecs * 1000)
                 NotificationCustomButton.FORWARD.customAction -> theatres[0].mPlayer?.seekDelta(fastForwardSecs * 1000)
-                NotificationCustomButton.SKIP.customAction -> if (appPrefs.showSkip) theatres[0].mPlayer?.skip()
+                NotificationCustomButton.SKIP.customAction -> if (appPrefsFlow!!.value.showSkip) theatres[0].mPlayer?.skip()
             }
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
@@ -460,7 +460,7 @@ class PlaybackService : MediaLibraryService() {
             KeyEvent.KEYCODE_MEDIA_NEXT -> {
                 when {
                     // Handle remapped button as notification button which is not remapped again.
-                    !notificationButton -> return handleKeycode(appPrefs.hardwareForwardButton.toInt(), true)
+                    !notificationButton -> return handleKeycode(appPrefsFlow!!.value.hardwareForwardButton.toInt(), true)
                     theatres[0].mPlayer!!.isPlaying || theatres[0].mPlayer!!.isPaused -> {
                         theatres[0].mPlayer?.skip()
                         return true
@@ -476,7 +476,7 @@ class PlaybackService : MediaLibraryService() {
             KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
                 when {
                     // Handle remapped button as notification button which is not remapped again.
-                    !notificationButton -> return handleKeycode(appPrefs.hardwarePreviousButton.toInt(), true)
+                    !notificationButton -> return handleKeycode(appPrefsFlow!!.value.hardwarePreviousButton.toInt(), true)
                     theatres[0].mPlayer!!.isPlaying || theatres[0].mPlayer!!.isPaused -> {
                         theatres[0].mPlayer?.seekTo(0)
                         return true
@@ -552,8 +552,8 @@ class PlaybackService : MediaLibraryService() {
         if (transientPause) {
             transientPause = false
             when {
-                !bluetooth && appPrefs.unpauseOnHeadsetReconnect -> theatres[0].mPlayer?.play()
-                bluetooth && appPrefs.unpauseOnBluetoothReconnect -> {
+                !bluetooth && appPrefsFlow!!.value.unpauseOnHeadsetReconnect -> theatres[0].mPlayer?.play()
+                bluetooth && appPrefsFlow!!.value.unpauseOnBluetoothReconnect -> {
                     val vibrator = if (Build.VERSION.SDK_INT >= VERSION_CODES.S) {
                         val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
                         manager.defaultVibrator
@@ -607,7 +607,7 @@ class PlaybackService : MediaLibraryService() {
                 add(NotificationCustomButton.REWIND.commandButton)
                 if (defaultPlayPauseButton != null) add(defaultPlayPauseButton)
                 add(NotificationCustomButton.FORWARD.commandButton)
-                if (appPrefs.showSkip) add(NotificationCustomButton.SKIP.commandButton)
+                if (appPrefsFlow!!.value.showSkip) add(NotificationCustomButton.SKIP.commandButton)
             }.build()
             return super.addNotificationActions(mediaSession, notificationMediaButtons, builder, actionFactory)
         }

@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.storage.utils
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.utils.Logd
@@ -57,7 +57,7 @@ private const val MD5_HEX_LENGTH = 32
 private val validChars = ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 _-").toCharArray()
 
 val customMediaUriString: String
-    get() = if (appPrefs.useCustomMediaFolder) appPrefs.customMediaUri else ""
+    get() = if (appPrefsFlow!!.value.useCustomMediaFolder) appPrefsFlow!!.value.customMediaUri else ""
 
 val fs = FileSystem.SYSTEM
 
@@ -72,8 +72,8 @@ val mediaDir: UnifiedFile
                 Logd(TAG, "mediaDir: $customMediaUriString")
                 return d
             } else {
-                Loge(TAG, "The chosen custom media folder is not valid: ${appPrefs.customMediaUri}. Reset!")
-                upsertBlk(appPrefs) {
+                Loge(TAG, "The chosen custom media folder is not valid: ${appPrefsFlow!!.value.customMediaUri}. Reset!")
+                upsertBlk(appPrefsFlow!!.value) {
                     it.useCustomMediaFolder = false
                     it.customMediaUri = ""
                     it.customFolderUnavailable = true
@@ -122,7 +122,7 @@ fun initStorage() {
             } catch (e: Exception) {
                 Logs(TAG, e, "failed creating .nomedia file")
                 if (customMediaUriString.isNotBlank()) {
-                    upsert(appPrefs) {
+                    upsert(appPrefsFlow!!.value) {
                         it.useCustomMediaFolder = false
                         it.customMediaUri = ""
                         it.customFolderUnavailable = true

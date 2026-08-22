@@ -11,8 +11,8 @@ import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.prepareUrl
 import ac.mdiq.podcini.sources.sourceClients
 import ac.mdiq.podcini.storage.database.allFeeds
-import ac.mdiq.podcini.storage.database.appAttribs
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.feedCount
 import ac.mdiq.podcini.storage.database.loadLocalFolder
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -79,6 +79,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
@@ -112,8 +113,8 @@ class FindFeedsVM: ViewModel() {
     var searchJob: Job? = null
 
     init {
-        if (appPrefs.OPMLRestored && feedCount == 0) {
-            numberOPMLFeedsToRestore.intValue = appPrefs.OPMLFeedsToRestore
+        if (appPrefsFlow!!.value.OPMLRestored && feedCount == 0) {
+            numberOPMLFeedsToRestore.intValue = appPrefsFlow!!.value.OPMLFeedsToRestore
             showOPMLRestoreDialog.value = true
         }
 //        search(searchText)
@@ -227,6 +228,7 @@ fun FindFeedsScreen() {
 
     @Composable
     fun TopBar() {
+        val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
         Column(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
             Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_add), contentDescription = "Open Drawer", modifier = Modifier.padding(end = 7.dp).clickable { drawerController?.open() })

@@ -3,22 +3,20 @@
 package ac.mdiq.podcini.utils
 
 import ac.mdiq.podcini.BuildConfig
+import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.net.download.DownloadError
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.storage.database.appPrefs
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Feed
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-val LogScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 var toastMessages = mutableStateListOf<ToastMessage>()
 data class ToastMessage(
     val id: Long = nowInMillis(),
@@ -40,80 +38,80 @@ private suspend fun trimSessionLogs() {
 }
 
 fun Logd(t: String, m: String) {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.d(t, m)
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.d(t, m)
 }
 
 fun Loge(t: String, m: String) {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.e(t, m)
-    LogScope.launch {
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.e(t, m)
+    appMainScope.launch {
         trimSessionLogs()
-        if (appPrefs.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m"))
+        if (appPrefsFlow!!.value.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m"))
         sessionLogs.add("${fullDateTimeString()} $t: Error: $m")
     }
 }
 
 fun Loge(t: String, e: Throwable, m: String) {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.e(t, m + ": "+ e.message)
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.e(t, m + ": "+ e.message)
     val me = e.message
-    LogScope.launch {
+    appMainScope.launch {
         trimSessionLogs()
-        if (appPrefs.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m: $me"))
+        if (appPrefsFlow!!.value.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m: $me"))
         sessionLogs.add("${fullDateTimeString()} $t: Error: $m: $me")
     }
 }
 
 fun LogeFor(t: String, episodeId: Long?, m: String) {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.e(t, m)
-    LogScope.launch {
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.e(t, m)
+    appMainScope.launch {
         trimSessionLogs()
-        if (appPrefs.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m"))
+        if (appPrefsFlow!!.value.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m"))
         sessionLogs.add("${fullDateTimeString()} $t: $episodeId Error: $m")
     }
 }
 
 fun Logs(t: String, m: String) {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.e(t, m)
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.e(t, m)
     showStackTrace()
-    LogScope.launch {
+    appMainScope.launch {
         trimSessionLogs()
-        if (appPrefs.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m "))
+        if (appPrefsFlow!!.value.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m "))
         sessionLogs.add("${fullDateTimeString()} $t: Error: $m ")
     }
 }
 
 fun LogsFor(t: String, episodeId: Long?, m: String) {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.e(t, m)
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.e(t, m)
     showStackTrace()
-    LogScope.launch {
+    appMainScope.launch {
         trimSessionLogs()
-        if (appPrefs.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m "))
+        if (appPrefsFlow!!.value.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "Error: $m "))
         sessionLogs.add("${fullDateTimeString()} $t: $episodeId Error: $m ")
     }
 }
 
 fun Logs(t: String, e: Throwable, m: String = "") {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.e(t, m + ": "+ e.message + "\n" + Log.getStackTraceString(e))
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.e(t, m + ": "+ e.message + "\n" + Log.getStackTraceString(e))
     val me = e.message
-    LogScope.launch {
+    appMainScope.launch {
         trimSessionLogs()
-        if (appPrefs.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "$m Error: $me"))
+        if (appPrefsFlow!!.value.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "$m Error: $me"))
         sessionLogs.add("${fullDateTimeString()} $t: $m Error: $me")
     }
 }
 
 fun LogsFor(t: String, episodeId: Long?, e: Throwable, m: String = "") {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.e(t, m + ": "+ e.message + "\n" + Log.getStackTraceString(e))
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.e(t, m + ": "+ e.message + "\n" + Log.getStackTraceString(e))
     val me = e.message
-    LogScope.launch {
+    appMainScope.launch {
         trimSessionLogs()
-        if (appPrefs.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "$m Error: $me"))
+        if (appPrefsFlow!!.value.showErrorToasts) toastMessages.add(ToastMessage(t = t, m = "$m Error: $me"))
         sessionLogs.add("${fullDateTimeString()} $t: $episodeId $m Error: $me")
     }
 }
 
 fun Logt(t: String, m: String) {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.d(t, m)
-    LogScope.launch {
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.d(t, m)
+    appMainScope.launch {
         trimSessionLogs()
         toastMessages.add(ToastMessage(t = t, m = m))
         sessionLogs.add("${fullDateTimeString()} $t: $m")
@@ -121,8 +119,8 @@ fun Logt(t: String, m: String) {
 }
 
 fun LogtFor(t: String, episodeId: Long?, m: String) {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) Log.d(t, m)
-    LogScope.launch {
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) Log.d(t, m)
+    appMainScope.launch {
         trimSessionLogs()
         toastMessages.add(ToastMessage(t = t, m = m))
         sessionLogs.add("${fullDateTimeString()} $t: $episodeId $m")
@@ -136,14 +134,14 @@ fun LogFor(t: String, feed: Feed, success: Boolean, message: String, reason:  Do
 }
 
 fun showStackTrace() {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) {
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) {
         val stackTraceElements = Thread.currentThread().stackTrace
         stackTraceElements.forEach { element -> Log.w("showStackTrace", element.toString()) }
     }
 }
 
 fun stackTraceShort() {
-    if (BuildConfig.DEBUG || appPrefs.printDebugLogs) {
+    if (BuildConfig.DEBUG || appPrefsFlow!!.value.printDebugLogs) {
         val stackTrace = Thread.currentThread().stackTrace
         val caller = if (stackTrace.size > 4) stackTrace[4] else null
         Log.d("stackTraceShort", "${caller?.className}.${caller?.methodName}")

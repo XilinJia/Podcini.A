@@ -4,7 +4,7 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.FeedSearchResult
-import ac.mdiq.podcini.storage.database.appAttribs
+import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.OnlineFeedItem
@@ -120,7 +120,7 @@ class DiscoveryVM: ViewModel() {
 
     init {
         timeIt("$TAG start of init")
-        countryCode = appAttribs.topChartCountryCode
+        countryCode = appAttribsFlow!!.value.topChartCountryCode
         Logd(TAG, "init countryCode: $countryCode")
         for (code in Locale.getISOCountries()) {
             val countryName = Locale.Builder().setRegion(code).build().displayCountry
@@ -289,7 +289,7 @@ fun TopChartScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     if (vm.countryNameCodeMap.containsKey(vm.selectedCountry)) vm.countryCode = vm.countryNameCodeMap[vm.selectedCountry]!!
-                    upsertBlk(appAttribs) { it.topChartCountryCode = vm.countryCode }
+                    upsertBlk(appAttribsFlow!!.value) { it.topChartCountryCode = vm.countryCode }
 //                    EventFlow.postEvent(FlowEvent.DiscoveryDefaultUpdateEvent())
                     vm.loadToplist(vm.countryCode)
                     onDismiss()

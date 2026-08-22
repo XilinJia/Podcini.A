@@ -1,3 +1,23 @@
+# 12.8.0
+
+* in FeedSettings screen, enabled Audo-enqueue/download policy setting when setting for multiple feeds
+* added a more versatile episodes sorting routine 
+* enabled feed based sorting in most modes of Facets screen
+* changed "Views per day" to "Trending" and enabled the sorting (if supported) in FeedDetails and Facets screens
+* amended Todo editing
+	* due time setting is in one field, needs to be confirmed
+	* episode will play at due time only when Notify is checked
+* in Timer editing, due time setting is in one field
+* in Overview of Statistics, fixed today's date
+* appAttribs and appPrefs are made into flows
+* in Remote tab of Search screen
+	* search needs to be manually initiated
+	* added Apple searcher for episodes, search strictly on title
+* playback streaming migrated to supporting http/3/2/1.1 auto switch, better for high-latency networks
+	* only non-authentication based proxy is supported (someone please verify)
+* removed redundant initialization in EpisodesDownloadWorker, FeedUpdateWorker and MediaButtonReceiver
+* some code refactoring
+
 # 12.7.1
 
 * tuned app initialization
