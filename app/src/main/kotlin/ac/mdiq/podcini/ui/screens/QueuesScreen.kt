@@ -12,7 +12,7 @@ import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.buildListInfo
-import ac.mdiq.podcini.storage.database.feedOperationText
+import ac.mdiq.podcini.ui.compose.feedOperationText
 import ac.mdiq.podcini.storage.database.persistOrdered
 import ac.mdiq.podcini.storage.database.queuesFlow
 import ac.mdiq.podcini.storage.database.queuesLive

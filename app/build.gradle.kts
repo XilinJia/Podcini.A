@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 107
-        versionName = "12.8.0"
+        versionCode = 108
+        versionName = "12.8.1"
 
         ndkVersion = "29.0.14206865"
 
@@ -178,14 +178,21 @@ androidComponents {
 
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2026.08.00"))
-    implementation("androidx.compose.foundation:foundation-layout:1.12.0")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.foundation:foundation-layout")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-tooling-preview")
 
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.2")
+
+    implementation("androidx.navigation3:navigation3-runtime:1.1.6")
+    implementation("androidx.navigation3:navigation3-ui:1.1.6")
+
+    implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.11.0")
 
     implementation("androidx.annotation:annotation:1.10.0")
     implementation("androidx.core:core-ktx:1.19.0")
@@ -197,8 +204,6 @@ dependencies {
 
     implementation("androidx.glance:glance-appwidget:1.1.1")
 
-    implementation("org.chromium.net:cronet-embedded:500.0.2")
-
     implementation("androidx.media3:media3-exoplayer:1.11.0")
     implementation("androidx.media3:media3-datasource-okhttp:1.11.0")
     implementation("androidx.media3:media3-ui:1.11.0")
@@ -207,26 +212,22 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-hls:1.11.0")
     implementation("androidx.media3:media3-datasource-cronet:1.11.0")
 
+    implementation("org.chromium.net:cronet-embedded:500.0.2")
+
     implementation("com.google.android.material:material:1.14.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin_version")}")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
     implementation("org.jetbrains.kotlinx:atomicfu:0.33.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.9.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
    implementation("com.github.XilinJia:PodciniLib:1.1.2")
     implementation("io.github.xilinjia.krdb:library-base:${project.property("krdb_version")}")
 
     implementation("io.coil-kt.coil3:coil-compose:3.5.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.5.0")
-
-    implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.11.0")
-
-    implementation("androidx.navigation3:navigation3-runtime:1.1.6")
-    implementation("androidx.navigation3:navigation3-ui:1.1.6")
-
-    implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.9.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     implementation("io.ktor:ktor-http:3.5.2")
     implementation("io.ktor:ktor-client-core:3.5.2")
@@ -246,10 +247,6 @@ dependencies {
     implementation("com.squareup.okio:okio:3.18.1")
 
     implementation("net.dankito.readability4j:readability4j:1.0.8")
-
-    debugImplementation("androidx.compose.ui:ui-tooling:1.12.0")
-    //noinspection GradleDependency
-    debugImplementation("androidx.compose.ui:ui-tooling-preview:1.11.1")
 
     "freeImplementation"("org.conscrypt:conscrypt-android:2.5.3")
 

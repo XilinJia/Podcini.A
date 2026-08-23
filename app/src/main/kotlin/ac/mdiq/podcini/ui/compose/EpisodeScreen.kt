@@ -44,6 +44,8 @@ import ac.mdiq.podcini.utils.formatShortFileSize
 import ac.mdiq.podcini.utils.openInSystemDefault
 import ac.mdiq.podcini.utils.shareLink
 import android.speech.tts.TextToSpeech
+import android.view.ViewGroup
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -512,6 +514,14 @@ fun EpisodeWebView(episode: Episode) {
                                     if (isEmpty) Logd(TAG, "content is empty")
                                     view?.evaluateJavascript("document.querySelectorAll('[hidden]').forEach(el => el.removeAttribute('hidden'));", null)
                                 }
+                                override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
+                                    view?.let { v->
+                                        (v.parent as? ViewGroup)?.removeView(v)
+                                        v.destroy()
+                                    }
+                                    Loge(TAG, "WebViewClient failure")
+                                    return true
+                                }
                             }
                         }
                     },
@@ -553,6 +563,14 @@ fun EpisodeWebView(episode: Episode) {
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     val isEmpty = view?.title.isNullOrEmpty() && view?.contentDescription.isNullOrEmpty()
                                     if (isEmpty) Logd(TAG, "content is empty")
+                                }
+                                override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
+                                    view?.let { v->
+                                        (v.parent as? ViewGroup)?.removeView(v)
+                                        v.destroy()
+                                    }
+                                    Loge(TAG, "WebViewClient failure")
+                                    return true
                                 }
                             }
                             settings.loadWithOverviewMode = true

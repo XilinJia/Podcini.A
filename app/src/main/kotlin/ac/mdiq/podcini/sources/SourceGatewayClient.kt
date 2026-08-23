@@ -2,7 +2,7 @@ package ac.mdiq.podcini.sources
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.net.feed.PodcastSearcherRegistry.searcherInfos
+import ac.mdiq.podcini.net.searcher.PodcastSearcherRegistry.searcherInfos
 import ac.mdiq.podcini.playback.forcePlaybackReset
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.FeedSearchResult
@@ -191,14 +191,14 @@ object AppGatewayRegistry {
                             clients.remove(client)
                         }
                     } catch (e: Exception) {
-                        Loge(TAG, "External service unqualified or incompatible, rejected.")
+                        Loge(TAG, e, "External service bind error")
                         clients.remove(client)
                     }
                     if (continuation.isActive) continuation.resumeWith(Result.success(client))
                 }
 
                 override fun onServiceDisconnected(name: ComponentName?) {
-                    Logt(TAG, "Service disconnected")
+                    Logt(TAG, "Service ${client.attributes?.name} disconnected")
                     searcherInfos.clear()
                     client.attributes?.apply { typeClientMap.remove(feedType) }
                     client.attributes = null
@@ -208,7 +208,7 @@ object AppGatewayRegistry {
                     client.connection = null
                 }
                 override fun onBindingDied(name: ComponentName?) {
-                    Logt(TAG, "Binding died, trying to rebind service")
+                    Logt(TAG, "${client.attributes?.name} binding died, trying to rebind service")
                     searcherInfos.clear()
                     client.attributes = null
                     client.gateway = null
@@ -219,7 +219,7 @@ object AppGatewayRegistry {
                     if (continuation.isActive) continuation.resumeWith(Result.success(null))
                 }
                 override fun onNullBinding(name: ComponentName?) {
-                    Logt(TAG, "Service not bond: null binding")
+                    Logt(TAG, "Service ${client.attributes?.name} not bond: null binding, trying to rebind")
                     searcherInfos.clear()
                     client.attributes = null
                     client.gateway = null

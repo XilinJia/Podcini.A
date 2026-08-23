@@ -15,9 +15,6 @@ import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import io.ktor.http.ContentType
@@ -133,8 +130,7 @@ fun initStorage() {
     }
 }
 
-
-var tempRoottree by mutableStateOf<Uri?>(null)
+var tempRoottree: Uri? = null
 
 val persistedTrees by lazy { getAppContext().contentResolver.persistedUriPermissions.filter { DocumentsContract.isTreeUri(it.uri) }.map { it.uri }.toMutableSet() }
 

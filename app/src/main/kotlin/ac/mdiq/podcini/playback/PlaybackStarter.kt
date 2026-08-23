@@ -1,6 +1,5 @@
 package ac.mdiq.podcini.playback
 
-import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.playback.base.InTheatre.aController
 import ac.mdiq.podcini.playback.base.InTheatre.aCtrlFuture
 import ac.mdiq.podcini.playback.base.InTheatre.ensureAController
@@ -16,11 +15,6 @@ import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
-import android.content.Intent
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -28,7 +22,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.seconds
 
-var forcePlaybackReset by mutableStateOf(false)
+var forcePlaybackReset: Boolean = false
+    set(value) {
+        field = value
+        if (value) {
+            theatres[0].mPlayer?.pause(false)
+            theatres[1].mPlayer?.pause(false)
+        }
+    }
 
 class PlaybackStarter(private val media: Episode) {
     private val TAG = "PlaybackStarter"

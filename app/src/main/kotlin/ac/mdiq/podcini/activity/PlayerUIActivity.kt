@@ -3,7 +3,6 @@ package ac.mdiq.podcini.activity
 import ac.mdiq.podcini.playback.base.InTheatre.theatres
 import ac.mdiq.podcini.ui.compose.AppThemes
 import ac.mdiq.podcini.ui.compose.PodciniTheme
-import ac.mdiq.podcini.ui.compose.appTheme
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.screens.AVPlayerVM
 import ac.mdiq.podcini.ui.screens.ControlUI
@@ -33,14 +32,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 private const val TAG = "PlayerUIActivity"
 class PlayerUIActivity : ComponentActivity() {
-    private var lastTheme = appTheme
-
     override fun onCreate(savedInstanceState: Bundle?) {
 //        installSplashScreen()
         super.onCreate(savedInstanceState)
         Logd(TAG, "in onCreate")
-
-        lastTheme = appTheme
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -51,7 +46,6 @@ class PlayerUIActivity : ComponentActivity() {
         setContent {
             PodciniTheme(AppThemes.BLACK) {
                 Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp, modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars)) {
-                    
                     val vm: AVPlayerVM = viewModel()
                     Box(modifier = Modifier.fillMaxWidth().height(100.dp).border(1.dp, MaterialTheme.colorScheme.tertiary).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))) {
                         Column {

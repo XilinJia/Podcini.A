@@ -45,6 +45,7 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
 
+// TODO: need modernize
 class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(context, params), ISyncService {
 
     private var loginFail = false

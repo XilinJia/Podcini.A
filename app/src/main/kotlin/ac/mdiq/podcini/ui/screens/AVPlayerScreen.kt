@@ -396,8 +396,6 @@ fun ControlUI(vm: AVPlayerVM) {
     var showSleepTimeDialog by remember { mutableStateOf(false) }
     if (showSleepTimeDialog) SleepTimerDialog { showSleepTimeDialog = false }
 
-    LaunchedEffect(forcePlaybackReset) { if (forcePlaybackReset) player?.pause(false)}
-
     @Composable
     fun SpeedometerWithArc(speed: Float, maxSpeed: Float, trackColor: Color, modifier: Modifier) {
         val needleAngleRad = remember(speed) { Math.toRadians(((speed / maxSpeed) * 270f - 225).toDouble()) }

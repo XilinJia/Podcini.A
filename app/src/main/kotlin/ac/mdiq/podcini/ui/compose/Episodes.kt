@@ -2,7 +2,10 @@ package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.automation.cancel
+import ac.mdiq.podcini.automation.cancelTimer
 import ac.mdiq.podcini.automation.playEpisodeAtTime
+import ac.mdiq.podcini.automation.reset
 import ac.mdiq.podcini.net.download.RequestType
 import ac.mdiq.podcini.net.sync.SynchronizationSettings.isProviderConnected
 import ac.mdiq.podcini.net.sync.model.EpisodeAction
@@ -785,6 +788,7 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
             }
             Button(onClick = {
                 runOnIOScope {
+                    val priorDueTime = todo?.dueTime ?: 0L
                     try {
                         if (setDueTime) {
                             val format = LocalDateTime.Format {
@@ -816,7 +820,10 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
                             if (setDueTime) todo_.dueTime = dueTime
                         }
                         if (notify) {
-                            if (dueTime > sysTime) playEpisodeAtTime(dueTime, episode.id)
+                            if (dueTime > sysTime) {
+                                if (priorDueTime > 0L && priorDueTime != dueTime) cancelTimer(priorDueTime)
+                                playEpisodeAtTime(dueTime, episode.id)
+                            }
                             else Logt(TAG, "Can not notify at the due time in the past")
                         }
                     } catch (e: Throwable) { Loge(TAG, e, "editing Todo error")}
@@ -830,9 +837,7 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
 @Composable
 fun EpisodeTimetableDialog(episode: Episode, onDismiss: () -> Unit, cb: (Timer)->Unit) {
     CommonDialogSurface(onDismiss = onDismiss) {
-//        val timers = remember(episode.id, appAttribs) { appAttribs.timetable.filter { it.episodeId == episode.id } }
-        val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
-        val timers = appAttribs.timetable.filter { it.episodeId == episode.id }
+        val timers = remember { appAttribsFlow!!.value.timetable.filter { it.episodeId == episode.id } }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             for (timer in timers) {
                 Row {
@@ -842,8 +847,8 @@ fun EpisodeTimetableDialog(episode: Episode, onDismiss: () -> Unit, cb: (Timer)-
                     })
                     Spacer(Modifier.width(100.dp))
                     Icon(imageVector = Icons.Filled.Delete, contentDescription = "delete", modifier = Modifier.clickable {
-                        timer.cancel()
-                        upsertBlk(appAttribs) { it.timetable.remove(timer) }
+                        cancel(timer)
+                        upsertBlk(appAttribsFlow!!.value) { it.timetable.remove(timer) }
                         onDismiss()
                     })
                 }
@@ -888,15 +893,8 @@ fun EditTimerDialog(timer: Timer? = null, episode: Episode? = null, cb: (Timer)-
                         if (timer != null) {
                             Logd(TAG, "triggerTime: ${timer.triggerTime} $triggerTime")
                             val timer_ = upsertBlkEmb(timer) { it.triggerTime = triggerTime }
-//                            val timetable = appAttribs.timetable.toMutableList()
-//                            timetable.remove(timer)
-//                            timetable.add(timer_)
-//                            upsertBlk(appAttribs) {
-//                                it.timetable.clear()
-//                                it.timetable.addAll(timetable)
-//                            }
                             cb(timer_)
-                            timer_.reset()
+                            reset(timer_)
                         } else if (episode != null) playEpisodeAtTime(triggerTime, episode.id, isRepeat)
                         onDismiss()
                     }

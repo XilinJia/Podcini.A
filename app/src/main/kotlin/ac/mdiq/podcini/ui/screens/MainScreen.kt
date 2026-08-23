@@ -202,6 +202,7 @@ fun MainScreen() {
                 Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize().padding(top = paddingValues.calculateTopPadding(), bottom = dynamicBottomPadding)) {
                     NavDisplay(backStack = backStack, onBack = { navBack() }, entryProvider = myEntryProvider, entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()))
                     if ((theatres[0].mPlayer?.curEpisode?.id ?: -1L) > 0 && psState == PSState.Hidden) Text(stringResource(R.string.player_in_drawer), color = Color.Black, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.LightGray).align(Alignment.BottomCenter))
+//                    if () Text(stringResource(R.string.player_in_drawer), color = Color.Red, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.background(Color.LightGray).align(Alignment.BottomCenter))
                 }
             }
         }

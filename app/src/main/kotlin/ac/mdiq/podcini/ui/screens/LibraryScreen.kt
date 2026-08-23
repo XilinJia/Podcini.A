@@ -22,7 +22,7 @@ import ac.mdiq.podcini.net.utils.NetworkUtils.getLocalIpAddress
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.feedCount
-import ac.mdiq.podcini.storage.database.feedOperationText
+import ac.mdiq.podcini.ui.compose.feedOperationText
 import ac.mdiq.podcini.storage.database.loadLocalFolder
 import ac.mdiq.podcini.storage.database.queuesFlow
 import ac.mdiq.podcini.storage.database.queuesLive

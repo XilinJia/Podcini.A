@@ -5,8 +5,7 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.settings.MediaFilesTransporter
 import ac.mdiq.podcini.net.feed.FeedUpdateManager.checkAndScheduleUpdateTaskOnce
-import ac.mdiq.podcini.net.feed.FeedUpdateManager.getInitialDelay
-import ac.mdiq.podcini.net.feed.FeedUpdateManager.nextRefreshTime
+import ac.mdiq.podcini.net.feed.FeedUpdateManager.intervalInMillis
 import ac.mdiq.podcini.net.sync.SyncService
 import ac.mdiq.podcini.net.sync.SynchronizationProviderViewData
 import ac.mdiq.podcini.net.sync.SynchronizationSettings
@@ -20,6 +19,7 @@ import ac.mdiq.podcini.shared.PodciniHttpClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.resetClient
 import ac.mdiq.podcini.shared.ProxyConfig
+import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sources.AppGatewayRegistry
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -47,6 +47,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.fullDateTimeString
 import android.app.Activity.RESULT_OK
 import android.content.Context.WIFI_SERVICE
 import android.content.Intent
@@ -351,8 +352,6 @@ fun NetworkStorageScreen() {
     }
 
     var refreshInterval by remember { mutableStateOf(appPrefs.autoUpdateInterval.toString()) }
-    LaunchedEffect(Unit) { getInitialDelay() }
-
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp).verticalScroll(rememberScrollState()).background(MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
             val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
@@ -388,6 +387,16 @@ fun NetworkStorageScreen() {
                 }
             }
             Text(stringResource(R.string.feed_refresh_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+            fun getRefreshTime(): String {
+                val initialDelay = intervalInMillis
+                val lastUpdateTime = appAttribsFlow!!.value.prefLastFullUpdateTime
+                Logd(TAG, "lastUpdateTime: $lastUpdateTime updateInterval: $intervalInMillis")
+                return if (lastUpdateTime == 0L) {
+                    if (initialDelay != 0L) fullDateTimeString(nowInMillis() + initialDelay + intervalInMillis)
+                    else getAppContext().getString(R.string.before) + fullDateTimeString(nowInMillis() + intervalInMillis)
+                } else fullDateTimeString(lastUpdateTime + intervalInMillis)
+            }
+            val nextRefreshTime = remember { getRefreshTime() }
             if (refreshInterval != "0") Text(stringResource(R.string.feed_next_refresh_time) + " " + nextRefreshTime, color = textColor, style = MaterialTheme.typography.bodySmall)
         }
         TitleSummarySwitchRow(R.string.pref_fetch_media_size, R.string.pref_fetch_media_size_sum, appPrefs.fetchmediaSizes) {
@@ -761,8 +770,8 @@ fun SynchronizationScreen() {
         )
     }
 
-    var showWifiAuthenticationDialog by remember { mutableStateOf(false) }
-    if (showWifiAuthenticationDialog) WifiAuthenticationDialog { showWifiAuthenticationDialog = false }
+//    var showWifiAuthenticationDialog by remember { mutableStateOf(false) }
+//    if (showWifiAuthenticationDialog) WifiAuthenticationDialog { showWifiAuthenticationDialog = false }
 
     var chooseProviderAndLoginDialog by remember { mutableStateOf(false) }
     if (chooseProviderAndLoginDialog) ChooseProviderAndLoginDialog { chooseProviderAndLoginDialog = false }
@@ -773,9 +782,9 @@ fun SynchronizationScreen() {
     //    }
 
 
-    TitleSummaryActionColumn(R.string.wifi_sync, R.string.wifi_sync_summary_unchoosen) {
-        showWifiAuthenticationDialog = true
-    }
+//    TitleSummaryActionColumn(R.string.wifi_sync, R.string.wifi_sync_summary_unchoosen) {
+//        showWifiAuthenticationDialog = true
+//    }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 10.dp)) {
         var titleRes by remember { mutableIntStateOf(0) }
         var summaryRes by remember { mutableIntStateOf(R.string.synchronization_summary_unchoosen) }

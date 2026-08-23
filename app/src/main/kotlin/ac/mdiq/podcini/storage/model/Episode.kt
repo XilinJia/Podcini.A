@@ -25,7 +25,6 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.LogsFor
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.fullDateTimeString
-import androidx.compose.runtime.Stable
 import io.github.xilinjia.krdb.ext.realmListOf
 import io.github.xilinjia.krdb.ext.realmSetOf
 import io.github.xilinjia.krdb.ext.toRealmSet
@@ -50,7 +49,6 @@ import kotlin.time.Duration.Companion.minutes
 
 private const val smartMarkAsPlayedPercent: Float = 0.95f
 
-@Stable
 class Episode : RealmObject {
     @PrimaryKey
     var id: Long = 0L   // increments from nowInMillis()

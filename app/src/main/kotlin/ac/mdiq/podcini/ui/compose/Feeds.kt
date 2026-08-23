@@ -105,6 +105,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+var feedOperationText by mutableStateOf("")
+
 @Composable
 fun ChooseRatingDialog(selected: List<Feed>, onDismiss: () -> Unit) {
     CommonPopupCard(onDismiss = onDismiss) {

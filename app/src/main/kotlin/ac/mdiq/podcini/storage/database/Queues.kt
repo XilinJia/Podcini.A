@@ -4,6 +4,7 @@ package ac.mdiq.podcini.storage.database
 import ac.mdiq.podcini.playback.base.InTheatre.actQueue
 import ac.mdiq.podcini.playback.base.InTheatre.theatres
 import ac.mdiq.podcini.shared.getEntityId
+import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.PlayQueue
 import ac.mdiq.podcini.storage.model.QueueEntry
@@ -11,23 +12,15 @@ import ac.mdiq.podcini.storage.model.VIRTUAL_QUEUE_ID
 import ac.mdiq.podcini.storage.specs.EnqueueLocation
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
 import ac.mdiq.podcini.storage.specs.EpisodeState
-import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent.QueueEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.timeIt
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import io.github.xilinjia.krdb.notifications.ResultsChange
 import io.github.xilinjia.krdb.notifications.UpdatedResults
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -39,7 +32,7 @@ const val VIRTUAL_QUEUE_SIZE = 50
 val queuesFlow = realm.query(PlayQueue::class).sort("name").asFlow()
 var queuesLive = listOf<PlayQueue>()
     private set
-var virQueue by mutableStateOf(PlayQueue())
+private var virQueue = PlayQueue()
 
 var queuesJob: Job? = null
 

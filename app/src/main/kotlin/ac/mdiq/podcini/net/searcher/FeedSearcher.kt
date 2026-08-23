@@ -1,4 +1,4 @@
-package ac.mdiq.podcini.net.feed
+package ac.mdiq.podcini.net.searcher
 
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.shared.FeedSearchResult
@@ -10,9 +10,6 @@ import ac.mdiq.podcini.sources.sourceClients
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.formatEpochMillisSimple
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.fleeksoft.ksoup.Ksoup
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
@@ -296,8 +293,6 @@ object PodcastSearcherRegistry {
             return field
         }
         private set
-
-    var searchProvider by mutableStateOf(searcherInfos.find { it.tag == "Combined" }!!.searcher)
 
     suspend fun lookupUrl(url: String): String {
         for (searcherInfo in searcherInfos) {

@@ -4,9 +4,8 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.OpmlBackupAgent.Companion.performRestore
 import ac.mdiq.podcini.config.settings.OpmlTransporter.OpmlElement
-import ac.mdiq.podcini.net.feed.FeedSearchers
-import ac.mdiq.podcini.net.feed.PodcastSearcherRegistry.searchProvider
-import ac.mdiq.podcini.net.feed.PodcastSearcherRegistry.searcherInfos
+import ac.mdiq.podcini.net.searcher.FeedSearchers
+import ac.mdiq.podcini.net.searcher.PodcastSearcherRegistry.searcherInfos
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.prepareUrl
 import ac.mdiq.podcini.sources.sourceClients
@@ -89,6 +88,8 @@ import kotlinx.coroutines.withContext
 
 private var searchText by mutableStateOf("")
 internal var searchResults by mutableStateOf<List<FeedSearchResult>>(listOf())
+
+var searchProvider by mutableStateOf(searcherInfos.find { it.tag == "Combined" }!!.searcher)
 
 fun searchFeedsOnline(searcherName: String = "", query: String? = null) {
     searchText = query ?: ""

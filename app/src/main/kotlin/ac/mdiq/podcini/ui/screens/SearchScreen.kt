@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.net.feed.AppleMediaSearcher
+import ac.mdiq.podcini.net.searcher.AppleMediaSearcher
 import ac.mdiq.podcini.playback.base.InTheatre.actQueue
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.MediaSearcher
@@ -203,38 +203,41 @@ class SearchVM: ViewModel() {
     suspend fun searchRemoteMedia() {
         val remoteMediaLimit = 1000
         searchingRemote = true
-        fun addItems( items: List<EpisodeIPC>, type: String?) {
-            if (items.isNotEmpty()) {
-                val list = items.map { it.toEpisode().apply {
-                    id = getEntityId()
-                    feedType = type
-                } }.toMutableList()
-                list.reorderWith(episodeSortOrder)
-                remoteMedia = list
-            }
+        val results = mutableListOf<Episode>()
+        fun addItems(items: List<EpisodeIPC>, type: String?) {
+            val list = items.map { it.toEpisode().apply {
+                id = getEntityId()
+                feedType = type
+            } }
+            if (list.isNotEmpty()) results.addAll(list)
         }
-        remoteMedia = listOf()
         Logd(TAG, "searchRemoteMedia searchers ${searchers.size}")
         for (s in searchers) {
-            val type = if (s.name in listOf("Apple", "PodcastIndex")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
+            val type = if (s.name in listOf("Apple")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
             val items = s.searchQuick(curSearchString)
-            Logd(TAG, "searchQuick items: ${items.size}")
+            Logd(TAG, "searchQuick ${s.name} items: ${items.size}")
             addItems(items, type)
         }
-        var counter = remoteMedia.size
-        while (remoteMedia.size < remoteMediaLimit) {
+        remoteMedia = results.toList()
+        var counter = results.size
+        while (results.size < remoteMediaLimit) {
             for (s in searchers) {
-                val type = if (s.name in listOf("Apple", "PodcastIndex")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
+                val type = if (s.name in listOf("Apple")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
                 val items = s.getMoreItems()
-                Logd(TAG, "getMoreItems items: ${items.size}")
-                if (items.isNotEmpty()) addItems(items, type)
+                Logd(TAG, "searchRemoteMedia ${s.name} more items: ${items.size}")
+                addItems(items, type)
             }
-            if (counter >= remoteMedia.size) break
-            counter = remoteMedia.size
+            remoteMedia = results.toList()
+            if (counter >= results.size) break
+            counter = results.size
         }
+        Logd(TAG, "searchRemoteMedia found items: $counter")
+        results.reorderWith(episodeSortOrder)
+        remoteMedia = results.toList()
         remoteMediaCache.put(curSearchString, remoteMedia)
         searchingRemote = false
     }
+
     data class Triplet(val episodes: Flow<ResultsChange<Episode>>, val feeds: List<Feed>, val pafeeds: List<PAFeed>)
 
     val episodesFlow: StateFlow<List<Episode>> = snapshotFlow { Pair(curSearchString, episodeSortOrder) }.flatMapLatest { (queryText, order) ->

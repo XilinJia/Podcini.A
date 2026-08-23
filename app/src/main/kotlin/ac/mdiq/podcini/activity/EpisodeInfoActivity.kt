@@ -4,8 +4,6 @@ import ac.mdiq.podcini.ui.compose.CommonConfirmDialog
 import ac.mdiq.podcini.ui.compose.CommonToast
 import ac.mdiq.podcini.ui.compose.LargePoster
 import ac.mdiq.podcini.ui.compose.PodciniTheme
-import ac.mdiq.podcini.ui.compose.appTheme
-
 import ac.mdiq.podcini.ui.compose.commonConfirms
 import ac.mdiq.podcini.ui.compose.commonMessage
 import ac.mdiq.podcini.ui.screens.EpisodeInfo
@@ -31,14 +29,11 @@ private const val TAG = "EpisodeInfoActivity"
 
 class EpisodeInfoActivity : ComponentActivity() {
     private val currentEpisodeId = MutableStateFlow<Long?>(null)
-    private var lastTheme = appTheme
 
     override fun onCreate(savedInstanceState: Bundle?) {
 //        installSplashScreen()
         super.onCreate(savedInstanceState)
         Logd(TAG, "in onCreate")
-
-        lastTheme = appTheme
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {

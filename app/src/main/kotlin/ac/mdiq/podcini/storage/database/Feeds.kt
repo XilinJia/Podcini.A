@@ -26,7 +26,6 @@ import ac.mdiq.podcini.utils.Loge
 import android.app.backup.BackupManager
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.xilinjia.krdb.ext.isManaged
 import io.github.xilinjia.krdb.notifications.ResultsChange
@@ -37,8 +36,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 private const val TAG: String = "Feeds"
-
-var feedOperationText by mutableStateOf("")
 
 var allFeeds = realm.query(Feed::class).find()
 var feedsMap: Map<Long, Feed> = allFeeds.associateBy { it.id }

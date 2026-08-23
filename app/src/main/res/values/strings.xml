@@ -627,7 +627,7 @@
     <string name="pref_fetch_media_size_sum">Fetch remote media size involves extra network queries. It\'s not performed for feeds set for streaming. Enable this for feeds set to be downloaded.</string>
 
     <string name="pref_use_external_apps">Use external apps</string>
-    <string name="pref_use_external_app_sum">This allows Podcini to establish/re-establish communication with other compatible apps installed. If you don\'t have such an app installed on your device, this should be set to false.</string>
+    <string name="pref_use_external_app_sum">This allows Podcini to establish/re-establish communication with external source provider apps for contents other than normal podcasts. If you don\'t have such an app installed on your device, this should be set to false.</string>
 
     <string name="pref_watch_storage_title">Watch available space</string>
     <string name="pref_watch_storage_sum">Specifies if available space is ensured at download time. If you don\'t have a tight storage, this is better set to false.</string>

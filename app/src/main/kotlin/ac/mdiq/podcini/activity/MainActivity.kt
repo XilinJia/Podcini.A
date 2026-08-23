@@ -1,7 +1,6 @@
 package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.BuildConfig
-import ac.mdiq.podcini.PodciniApp.Companion.forceRestart
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.activity.starter.MainActivityStarter
 import ac.mdiq.podcini.net.feed.FeedUpdateManager
@@ -22,7 +21,6 @@ import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.autoBackup
 import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.PodciniTheme
-import ac.mdiq.podcini.ui.compose.appTheme
 import ac.mdiq.podcini.ui.compose.commonConfirms
 import ac.mdiq.podcini.ui.screens.Facets
 import ac.mdiq.podcini.ui.screens.FeedDetails
@@ -94,7 +92,6 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : BaseActivity() {
-    private var lastTheme = appTheme
     private var intentState by mutableStateOf<Intent?>(null)
 
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -133,8 +130,6 @@ class MainActivity : BaseActivity() {
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
-
-        lastTheme = appTheme
 
         window.requestFeature(Window.FEATURE_ACTION_MODE_OVERLAY)
         enableEdgeToEdge(window)
@@ -260,10 +255,10 @@ class MainActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         autoBackup()
-        if (lastTheme != appTheme) {
-            finish()
-            forceRestart()
-        }
+//        if (lastTheme != appTheme) {
+//            finish()
+//            forceRestart()
+//        }
         val curTime = nowInMillis()
         Logd(TAG, "onResume curTime: $curTime postRepeatsTime: ${appPrefsFlow!!.value.postRepeatsTime}")
         if ((curTime - appPrefsFlow!!.value.postRepeatsTime) > 3600000L * 24)

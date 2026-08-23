@@ -22,15 +22,11 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
-import ac.mdiq.podcini.utils.fullDateTimeString
 import android.Manifest
 import android.content.Context
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.os.Build
 import androidx.annotation.RequiresPermission
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints.Builder
 import androidx.work.CoroutineWorker
@@ -67,11 +63,9 @@ object FeedUpdateManager {
 
     const val KEY_IS_PERIODIC = "is_periodic"
 
-    private val intervalInMillis: Long
+    val intervalInMillis: Long
         get() = appPrefsFlow!!.value.autoUpdateInterval.toLong() * 1.minutes.inWholeMilliseconds
-
-    var nextRefreshTime by mutableStateOf("")
-
+    
     private fun oneRequest(initialDelay: Long): OneTimeWorkRequest {
         return OneTimeWorkRequest.Builder(FeedUpdateWorker::class.java)
             .setInputData(workDataOf(KEY_IS_PERIODIC to true))
@@ -82,18 +76,6 @@ object FeedUpdateManager {
             .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
             .setBackoffCriteria(BackoffPolicy.LINEAR, intervalInMillis / 4, TimeUnit.MILLISECONDS)
             .build()
-    }
-
-    fun getInitialDelay(now: Boolean = false): Long {
-        val initialDelay = if (now) 0L else intervalInMillis
-        val lastUpdateTime = appAttribsFlow!!.value.prefLastFullUpdateTime
-        Logd(TAG, "lastUpdateTime: $lastUpdateTime updateInterval: $intervalInMillis")
-        nextRefreshTime = if (lastUpdateTime == 0L) {
-            if (initialDelay != 0L) fullDateTimeString(nowInMillis() + initialDelay + intervalInMillis)
-            else getAppContext().getString(R.string.before) + fullDateTimeString(nowInMillis() + intervalInMillis)
-        } else fullDateTimeString(lastUpdateTime + intervalInMillis)
-
-        return initialDelay
     }
 
     fun scheduleUpdateTaskOnce(replace: Boolean, force: Boolean = false) {
@@ -117,7 +99,7 @@ object FeedUpdateManager {
             Logt(TAG, context.getString(R.string.mobile_feed_refresh_message))
             doItNow = false
         }
-        val initialDelay = getInitialDelay(doItNow)
+        val initialDelay = if (doItNow) 0L else intervalInMillis
         Logd(TAG, "initialDelay: $initialDelay")
         val oneTimeRequest = oneRequest(initialDelay)
         WorkManager.getInstance(context).enqueueUniqueWork(feedUpdateOnceWorkId, policy, oneTimeRequest)
@@ -217,7 +199,7 @@ object FeedUpdateManager {
                 }
                 if (intervalInMillis == 0L) WorkManager.getInstance(context).cancelUniqueWork(feedUpdateOnceWorkId)
                 else {
-                    val initialDelay = getInitialDelay()
+                    val initialDelay = intervalInMillis
                     Logd(FeedUpdateManager.TAG, "initialDelay: $initialDelay")
                     val oneTimeRequest = oneRequest(initialDelay)
                     WorkManager.getInstance(context).enqueueUniqueWork(feedUpdateOnceWorkId, ExistingWorkPolicy.APPEND_OR_REPLACE, oneTimeRequest)

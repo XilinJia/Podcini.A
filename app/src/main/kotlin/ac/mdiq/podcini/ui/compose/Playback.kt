@@ -472,8 +472,11 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                     }
                     if (!toEnd) TextField(value = etxtTime, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.time_minutes)) }, singleLine = true,
                         onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) etxtTime = it })
-                    if (theatres[0].mPlayer?.curEpisode != null && PlaybackService.isRunning) Button(modifier = Modifier.fillMaxWidth(), onClick = {
-                        if (theatres[0].mPlayer?.curEpisode == null) return@Button
+                    if (theatres[0].mPlayer?.curEpisode != null) Button(modifier = Modifier.fillMaxWidth(), onClick = {
+                        if (!PlaybackService.isRunning) {
+                            Logt(TAG, "Can't set sleep timer: service has not started")
+                            return@Button
+                        }
                         val time = if (!toEnd) etxtTime.toLong() else (max(((theatres[0].mPlayer!!.curEpisode!!.duration) - (theatres[0].mPlayer!!.curEpisode!!.position)), 0) / theatres[0].mPlayer!!.curPBSpeed).toLong().milliseconds.inWholeMinutes // ms to minutes
                         Logd("SleepTimerDialog", "Sleep timer set: $time")
                         if (time > 0L) {

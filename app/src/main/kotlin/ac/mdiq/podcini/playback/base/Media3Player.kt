@@ -654,30 +654,10 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 
         val extractorsFactory = DefaultExtractorsFactory()
             .setConstantBitrateSeekingEnabled(true)
-//            .setMp3ExtractorFlags(Mp3Extractor.FLAG_ENABLE_INDEX_SEEKING)
-//            .setMp4ExtractorFlags(Mp4Extractor.FLAG_WORKAROUND_IGNORE_EDIT_LISTS)
-//        val baseHttpDataSourceFactory = OkHttpDataSource.Factory(getOKHttpClient())
-//        baseHttpDataSourceFactory.setTransferListener(
-//            object : TransferListener {
-//                override fun onTransferInitializing(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
-//                    Logd(TAG, "HTTP INITIALIZING: ${dataSpec.uri}")
-//                }
-//                override fun onTransferStart(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
-//                    Logd(TAG, "HTTP TRANSFER START: ${dataSpec.uri}")
-//                }
-//                override fun onBytesTransferred(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean, bytesTransferred: Int) {}
-//                override fun onTransferEnd(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
-//                    Logd(TAG, "HTTP TRANSFER END")
-//                }
-//            }
-//        )
-//        val upstreamFactory = DefaultDataSource.Factory(context, baseHttpDataSourceFactory)
-
         val upstreamFactory = createHttpDataSourceFactory(context, networkExecutor)
         val cacheDataSourceFactory = CacheDataSource.Factory()
             .setCache(getCache())
             .setUpstreamDataSourceFactory(upstreamFactory)
-//            .setCacheWriteDataSinkFactory(cacheDataSinkFactory)
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
         cacheDataSourceFactory.setEventListener(
             object : CacheDataSource.EventListener {
@@ -887,7 +867,11 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     override fun setPlaybackParams(speed: Float, pitch: Float) {
-        if (castPlayer == null || abs(castPlayer!!.playbackParameters.speed - speed) < 0.01f) return
+        if (castPlayer == null) return
+
+        resetPosSaverInterval(speed)
+
+        if (abs(castPlayer!!.playbackParameters.speed - speed) < 0.01f) return
         EventFlow.postEvent(FlowEvent.SpeedChangedEvent(playerId, speed))
         Logd(TAG, "setPlaybackParams speed=$speed pitch=${playbackParameters.pitch}")
         val wantsOffload = speed == 1f
@@ -908,8 +892,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         val targetMaxBufferMs = maxOf(baseMaxBufferMs, (baseMinBufferMs * speed).toInt() + 10_000)
         Logd(TAG, "set player buffer: $baseMinBufferMs $targetMaxBufferMs $targetPlaybackMs $targetRebufferMs")
         loadControl?.updateBufferParameters(minBufferMs = baseMinBufferMs, maxBufferMs = targetMaxBufferMs, playbackMs = targetPlaybackMs, rebufferMs = targetRebufferMs, true)
-
-        resetPosSaverInterval(speed)
 
         playbackParameters = PlaybackParameters(if (speed <= 0) playbackParameters.speed else speed, if (pitch <= 0f) playbackParameters.pitch else pitch)
         setPlaybackParams()

@@ -12,7 +12,7 @@ import ac.mdiq.podcini.sources.isExtFeed
 import ac.mdiq.podcini.sources.typeClientMap
 import ac.mdiq.podcini.storage.database.FeedAssistant
 import ac.mdiq.podcini.storage.database.buildListInfo
-import ac.mdiq.podcini.storage.database.feedOperationText
+import ac.mdiq.podcini.ui.compose.feedOperationText
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesAsListFlow
 import ac.mdiq.podcini.storage.database.getHistoryAsFlow

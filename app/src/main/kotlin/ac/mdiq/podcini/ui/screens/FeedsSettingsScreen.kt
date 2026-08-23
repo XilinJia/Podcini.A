@@ -609,6 +609,76 @@ fun FeedsSettingsScreen() {
                 }
             }
 
+            var autoDLEQIndex by remember { mutableIntStateOf(when {
+                feedToSet.autoEnqueue -> 0
+                feedToSet.autoDownload -> 2
+                else -> 1
+            }) }
+            //                    prefer streaming
+            var preferStreaming by remember { mutableStateOf(feedToSet.prefStreamOverDownload) }
+            if (extClient?.attributes?.supportDownload != false || !preferStreaming || feedsToSet.size > 1) {
+                TitleSummarySwitch(R.string.pref_stream_over_download_title, R.string.pref_stream_over_download_sum, R.drawable.ic_stream, preferStreaming) {
+                    preferStreaming = it
+                    if (preferStreaming) {
+                        prefStreamOverDownload = true
+                        if (autoDLEQIndex == 2) autoDLEQIndex = 0
+                    }
+                    runOnIOScope {
+                        realm.write { for (f in feedsToSet) {
+                            val client = clientByFeed(f)
+                            if (client?.attributes?.supportDownload == true || preferStreaming) findLatest(f)?.let { f ->
+                                f.prefStreamOverDownload = preferStreaming
+                                if (preferStreaming) f.autoDownload = false
+                            }
+                        } }
+                    }
+                }
+            }
+
+            //                    preferred action
+            val actions = remember { listOf("Auto") + (if (extClient?.attributes?.supportDownload != false) playActions.map { it.name }  else listOf()) + streamActions.map { it.name } + listOf(ButtonTypes.TTS_NOW.name, ButtonTypes.TTS.name, ButtonTypes.WEBSITE.name) }
+            val curAction = remember(feedToSet.prefActionType) { feedToSet.prefActionType ?: "Auto" }
+            var showChooseAction by remember { mutableStateOf(false) }
+            if (showChooseAction) Popup(onDismissRequest = { showChooseAction = false }, alignment = Alignment.TopStart, offset = IntOffset(100, 100), properties = PopupProperties(focusable = true)) {
+                Card(modifier = Modifier.width(300.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
+                        for (action in actions) {
+                            FilterChip(label = { Text(action) }, selected = curAction == action, border = filterChipBorder(curAction == action),
+                                onClick = {
+                                    if (action == "Auto") runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.let { it.prefActionType = null } } } }
+                                    else {
+                                        if (action in streamActions.map { it.name }) preferStreaming = true else if (action in playActions.map { it.name }) preferStreaming = false
+                                        if (preferStreaming) {
+                                            prefStreamOverDownload = true
+                                            if (autoDLEQIndex == 2) autoDLEQIndex = 0
+                                        }
+                                        runOnIOScope {
+                                            realm.write {
+                                                for (f in feedsToSet) {
+                                                    findLatest(f)?.let {
+                                                        it.prefActionType = action
+                                                        it.prefStreamOverDownload = preferStreaming
+                                                        if (preferStreaming) it.autoDownload = false
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    showChooseAction = false
+                                })
+                        }
+                    }
+                }
+            }
+            Column {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(ImageVector.vectorResource(id = R.drawable.play_stream_svgrepo_com), "", tint = textColor)
+                    Spacer(modifier = Modifier.width(20.dp))
+                    Text(text = stringResource(R.string.preferred_action), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showChooseAction = true })
+                }
+                Text(text = stringResource(R.string.preferred_action_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
+            }
+
             //                    playback speed
             Column {
                 Row(Modifier.fillMaxWidth()) {
@@ -621,6 +691,7 @@ fun FeedsSettingsScreen() {
                 }
                 Text(text = stringResource(R.string.pref_feed_playback_speed_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
+
             //              skip silence
             Column {
                 Row(Modifier.fillMaxWidth()) {
@@ -759,76 +830,7 @@ fun FeedsSettingsScreen() {
             }
 
             val dleqOptions = listOf(stringResource(R.string.enqueue), stringResource(R.string.off), stringResource(R.string.download))
-            var autoDLEQIndex by remember { mutableIntStateOf(when {
-                feedToSet.autoEnqueue -> 0
-                feedToSet.autoDownload -> 2
-                else -> 1
-            }) }
-
-            //                    prefer streaming
-            var preferStreaming by remember { mutableStateOf(feedToSet.prefStreamOverDownload) }
-            if (extClient?.attributes?.supportDownload != false || !preferStreaming || feedsToSet.size > 1) {
-                TitleSummarySwitch(R.string.pref_stream_over_download_title, R.string.pref_stream_over_download_sum, R.drawable.ic_stream, preferStreaming) {
-                    preferStreaming = it
-                    if (preferStreaming) {
-                        prefStreamOverDownload = true
-                        if (autoDLEQIndex == 2) autoDLEQIndex = 0
-                    }
-                    runOnIOScope {
-                        realm.write { for (f in feedsToSet) {
-                            val client = clientByFeed(f)
-                            if (client?.attributes?.supportDownload == true || preferStreaming) findLatest(f)?.let { f ->
-                                f.prefStreamOverDownload = preferStreaming
-                                if (preferStreaming) f.autoDownload = false
-                            }
-                        } }
-                    }
-                }
-            }
-            //                    preferred action
-            val actions = remember { listOf("Auto") + (if (extClient?.attributes?.supportDownload != false) playActions.map { it.name }  else listOf()) + streamActions.map { it.name } + listOf(ButtonTypes.TTS_NOW.name, ButtonTypes.TTS.name, ButtonTypes.WEBSITE.name) }
-            val curAction = remember(feedToSet.prefActionType) { feedToSet.prefActionType ?: "Auto" }
-            var showChooseAction by remember { mutableStateOf(false) }
-            if (showChooseAction) Popup(onDismissRequest = { showChooseAction = false }, alignment = Alignment.TopStart, offset = IntOffset(100, 100), properties = PopupProperties(focusable = true)) {
-                Card(modifier = Modifier.width(300.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
-                        for (action in actions) {
-                            FilterChip(label = { Text(action) }, selected = curAction == action, border = filterChipBorder(curAction == action),
-                                onClick = {
-                                    if (action == "Auto") runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.let { it.prefActionType = null } } } }
-                                    else {
-                                        if (action in streamActions.map { it.name }) preferStreaming = true else if (action in playActions.map { it.name }) preferStreaming = false
-                                        if (preferStreaming) {
-                                            prefStreamOverDownload = true
-                                            if (autoDLEQIndex == 2) autoDLEQIndex = 0
-                                        }
-                                        runOnIOScope {
-                                            realm.write {
-                                                for (f in feedsToSet) {
-                                                    findLatest(f)?.let {
-                                                        it.prefActionType = action
-                                                        it.prefStreamOverDownload = preferStreaming
-                                                        if (preferStreaming) it.autoDownload = false
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    showChooseAction = false
-                                })
-                        }
-                    }
-                }
-            }
-            Column {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(ImageVector.vectorResource(id = R.drawable.play_stream_svgrepo_com), "", tint = textColor)
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.preferred_action), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showChooseAction = true })
-                }
-                Text(text = stringResource(R.string.preferred_action_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
-            }
-
+            // automation
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(ImageVector.vectorResource(id = R.drawable.outline_automation_24), "", tint = textColor)
                 Spacer(modifier = Modifier.width(20.dp))

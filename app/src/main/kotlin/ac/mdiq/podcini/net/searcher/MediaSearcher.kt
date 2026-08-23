@@ -1,4 +1,4 @@
-package ac.mdiq.podcini.net.feed
+package ac.mdiq.podcini.net.searcher
 
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.MediaSearcher

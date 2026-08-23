@@ -1,3 +1,15 @@
+# 12.8.1
+
+* in Remote tab of Search screen, fixed issue with multiple searchers
+* fixed position saver interval not rest on new media
+* ensure to cancel prior schedule when changing a timer or due time of a Todo
+* tuned toasts when binding external client
+* amended use external apps text in Settings
+* reordered FeedSettings
+* theme changing is live, no restart needed
+* wifi sync is turned off, antique version
+* some code cleaning and refactoring
+
 # 12.8.0
 
 * in FeedSettings screen, enabled Audo-enqueue/download policy setting when setting for multiple feeds

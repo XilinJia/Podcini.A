@@ -21,10 +21,8 @@ import ac.mdiq.podcini.storage.specs.VolumeAdaptionSetting
 import ac.mdiq.podcini.storage.specs.VolumeAdaptionSetting.Companion.fromInteger
 import ac.mdiq.podcini.storage.utils.generateFileName
 import ac.mdiq.podcini.utils.Logd
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.media3.common.C
 import io.github.xilinjia.krdb.ext.realmListOf
@@ -39,7 +37,6 @@ import io.github.xilinjia.krdb.types.annotations.Index
 import io.github.xilinjia.krdb.types.annotations.PrimaryKey
 import kotlinx.serialization.Serializable
 
-@Stable
 class Feed : RealmObject {
     @PrimaryKey
     var id: Long = 0L  // increments from nowInMillis()
@@ -188,7 +185,7 @@ class Feed : RealmObject {
     var prefActionType: String? = null
 
     @Ignore
-    var isBuilding by mutableStateOf(false)
+    var isBuilding: Boolean = false
 
     var useEpisodeImage: Boolean = false
 

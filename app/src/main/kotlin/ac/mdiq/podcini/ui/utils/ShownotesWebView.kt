@@ -20,6 +20,8 @@ import android.view.ContextMenu
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -65,11 +67,18 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
                 else openInSystemDefault(url)
                 return true
             }
-
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
 //                Logd(TAG, "Page finished")
                 pageFinishedListener?.invoke()
+            }
+            override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
+                view?.let { v->
+                    (v.parent as? ViewGroup)?.removeView(v)
+                    v.destroy()
+                }
+                Loge(TAG, "WebViewClient failure")
+                return true
             }
         }
     }

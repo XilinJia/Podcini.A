@@ -106,7 +106,7 @@ abstract class MediaPlayerBase {
 
     var statusSimple by mutableStateOf(PlayerStatusSimple.OTHER)
 
-    var curState by mutableStateOf(CurrentState())
+    var curState: CurrentState = CurrentState()
 
     val isPlaying: Boolean
         get() = status == PlayerStatus.PLAYING
@@ -155,7 +155,7 @@ abstract class MediaPlayerBase {
     private var prevPosition: Int = -1
     private var samePositionCount: Int = 0
 
-    var curSpeed by mutableFloatStateOf(SPEED_USE_GLOBAL)
+    var curSpeed: Float = SPEED_USE_GLOBAL
     var curPBSpeed by mutableFloatStateOf(1f)
     var curPitch: Float = SPEED_USE_GLOBAL
 
@@ -401,6 +401,7 @@ abstract class MediaPlayerBase {
     private var positionSaverInterval: Long = MIN_POSITION_SAVER_INTERVAL.toLong()
 
     protected fun resetPosSaverInterval(speed: Float) {
+        Logd(TAG, "resetPosSaverInterval curEpisode: ${curEpisode?.title}")
         curEpisode?.apply {
             Logd(TAG, "resetPosSaverInterval speed: $speed duration: ${this.duration} ${(0.02 * this.duration / speed).toInt()}")
             positionSaverInterval = (if (appPrefsFlow!!.value.useAdaptiveProgressUpdate) max(MIN_POSITION_SAVER_INTERVAL, (0.02 * this.duration / speed).toInt()) else MIN_POSITION_SAVER_INTERVAL).toLong()
@@ -521,7 +522,7 @@ abstract class MediaPlayerBase {
         resetMediaPlayer()
 
         isStartWhenPrepared = startWhenPrepared
-        prefSpeedOf(curEpisode).let { (sp, pi) -> setPlaybackParams(sp, pi) }
+        prefSpeedOf(curEpisode).let { (sp, pi)-> setPlaybackParams(sp, pi) }
         setRepeat(shouldRepeat)
         setSkipSilence()
         dataSourceJob = CoroutineScope(Dispatchers.IO).launch {

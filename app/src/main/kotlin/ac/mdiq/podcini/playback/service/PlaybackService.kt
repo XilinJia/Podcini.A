@@ -49,9 +49,6 @@ import android.view.KeyEvent
 import android.view.KeyEvent.KEYCODE_MEDIA_STOP
 import android.view.ViewConfiguration
 import androidx.annotation.RequiresPermission
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -632,7 +629,7 @@ class PlaybackService : MediaLibraryService() {
         var playbackService: PlaybackService? = null
         var mediaBrowser: MediaBrowser? = null
 
-        var isRunning by mutableStateOf(false)
+        var isRunning = false
 
         var isCasting: Boolean = false
             internal set

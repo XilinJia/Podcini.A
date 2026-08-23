@@ -3,10 +3,10 @@ package ac.mdiq.podcini.ui.screens
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.net.download.EpisodeAdrDLManager
-import ac.mdiq.podcini.net.feed.CombinedSearcher
+import ac.mdiq.podcini.net.searcher.CombinedSearcher
 import ac.mdiq.podcini.net.feed.FeedBuilder
-import ac.mdiq.podcini.net.feed.FeedUrlNotFoundException
-import ac.mdiq.podcini.net.feed.PodcastSearcherRegistry
+import ac.mdiq.podcini.net.searcher.FeedUrlNotFoundException
+import ac.mdiq.podcini.net.searcher.PodcastSearcherRegistry
 import ac.mdiq.podcini.net.feed.subscribe
 import ac.mdiq.podcini.net.utils.NetworkUtils.getFinalRedirectedUrl
 import ac.mdiq.podcini.playback.base.InTheatre.actQueue

@@ -18,6 +18,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 private const val TAG = "AppTheme"
 
@@ -95,6 +97,8 @@ var appTheme: AppThemes
 
 @Composable
 fun PodciniTheme(forceTheme: AppThemes? = null, content: @Composable () -> Unit) {
+    val appPrefs by appPrefsFlow!!.collectAsStateWithLifecycle()
+
     val appThemes: AppThemes = if (forceTheme != null) forceTheme else appTheme
     val isDark = when (appThemes) {
         AppThemes.LIGHT -> false
@@ -113,11 +117,11 @@ fun PodciniTheme(forceTheme: AppThemes? = null, content: @Composable () -> Unit)
     }
 
     val colorScheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && appPrefsFlow!!.value.useDynamicThemes -> {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && appPrefs.useDynamicThemes -> {
             val context = LocalContext.current
             if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        isDark && (appThemes == AppThemes.BLACK || appPrefsFlow!!.value.themeBlack) -> DarkColors.copy(surface = Color(0xFF000000))
+        isDark && (appThemes == AppThemes.BLACK || appPrefs.themeBlack) -> DarkColors.copy(surface = Color(0xFF000000))
         isDark -> DarkColors
         else -> LightColors
     }
