@@ -5,7 +5,7 @@
 * show updated duration (when invalid) in episodes list and playerUI
 * in PlayerUI
 	* skip forward text is shown on top of Skip button (consistent with other single clicks)
-	* potton positions and buffer indicator are adjusted
+	* button positions and buffer indicator are adjusted
 * in AVPlayer screen, changing speed in video player is reflected in PlayerUI
 * likely fixed possible PlayUI flickers on start
 * in OnlineFeed, ensure "Likely removed" list has not duplicates

@@ -1,0 +1,10 @@
+* fixed error playing downloaded file
+* player buffer updates on a flow every 5 seconds
+* show updated duration (when invalid) in episodes list and playerUI
+* adjustment in PlayerUI
+* in AVPlayer screen, changing speed in video player is reflected in PlayerUI
+* likely fixed possible PlayUI flickers on start
+* in OnlineFeed, ensure "Likely removed" list has not duplicates
+* cleared dependency on compose runtime in non-UI routines
+* re-worked curMedia monitoring
+* some adjustment in FeedSettings
