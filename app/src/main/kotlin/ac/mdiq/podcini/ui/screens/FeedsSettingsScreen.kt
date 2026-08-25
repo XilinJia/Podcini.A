@@ -2,7 +2,7 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.net.feed.FeedUpdater
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.forcePlaybackReset
 import ac.mdiq.podcini.sources.SourceGatewayClient
 import ac.mdiq.podcini.sources.clientByFeed
@@ -382,35 +382,6 @@ fun FeedsSettingsScreen() {
                 Text(text = curPrefQueue + " : " + stringResource(R.string.pref_feed_associated_queue_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
 
-            //                    max episodes
-            if (feedToSet.id > MAX_SYNTHETIC_ID || feedsToSet.size > 1) {
-                Column {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(ImageVector.vectorResource(id = R.drawable.ic_refresh), "", tint = textColor)
-                        Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = stringResource(R.string.limit_episodes_to), style = CustomTextStyles.titleCustom, color = textColor)
-                        Spacer(modifier = Modifier.weight(1f))
-                        NumberEditor(feedToSet.limitEpisodesCount, label = "0 = unlimited", nz = false, modifier = Modifier.width(150.dp)) {
-                            runOnIOScope { realm.write { for (f in feedsToSet) if (f.id > MAX_SYNTHETIC_ID) findLatest(f)?.limitEpisodesCount = it } }
-                        }
-                    }
-                    Text(text = stringResource(R.string.limit_episodes_to_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
-                }
-            }
-
-            var useEpisodeImage by remember { mutableStateOf(feedToSet.useEpisodeImage) }
-            TitleSummarySwitch(R.string.use_episode_image, R.string.use_episode_image_summary, R.drawable.outline_broken_image_24, useEpisodeImage) {
-                useEpisodeImage = it
-                runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.useEpisodeImage = it } } }
-            }
-            if (feedsToSet.size > 1 || useEpisodeImage) {
-                var useWideLayout by remember { mutableStateOf(feedToSet.useWideLayout) }
-                TitleSummarySwitch(R.string.use_wide_layout, R.string.use_wide_layout_summary, R.drawable.rounded_responsive_layout_24, useWideLayout) {
-                    useWideLayout = it
-                    runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.useWideLayout = it } } }
-                }
-            }
-
             // feed type
             if (feedToSet.isSynthetic()) {
                 Column {
@@ -501,7 +472,7 @@ fun FeedsSettingsScreen() {
                                             att.preferredLnaguages.addAll(newName.split(',').map { it.trim() }.filter { it.isNotEmpty() })
                                         } } }
                                     }
-                                    if (theatres[0].mPlayer?.curEpisode?.feedId in feedsToSet.map { it.id }) forcePlaybackReset = true
+                                    if (theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.feedId in feedsToSet.map { it.id }) forcePlaybackReset = true
                                     showIcon =  false
                                 }))
                         })
@@ -532,7 +503,7 @@ fun FeedsSettingsScreen() {
                                         }
                                     }
                                 }
-                                if (theatres[0].mPlayer?.curEpisode?.feedId in feedsToSet.map { it.id }) forcePlaybackReset = true
+                                if (theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.feedId in feedsToSet.map { it.id }) forcePlaybackReset = true
                             }
                         }
                         Icon(ImageVector.vectorResource(id = R.drawable.ic_delete), "", tint = textColor)
@@ -561,7 +532,7 @@ fun FeedsSettingsScreen() {
                                     }
                                 }
                             }
-                            if (theatres[0].mPlayer?.curEpisode?.feedId in feedsToSet.map { it.id }) forcePlaybackReset = true
+                            if (theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.feedId in feedsToSet.map { it.id }) forcePlaybackReset = true
                         }
                     }
                     Row(Modifier.fillMaxWidth()) {
@@ -591,7 +562,7 @@ fun FeedsSettingsScreen() {
                                     }
                                 }
                             }
-                            if (theatres[0].mPlayer?.curEpisode?.feedId in feedsToSet.map { it.id }) forcePlaybackReset = true
+                            if (theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.feedId in feedsToSet.map { it.id }) forcePlaybackReset = true
                         }
                         Row(Modifier.fillMaxWidth()) {
                             Icon(ImageVector.vectorResource(id = R.drawable.ic_videocam), "", tint = textColor)
@@ -784,6 +755,36 @@ fun FeedsSettingsScreen() {
                 Text(text = stringResource(R.string.feed_volume_adaptation_summary), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
 
+            HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
+            //                    max episodes
+            if (feedToSet.id > MAX_SYNTHETIC_ID || feedsToSet.size > 1) {
+                Column {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(ImageVector.vectorResource(id = R.drawable.ic_refresh), "", tint = textColor)
+                        Spacer(modifier = Modifier.width(20.dp))
+                        Text(text = stringResource(R.string.limit_episodes_to), style = CustomTextStyles.titleCustom, color = textColor)
+                        Spacer(modifier = Modifier.weight(1f))
+                        NumberEditor(feedToSet.limitEpisodesCount, label = "0 = unlimited", nz = false, modifier = Modifier.width(150.dp)) {
+                            runOnIOScope { realm.write { for (f in feedsToSet) if (f.id > MAX_SYNTHETIC_ID) findLatest(f)?.limitEpisodesCount = it } }
+                        }
+                    }
+                    Text(text = stringResource(R.string.limit_episodes_to_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
+                }
+            }
+
+            var useEpisodeImage by remember { mutableStateOf(feedToSet.useEpisodeImage) }
+            TitleSummarySwitch(R.string.use_episode_image, R.string.use_episode_image_summary, R.drawable.outline_broken_image_24, useEpisodeImage) {
+                useEpisodeImage = it
+                runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.useEpisodeImage = it } } }
+            }
+            if (feedsToSet.size > 1 || useEpisodeImage) {
+                var useWideLayout by remember { mutableStateOf(feedToSet.useWideLayout) }
+                TitleSummarySwitch(R.string.use_wide_layout, R.string.use_wide_layout_summary, R.drawable.rounded_responsive_layout_24, useWideLayout) {
+                    useWideLayout = it
+                    runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.useWideLayout = it } } }
+                }
+            }
+
             // sorting
             var showSortDialog by remember { mutableStateOf(false) }
             if (showSortDialog) {
@@ -815,6 +816,14 @@ fun FeedsSettingsScreen() {
                 Text(text = stringResource(R.string.filter_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
 
+            HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
+            // automation
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Icon(ImageVector.vectorResource(id = R.drawable.outline_automation_24), "", tint = textColor)
+                Spacer(modifier = Modifier.width(20.dp))
+                Text(text = stringResource(R.string.automation), style = CustomTextStyles.titleCustom, color = textColor)
+            }
+
             //                    refresh
             if ((feedToSet.inNormalVolume && feedToSet.id > MAX_SYNTHETIC_ID) || feedsToSet.size > 1) {
                 var autoUpdate by remember { mutableStateOf(feedToSet.keepUpdated) }
@@ -829,15 +838,8 @@ fun FeedsSettingsScreen() {
                 }
             }
 
-            val dleqOptions = listOf(stringResource(R.string.enqueue), stringResource(R.string.off), stringResource(R.string.download))
-            // automation
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(ImageVector.vectorResource(id = R.drawable.outline_automation_24), "", tint = textColor)
-                Spacer(modifier = Modifier.width(20.dp))
-                Text(text = stringResource(R.string.automation), style = CustomTextStyles.titleCustom, color = textColor)
-            }
-
             SingleChoiceSegmentedButtonRow {
+                val dleqOptions = listOf(stringResource(R.string.enqueue), stringResource(R.string.off), stringResource(R.string.download))
                 dleqOptions.forEachIndexed { index, label ->
                     val isOptionEnabled = when (index) {
                         0 -> (feedToSet.inNormalVolume && curPrefQueue != "None") || feedsToSet.size > 1
@@ -1211,6 +1213,7 @@ fun FeedsSettingsScreen() {
                 }
             }
 
+            HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
             //                    repeat intervals
             Row(Modifier.fillMaxWidth()) {
                 val showDialog = remember { mutableStateOf(false) }

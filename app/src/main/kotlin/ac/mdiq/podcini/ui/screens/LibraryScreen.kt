@@ -21,7 +21,7 @@ import ac.mdiq.podcini.net.sync.transceive.sendFeed
 import ac.mdiq.podcini.net.utils.NetworkUtils.getLocalIpAddress
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.storage.database.appAttribsFlow
-import ac.mdiq.podcini.storage.database.feedCount
+import ac.mdiq.podcini.storage.database.feedCountFlow
 import ac.mdiq.podcini.ui.compose.feedOperationText
 import ac.mdiq.podcini.storage.database.loadLocalFolder
 import ac.mdiq.podcini.storage.database.queuesFlow
@@ -800,6 +800,7 @@ fun LibraryScreen() {
         var expanded by remember { mutableStateOf(false) }
         val isFiltered = remember(vm.subPrefs.feedsFilter, vm.subPrefs.tagsSel.size, vm.subPrefs.langsSel.size, vm.subPrefs.queueSelIds.size) { vm.subPrefs.feedsFilter.isNotEmpty() || vm.subPrefs.tagsSel.size != appAttribs.feedTagSet.size || vm.subPrefs.langsSel.size != appAttribs.langSet.size || vm.subPrefs.queueSelIds.size != vm.queueIds.size }
         Row(modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            val feedCount by feedCountFlow.collectAsStateWithLifecycle()
             Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_subscriptions), contentDescription = "Open Drawer", modifier = Modifier.padding(end = 10.dp).clickable { drawerController?.open() })
             if (feedOperationText.isNotEmpty()) Text(feedOperationText, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.clickable {})
             else {

@@ -9,7 +9,7 @@ import ac.mdiq.podcini.net.searcher.FeedUrlNotFoundException
 import ac.mdiq.podcini.net.searcher.PodcastSearcherRegistry
 import ac.mdiq.podcini.net.feed.subscribe
 import ac.mdiq.podcini.net.utils.NetworkUtils.getFinalRedirectedUrl
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
+import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.getEntityId
@@ -343,7 +343,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
         feed = feed_
 //        findExisting(preparedUrl, feed)?.apply { feedId = this.id }
 
-        val results = mutableListOf<SubscriptionLog>()
+        val results = mutableSetOf<SubscriptionLog>()
         if (!feed_.title.isNullOrBlank()) feedLogsMap?.get(feed_.title)?.apply { results.add(this) }
         if (!feed_.downloadUrl.isNullOrBlank()) feedLogsMap?.get(feed_.downloadUrl)?.apply { results.add(this) }
         feed_.description?.take(100).takeIf { !it.isNullOrBlank() }.apply { feedLogsMap?.get(this)?.apply { results.add(this) } }
@@ -575,7 +575,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
         }) { innerPadding ->
             if (vm.showEpisodes) Column(modifier = Modifier.padding(innerPadding).fillMaxSize().padding(start = 5.dp, end = 5.dp).background(MaterialTheme.colorScheme.surface)) {
                 InforBar(swipeActions) { Text(vm.infoBarText.value, style = MaterialTheme.typography.bodyMedium) }
-                EpisodeLazyColumn(vm.episodes, isExternal = true, swipeActions = swipeActions, actionButtonCB = { _, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) actQueue = tmpQueue() })
+                EpisodeLazyColumn(vm.episodes, isExternal = true, swipeActions = swipeActions, actionButtonCB = { _, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) actQueueFlow.value = tmpQueue() })
             } else Column(modifier = Modifier.padding(innerPadding).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 10.dp, end = 10.dp).background(MaterialTheme.colorScheme.surface)) {
                 ConstraintLayout(modifier = Modifier.fillMaxWidth().height(110.dp).background(MaterialTheme.colorScheme.surface)) {
                     val (coverImage, taColumn, buttons) = createRefs()

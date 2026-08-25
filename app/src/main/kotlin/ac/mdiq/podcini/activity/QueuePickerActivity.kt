@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.activity
 
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
+import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.receiver.PodciniWidget
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.model.toWidget
@@ -44,7 +44,7 @@ class QueuePickerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 //        installSplashScreen()
         super.onCreate(savedInstanceState)
-        val spinnerTexts = queuesLive.map { "${if (it.id == actQueue.id) "> " else ""}${it.name} : ${it.size()}" }
+        val spinnerTexts = queuesLive.map { "${if (it.id == actQueueFlow.value.id) "> " else ""}${it.name} : ${it.size()}" }
 
         setContent {
             PodciniTheme(AppThemes.BLACK) {

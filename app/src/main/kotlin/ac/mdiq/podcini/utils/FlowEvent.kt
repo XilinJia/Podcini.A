@@ -16,22 +16,9 @@ sealed class FlowEvent {
     val TAG = this::class.simpleName ?: "FlowEvent"
     val id: Long = nowInMillis()
 
-    data class PlaybackServiceEvent(val action: Action) : FlowEvent() {
-        enum class Action { SERVICE_STARTED, SERVICE_SHUT_DOWN, }
-    }
-
-    data class BufferUpdateEvent(val episode: Episode, val progress: Float) : FlowEvent() {
-        fun hasStarted(): Boolean = progress == PROGRESS_STARTED
-        fun hasEnded(): Boolean = progress == PROGRESS_ENDED
-
-        companion object {
-            private const val PROGRESS_STARTED = -1f
-            private const val PROGRESS_ENDED = -2f
-            fun started(episode: Episode): BufferUpdateEvent = BufferUpdateEvent(episode, PROGRESS_STARTED)
-            fun ended(episode: Episode): BufferUpdateEvent = BufferUpdateEvent(episode, PROGRESS_ENDED)
-            fun progressUpdate(episode: Episode, progress: Float): BufferUpdateEvent = BufferUpdateEvent(episode, progress)
-        }
-    }
+//    data class PlaybackServiceEvent(val action: Action) : FlowEvent() {
+//        enum class Action { SERVICE_STARTED, SERVICE_SHUT_DOWN, }
+//    }
 
     data class QueueEvent(val action: Action, val episodes: List<Episode>, val position: Int) : FlowEvent() {
         enum class Action { REMOVED, CLEARED }
@@ -58,7 +45,7 @@ sealed class FlowEvent {
     // TODO: perhaps FeedDetails Settings need to post this?
 //    data class FeedChangeEvent(val feed: Feed, val changedFields: Array<String>) : FlowEvent()
 
-    data class SpeedChangedEvent(val playerId: Int, val newSpeed: Float) : FlowEvent()
+//    data class SpeedChangedEvent(val playerId: Int, val newSpeed: Float) : FlowEvent()
 
     data class EpisodeMediaEvent(val action: Action, val episodes: List<Episode>) : FlowEvent() {
         enum class Action { REMOVED }

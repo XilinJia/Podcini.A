@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.playback.service
 
 
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.PlayerStatusSimple
 import ac.mdiq.podcini.receiver.MediaButtonReceiver
 import ac.mdiq.podcini.utils.Logd
@@ -43,7 +43,7 @@ class QuickSettingsTileService : TileService() {
         val qsTile = qsTile
         if (qsTile == null) Logd(TAG, "Ignored call to update QS tile: getQsTile() returned null.")
         else {
-            val isPlaying = (PlaybackService.isRunning && theatres[0].mPlayer?.statusSimple == PlayerStatusSimple.PLAYING)
+            val isPlaying = (PlaybackService.isRunning && theatres[0].mPlayerFlow.value?.statusSimpleFlow?.value == PlayerStatusSimple.PLAYING)
             qsTile.state = if (isPlaying) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
             qsTile.updateTile()
         }

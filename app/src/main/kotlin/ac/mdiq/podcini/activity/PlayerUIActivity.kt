@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.activity
 
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.ui.compose.AppThemes
 import ac.mdiq.podcini.ui.compose.PodciniTheme
 import ac.mdiq.podcini.ui.compose.textColor
@@ -26,8 +26,10 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 private const val TAG = "PlayerUIActivity"
@@ -47,9 +49,12 @@ class PlayerUIActivity : ComponentActivity() {
             PodciniTheme(AppThemes.BLACK) {
                 Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp, modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars)) {
                     val vm: AVPlayerVM = viewModel()
+                    val player_ by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
+                    val player = player_ ?: return@Surface
+                    val curMedia by player.curMediaFlow.collectAsStateWithLifecycle()
                     Box(modifier = Modifier.fillMaxWidth().height(100.dp).border(1.dp, MaterialTheme.colorScheme.tertiary).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))) {
                         Column {
-                            Text(theatres[0].mPlayer?.curEpisode?.title ?: "No title", maxLines = 1, color = textColor, style = MaterialTheme.typography.bodyMedium)
+                            Text(curMedia?.title ?: "No title", maxLines = 1, color = textColor, style = MaterialTheme.typography.bodyMedium)
                             ProgressBar(vm)
                             ControlUI(vm)
                         }

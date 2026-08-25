@@ -1,7 +1,24 @@
+# 12.8.2
+
+* fixed error playing downloaded file
+* player buffer updates on a flow every 5 seconds
+* show updated duration (when invalid) in episodes list and playerUI
+* in PlayerUI
+	* skip forward text is shown on top of Skip button (consistent with other single clicks)
+	* potton positions and buffer indicator are adjusted
+* in AVPlayer screen, changing speed in video player is reflected in PlayerUI
+* likely fixed possible PlayUI flickers on start
+* in OnlineFeed, ensure "Likely removed" list has not duplicates
+* cleared dependency on compose runtime in non-UI routines
+* re-worked curMedia monitoring
+* improved list info calculation
+* some adjustment in FeedSettings
+* some events removed and some code refactoring, 
+
 # 12.8.1
 
 * in Remote tab of Search screen, fixed issue with multiple searchers
-* fixed position saver interval not rest on new media
+* fixed position saver interval not reset on new media
 * ensure to cancel prior schedule when changing a timer or due time of a Todo
 * tuned toasts when binding external client
 * amended use external apps text in Settings

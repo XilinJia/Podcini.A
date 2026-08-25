@@ -32,7 +32,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.formatDateTimeFlex
-import ac.mdiq.podcini.utils.sessionLogs
+import ac.mdiq.podcini.utils.sessionLogsFlow
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -93,6 +93,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.xilinjia.krdb.query.Sort
@@ -360,6 +361,7 @@ fun LogsScreen() {
     @Composable
     fun SessionLogView() {
         val lazyListState = rememberLazyListState()
+        val sessionLogs by sessionLogsFlow.collectAsStateWithLifecycle()
         LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val logs = sessionLogs.reversed().filter { vm.showSuccessLogs == !it.contains("Error", ignoreCase = true) }
             items(logs) { log -> Text(log, color = if (log.contains("Error", ignoreCase = true)) Color.Red else textColor) }

@@ -4,8 +4,8 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.automation.AutoDownloadAlgorithm
 import ac.mdiq.podcini.automation.AutoEnqueueAlgorithm
 import ac.mdiq.podcini.net.feed.FeedUpdateManager.runOnceOrAsk
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.mediaBrowser
 import ac.mdiq.podcini.storage.database.allFeeds
@@ -194,7 +194,7 @@ class QueuesVM(id_: Long): ViewModel() {
     }.distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = null)
 
     var curIndex by  mutableIntStateOf(-1)
-    var curQueue by mutableStateOf(actQueue)
+    var curQueue by mutableStateOf(actQueueFlow.value)
 
     var curQueuePosition by mutableIntStateOf(curQueue.scrollPosition)
 
@@ -343,6 +343,8 @@ fun QueuesScreen(id: Long = -1L) {
         }
     }
 
+    val actQueue by actQueueFlow.collectAsStateWithLifecycle()
+
     var queueNames by remember {  mutableStateOf<List<String>>(listOf()) }
     var queueTexts by remember { mutableStateOf<List<String>>(listOf()) }
     var redoNames by remember { mutableIntStateOf(0) }
@@ -358,7 +360,8 @@ fun QueuesScreen(id: Long = -1L) {
     LaunchedEffect(actQueue.id) { queueTexts = vm.queues.map { "${if (it.id == actQueue.id) "> " else ""}${it.name} : ${it.size()}" } }
 
     var feedsAssociated by remember { mutableStateOf<List<Feed>>(listOf()) }
-    LaunchedEffect(vm.curQueue.id, feedQueueUpdated, vm.queuesMode) {
+    val feedUpdated by feedQueueUpdated.collectAsStateWithLifecycle()
+    LaunchedEffect(vm.curQueue.id, feedUpdated, vm.queuesMode) {
         if (vm.queuesMode == QueuesScreenMode.Feed) feedsAssociated = allFeeds.filter { it.queueId == vm.curQueue.id }
     }
 
@@ -450,11 +453,14 @@ fun QueuesScreen(id: Long = -1L) {
 
     OpenDialogs()
 
+    val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
+    val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
+
     @Composable
     fun TopBar() {
         var expanded by remember { mutableStateOf(false) }
         Box(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
-            if (vm.curQueue.id == actQueue.id) AsyncImage(model = theatres[0].mPlayer?.curEpisode?.imageUrl?:theatres[0].mPlayer?.curEpisode?.feed?.imageUrl?:"", contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 5.dp, radiusY = 5.dp))
+            if (vm.curQueue.id == actQueue.id) AsyncImage(model = curMedia0?.imageUrl?: curMedia0?.feed?.imageUrl?:"", contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 5.dp, radiusY = 5.dp))
             Box(modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)))
             Column {
                 Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -463,7 +469,7 @@ fun QueuesScreen(id: Long = -1L) {
                         Text((if (vm.curQueue.id == actQueue.id) "> " else "") + if (vm.curIndex in queueNames.indices) queueNames[vm.curIndex].ifBlank { "No name" } else "No name", maxLines = 1, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.scale(scaleX = 1f, scaleY = 1.8f).combinedClickable(onClick = { showChooseQueue = true }, onLongClick = {
                             if (vm.curQueue.id == actQueue.id) {
                                 if (episodes.size > 5) {
-                                    val index = episodes.indexOfFirst { it.id == theatres[0].mPlayer?.curEpisode?.id }
+                                    val index = episodes.indexOfFirst { it.id == curMedia0?.id }
                                     if (index >= 0) scope.launch { lazyListState.scrollToItem(index) }
                                     else Logt(TAG, "can not find curEpisode to scroll to")
                                 } else Logt(TAG, "only scroll in actQueue when size is larger than 5")
@@ -758,10 +764,10 @@ fun QueuesScreen(id: Long = -1L) {
                                 }
                             }
                             var scrollToOnStart by remember { mutableIntStateOf(-1) }
-                            LaunchedEffect(vm.curQueue.id, episodes.size, theatres[0].mPlayer?.curEpisode?.id) {
+                            LaunchedEffect(vm.curQueue.id, episodes.size, curMedia0?.id) {
                                 scrollToOnStart = when {
                                     vm.curQueue.id == actQueue.id -> {
-                                        val index = episodes.indexOfFirst { it.id == theatres[0].mPlayer?.curEpisode?.id }
+                                        val index = episodes.indexOfFirst { it.id == curMedia0?.id }
                                         if (index < 0) -1 else index
                                     }
                                     else -> -1
@@ -777,7 +783,7 @@ fun QueuesScreen(id: Long = -1L) {
                                     }
                                 }, neutralRes = R.string.refresh_label, onNeutral = { runOnceOrAsk(feeds = vm.curQueue.normalFeeds) }))
                             }, actionButtonCB = { _, type ->
-                                if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM) && actQueue.id != vm.curQueue.id) queuesLive.find { it.id == vm.curQueue.id }?.let { actQueue = it }
+                                if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM) && actQueue.id != vm.curQueue.id) queuesLive.find { it.id == vm.curQueue.id }?.let { actQueueFlow.value = it }
                             })
                         }
                     }

@@ -6,11 +6,12 @@ import ac.mdiq.podcini.net.download.EpisodeAdrDLManager
 import ac.mdiq.podcini.net.sync.SynchronizationSettings.isProviderConnected
 import ac.mdiq.podcini.net.sync.model.EpisodeAction
 import ac.mdiq.podcini.net.sync.queue.SynchronizationQueueSink
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.ACTION_SHUTDOWN_PLAYBACK_SERVICE
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sources.clientByEpisode
 import ac.mdiq.podcini.storage.model.Episode
+import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.SubscriptionLog
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.feedLogsMap
 import ac.mdiq.podcini.storage.specs.EpisodeFilter
@@ -227,8 +228,8 @@ suspend fun deleteMedia(episode: Episode): Episode {
     }
 
     for (i in 0..1) {
-        if (episode.id == theatres[i].mPlayer?.curState?.curMediaId) {
-            theatres[i].mPlayer?.savePlayerStatus(null, null)
+        if (episode.id == theatres[i].mPlayerFlow.value?.curState?.curMediaId) {
+            theatres[i].mPlayerFlow.value?.savePlayerStatus(null, null)
             sendLocalBroadcast(ACTION_SHUTDOWN_PLAYBACK_SERVICE)
             val nm = NotificationManagerCompat.from(context)
             nm.cancel(R.id.notification_playing)
@@ -295,13 +296,17 @@ fun checkAndMarkDuplicates(episode: Episode): Episode {
 
 fun shouldPreserve(stat: Int): Boolean = stat in listOf(EpisodeState.SOON.code, EpisodeState.LATER.code, EpisodeState.AGAIN.code, EpisodeState.FOREVER.code)
 
-fun buildListInfo(episodes: List<Episode>, total: Int = 0): String {
+fun buildListInfo(episodes: List<Episode>, total: Int = 0, feed: Feed? = null): String {
     Logd(TAG, "buildListInfo")
     var infoText = episodes.size.toString()
     if (total > 0) infoText += "/$total"
     if (episodes.isNotEmpty()) {
+        var speed = feed?.playSpeed?.takeIf { it > 0 } ?: 1f
         var timeLeft: Long = 0
-        for (item in episodes) timeLeft += ((item.duration - item.position) / (theatres[0].mPlayer!!.prefSpeedOf(item).first.takeIf { it > 0 } ?: 1f)).toLong()
+        for (item in episodes) {
+            if (feed == null) speed = if (item.feedId != null && feedsMap.containsKey(item.feedId!!)) feedsMap[item.feedId!!]!!.playSpeed.takeIf { it > 0 } ?: 1f else 1f
+            timeLeft += ((item.duration - item.position) / speed).toLong()
+        }
         infoText += " * " + durationStringShort(timeLeft, true)
     }
     return infoText

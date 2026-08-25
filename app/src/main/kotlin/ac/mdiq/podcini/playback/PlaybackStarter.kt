@@ -1,9 +1,9 @@
 package ac.mdiq.podcini.playback
 
-import ac.mdiq.podcini.playback.base.InTheatre.aController
-import ac.mdiq.podcini.playback.base.InTheatre.aCtrlFuture
-import ac.mdiq.podcini.playback.base.InTheatre.ensureAController
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.aController
+import ac.mdiq.podcini.playback.base.aCtrlFuture
+import ac.mdiq.podcini.playback.base.ensureAController
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.getCache
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.simpleCache
 import ac.mdiq.podcini.playback.base.MediaPlayerBase.Companion.isStreamingCapable
@@ -26,8 +26,8 @@ var forcePlaybackReset: Boolean = false
     set(value) {
         field = value
         if (value) {
-            theatres[0].mPlayer?.pause(false)
-            theatres[1].mPlayer?.pause(false)
+            theatres[0].mPlayerFlow.value?.pause(false)
+            theatres[1].mPlayerFlow.value?.pause(false)
         }
     }
 
@@ -65,52 +65,53 @@ class PlaybackStarter(private val media: Episode) {
         var media_ = media
         if (forcePlaybackReset && simpleCache != null) getCache().removeResource(media.id.toString())
         var sameMedia = !forcePlaybackReset
-        if (theatres[playerId].mPlayer?.curEpisode?.id != media.id) {
+        val player = theatres[playerId].mPlayerFlow.value
+        if (player?.curMediaFlow?.value?.id != media.id) {
             sameMedia = false
             media_ = checkAndMarkDuplicates(media)
-//            theatres[playerId].mPlayer?.setAsCurEpisode(media_)   // seems redundant
+//            player.setAsCurEpisode(media_)   // seems redundant
         }
 
         fun processTask() {
-            if (theatres[playerId].mPlayer == null) {
-                Loge(TAG, "processTask mPlayer == null")
+            if (player == null) {
+                Loge(TAG, "processTask mPlayerFlow.value == null")
                 return
             }
-            Logd(TAG, "aCtrlFuture: ${aCtrlFuture != null} player status: ${theatres[playerId].mPlayer?.status}")
-            theatres[playerId].mPlayer?.shouldRepeat = repeat
-            Logd(TAG, "start: status: ${theatres[playerId].mPlayer?.status} sameMedia: $sameMedia")
-            theatres[playerId].mPlayer?.isStreaming = shouldStreamThisTime
-            theatres[playerId].mPlayer?.widgetId = widgetId
+            Logd(TAG, "aCtrlFuture: ${aCtrlFuture != null} player status: ${player.statusFlow.value}")
+            player.shouldRepeatFlow.value = repeat
+            Logd(TAG, "start: statusFlow.value: ${player.statusFlow.value} sameMedia: $sameMedia")
+            player.isStreaming = shouldStreamThisTime
+            player.widgetId = widgetId
             when {
-                theatres[playerId].mPlayer!!.isPlaying -> {
-                    theatres[playerId].mPlayer?.pause(false)
+                player.isPlaying -> {
+                    player.pause(false)
                     if (!sameMedia) {
-                        theatres[playerId].mPlayer?.isSkipping = true
-                        theatres[playerId].mPlayer?.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
+                        player.isSkipping = true
+                        player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
                         sleepManager?.restart()
                     }
                 }
-                theatres[playerId].mPlayer!!.isPaused || theatres[playerId].mPlayer!!.isPrepared -> {
-                    if (sameMedia) theatres[playerId].mPlayer?.play()
+                player.isPaused || player.isPrepared -> {
+                    if (sameMedia) player.play()
                     else {
-                        theatres[playerId].mPlayer?.isSkipping = true
-                        theatres[playerId].mPlayer?.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
+                        player.isSkipping = true
+                        player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
                     }
                     sleepManager?.restart()
                 }
-                theatres[playerId].mPlayer!!.isStopped -> {
+                player.isStopped -> {
 //                    ContextCompat.startForegroundService(getAppContext(), Intent(getAppContext(), PlaybackService::class.java))
-                    theatres[playerId].mPlayer?.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
+                    player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
                     sleepManager?.restart()
                 }
                 // TODO: test
-                theatres[playerId].mPlayer!!.isInitialized -> {
-                    theatres[playerId].mPlayer?.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
+                player.isInitialized -> {
+                    player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
                     sleepManager?.restart()
                 }
                 else -> {
-                    theatres[playerId].mPlayer?.setAsCurEpisode(media_)
-                    theatres[playerId].mPlayer?.reinit()
+                    player.setAsCurMedia(media_)
+                    player.reinit()
                     sleepManager?.restart()
                 }
             }
@@ -118,7 +119,7 @@ class PlaybackStarter(private val media: Episode) {
         }
         aCtrlFuture?.let { future ->
             if (future.isDone && aController?.isConnected == true) {
-                Logd(TAG, "aCtrlFuture aController ready, play, ${theatres[playerId].mPlayer?.status} $shouldStreamThisTime")
+                Logd(TAG, "aCtrlFuture aController ready, play, ${player?.statusFlow?.value} $shouldStreamThisTime")
                 if (shouldStreamThisTime && !isStreamingCapable(media)) return
                 processTask()
             } else {

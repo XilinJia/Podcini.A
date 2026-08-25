@@ -3,16 +3,17 @@ package ac.mdiq.podcini.playback.service
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.InTheatre
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
-import ac.mdiq.podcini.playback.base.InTheatre.activeTheatres
-import ac.mdiq.podcini.playback.base.InTheatre.startTheatres
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.base.activeTheatresFlow
+import ac.mdiq.podcini.playback.base.startTheatres
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.Media3Player
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.buildMetadata
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.releaseCache
 import ac.mdiq.podcini.playback.base.SleepManager
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
+import ac.mdiq.podcini.playback.base.cleanupTheatres
+import ac.mdiq.podcini.playback.base.isCurMedia
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
 import ac.mdiq.podcini.storage.database.fastForwardSecs
@@ -84,21 +85,21 @@ class PlaybackService : MediaLibraryService() {
 
     private val autoStateUpdated: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (theatres[0].mPlayer == null) return
+            if (theatres[0].mPlayerFlow.value == null) return
             Logd(TAG, "autoStateUpdated onReceive called with action: ${intent.action}")
             val status = intent.getStringExtra("media_connection_status")
             Logd(TAG, "Received Auto Connection update: $status")
             if ("media_connected" != status) Logd(TAG, "Car was unplugged during playback.")
             else {
                 when  {
-                    theatres[0].mPlayer!!.isPaused || theatres[0].mPlayer!!.isPrepared -> theatres[0].mPlayer?.play()
-                    theatres[0].mPlayer!!.isPreparing -> {
-                        val value = theatres[0].mPlayer!!.isStartWhenPrepared
-                        theatres[0].mPlayer?.isStartWhenPrepared = !value
+                    theatres[0].mPlayerFlow.value!!.isPaused || theatres[0].mPlayerFlow.value!!.isPrepared -> theatres[0].mPlayerFlow.value?.play()
+                    theatres[0].mPlayerFlow.value!!.isPreparing -> {
+                        val value = theatres[0].mPlayerFlow.value!!.isStartWhenPrepared
+                        theatres[0].mPlayerFlow.value?.isStartWhenPrepared = !value
                     }
-                    theatres[0].mPlayer!!.isInitialized -> {
-                        theatres[0].mPlayer?.isStartWhenPrepared = true
-                        theatres[0].mPlayer?.prepare()
+                    theatres[0].mPlayerFlow.value!!.isInitialized -> {
+                        theatres[0].mPlayerFlow.value?.isStartWhenPrepared = true
+                        theatres[0].mPlayerFlow.value?.prepare()
                     }
                     else -> {}
                 }
@@ -125,7 +126,7 @@ class PlaybackService : MediaLibraryService() {
                 val state = intent.getIntExtra("state", -1)
                 Logd(TAG, "Headset plug event. State is $state")
                 when (state) {
-                    -1 -> LogeFor(TAG, theatres[0].mPlayer?.curEpisode?.id,"Received invalid ACTION_HEADSET_PLUG intent")
+                    -1 -> LogeFor(TAG, theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id,"Received invalid ACTION_HEADSET_PLUG intent")
                     UNPLUGGED -> {}
                     PLUGGED -> unpauseIfPauseOnDisconnect(false)
                 }
@@ -149,20 +150,20 @@ class PlaybackService : MediaLibraryService() {
 
     private val audioBecomingNoisy: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (theatres[0].mPlayer == null) return
+            if (theatres[0].mPlayerFlow.value == null) return
             // sound is about to change, eg. bluetooth -> speaker
             Logd(TAG, "audioBecomingNoisy onReceive called with action: ${intent.action}")
             Logd(TAG, "Pausing playback because audio is becoming noisy")
 //            pauseIfPauseOnDisconnect()
-            transientPause = theatres[0].mPlayer!!.isPlaying
-            if (appPrefsFlow!!.value.pauseOnHeadsetDisconnect && !isCasting) theatres[0].mPlayer?.pause(false)
+            transientPause = theatres[0].mPlayerFlow.value!!.isPlaying
+            if (appPrefsFlow!!.value.pauseOnHeadsetDisconnect && !isCasting) theatres[0].mPlayerFlow.value?.pause(false)
         }
     }
 
     private val shutdownReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             Logd(TAG, "shutdownReceiver onReceive called with action: ${intent.action}")
-            if (intent.action == ACTION_SHUTDOWN_PLAYBACK_SERVICE) EventFlow.postEvent(FlowEvent.PlaybackServiceEvent(FlowEvent.PlaybackServiceEvent.Action.SERVICE_SHUT_DOWN))
+//            if (intent.action == ACTION_SHUTDOWN_PLAYBACK_SERVICE) EventFlow.postEvent(FlowEvent.PlaybackServiceEvent(FlowEvent.PlaybackServiceEvent.Action.SERVICE_SHUT_DOWN))
         }
     }
 
@@ -209,9 +210,9 @@ class PlaybackService : MediaLibraryService() {
         override fun onCustomCommand(session: MediaSession, controller: MediaSession.ControllerInfo, customCommand: SessionCommand, args: Bundle): ListenableFuture<SessionResult> {
             Logd(TAG, "MyMediaSessionCallback onCustomCommand ${customCommand.customAction}")
             when (customCommand.customAction) {
-                NotificationCustomButton.REWIND.customAction -> theatres[0].mPlayer?.seekDelta(-rewindSecs * 1000)
-                NotificationCustomButton.FORWARD.customAction -> theatres[0].mPlayer?.seekDelta(fastForwardSecs * 1000)
-                NotificationCustomButton.SKIP.customAction -> if (appPrefsFlow!!.value.showSkip) theatres[0].mPlayer?.skip()
+                NotificationCustomButton.REWIND.customAction -> theatres[0].mPlayerFlow.value?.seekDelta(-rewindSecs * 1000)
+                NotificationCustomButton.FORWARD.customAction -> theatres[0].mPlayerFlow.value?.seekDelta(fastForwardSecs * 1000)
+                NotificationCustomButton.SKIP.customAction -> if (appPrefsFlow!!.value.showSkip) theatres[0].mPlayerFlow.value?.skip()
             }
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
@@ -251,8 +252,8 @@ class PlaybackService : MediaLibraryService() {
                     clickHandler.postDelayed({
                         when (clickCount) {
                             1 -> handleKeycode(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, false)
-                            2 -> theatres[0].mPlayer?.seekDelta(fastForwardSecs * 1000)
-                            3 -> theatres[0].mPlayer?.seekDelta(-rewindSecs * 1000)
+                            2 -> theatres[0].mPlayerFlow.value?.seekDelta(fastForwardSecs * 1000)
+                            3 -> theatres[0].mPlayerFlow.value?.seekDelta(-rewindSecs * 1000)
                         }
                         clickCount = 0
                     }, ViewConfiguration.getDoubleTapTimeout().toLong())
@@ -268,7 +269,7 @@ class PlaybackService : MediaLibraryService() {
         override fun onGetLibraryRoot(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, params: LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> {
             Logd(TAG, "MyMediaSessionCallback onGetLibraryRoot called")
             val rootItem: MediaItem = MediaItem.Builder().setMediaId("ActQueue")
-                .setMediaMetadata(MediaMetadata.Builder().setIsBrowsable(true).setIsPlayable(false).setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED).setTitle(actQueue.name).build())
+                .setMediaMetadata(MediaMetadata.Builder().setIsBrowsable(true).setIsPlayable(false).setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED).setTitle(actQueueFlow.value.name).build())
                 .build()
             return Futures.immediateFuture(LibraryResult.ofItem(rootItem, params))
         }
@@ -278,7 +279,7 @@ class PlaybackService : MediaLibraryService() {
 //            return super.onGetChildren(session, browser, parentId, page, pageSize, params)
             val mediaItemsInQueue: MutableList<MediaItem> by lazy {
                 val list = mutableListOf<MediaItem>()
-                actQueue.episodesSorted.forEach { e-> e.downloadUrl?.let { list += MediaItem.Builder().setMediaId(it).setUri(it.toSafeUri()).setMediaMetadata(buildMetadata(e)).build() } }
+                actQueueFlow.value.episodesSorted.forEach { e-> e.downloadUrl?.let { list += MediaItem.Builder().setMediaId(it).setUri(it.toSafeUri()).setMediaMetadata(buildMetadata(e)).build() } }
                 Logd(TAG, "mediaItemsInQueue: ${list.size}")
                 list
             }
@@ -292,9 +293,9 @@ class PlaybackService : MediaLibraryService() {
             Logd(TAG, "MyMediaSessionCallback onAddMediaItems called ${mediaItems.size} ${mediaItems[0]}")
             // TODO check this out
             val episode = episodeByGuidOrUrl(null, mediaItems.first().mediaId, copy = false) ?: return Futures.immediateFuture(mutableListOf())
-            if (!InTheatre.isCurMedia(episode)) {
+            if (!isCurMedia(episode)) {
                 for (i in 0..1) {
-                    if (episode.id != theatres[i].mPlayer?.curEpisode?.id) continue
+                    if (episode.id != theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) continue
                     PlaybackStarter(episode).start(i)
                 }
             }
@@ -330,7 +331,7 @@ class PlaybackService : MediaLibraryService() {
 
         if (mediaSession == null) createMediaSessionAndPlayers()
 
-        EventFlow.postEvent(FlowEvent.PlaybackServiceEvent(FlowEvent.PlaybackServiceEvent.Action.SERVICE_STARTED))
+//        EventFlow.postEvent(FlowEvent.PlaybackServiceEvent(FlowEvent.PlaybackServiceEvent.Action.SERVICE_STARTED))
         timeIt("$TAG onCreate Service end")
     }
 
@@ -343,7 +344,7 @@ class PlaybackService : MediaLibraryService() {
 
         val intent = packageManager.getLaunchIntentForPackage(packageName)
         val pendingIntent = PendingIntent.getActivity(this, 0, intent, FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE)
-        mediaSession = MediaLibrarySession.Builder(applicationContext, theatres[0].mPlayer!!.castPlayer!!, MediaLibrarySessionCK())
+        mediaSession = MediaLibrarySession.Builder(applicationContext, theatres[0].mPlayerFlow.value!!.castPlayer!!, MediaLibrarySessionCK())
             .setId(packageName)
             .setSessionActivity(pendingIntent)
             .setCustomLayout(notificationCustomButtons)
@@ -351,22 +352,22 @@ class PlaybackService : MediaLibraryService() {
     }
 
     fun recreateMediaPlayers() {
-        for (id in 0..<activeTheatres) {
-            Logd(TAG, "recreateMediaPlayer creating player $id of $activeTheatres")
+        for (id in 0..<activeTheatresFlow.value) {
+            Logd(TAG, "recreateMediaPlayer creating player $id of ${activeTheatresFlow.value}")
             var wasPlaying = false
-            if (theatres[id].mPlayer != null) {
-                wasPlaying = theatres[id].mPlayer!!.isPlaying
-                if (wasPlaying) theatres[id].mPlayer!!.pause(reinit = false)
-                theatres[id].mPlayer!!.shutdown()
+            if (theatres[id].mPlayerFlow.value != null) {
+                wasPlaying = theatres[id].mPlayerFlow.value!!.isPlaying
+                if (wasPlaying) theatres[id].mPlayerFlow.value!!.pause(reinit = false)
+                theatres[id].mPlayerFlow.value!!.shutdown()
             }
-            theatres[id].mPlayer = Media3Player(id, if (activeTheatres > 1) { if (id == 0) -1 else 1} else 0)
+            theatres[id].mPlayerFlow.value = Media3Player(id, if (activeTheatresFlow.value > 1) { if (id == 0) -1 else 1} else 0)
         }
     }
 
     fun switchPlayersMode() {
         recreateMediaPlayers()
         startTheatres()
-        mediaSession?.player = theatres[0].mPlayer!!.castPlayer!!
+        mediaSession?.player = theatres[0].mPlayerFlow.value!!.castPlayer!!
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
@@ -378,13 +379,13 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onDestroy() {
         Logd(TAG, "Service is about to be destroyed")
-        theatres[0].mPlayer?.onDestroy()
+        theatres[0].mPlayerFlow.value?.onDestroy()
         mediaSession?.run {
             player.release()
             release()
             mediaSession = null
         }
-        theatres[1].mPlayer?.onDestroy()
+        theatres[1].mPlayerFlow.value?.onDestroy()
 
         cancelFlowEvents()
         unregisterReceiver(autoStateUpdated)
@@ -396,7 +397,7 @@ class PlaybackService : MediaLibraryService() {
 
         releaseCache()
 
-        InTheatre.cleanup()
+        cleanupTheatres()
         playbackService = null
         isRunning = false
         super.onDestroy()
@@ -409,27 +410,27 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun handleKeycode(keycode: Int, notificationButton: Boolean): Boolean {
-        if (theatres[0].mPlayer == null) return false
-        LogtFor(TAG, theatres[0].mPlayer?.curEpisode?.id, "Handling keycode: $keycode")
+        if (theatres[0].mPlayerFlow.value == null) return false
+        LogtFor(TAG, theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id, "Handling keycode: $keycode")
         // TODO: check out this
         fun startPlayingFromPreferences() {
             if (mediaSession == null) createMediaSessionAndPlayers()
             try {
                 startTheatres()
-                theatres[0].mPlayer?.startPlaying()
-            } catch (e: Throwable) { LogsFor(TAG, theatres[0].mPlayer?.curEpisode?.id, e, "EpisodeMedia was not loaded from preferences.") }
+                theatres[0].mPlayerFlow.value?.startPlaying()
+            } catch (e: Throwable) { LogsFor(TAG, theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id, e, "EpisodeMedia was not loaded from preferences.") }
         }
         when (keycode) {
             KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
                 when {
-                    theatres[0].mPlayer!!.isPlaying -> theatres[0].mPlayer?.pause(false)
-                    theatres[0].mPlayer!!.isPlaying || theatres[0].mPlayer!!.isPrepared -> theatres[0].mPlayer?.play()
-                    theatres[0].mPlayer!!.isPreparing -> theatres[0].mPlayer?.isStartWhenPrepared = !theatres[0].mPlayer!!.isStartWhenPrepared
-                    theatres[0].mPlayer!!.isInitialized -> {
-                        theatres[0].mPlayer?.isStartWhenPrepared = true
-                        theatres[0].mPlayer?.prepare()
+                    theatres[0].mPlayerFlow.value!!.isPlaying -> theatres[0].mPlayerFlow.value?.pause(false)
+                    theatres[0].mPlayerFlow.value!!.isPlaying || theatres[0].mPlayerFlow.value!!.isPrepared -> theatres[0].mPlayerFlow.value?.play()
+                    theatres[0].mPlayerFlow.value!!.isPreparing -> theatres[0].mPlayerFlow.value?.isStartWhenPrepared = !theatres[0].mPlayerFlow.value!!.isStartWhenPrepared
+                    theatres[0].mPlayerFlow.value!!.isInitialized -> {
+                        theatres[0].mPlayerFlow.value?.isStartWhenPrepared = true
+                        theatres[0].mPlayerFlow.value?.prepare()
                     }
-                    theatres[0].mPlayer?.curEpisode == null -> startPlayingFromPreferences()
+                    theatres[0].mPlayerFlow.value?.curMediaFlow?.value == null -> startPlayingFromPreferences()
                     else -> return false
                 }
                 sleepManager?.restart()
@@ -437,20 +438,20 @@ class PlaybackService : MediaLibraryService() {
             }
             KeyEvent.KEYCODE_MEDIA_PLAY -> {
                 when {
-                    theatres[0].mPlayer!!.isPlaying || theatres[0].mPlayer!!.isPrepared -> theatres[0].mPlayer?.play()
-                    theatres[0].mPlayer!!.isInitialized -> {
-                        theatres[0].mPlayer?.isStartWhenPrepared = true
-                        theatres[0].mPlayer?.prepare()
+                    theatres[0].mPlayerFlow.value!!.isPlaying || theatres[0].mPlayerFlow.value!!.isPrepared -> theatres[0].mPlayerFlow.value?.play()
+                    theatres[0].mPlayerFlow.value!!.isInitialized -> {
+                        theatres[0].mPlayerFlow.value?.isStartWhenPrepared = true
+                        theatres[0].mPlayerFlow.value?.prepare()
                     }
-                    theatres[0].mPlayer?.curEpisode == null -> startPlayingFromPreferences()
+                    theatres[0].mPlayerFlow.value?.curMediaFlow?.value == null -> startPlayingFromPreferences()
                     else -> return false
                 }
                 sleepManager?.restart()
                 return true
             }
             KeyEvent.KEYCODE_MEDIA_PAUSE -> {
-                if (theatres[0].mPlayer!!.isPlaying) {
-                    theatres[0].mPlayer?.pause(false)
+                if (theatres[0].mPlayerFlow.value!!.isPlaying) {
+                    theatres[0].mPlayerFlow.value?.pause(false)
                     return true
                 }
             }
@@ -458,15 +459,15 @@ class PlaybackService : MediaLibraryService() {
                 when {
                     // Handle remapped button as notification button which is not remapped again.
                     !notificationButton -> return handleKeycode(appPrefsFlow!!.value.hardwareForwardButton.toInt(), true)
-                    theatres[0].mPlayer!!.isPlaying || theatres[0].mPlayer!!.isPaused -> {
-                        theatres[0].mPlayer?.skip()
+                    theatres[0].mPlayerFlow.value!!.isPlaying || theatres[0].mPlayerFlow.value!!.isPaused -> {
+                        theatres[0].mPlayerFlow.value?.skip()
                         return true
                     }
                 }
             }
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
-                if (theatres[0].mPlayer!!.isPlaying || theatres[0].mPlayer!!.isPaused) {
-                    theatres[0].mPlayer?.seekDelta(fastForwardSecs * 1000)
+                if (theatres[0].mPlayerFlow.value!!.isPlaying || theatres[0].mPlayerFlow.value!!.isPaused) {
+                    theatres[0].mPlayerFlow.value?.seekDelta(fastForwardSecs * 1000)
                     return true
                 }
             }
@@ -474,26 +475,26 @@ class PlaybackService : MediaLibraryService() {
                 when {
                     // Handle remapped button as notification button which is not remapped again.
                     !notificationButton -> return handleKeycode(appPrefsFlow!!.value.hardwarePreviousButton.toInt(), true)
-                    theatres[0].mPlayer!!.isPlaying || theatres[0].mPlayer!!.isPaused -> {
-                        theatres[0].mPlayer?.seekTo(0)
+                    theatres[0].mPlayerFlow.value!!.isPlaying || theatres[0].mPlayerFlow.value!!.isPaused -> {
+                        theatres[0].mPlayerFlow.value?.seekTo(0)
                         return true
                     }
                 }
             }
             KeyEvent.KEYCODE_MEDIA_REWIND -> {
-                if (theatres[0].mPlayer!!.isPlaying || theatres[0].mPlayer!!.isPaused) {
-                    theatres[0].mPlayer?.seekDelta(-rewindSecs * 1000)
+                if (theatres[0].mPlayerFlow.value!!.isPlaying || theatres[0].mPlayerFlow.value!!.isPaused) {
+                    theatres[0].mPlayerFlow.value?.seekDelta(-rewindSecs * 1000)
                     return true
                 }
             }
             KEYCODE_MEDIA_STOP -> {
-                if (theatres[0].mPlayer!!.isPlaying) theatres[0].mPlayer?.pause(reinit = true)
+                if (theatres[0].mPlayerFlow.value!!.isPlaying) theatres[0].mPlayerFlow.value?.pause(reinit = true)
                 return true
             }
             else -> {
                 Logd(TAG, "Unhandled key code: $keycode")
                 // only notify the user about an unknown key event if it is actually doing something
-                if (theatres[0].mPlayer?.curEpisode != null && theatres[0].mPlayer!!.isPlaying) LogeFor(TAG, theatres[0].mPlayer?.curEpisode?.id, resources.getString(R.string.unknown_media_key, keycode))
+                if (theatres[0].mPlayerFlow.value?.curMediaFlow?.value != null && theatres[0].mPlayerFlow.value!!.isPlaying) LogeFor(TAG, theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id, resources.getString(R.string.unknown_media_key, keycode))
             }
         }
         return false
@@ -510,9 +511,9 @@ class PlaybackService : MediaLibraryService() {
                 Logd(TAG, "Received event: ${event.TAG}")
                 when (event) {
                     is FlowEvent.QueueEvent -> onQueueEvent(event)
-                    is FlowEvent.BufferUpdateEvent -> for (i in 0..1) theatres[i].mPlayer?.onBufferUpdate(event)
-                    is FlowEvent.SleepTimerUpdatedEvent -> for (i in 0..1) theatres[i].mPlayer?.onSleepTimerUpdate(event)
-                    is FlowEvent.EpisodeMediaEvent -> for (i in 0..1) theatres[i].mPlayer?.onEpisodeMediaEvent(event)   // TODO
+//                    is FlowEvent.BufferUpdateEvent -> for (i in 0..1) theatres[i].mPlayerFlow.value?.onBufferUpdate(event)
+                    is FlowEvent.SleepTimerUpdatedEvent -> for (i in 0..1) theatres[i].mPlayerFlow.value?.onSleepTimerUpdate(event)
+                    is FlowEvent.EpisodeMediaEvent -> for (i in 0..1) theatres[i].mPlayerFlow.value?.onEpisodeMediaEvent(event)   // TODO
                     else -> {}
                 }
             }
@@ -521,25 +522,25 @@ class PlaybackService : MediaLibraryService() {
 
     private fun onQueueEvent(event: FlowEvent.QueueEvent) {
         if (event.action == FlowEvent.QueueEvent.Action.REMOVED) {
-            mediaSession?.notifyChildrenChanged("ActQueue", actQueue.size(), null)
+            mediaSession?.notifyChildrenChanged("ActQueue", actQueueFlow.value.size(), null)
             for (e in event.episodes) {
                 for (i in 0..1) {
-                    if (e.id == theatres[i].mPlayer?.curEpisode?.id) {
+                    if (e.id == theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) {
                         Logd(TAG, "onQueueEvent: queue event removed ${e.title}")
-                        theatres[i].mPlayer?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = theatres[i].mPlayer!!.isPlaying)
+                        theatres[i].mPlayerFlow.value?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = theatres[i].mPlayerFlow.value!!.isPlaying)
                         break
                     }
                 }
             }
         } else if (event.action == FlowEvent.QueueEvent.Action.CLEARED) {
             mediaSession?.notifyChildrenChanged("ActQueue", 0, null)
-            for (i in 0..1) theatres[i].mPlayer?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = theatres[i].mPlayer!!.isPlaying)
+            for (i in 0..1) theatres[i].mPlayerFlow.value?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = theatres[i].mPlayerFlow.value!!.isPlaying)
         }
     }
 
     @RequiresPermission(Manifest.permission.VIBRATE)
     private fun unpauseIfPauseOnDisconnect(bluetooth: Boolean) {
-        if (theatres[0].mPlayer != null) {
+        if (theatres[0].mPlayerFlow.value != null) {
             val audioManager = getAppContext().getSystemService(AUDIO_SERVICE) as AudioManager
             if (audioManager.mode != AudioManager.MODE_NORMAL || audioManager.isMusicActive) {
                 Logd(TAG, "unpauseIfPauseOnDisconnect() audio is in use")
@@ -549,7 +550,7 @@ class PlaybackService : MediaLibraryService() {
         if (transientPause) {
             transientPause = false
             when {
-                !bluetooth && appPrefsFlow!!.value.unpauseOnHeadsetReconnect -> theatres[0].mPlayer?.play()
+                !bluetooth && appPrefsFlow!!.value.unpauseOnHeadsetReconnect -> theatres[0].mPlayerFlow.value?.play()
                 bluetooth && appPrefsFlow!!.value.unpauseOnBluetoothReconnect -> {
                     val vibrator = if (Build.VERSION.SDK_INT >= VERSION_CODES.S) {
                         val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -559,7 +560,7 @@ class PlaybackService : MediaLibraryService() {
                         getSystemService(VIBRATOR_SERVICE) as Vibrator
                     }
                     vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-                    theatres[0].mPlayer?.play()
+                    theatres[0].mPlayerFlow.value?.play()
                 }
             }
         }

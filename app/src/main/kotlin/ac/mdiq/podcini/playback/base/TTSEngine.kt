@@ -24,8 +24,6 @@ import ac.mdiq.podcini.utils.Logt
 import android.media.MediaMetadataRetriever
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
-import androidx.compose.runtime.MutableIntState
-import androidx.compose.runtime.MutableState
 import androidx.core.text.HtmlCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +36,7 @@ import java.io.File
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration.Companion.milliseconds
 
 object TTSEngine {
     const val TAG = "TTSEngine"
@@ -64,7 +63,7 @@ object TTSEngine {
 
     fun closeTTS() {
         if (ttsWorking) CoroutineScope(Dispatchers.Default).launch {
-            while (ttsWorking) delay(10000)
+            while (ttsWorking) delay(10000.milliseconds)
             tts?.stop()
             tts?.shutdown()
             ttsWorking = false
@@ -73,7 +72,7 @@ object TTSEngine {
         }
     }
 
-    fun doTTSNow(item_: Episode, textSourceIndex: Int, speaking: MutableState<Boolean>) {
+    fun doTTSNow(item_: Episode, textSourceIndex: Int, speakCB: (Boolean)->Unit) {
         var item = item_
         runOnIOScope {
             var readerText: String? = null
@@ -100,9 +99,9 @@ object TTSEngine {
                     commonMessage = null
                 }
             )
-            while (!ttsReady) delay(200)
+            while (!ttsReady) delay(200.milliseconds)
             if (tts?.isSpeaking == true) tts?.stop()
-            speaking.value = true
+            speakCB(true)
             if (!item.feed?.langSet.isNullOrEmpty()) {
                 val lang = item.feed!!.langSet.first()
                 val result = tts?.setLanguage(Locale.forLanguageTag(lang))
@@ -119,20 +118,20 @@ object TTSEngine {
                 tts?.speak(chunk, TextToSpeech.QUEUE_ADD, null, null)
                 startIndex += chunkLength
             }
-            while (tts?.isSpeaking == true) delay(1000)
-            speaking.value = false
+            while (tts?.isSpeaking == true) delay(1000.milliseconds)
+            speakCB(false)
         }
     }
 
-    fun doTTS(item_: Episode, textSourceIndex: Int, processing: MutableIntState, update: (Episode)->Unit) {
+    fun doTTS(item_: Episode, textSourceIndex: Int, processCB: (Int)-> Unit, update: (Episode)->Unit) {
         var item = item_
-        processing.intValue = 1
+        processCB(1)
         item = upsertBlk(item) { it.setPlayState(EpisodeState.BUILDING) }
         ttsTmpFiles.clear()
         ensureTTS()
         ttsJob = runOnIOScope {
             var readerText: String? = null
-            processing.intValue = 1
+            processCB(1)
             when (textSourceIndex) {
                 1 -> readerText = HtmlCompat.fromHtml(item.description ?: "", HtmlCompat.FROM_HTML_MODE_COMPACT).toString()
                 2 -> {
@@ -149,10 +148,10 @@ object TTSEngine {
 
             Logd(TAG, "readerText: [$readerText]")
             if (!readerText.isNullOrBlank()) {
-                processing.intValue = 5
-                while (!ttsReady) { delay(100) }
-                withContext(Dispatchers.Main) { processing.intValue = 15 }
-                while (ttsWorking) { delay(100) }
+                processCB(5)
+                while (!ttsReady) { delay(100.milliseconds) }
+                withContext(Dispatchers.Main) { processCB(15) }
+                while (ttsWorking) { delay(100.milliseconds) }
                 ttsWorking = true
                 if (!item.feed?.langSet.isNullOrEmpty()) {
                     val lang = item.feed!!.langSet.first()
@@ -192,11 +191,11 @@ object TTSEngine {
                     } catch (e: Exception) { Logs(TAG, e, "writing temp file error")}
                     startIndex += chunkLength
                     i++
-                    while (i - engineIndex > 0) delay(100)
-                    withContext(Dispatchers.Main) { processing.intValue = 15 + 70 * startIndex / readerText.length }
+                    while (i - engineIndex > 0) delay(100.milliseconds)
+                    withContext(Dispatchers.Main) { processCB(15 + 70 * startIndex / readerText.length) }
                 }
                 Logd(TAG, "chunks finished, status: $status")
-                withContext(Dispatchers.Main) { processing.intValue = 85 }
+                withContext(Dispatchers.Main) { processCB(85) }
                 if (status == TextToSpeech.SUCCESS) {
                     Logd(TAG, "TTS success, merging files to: ${mediaFile.absPath}")
                     mergeAudios(ttsTmpFiles.toTypedArray(), mediaFile.absPath, null)
@@ -229,11 +228,11 @@ object TTSEngine {
                 tts?.setOnUtteranceProgressListener(null)
                 ttsWorking = false
                 item = upsertBlk(item) { it.setPlayState(EpisodeState.UNPLAYED) }
-                withContext(Dispatchers.Main) { processing.intValue = -1 }
+                withContext(Dispatchers.Main) { processCB(-1) }
             } else {
                 Loge(TAG, getAppContext().getString(R.string.episode_has_no_content))
                 withContext(Dispatchers.Main) {
-                    processing.intValue = -1
+                    processCB(-1)
                     update(item)
                 }
             }

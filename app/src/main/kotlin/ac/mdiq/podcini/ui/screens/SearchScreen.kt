@@ -2,7 +2,7 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.net.searcher.AppleMediaSearcher
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
+import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.MediaSearcher
 import ac.mdiq.podcini.shared.getEntityId
@@ -41,6 +41,7 @@ import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.utils.SearchAlgo
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
+import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.formatLargeInteger
 import ac.mdiq.podcini.utils.formatWithGrouping
 import androidx.activity.compose.BackHandler
@@ -349,7 +350,10 @@ fun SearchScreen() {
             TopAppBar(
                 title = { Row(verticalAlignment = Alignment.CenterVertically) {
                     SearchBarRow(R.string.search_hint, defaultText = curSearchString, modifier = Modifier.weight(1f) , history = appAttribs.searchHistory) { str ->
-                        if (str.isBlank()) return@SearchBarRow
+                        if (str.isBlank()) {
+                            Logt(TAG, "A query string is needed.")
+                            return@SearchBarRow
+                        }
                         curSearchString = str
                         if (vm.selectedTabIndex == 2) scope.launch(Dispatchers.IO) { vm.searchRemoteMedia() }
                         saveToSearchHistory()
@@ -486,7 +490,7 @@ fun SearchScreen() {
                             Spacer(modifier = Modifier.weight(0.1f))
                             PlayRandom(vm.remoteMedia)
                         }
-                        EpisodeLazyColumn(vm.remoteMedia, isExternal = true, layoutMode = LayoutMode.WideImage.code, swipeActions = null, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) actQueue = tmpQueue() })
+                        EpisodeLazyColumn(vm.remoteMedia, isExternal = true, layoutMode = LayoutMode.WideImage.code, swipeActions = null, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) actQueueFlow.value = tmpQueue() })
                     }
                     3 -> PAFeedsColumn()
                 }

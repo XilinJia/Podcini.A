@@ -12,7 +12,7 @@ import ac.mdiq.podcini.sources.sourceClients
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.feedCount
+import ac.mdiq.podcini.storage.database.feedCountFlow
 import ac.mdiq.podcini.storage.database.loadLocalFolder
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsertBlk
@@ -114,7 +114,7 @@ class FindFeedsVM: ViewModel() {
     var searchJob: Job? = null
 
     init {
-        if (appPrefsFlow!!.value.OPMLRestored && feedCount == 0) {
+        if (appPrefsFlow!!.value.OPMLRestored && feedCountFlow.value == 0) {
             numberOPMLFeedsToRestore.intValue = appPrefsFlow!!.value.OPMLFeedsToRestore
             showOPMLRestoreDialog.value = true
         }

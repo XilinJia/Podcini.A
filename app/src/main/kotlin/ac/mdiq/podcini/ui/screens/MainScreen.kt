@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -14,7 +14,6 @@ import ac.mdiq.podcini.ui.compose.commonMessage
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
-import ac.mdiq.podcini.utils.toastMessages
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -70,6 +69,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -109,27 +109,27 @@ fun MainScreen() {
     }
 
     val sheetState = rememberBottomSheetScaffoldState(bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded, skipHiddenState = false))
+    val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
+    val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 
-    LaunchedEffect(sheetState.bottomSheetState) { snapshotFlow { sheetState.bottomSheetState.currentValue }.collect { state ->
-        Logd(TAG, "LaunchedEffect(sheetState.bottomSheetState) { snapshotFlow { sheetState.bottomSheetState.currentValue } state: $state")
-        psState = PSState.fromSheet(state)
+    // Sheet -> state
+    LaunchedEffect(Unit) { snapshotFlow { sheetState.bottomSheetState.currentValue }.distinctUntilChanged().collect { value ->
+        Logd(TAG, "snapshotFlow { sheetState.bottomSheetState.currentValue }")
+        val state = PSState.fromSheet(value)
+        if (psState != state) psState = state
     } }
 
-    var firstRun by remember { mutableStateOf(true) }
-    LaunchedEffect(key1 = psState, key2 = theatres[0].mPlayer?.curEpisode?.id, firstRun) {
-        Logd(TAG, "LaunchedEffect(key1 = bsState, key2 = curEpisode?.id, firstRun) ${psState.name}")
-        if (firstRun) {
-            firstRun = false
+    LaunchedEffect(psState, curMedia0?.id) {
+        Logd(TAG, "LaunchedEffect(psState, curMedia0?.id) ${curMedia0?.id} ${psState.name}")
+        if ((curMedia0?.id ?: -1L) <= 0) {
+            if (sheetState.bottomSheetState.currentValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()
             return@LaunchedEffect
         }
-        if ((theatres[0].mPlayer?.curEpisode?.id ?: -1L) > 0) {
-            when (psState) {
-                PSState.Expanded -> sheetState.bottomSheetState.expand()
-                PSState.PartiallyExpanded -> sheetState.bottomSheetState.partialExpand()
-                else -> sheetState.bottomSheetState.hide()
-            }
-        } else sheetState.bottomSheetState.hide()
-        //            if ((curEpisode?.id ?: -1L) <= 0) sheetState.bottomSheetState.hide()
+        when (psState) {
+            PSState.Expanded -> if (sheetState.bottomSheetState.currentValue != SheetValue.Expanded) sheetState.bottomSheetState.expand()
+            PSState.PartiallyExpanded -> if (sheetState.bottomSheetState.currentValue != SheetValue.PartiallyExpanded) sheetState.bottomSheetState.partialExpand()
+            PSState.Hidden -> if (sheetState.bottomSheetState.currentValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()
+        }
     }
 
     val bottomInsets = WindowInsets.ime.union(WindowInsets.navigationBars)
@@ -173,7 +173,7 @@ fun MainScreen() {
         }
     }
 
-    if (toastMessages.isNotEmpty()) CommonToast(toasts = toastMessages, onDismiss = { })
+    CommonToast(onDismiss = { })
     if (commonConfirms.isNotEmpty()) CommonConfirmDialog(commonConfirms[0])
     if (commonMessage != null) LargePoster(commonMessage!!)
 
@@ -201,7 +201,7 @@ fun MainScreen() {
             BottomSheetScaffold(sheetContent = { AVPlayerScreen() }, scaffoldState = sheetState, sheetMaxWidth = screenWidth, sheetPeekHeight = bottomInsetPadding + playerMinHeight.dp, sheetDragHandle = {}, sheetShape = RectangleShape, topBar = {}) { paddingValues ->
                 Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize().padding(top = paddingValues.calculateTopPadding(), bottom = dynamicBottomPadding)) {
                     NavDisplay(backStack = backStack, onBack = { navBack() }, entryProvider = myEntryProvider, entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()))
-                    if ((theatres[0].mPlayer?.curEpisode?.id ?: -1L) > 0 && psState == PSState.Hidden) Text(stringResource(R.string.player_in_drawer), color = Color.Black, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.LightGray).align(Alignment.BottomCenter))
+                    if ((curMedia0?.id ?: -1L) > 0 && psState == PSState.Hidden) Text(stringResource(R.string.player_in_drawer), color = Color.Black, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.LightGray).align(Alignment.BottomCenter))
 //                    if () Text(stringResource(R.string.player_in_drawer), color = Color.Red, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.background(Color.LightGray).align(Alignment.BottomCenter))
                 }
             }

@@ -18,7 +18,7 @@ import ac.mdiq.podcini.net.sync.queue.SynchronizationQueueStorage
 import ac.mdiq.podcini.net.utils.NetworkUtils.containsUrl
 import ac.mdiq.podcini.net.utils.NetworkUtils.isAllowedOnMobile
 import ac.mdiq.podcini.net.utils.NetworkUtils.setAllowMobileFor
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
+import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
@@ -285,7 +285,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
         }
 
         runOnIOScope {
-            removeFromQueue(actQueue, updatedItems)
+            removeFromQueue(actQueueFlow.value, updatedItems)
             for (episode in updatedItems) upsert(episode) {}
         }
     }

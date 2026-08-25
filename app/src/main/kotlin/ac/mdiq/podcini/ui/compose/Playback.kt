@@ -2,8 +2,8 @@ package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.autoEnableFrom
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.autoEnableTo
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.lastTimerValue
@@ -96,6 +96,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.collectLatest
 import org.json.JSONArray
 import org.json.JSONException
@@ -208,12 +209,16 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
         for (speed in speeds) jsonArray.put(formatNumberKmp(speed.toDouble()))
         upsertBlk(appPrefsFlow!!.value) { it.playbackSpeedArray = jsonArray.toString()}
     }
+    val player_ by theatres[playerId].mPlayerFlow.collectAsStateWithLifecycle()
+    val player = player_ ?: return
+    val curMedia by player.curMediaFlow.collectAsStateWithLifecycle()
+
     Dialog(properties = DialogProperties(usePlatformDefaultWidth = false), onDismissRequest = onDismiss) {
         val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
         dialogWindowProvider?.window?.setGravity(Gravity.BOTTOM)
         Card(modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(top = 10.dp, bottom = 10.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                var speed by remember { mutableFloatStateOf(theatres[playerId].mPlayer?.curPBSpeed?:0f) }
+                var speed by remember { mutableFloatStateOf(player.curPlayerSpeedFlow.value) }
                 val speeds = remember { readPlaybackSpeedArray(appPrefsFlow!!.value.playbackSpeedArray).toMutableStateList() }
                 var showEdit by remember { mutableStateOf(false) }
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -276,18 +281,18 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         FilterChip(label = { Text(chipSpeed.format(2)) }, selected = false,
                             onClick = {
                                 if (playbackService != null) {
-                                    theatres[playerId].mPlayer?.isSpeedForward = false
-                                    theatres[playerId].mPlayer?.isFallbackSpeed = false
+                                    player.isSpeedForward = false
+                                    player.isFallbackSpeed = false
                                     if (forGlobal) upsertBlk(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
-                                    if (forPodcast && theatres[playerId].mPlayer?.curEpisode?.feed != null) upsertBlk(theatres[playerId].mPlayer?.curEpisode!!.feed!!) { it.playSpeed = chipSpeed }
+                                    if (forPodcast && player.curMediaFlow.value?.feed != null) upsertBlk(player.curMediaFlow.value!!.feed!!) { it.playSpeed = chipSpeed }
                                     if (forCurrent) {
-                                        theatres[playerId].mPlayer?.curSpeed = chipSpeed
-                                        theatres[playerId].mPlayer?.setPlaybackParams(chipSpeed)
+                                        player.curSpeed = chipSpeed
+                                        player.setPlaybackParams(chipSpeed)
                                     }
                                 }
                                 else {
                                     upsertBlk(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
-                                    EventFlow.postEvent(FlowEvent.SpeedChangedEvent(playerId, chipSpeed))
+//                                    EventFlow.postEvent(FlowEvent.SpeedChangedEvent(playerId, chipSpeed))
                                 }
                                 onDismiss()
                             },
@@ -301,8 +306,8 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                 TextButton(onClick = { showMore = !showMore }) { Text("More>>", style = MaterialTheme.typography.headlineSmall) }
                 if (showMore) {
                     Text(stringResource(R.string.playback_pitch), fontSize = MaterialTheme.typography.headlineSmall.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 20.dp))
-                    var tmpPitch by remember(theatres[playerId].mPlayer?.curEpisode?.id) { mutableStateOf(true) }
-                    var feedPitch by remember(theatres[playerId].mPlayer?.curEpisode?.id) { mutableStateOf(false) }
+                    var tmpPitch by remember(curMedia?.id) { mutableStateOf(true) }
+                    var feedPitch by remember(curMedia?.id) { mutableStateOf(false) }
                     var glPitch by remember { mutableStateOf(false) }
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                         Spacer(Modifier.weight(1f))
@@ -316,7 +321,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         Text(stringResource(R.string.global))
                         Spacer(Modifier.weight(1f))
                     }
-                    var pitchStr by remember { mutableStateOf((theatres[playerId].mPlayer?.curPitch?:1f).toString()) }
+                    var pitchStr by remember { mutableStateOf((player.curPitch).toString()) }
                     var showSet by remember { mutableStateOf(false) }
                     var unit by remember { mutableStateOf("Ratio") }
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -332,10 +337,10 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                 val pitch = if (unit == "Ratio") pitchStr.toFloat() else pitchStr.toFloat() / 440f
                                 Logd(TAG, "pitch set to $pitch")
                                 if (tmpPitch) {
-                                    theatres[playerId].mPlayer?.curPitch = pitch
-                                    theatres[playerId].mPlayer?.setPlaybackParams(theatres[playerId].mPlayer!!.curSpeed, pitch)
+                                    player.curPitch = pitch
+                                    player.setPlaybackParams(player.curSpeed, pitch)
                                 }
-                                if (feedPitch) upsertBlk(theatres[playerId].mPlayer?.curEpisode!!.feed!!) { it.playPitch = pitch }
+                                if (feedPitch) upsertBlk(player.curMediaFlow.value!!.feed!!) { it.playPitch = pitch }
                                 if (glPitch) upsertBlk(appPrefsFlow!!.value) { it.playbackPitch = pitch }
                             }) }
                         )
@@ -349,18 +354,18 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                     Text(stringResource(R.string.pref_skip_silence_title), fontSize = MaterialTheme.typography.headlineSmall.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 20.dp))
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                         Spacer(Modifier.weight(1f))
-                        var tmpChecked by remember(theatres[playerId].mPlayer?.curEpisode?.id) { mutableStateOf(theatres[playerId].mPlayer?.skipSilence) }
+                        var tmpChecked by remember(curMedia?.id) { mutableStateOf(player.skipSilence) }
                         Checkbox(checked = tmpChecked?: false, onCheckedChange = { isChecked ->
                             tmpChecked = isChecked
-                            theatres[playerId].mPlayer?.skipSilence = isChecked
-                            theatres[playerId].mPlayer?.setSkipSilence()
+                            player.skipSilence = isChecked
+                            player.setSkipSilence()
                         })
                         Text(stringResource(R.string.current_episode))
-                        var feedChecked by remember(theatres[playerId].mPlayer?.curEpisode?.id) { mutableStateOf(theatres[playerId].mPlayer?.curEpisode!!.feed?.skipSilence?: false) }
+                        var feedChecked by remember(curMedia?.id) { mutableStateOf(curMedia!!.feed?.skipSilence?: false) }
                         Spacer(Modifier.weight(1f))
                         Checkbox(checked = feedChecked, onCheckedChange = { isChecked ->
                             feedChecked = isChecked
-                            if (theatres[playerId].mPlayer?.curEpisode?.feed != null) upsertBlk(theatres[playerId].mPlayer?.curEpisode!!.feed!!) { it.skipSilence = isChecked }
+                            if (player.curMediaFlow.value?.feed != null) upsertBlk(player.curMediaFlow.value!!.feed!!) { it.skipSilence = isChecked }
                         })
                         Text(stringResource(R.string.current_podcast))
                         Spacer(Modifier.weight(1f))
@@ -375,9 +380,10 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                     Text(stringResource(R.string.pref_skip_silence_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
                     HorizontalDivider(thickness = 5.dp, modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = theatres[playerId].mPlayer?.shouldRepeat == true, onCheckedChange = { isChecked ->
-                            theatres[playerId].mPlayer?.shouldRepeat = isChecked
-                            theatres[playerId].mPlayer?.setRepeat(isChecked)
+                        val shouldRepeat by player.shouldRepeatFlow.collectAsStateWithLifecycle()
+                        Checkbox(checked = shouldRepeat, onCheckedChange = { isChecked ->
+                            player.shouldRepeatFlow.value = isChecked
+                            player.setRepeat(isChecked)
                         })
                         Text(stringResource(R.string.repeat_current_media))
                     }
@@ -466,18 +472,20 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
         text = {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 if (showTimeSetup) {
+                    val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
+                    val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp)) {
                         Checkbox(checked = toEnd, onCheckedChange = { toEnd = it })
                         Text(stringResource(R.string.end_episode), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 10.dp))
                     }
                     if (!toEnd) TextField(value = etxtTime, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.time_minutes)) }, singleLine = true,
                         onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) etxtTime = it })
-                    if (theatres[0].mPlayer?.curEpisode != null) Button(modifier = Modifier.fillMaxWidth(), onClick = {
+                    if (curMedia0 != null) Button(modifier = Modifier.fillMaxWidth(), onClick = {
                         if (!PlaybackService.isRunning) {
                             Logt(TAG, "Can't set sleep timer: service has not started")
                             return@Button
                         }
-                        val time = if (!toEnd) etxtTime.toLong() else (max(((theatres[0].mPlayer!!.curEpisode!!.duration) - (theatres[0].mPlayer!!.curEpisode!!.position)), 0) / theatres[0].mPlayer!!.curPBSpeed).toLong().milliseconds.inWholeMinutes // ms to minutes
+                        val time = if (!toEnd) etxtTime.toLong() else (max(((player0!!.curMediaFlow.value!!.duration) - (player0!!.curMediaFlow.value!!.position)), 0) / player0!!.curPlayerSpeedFlow.value).toLong().milliseconds.inWholeMinutes // ms to minutes
                         Logd("SleepTimerDialog", "Sleep timer set: $time")
                         if (time > 0L) {
                             upsertBlk(sleepPrefs) { it.LastValue = time }
@@ -551,7 +559,7 @@ fun PlayRandom(episodes: List<Episode>, playNext: Boolean = false) {
         val item = episodes.random()
         PlaybackStarter(item).shouldStreamThisTime(null).start(0)
         playVideoIfNeeded(item)
-        if (!playNext) actQueue = tmpQueue()
+        if (!playNext) actQueueFlow.value = tmpQueue()
     })
 }
 

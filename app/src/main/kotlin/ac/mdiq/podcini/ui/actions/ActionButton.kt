@@ -10,11 +10,10 @@ import ac.mdiq.podcini.net.utils.NetworkUtils
 import ac.mdiq.podcini.net.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.net.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.InTheatre
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
-import ac.mdiq.podcini.playback.base.InTheatre.activeTheatres
-import ac.mdiq.podcini.playback.base.InTheatre.isCurrentlyPlaying
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.base.activeTheatresFlow
+import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.MediaPlayerBase.Companion.handleAudioFocus
 import ac.mdiq.podcini.playback.base.TTSEngine
 import ac.mdiq.podcini.playback.base.TTSEngine.doTTS
@@ -23,6 +22,7 @@ import ac.mdiq.podcini.playback.base.TTSEngine.ensureTTS
 import ac.mdiq.podcini.playback.base.TTSEngine.tts
 import ac.mdiq.podcini.playback.base.TTSEngine.ttsJob
 import ac.mdiq.podcini.playback.base.TTSEngine.ttsTmpFiles
+import ac.mdiq.podcini.playback.base.isCurMedia
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.sources.clientByEpisode
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -40,7 +40,6 @@ import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
-
 import ac.mdiq.podcini.ui.compose.commonConfirms
 import ac.mdiq.podcini.ui.screens.PSState
 import ac.mdiq.podcini.ui.screens.curVideoMode
@@ -162,37 +161,37 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             }
             ButtonTypes.PLAY -> {
                 if (fileNotExist()) return
-                if (activeTheatres == 1) {
+                if (activeTheatresFlow.value == 1) {
                     PlaybackStarter(item).start(0)
                     playVideoIfNeeded(item)
                 } else askForPlayer { i-> PlaybackStarter(item).start(i) }
             }
             ButtonTypes.PLAY_ONE -> {
                 if (fileNotExist()) return
-                if (activeTheatres == 1) {
+                if (activeTheatresFlow.value == 1) {
                     PlaybackStarter(item).start(0)
                     playVideoIfNeeded(item)
-                    actQueue = tmpQueue()
+                    actQueueFlow.value = tmpQueue()
                 } else askForPlayer { i->
                     PlaybackStarter(item).start(i)
-                    actQueue = tmpQueue()
+                    actQueueFlow.value = tmpQueue()
                 }
             }
             ButtonTypes.PLAY_REPEAT -> {
                 if (fileNotExist()) return
-                if (activeTheatres == 1) {
+                if (activeTheatresFlow.value == 1) {
                     PlaybackStarter(item).setToRepeat(true).start(0)
                     playVideoIfNeeded(item)
-                    actQueue = tmpQueue()
+                    actQueueFlow.value = tmpQueue()
                 } else askForPlayer { i->
                     PlaybackStarter(item).setToRepeat(true).start(i)
-                    actQueue = tmpQueue()
+                    actQueueFlow.value = tmpQueue()
                 }
             }
             ButtonTypes.STREAM -> {
                 //        Logd("StreamActionButton", "item.feed: ${item.feedId}")
                 askToStream {
-                    if (activeTheatres == 1) {
+                    if (activeTheatresFlow.value == 1) {
                         PlaybackStarter(item).shouldStreamThisTime(true).start(0)
                         playVideoIfNeeded(item)
                     } else askForPlayer { i-> PlaybackStarter(item).shouldStreamThisTime(true).start(i) }
@@ -201,24 +200,24 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             ButtonTypes.STREAM_REPEAT -> {
                 //        Logd("StreamActionButton", "item.feed: ${item.feedId}")
                 askToStream {
-                    if (activeTheatres == 1) {
+                    if (activeTheatresFlow.value == 1) {
                         PlaybackStarter(item).shouldStreamThisTime(true).setToRepeat(true).start(0)
                         playVideoIfNeeded(item)
-                        actQueue = tmpQueue()
+                        actQueueFlow.value = tmpQueue()
                     } else askForPlayer { i->
                         PlaybackStarter(item).shouldStreamThisTime(true).setToRepeat(true).start(i)
-                        actQueue = tmpQueue()
+                        actQueueFlow.value = tmpQueue()
                     }
                 }
             }
             ButtonTypes.STREAM_ONE -> {
-                if (activeTheatres == 1) {
+                if (activeTheatresFlow.value == 1) {
                     PlaybackStarter(item).shouldStreamThisTime(true).start(0)
                     playVideoIfNeeded(item)
-                    actQueue = tmpQueue()
+                    actQueueFlow.value = tmpQueue()
                 } else askForPlayer { i->
                     PlaybackStarter(item).shouldStreamThisTime(true).start(i)
-                    actQueue = tmpQueue()
+                    actQueueFlow.value = tmpQueue()
                 }
             }
             ButtonTypes.DELETE -> {
@@ -228,8 +227,8 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             ButtonTypes.PAUSE -> {
                 if (isCurrentlyPlaying(item)) {
                     for (i in 0..1) {
-                        if (item.id != theatres[i].mPlayer?.curEpisode?.id) continue
-                        theatres[i].mPlayer?.pause(false)
+                        if (item.id != theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) continue
+                        theatres[i].mPlayerFlow.value?.pause(false)
                         update(item)
                     }
                 }
@@ -280,8 +279,8 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     confirmRes = R.string.description_label,
                     cancelRes = R.string.cancel_label,
                     neutralRes = R.string.transcript,
-                    onConfirm = { doTTSNow(item, 1, speaking) },
-                    onNeutral = { doTTSNow(item, 2, speaking) }))
+                    onConfirm = { doTTSNow(item, 1) { speaking.value = it} },
+                    onNeutral = { doTTSNow(item, 2) { speaking.value = it}  }))
             }
             ButtonTypes.TTS -> {
                 Logd("TTSActionButton", "onClick called")
@@ -299,22 +298,22 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     onConfirm = {
                         typeToCancel = ButtonTypes.TTS
                         type = ButtonTypes.CANCEL
-                        doTTS(item, 1, processing) { update(it) }
+                        doTTS(item, 1, { processing.intValue = it }) { update(it) }
                     },
                     onNeutral = {
                         typeToCancel = ButtonTypes.TTS
                         type = ButtonTypes.CANCEL
-                        doTTS(item, 2, processing) { update(it) }
+                        doTTS(item, 2, { processing.intValue = it }) { update(it) }
                     }))
             }
             ButtonTypes.PLAY_LOCAL -> {
-                if (PlaybackService.playbackService?.isServiceReady() == true && InTheatre.isCurMedia(item)) {
+                if (PlaybackService.playbackService?.isServiceReady() == true && isCurMedia(item)) {
                     for (i in 0..1) {
-                        if (item.id != theatres[i].mPlayer?.curEpisode?.id) continue
-                        theatres[i].mPlayer?.play()
+                        if (item.id != theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) continue
+                        theatres[i].mPlayerFlow.value?.play()
                     }
                 } else {
-                    if (activeTheatres == 1) {
+                    if (activeTheatresFlow.value == 1) {
                         PlaybackStarter(item).start(0)
                         if (item.playState < EpisodeState.PROGRESS.code || item.playState == EpisodeState.SKIPPED.code || item.playState == EpisodeState.AGAIN.code) item = upsertBlk(item) { it.setPlayState(EpisodeState.PROGRESS) }
                     } else askForPlayer { i->
@@ -516,11 +515,11 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
         @OptIn(ExperimentalMaterial3Api::class)
         fun playVideoIfNeeded(item: Episode) {
             for (i in 0..1) {
-                if (item.id != theatres[i].mPlayer?.curEpisode?.id) continue
+                if (item.id != theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) continue
                 if (item.forceVideo || (item.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && item.mediaType == MediaType.VIDEO)) {
-                    theatres[i].mPlayer?.playingVideo = true
+                    theatres[i].mPlayerFlow.value?.playingVideoFlow?.value = true
                     psState = PSState.Expanded
-                } else theatres[i].mPlayer?.playingVideo = false
+                } else theatres[i].mPlayerFlow.value?.playingVideoFlow?.value = false
             }
         }
     }

@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.storage.model
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
+import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.shared.FeedIPC
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getFeed
@@ -21,9 +21,6 @@ import ac.mdiq.podcini.storage.specs.VolumeAdaptionSetting
 import ac.mdiq.podcini.storage.specs.VolumeAdaptionSetting.Companion.fromInteger
 import ac.mdiq.podcini.storage.utils.generateFileName
 import ac.mdiq.podcini.utils.Logd
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
 import androidx.media3.common.C
 import io.github.xilinjia.krdb.ext.realmListOf
 import io.github.xilinjia.krdb.ext.realmSetOf
@@ -35,6 +32,7 @@ import io.github.xilinjia.krdb.types.RealmSet
 import io.github.xilinjia.krdb.types.annotations.Ignore
 import io.github.xilinjia.krdb.types.annotations.Index
 import io.github.xilinjia.krdb.types.annotations.PrimaryKey
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
 
 class Feed : RealmObject {
@@ -294,14 +292,14 @@ class Feed : RealmObject {
     var queue: PlayQueue? = null
         get() = when {
             queueId >= 0 -> queuesLive.find { it.id == queueId }
-            queueId == -1L -> actQueue
+            queueId == -1L -> actQueueFlow.value
             queueId == -2L -> null
             else -> null
         }
         set(value) {
             field = value
             queueId = value?.id ?: -2L
-            feedQueueUpdated++
+            feedQueueUpdated.value++
         }
     @Ignore
     val queueText: String
@@ -657,7 +655,7 @@ class Feed : RealmObject {
 
         val FeedAutoDeleteOptions = AutoDeleteAction.entries.map { it.tag }
 
-        var feedQueueUpdated by mutableIntStateOf(0)
+        val feedQueueUpdated = MutableStateFlow(0)
 
         fun intervalMillis(n: Int, i: Int): Long {
             return when (i) {

@@ -14,8 +14,8 @@ import ac.mdiq.podcini.net.sync.transceive.DiscoveredReceiver
 import ac.mdiq.podcini.net.sync.transceive.listenForUDPBroadcasts
 import ac.mdiq.podcini.net.sync.transceive.sendEpisodes
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sources.clientByEpisode
@@ -71,7 +71,7 @@ import ac.mdiq.podcini.utils.LogtFor
 import ac.mdiq.podcini.utils.ShownotesCleaner
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.fullDateTimeString
-import ac.mdiq.podcini.utils.sessionLogs
+import ac.mdiq.podcini.utils.sessionLogsFlow
 import ac.mdiq.podcini.utils.shareLink
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -313,6 +313,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
     }
     if (showTodoDialog) TodoDialog(episode, onTodo) { showTodoDialog = false}
 
+    val sessionLogs by sessionLogsFlow.collectAsStateWithLifecycle()
     val playerLogs = remember(episode.id) { sessionLogs.filter { it.contains(episode.id.toString()) } }
     val dlLogs = remember(episode.id) { realm.query(DownloadResult::class).query("feedfileId == ${episode.id} AND feedfileType == ${RequestType.FEEDMEDIA.code}").sort("completionTime",  Sort.DESCENDING).find() }
 
@@ -427,9 +428,9 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 episode.marks.forEach { mark ->
                     FilterChip(label = { Text(durationStringShort(mark, false)) }, selected = false,
                         onClick = {
-                            if (episode.id == theatres[0].mPlayer?.curEpisode?.id) {
-                                if (!theatres[0].mPlayer!!.isPlaying) theatres[0].mPlayer?.play()
-                                theatres[0].mPlayer?.seekTo(mark.toInt())
+                            if (episode.id == theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id) {
+                                if (!theatres[0].mPlayerFlow.value!!.isPlaying) theatres[0].mPlayerFlow.value?.play()
+                                theatres[0].mPlayerFlow.value?.seekTo(mark.toInt())
                             } else Logt(TAG, context.getString(R.string.play_mark_msg))
                         },
                         trailingIcon = { Icon(imageVector = Icons.Filled.Delete, contentDescription = "delete", modifier = Modifier.size(FilterChipDefaults.IconSize).padding(start = 3.dp).clickable { markToRemove = mark }) }
@@ -490,18 +491,18 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                     //            Text(ch.link?: "")
                     Row(modifier = Modifier.clickable {
                         when {
-                            theatres[0].mPlayer?.curEpisode?.id == episode.id -> {
-                                if (!theatres[0].mPlayer!!.isPlaying) theatres[0].mPlayer?.play()
-                                theatres[0].mPlayer?.seekTo(ch.start.toInt())
+                            theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id == episode.id -> {
+                                if (!theatres[0].mPlayerFlow.value!!.isPlaying) theatres[0].mPlayerFlow.value?.play()
+                                theatres[0].mPlayerFlow.value?.seekTo(ch.start.toInt())
                             }
-                            theatres[1].mPlayer?.curEpisode?.id == episode.id -> {
-                                if (!theatres[1].mPlayer!!.isPlaying) theatres[1].mPlayer?.play()
-                                theatres[1].mPlayer?.seekTo(ch.start.toInt())
+                            theatres[1].mPlayerFlow.value?.curMediaFlow?.value?.id == episode.id -> {
+                                if (!theatres[1].mPlayerFlow.value!!.isPlaying) theatres[1].mPlayerFlow.value?.play()
+                                theatres[1].mPlayerFlow.value?.seekTo(ch.start.toInt())
                             }
                             else -> {
                                 PlaybackStarter(episode).shouldStreamThisTime(episode.fileUrl == null).start(0)
                                 playVideoIfNeeded(episode)
-                                theatres[0].mPlayer?.seekTo(ch.start.toInt())
+                                theatres[0].mPlayerFlow.value?.seekTo(ch.start.toInt())
                             }
                         }
                         curChapterIndex = index
@@ -537,7 +538,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
         AndroidView(modifier = Modifier.fillMaxSize(),
             factory = {
                 ShownotesWebView(activity).apply {
-                    setTimecodeSelectedListener { time: Int -> theatres[0].mPlayer?.seekTo(time) }
+                    setTimecodeSelectedListener { time: Int -> theatres[0].mPlayerFlow.value?.seekTo(time) }
                     setPageFinishedListener { postDelayed({ }, 50) }
                 } },
             update = { view ->
@@ -656,7 +657,7 @@ fun PutToQueueDialog(selected: List<Episode>, onDismiss: () -> Unit) {
     CommonPopupCard(onDismiss = onDismiss) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             var removeChecked by remember { mutableStateOf(false) }
-            var toQueue by remember { mutableStateOf(actQueue) }
+            var toQueue by remember { mutableStateOf(actQueueFlow.value) }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                 for (q in queuesLive) {
                     FilterChip(label = { Text(q.name) }, onClick = { toQueue = q }, selected = toQueue == q, border = filterChipBorder(toQueue == q) )
@@ -673,7 +674,7 @@ fun PutToQueueDialog(selected: List<Episode>, onDismiss: () -> Unit) {
                         if (removeChecked) {
                             val toRemove = mutableSetOf<Long>()
                             val toRemoveCur = mutableListOf<Episode>()
-                            selected.forEach { e -> if (actQueue.contains(e)) toRemoveCur.add(e) }
+                            selected.forEach { e -> if (actQueueFlow.value.contains(e)) toRemoveCur.add(e) }
                             selected.forEach { e ->
                                 for (q in queuesLive) {
                                     if (q.contains(e)) {

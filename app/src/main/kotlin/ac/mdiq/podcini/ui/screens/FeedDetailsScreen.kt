@@ -6,7 +6,7 @@ import ac.mdiq.podcini.net.download.RequestType
 import ac.mdiq.podcini.net.feed.FeedUpdateManager.runOnceOrAsk
 import ac.mdiq.podcini.net.feed.FeedUpdater
 import ac.mdiq.podcini.net.sync.transceive.sendFeed
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sources.isExtFeed
 import ac.mdiq.podcini.sources.typeClientMap
@@ -343,10 +343,9 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     var showToDeviceDialog by remember { mutableStateOf(false) }
 
     val episodes by vm.episodesFlow.collectAsStateWithLifecycle()
-    LaunchedEffect(episodes.size) {
+    LaunchedEffect(episodes.size, feed?.id) {
         Logd(TAG, "LaunchedEffect(episodes.size)")
-//        for (e in episodes) Logd(TAG, "tracknumber: ${e.trackNumber} ")
-        vm.listInfoText = buildListInfo(episodes, vm.feedEpisodesSize)
+        vm.listInfoText = buildListInfo(episodes, vm.feedEpisodesSize, feed)
     }
 
     LaunchedEffect(feedOperationText) {
@@ -406,15 +405,15 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     val lazyListState = rememberLazyListState()
     fun onImgLongClick() {
         for (i in 0..1) {
-            if (theatres[i].mPlayer?.curEpisode?.feedId == feedId) {
+            if (theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.feedId == feedId) {
                 if (screenMode == FeedScreenMode.List) {
                     if (episodes.size > 5) {
-                        val index = episodes.indexOfFirst { it.id == theatres[i].mPlayer?.curEpisode?.id }
+                        val index = episodes.indexOfFirst { it.id == theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id }
                         if (index >= 0) scope.launch { lazyListState.scrollToItem(index) }
-                        else Logt(TAG, "can not find curEpisode to scroll to")
+                        else Logt(TAG, "can not find curMediaFlow.value to scroll to")
                     } else Logt(TAG, "only scroll when episodes number is larger than 5")
                 } else vm.screenModeFlow.value = (FeedScreenMode.List)
-            } else if (theatres[i].mPlayer?.curEpisode?.feedId != null) navTo(FeedDetails(feedId = theatres[i].mPlayer?.curEpisode!!.feedId!!))
+            } else if (theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.feedId != null) navTo(FeedDetails(feedId = theatres[i].mPlayerFlow.value?.curMediaFlow?.value!!.feedId!!))
         }
     }
 
@@ -715,11 +714,15 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
         Scaffold(topBar = { TopHeader() }) { innerPadding ->
             if (screenMode in listOf(FeedScreenMode.List, FeedScreenMode.History)) {
                 Column(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface).nestedScroll(nestedScrollConnection)) {
-                    val scrollToOnStart = remember(episodes.size, theatres[0].mPlayer?.curEpisode?.id, theatres[1].mPlayer?.curEpisode?.id, screenMode) {
+                    val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
+                    val player1 by theatres[1].mPlayerFlow.collectAsStateWithLifecycle()
+                    val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
+                    val curMedia1 by player1?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
+                    val scrollToOnStart = remember(episodes.size, curMedia0?.id, curMedia1?.id, screenMode) {
                         when {
                             screenMode == FeedScreenMode.History || screenMode == FeedScreenMode.Info -> -1
-                            theatres[0].mPlayer?.curEpisode?.feedId == feedId -> episodes.indexOfFirst { it.id == theatres[0].mPlayer?.curEpisode?.id }
-                            theatres[1].mPlayer?.curEpisode?.feedId == feedId -> episodes.indexOfFirst { it.id == theatres[1].mPlayer?.curEpisode?.id }
+                            curMedia0?.feedId == feedId -> episodes.indexOfFirst { it.id == curMedia0?.id }
+                            curMedia1?.feedId == feedId -> episodes.indexOfFirst { it.id == curMedia1?.id }
                             else -> -1
                         }
                     } //                Logd(TAG, "feed?.prefActionType: ${feed?.prefActionType}")

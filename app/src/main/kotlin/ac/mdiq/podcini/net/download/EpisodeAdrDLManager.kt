@@ -7,7 +7,7 @@ import ac.mdiq.podcini.net.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.net.download.EpisodeAdrDLManager.Companion.WORK_DATA_PROGRESS
 import ac.mdiq.podcini.net.download.EpisodeDLManager.Companion.updateDB
 import ac.mdiq.podcini.net.utils.NetworkUtils.mobileAllowEpisodeDownload
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
+import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -92,7 +92,7 @@ class EpisodeAdrDLManager: EpisodeDLManager() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val workInfoList = future.get() // Wait for the completion of the future operation and retrieve the result
-                workInfoList.forEach { workInfo -> if (workInfo.tags.contains(WORK_DATA_WAS_QUEUED)) removeFromQueue(actQueue, listOf(media), playState = EpisodeState.UNSPECIFIED) }
+                workInfoList.forEach { workInfo -> if (workInfo.tags.contains(WORK_DATA_WAS_QUEUED)) removeFromQueue(actQueueFlow.value, listOf(media), playState = EpisodeState.UNSPECIFIED) }
             } catch (exception: Throwable) { Logs(TAG, exception)
             } finally { WorkManager.getInstance(getAppContext()).cancelAllWorkByTag(tag) }
         }

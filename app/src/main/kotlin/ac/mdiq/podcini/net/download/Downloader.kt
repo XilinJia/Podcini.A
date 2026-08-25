@@ -2,14 +2,14 @@ package ac.mdiq.podcini.net.download
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.net.download.DownloadRequest.Companion.CredentialsKey
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.net.utils.NetworkUtils.getURIFromRequestUrl
 import ac.mdiq.podcini.net.utils.NetworkUtils.isNetworkUrl
 import ac.mdiq.podcini.net.utils.NetworkUtils.wasDownloadBlocked
-import ac.mdiq.podcini.storage.model.DownloadResult
-import ac.mdiq.podcini.storage.utils.freeSpaceAvailable
+import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appPrefsFlow
+import ac.mdiq.podcini.storage.model.DownloadResult
+import ac.mdiq.podcini.storage.utils.freeSpaceAvailable
 import ac.mdiq.podcini.storage.utils.parseDate
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.utils.Logd
@@ -18,7 +18,6 @@ import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.startTiming
 import ac.mdiq.podcini.utils.timeIt
-import androidx.compose.runtime.mutableStateMapOf
 import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.HttpTimeoutConfig
 import io.ktor.client.plugins.onDownload
@@ -36,6 +35,8 @@ import io.ktor.util.network.UnresolvedAddressException
 import io.ktor.utils.io.asSource
 import io.ktor.utils.io.readAvailable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlinx.io.Source
@@ -115,7 +116,7 @@ abstract class Downloader(val request: DownloadRequest) {
     companion object {
         private val TAG: String = Downloader::class.simpleName ?: "Anonymous"
 
-        val downloadStates = mutableStateMapOf<String, DownloadStatus>()
+        val downloadStatesFlow = MutableStateFlow<Map<String, DownloadStatus>>(emptyMap())
 
         protected const val BUFFER_SIZE = 8 * 1024
 
@@ -263,7 +264,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
             Logd(TAG, "starting downloadEpisode(): destination: ${request.destination}")
             if (request.source == null) return@withContext
             startTiming()
-            downloadStates[request.source] = DownloadStatus(DownloadStatus.State.QUEUED.code, 5)
+            downloadStatesFlow.update { it + (request.source to DownloadStatus(DownloadStatus.State.QUEUED.code, 5)) }
             timeIt("$TAG start")
 
             val destFile = request.destination.toUF()
@@ -289,7 +290,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                                 if (currentProgress / 10 > lastReportedProgress / 10 || currentProgress == 100) {
                                     lastReportedProgress = currentProgress
                                     withContext(Dispatchers.Main.immediate) {
-                                        downloadStates[request.source] = DownloadStatus(if (request.progressPercent < 100) DownloadStatus.State.RUNNING.code else DownloadStatus.State.COMPLETED.code, request.progressPercent)
+                                        downloadStatesFlow.update { it + (request.source to DownloadStatus(if (request.progressPercent < 100) DownloadStatus.State.RUNNING.code else DownloadStatus.State.COMPLETED.code, request.progressPercent)) }
                                     }
                                 }
                                 //                                Logd(TAG, "writeBody request.soFar: ${request.soFar} progressPercent: $progressPercent")
@@ -318,7 +319,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                             val progress = (100 * bytesSentTotal / contentLength!!).toInt()
                             //                        timeIt("$TAG got progress: $progress")
                             request.progressPercent = progress
-                            downloadStates[request.source] = DownloadStatus(if(request.progressPercent < 100) DownloadStatus.State.RUNNING.code else DownloadStatus.State.COMPLETED.code, request.progressPercent)
+                            downloadStatesFlow.update { it + (request.source to DownloadStatus(if(request.progressPercent < 100) DownloadStatus.State.RUNNING.code else DownloadStatus.State.COMPLETED.code, request.progressPercent)) }
                         }
                     }
                     attributes.put(CredentialsKey, request)
@@ -393,13 +394,13 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                         else -> throw IOException("Unexpected HTTP status ${response.status}")
                     }
                     timeIt("$TAG after when")
-                    downloadStates[request.source] = DownloadStatus(DownloadStatus.State.RUNNING.code, 10)
+                    downloadStatesFlow.update { it + (request.source to DownloadStatus(DownloadStatus.State.RUNNING.code, 10)) }
                     checkIfRedirect(response)
                     timeIt("$TAG after checkIfRedirect")
-                    downloadStates[request.source] = DownloadStatus(DownloadStatus.State.RUNNING.code, 15)
+                    downloadStatesFlow.update { it + (request.source to DownloadStatus(DownloadStatus.State.RUNNING.code, 15)) }
                     request.ensureMediaFileExists()
                     timeIt("$TAG after ensureMediaFileExists")
-                    downloadStates[request.source] = DownloadStatus(DownloadStatus.State.RUNNING.code, 18)
+                    downloadStatesFlow.update { it + (request.source to DownloadStatus(DownloadStatus.State.RUNNING.code, 18)) }
                     request.statusMsg = (R.string.download_running)
 
                     if (appPrefsFlow!!.value.checkAvailableSpace) {

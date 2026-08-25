@@ -1,9 +1,9 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.InTheatre.activeTheatres
+import ac.mdiq.podcini.playback.base.activeTheatresFlow
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
-import ac.mdiq.podcini.storage.database.feedCount
+import ac.mdiq.podcini.storage.database.feedCountFlow
 import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.min
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import io.github.xilinjia.krdb.query.Sort
 import kotlinx.coroutines.Dispatchers
@@ -97,11 +98,12 @@ fun NavDrawerScreen() {
         }
     }
 
+    val activeTheatres by activeTheatresFlow.collectAsStateWithLifecycle()
     LaunchedEffect(drawerState.isOpen) {
         Logd(TAG, "LaunchedEffect(drawerState.currentValue): ${drawerState.isOpen}")
         if (drawerState.isOpen) withContext(Dispatchers.IO) {
             navMap[Screens.Queues.name]?.count = queuesLive.sumOf { it.size()}
-            navMap[Screens.Library.name]?.count = feedCount
+            navMap[Screens.Library.name]?.count = feedCountFlow.value
             navMap[Screens.Facets.name]?.count = getEpisodesCount(EpisodeFilter(""))
             navMap[Screens.Logs.name]?.count = realm.query(ShareLog::class).count().find().toInt() +
                     realm.query(SubscriptionLog::class).count().find().toInt() +
@@ -146,7 +148,7 @@ fun NavDrawerScreen() {
                 Spacer(Modifier.weight(1f))
                 val playersRes = remember(activeTheatres) { if (activeTheatres == 1) R.drawable.teaser else R.drawable.ic_launcher_foreground }
                 AsyncImage(model = playersRes, contentDescription = "Players", modifier = Modifier.height(24.dp).clickable {
-                    activeTheatres = if (activeTheatres == 1) 2 else 1
+                    activeTheatresFlow.value = if (activeTheatres == 1) 2 else 1
                     playerMinHeight = if (activeTheatres == 1) 100 else 210
                     playbackService?.switchPlayersMode()
                 })

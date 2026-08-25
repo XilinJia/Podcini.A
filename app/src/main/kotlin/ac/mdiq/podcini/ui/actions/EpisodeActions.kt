@@ -2,7 +2,7 @@ package ac.mdiq.podcini.ui.actions
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
+import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.addToQueue
@@ -243,12 +243,12 @@ class AddToActiveQueue : EpisodeAction() {
 
     override fun enabled(): Boolean {
         if (onEpisode?.feed?.queue != null) return false
-        return onEpisode != null && !actQueue.contains(onEpisode!!)
+        return onEpisode != null && !actQueueFlow.value.contains(onEpisode!!)
     }
 
     override fun performAction(e: Episode) {
         super.performAction(e)
-        runOnIOScope { addToQueue(listOf(e), actQueue) }
+        runOnIOScope { addToQueue(listOf(e), actQueueFlow.value) }
     }
 }
 
@@ -283,7 +283,7 @@ class RemoveFromAllQueues : EpisodeAction() {
     override val iconRes:  Int = R.drawable.ic_playlist_remove
     override val color: Color = Color(0xFFDDAAFF)
 
-    override fun enabled(): Boolean = onEpisode != null && actQueue.contains(onEpisode!!)
+    override fun enabled(): Boolean = onEpisode != null && actQueueFlow.value.contains(onEpisode!!)
 
     override fun performAction(e: Episode) {
         super.performAction(e)
@@ -300,7 +300,7 @@ class RemoveFromCurQueue : EpisodeAction() {
     override val iconRes:  Int = R.drawable.outline_remove_from_queue_24
     override val color: Color = Color(0xFFDD77FF)
 
-    override fun enabled(): Boolean = onEpisode != null && actQueue.contains(onEpisode!!)
+    override fun enabled(): Boolean = onEpisode != null && actQueueFlow.value.contains(onEpisode!!)
 
     override fun performAction(e: Episode) {
         super.performAction(e)

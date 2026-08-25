@@ -8,11 +8,12 @@ package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.net.download.DownloadStatus
-import ac.mdiq.podcini.net.download.Downloader.Companion.downloadStates
+import ac.mdiq.podcini.net.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.net.utils.NetworkUtils.fetchHtmlSource
 import ac.mdiq.podcini.net.utils.NetworkUtils.isImageDownloadAllowed
-import ac.mdiq.podcini.playback.base.InTheatre
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.playback.base.PlayerStatus
+import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
 import ac.mdiq.podcini.sources.isExtFeed
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
@@ -211,10 +212,14 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
     var showAltActionsDialog by remember { mutableStateOf(false) }
     var actionButton by remember { mutableStateOf<ActionButton?>(null) }
     if (showAltActionsDialog) actionButton?.AltActionsDialog(onDismiss = { showAltActionsDialog = false })
-    LaunchedEffect(key1 = theatres[0].mPlayer?.status, theatres[1].mPlayer?.status, episode) {
+    val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
+    val player1 by theatres[1].mPlayerFlow.collectAsStateWithLifecycle()
+    val status0 by player0?.statusFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf( PlayerStatus.STOPPED) }
+    val status1 by player1?.statusFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(PlayerStatus.STOPPED) }
+    LaunchedEffect(key1 = status0, status1, episode) {
         actionButton = ActionButton(episode)
         actionButton?.type = when {
-            InTheatre.isCurrentlyPlaying(episode) -> ButtonTypes.PAUSE
+            isCurrentlyPlaying(episode) -> ButtonTypes.PAUSE
             episodeFeed != null && episodeFeed.isLocal -> ButtonTypes.PLAY_LOCAL
             episode.downloaded -> ButtonTypes.PLAY
             !episode.downloadUrl.isNullOrBlank() -> ButtonTypes.STREAM
@@ -293,7 +298,8 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                             onLongClick = { showAddTimerDialog = true  }))
                         Spacer(Modifier.weight(0.5f))
                         if (actionButton != null) {
-                            val dlStats = downloadStates[episode.downloadUrl]
+                            val states by downloadStatesFlow.collectAsStateWithLifecycle()
+                            val dlStats = states[episode.downloadUrl]
                             if (dlStats != null) {
                                 actionButton!!.processing.intValue = dlStats.progress
                                 if (dlStats.state == DownloadStatus.State.COMPLETED.code) actionButton!!.type = ButtonTypes.PLAY

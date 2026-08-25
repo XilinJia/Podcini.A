@@ -2,12 +2,12 @@ package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.net.download.DownloadStatus
-import ac.mdiq.podcini.net.download.Downloader.Companion.downloadStates
+import ac.mdiq.podcini.net.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.net.download.EpisodeAdrDLManager
 import ac.mdiq.podcini.net.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.net.utils.NetworkUtils.networkMonitor
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.PlayerStatusSimple
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
@@ -110,6 +110,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -300,7 +301,15 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
         val imageWidth = if (layoutMode == LayoutMode.WideImage.code) 150.dp else 56.dp
         val imageHeight = if (layoutMode == LayoutMode.WideImage.code) 100.dp else 56.dp
 
-//        Logd(TAG, "outside of LazyColumn")
+        val downloadStates by downloadStatesFlow.collectAsStateWithLifecycle()
+        val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
+        val player1 by theatres[1].mPlayerFlow.collectAsStateWithLifecycle()
+        val statusSimple0 by player0?.statusSimpleFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(PlayerStatusSimple.OTHER) }
+        val statusSimple1 by player1?.statusSimpleFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(PlayerStatusSimple.OTHER) }
+        val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
+        val curMedia1 by player1?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
+
+        //        Logd(TAG, "outside of LazyColumn")
         LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize().padding(start = 5.dp, end = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(items = episodes, key = { it.id }) { episode_ ->
                 val episode by rememberUpdatedState(episode_)
@@ -413,7 +422,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                         if (episode.rating != Rating.UNRATED.code) Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(episode.rating).res), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).width(16.dp).height(16.dp))
                                         if (episode.comment.isNotBlank()) Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_comment_24), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "comment", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).width(16.dp).height(16.dp))
                                         if (episode.mediaType == MediaType.VIDEO) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_videocam), tint = textColor, contentDescription = "isVideo", modifier = Modifier.width(16.dp).height(16.dp))
-                                        val dateSizeText = remember(episode.id) {
+                                        val dateSizeText = remember(episode.id, episode.duration, episode.size) {
                                             " · " + formatDateTimeFlex(episode.pubDate) + " · " + durationStringFull(episode.duration) +
                                                     (if (episode.size > 0) " · " + formatShortFileSize(episode.size) else "") +
                                                     (if (episode.viewCount > 0) " · " + formatLargeInteger(episode.viewCount) else "") +
@@ -437,7 +446,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                             Icon(imageVector = ImageVector.vectorResource(playState.res), tint = playState.color ?: MaterialTheme.colorScheme.tertiary, contentDescription = "playState", modifier = Modifier.background(if (episode.playState >= EpisodeState.SKIPPED.code) Color.Green.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surface).width(16.dp).height(16.dp))
                                             if (episode.rating != Rating.UNRATED.code) Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(episode.rating).res), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).width(16.dp).height(16.dp))
                                             if (episode.mediaType == MediaType.VIDEO) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_videocam), tint = textColor, contentDescription = "isVideo", modifier = Modifier.width(16.dp).height(16.dp))
-                                            val dateSizeText = remember { " · " + durationStringFull(episode.duration) + (if (episode.size > 0) " · " + formatShortFileSize(episode.size) else "") }
+                                            val dateSizeText = remember(episode.id, episode.duration, episode.size) { " · " + durationStringFull(episode.duration) + (if (episode.size > 0) " · " + formatShortFileSize(episode.size) else "") }
                                             Text(dateSizeText, color = textColor, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
                                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -516,16 +525,16 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                         }
                                     }
                                     LaunchedEffect(episode.fileUrl) { actionButton.update(episode) }
-                                    LaunchedEffect(theatres[0].mPlayer?.statusSimple, theatres[0].mPlayer?.curEpisode?.id, theatres[1].mPlayer?.statusSimple, theatres[1].mPlayer?.curEpisode?.id, actionButton.speaking) {
+                                    LaunchedEffect(statusSimple0, curMedia0?.id, statusSimple1, curMedia1?.id, actionButton.speaking) {
                                         when {
-                                            episode.id == theatres[0].mPlayer?.curEpisode?.id -> {
-                                                Logd(TAG, "playerStat: ${theatres[0].mPlayer?.statusSimple} episode: ${episode.title}")
-                                                if (theatres[0].mPlayer?.statusSimple == PlayerStatusSimple.PLAYING) actionButton.type = ButtonTypes.PAUSE
+                                            episode.id == curMedia0?.id -> {
+                                                Logd(TAG, "playerStat: $statusSimple0 episode: ${episode.title}")
+                                                if (statusSimple0 == PlayerStatusSimple.PLAYING) actionButton.type = ButtonTypes.PAUSE
                                                 else actionButton.update(episode)
                                             }
-                                            episode.id == theatres[1].mPlayer?.curEpisode?.id -> {
-                                                Logd(TAG, "playerStat: ${theatres[1].mPlayer?.statusSimple} episode: ${episode.title}")
-                                                if (theatres[1].mPlayer?.statusSimple == PlayerStatusSimple.PLAYING) actionButton.type = ButtonTypes.PAUSE
+                                            episode.id == curMedia1?.id -> {
+                                                Logd(TAG, "playerStat: $statusSimple1 episode: ${episode.title}")
+                                                if (statusSimple1 == PlayerStatusSimple.PLAYING) actionButton.type = ButtonTypes.PAUSE
                                                 else actionButton.update(episode)
                                             }
                                             actionButton.speaking.value -> actionButton.type = ButtonTypes.PAUSE
@@ -548,7 +557,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             }
                         }
 
-                        if (showActionButtons && (episode.position > 0 || theatres[0].mPlayer?.curEpisode?.id == episode.id || theatres[1].mPlayer?.curEpisode?.id == episode.id)) {
+                        if (showActionButtons && (episode.position > 0 || curMedia0?.id == episode.id || curMedia1?.id == episode.id)) {
                             fun calcProg(): Float {
                                 val pos = episode.position
                                 val dur = episode.duration
@@ -556,7 +565,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             }
                             val prog = remember(episode.id, episode.position) { calcProg() }
                             val posText = remember(episode.id, episode.position) { durationStringFull(episode.position) }
-                            val durText = remember(episode.id) { durationStringFull(episode.duration) }
+                            val durText = remember(episode.id, episode.duration) { durationStringFull(episode.duration) }
                             Row {
                                 Text(posText, color = textColor, style = MaterialTheme.typography.bodySmall)
                                 LinearProgressIndicator(progress = { prog }, modifier = Modifier.weight(1f).height(4.dp).align(Alignment.CenterVertically))
@@ -668,7 +677,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             Text(stringResource(id = R.string.add_to_associated_queue)) } },
                         { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
                             onSelected()
-                            runOnIOScope { addToQueue(selected, actQueue) }
+                            runOnIOScope { addToQueue(selected, actQueueFlow.value) }
                         }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_play), contentDescription = "Add to active queue")
                             Text(stringResource(id = R.string.add_to_active_queue)) } },

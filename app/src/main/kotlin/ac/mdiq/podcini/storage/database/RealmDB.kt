@@ -34,18 +34,12 @@ import io.github.xilinjia.krdb.dynamic.getNullableValue
 import io.github.xilinjia.krdb.dynamic.getValue
 import io.github.xilinjia.krdb.ext.isManaged
 import io.github.xilinjia.krdb.ext.realmListOf
-import io.github.xilinjia.krdb.notifications.InitialObject
-import io.github.xilinjia.krdb.notifications.SingleQueryChange
-import io.github.xilinjia.krdb.notifications.UpdatedObject
 import io.github.xilinjia.krdb.types.EmbeddedRealmObject
 import io.github.xilinjia.krdb.types.RealmObject
 import io.github.xilinjia.krdb.types.TypedRealmObject
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.ContinuationInterceptor
 
@@ -222,97 +216,5 @@ fun runOnIOScope(block: suspend () -> Unit) : Job {
     return appIOScope.launch {
         if (Dispatchers.IO == coroutineContext[ContinuationInterceptor]) block()
         else withContext(Dispatchers.IO) { block() }
-    }
-}
-
-private val subscriptionMutex = Mutex()
-
-data class MonitorEntity(
-    val tag: String,
-    val onChanges: suspend (Episode, fields: Array<String>)->Unit,
-    val onInit: (suspend (Episode)->Unit)? = null)
-
-class EpisodeMonitors {
-    var job: Job? = null
-    val entities: MutableSet<MonitorEntity> = mutableSetOf()
-}
-
-private val idMonitorsMap: MutableMap<Long, EpisodeMonitors> = mutableMapOf()
-
-private fun episodeMonitor(episode: Episode): Job {
-    return CoroutineScope(Dispatchers.IO).launch {
-        val item_ = realm.query(Episode::class).query("id == ${episode.id}").first()
-        Logd(TAG, "start monitoring episode: ${episode.id} ${episode.title}")
-        item_.asFlow().collect { changes: SingleQueryChange<Episode> ->
-            //                Logd(TAG, "episodeMonitor in collect subscriptionLock: $subscriptionLock")
-            subscriptionMutex.withLock {
-                val ms = idMonitorsMap[episode.id] ?: return@collect
-                when (changes) {
-                    is UpdatedObject -> {
-                        Logd(TAG, "episodeMonitor UpdatedObject ${changes.obj.title} ${changes.changedFields.joinToString()}")
-                        for (e in ms.entities) {
-                            if (episode.id == changes.obj.id) {
-                                Logd(TAG, "episodeMonitor onChange callback for ${e.tag} ${episode.title}")
-                                e.onChanges(changes.obj, changes.changedFields)
-                            }
-                        }
-                    }
-                    is InitialObject -> {
-                        Logd(TAG, "episodeMonitor InitialObject ${changes.obj.title}")
-                        for (e in ms.entities) {
-                            if (episode.id == changes.obj.id) {
-                                Logd(TAG, "episodeMonitor onChange callback for ${e.tag} ${episode.title}")
-                                e.onInit?.invoke(changes.obj)
-                            }
-                        }
-                    }
-                    else -> Logd(TAG, "episodeMonitor other changes: $changes")
-                }
-            }
-        }
-    }
-}
-
-fun hasSubscribed(episode: Episode, tag: String): Boolean {
-    val ms = idMonitorsMap[episode.id] ?: return false
-    return ms.entities.firstOrNull { it.tag == tag } != null
-}
-
-suspend fun subscribeEpisode(episode: Episode, entity: MonitorEntity) {
-    subscriptionMutex.withLock {
-        var ms = idMonitorsMap[episode.id]
-        if (ms == null) {
-            ms = EpisodeMonitors()
-            ms.entities.add(entity)
-            ms.job = episodeMonitor(episode)
-            idMonitorsMap[episode.id] = ms
-        } else {
-            ms.entities.removeIf { it.tag == entity.tag }
-            ms.entities.add(entity)
-        }
-        Logd(TAG, "subscribeEpisode ${entity.tag} ${episode.id} ${episode.title}")
-        Logd(TAG, "subscribeEpisode idMonitorsMap: ${idMonitorsMap.size}")
-        for ((k, v) in idMonitorsMap.entries.toList()) for (e in v.entities) Logd(TAG, "subscribeEpisode idMonitorsMap $k tag: ${e.tag} job: ${v.job != null}")
-    }
-}
-
-fun unsubscribeEpisode(episode: Episode, tag: String) {
-    runOnIOScope {
-        subscriptionMutex.withLock {
-            val ms = idMonitorsMap[episode.id]
-            if (ms != null) {
-                try {
-                    ms.entities.removeIf { it.tag == tag }
-                    if (ms.entities.isEmpty()) {
-                        ms.job?.cancel()
-                        idMonitorsMap.remove(episode.id)
-                    }
-                } catch (e: Throwable) { Logs(TAG, e, "unsubscribe episode failed $tag ${episode.title}") }
-            }
-            eraseIfLoose(episode)
-            Logd(TAG, "unsubscribeEpisode $tag ${episode.id} ${episode.title}")
-            Logd(TAG, "unsubscribeEpisode idMonitorsMap: ${idMonitorsMap.size}")
-            for ((k, v) in idMonitorsMap.entries.toList()) for (e in v.entities) Logd(TAG, "unsubscribeEpisode idMonitorsMap $k tag: ${e.tag} job: ${v.job != null}")
-        }
     }
 }

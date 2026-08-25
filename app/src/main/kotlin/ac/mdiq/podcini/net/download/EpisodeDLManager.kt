@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.net.download
 
-import ac.mdiq.podcini.net.download.Downloader.Companion.downloadStates
+import ac.mdiq.podcini.net.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.net.sync.SynchronizationSettings.isProviderConnected
 import ac.mdiq.podcini.net.sync.model.EpisodeAction
 import ac.mdiq.podcini.net.sync.queue.SynchronizationQueueSink
@@ -12,7 +12,9 @@ import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
+import kotlin.collections.plus
 
 abstract class EpisodeDLManager {
     private var currentDownloads: Map<String, DownloadStatus> = mutableMapOf()
@@ -37,7 +39,8 @@ abstract class EpisodeDLManager {
         const val TAG = "EpisodeDLManager"
 
         suspend fun updateDB(request: DownloadRequest) {
-            downloadStates[request.source!!] = DownloadStatus(DownloadStatus.State.COMPLETED.code, -1)
+            downloadStatesFlow.update { it + (request.source!! to DownloadStatus(DownloadStatus.State.COMPLETED.code, -1)) }
+
             var item = realm.query(Episode::class).query("id == ${request.feedfileId}").first().find()
             if (item == null) {
                 Loge(TAG, "Could not find downloaded episode object in database")

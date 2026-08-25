@@ -1,8 +1,7 @@
 package ac.mdiq.podcini.storage.database
 
-
-import ac.mdiq.podcini.playback.base.InTheatre.actQueue
-import ac.mdiq.podcini.playback.base.InTheatre.theatres
+import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.model.Episode
@@ -66,8 +65,8 @@ fun initQueues() {
 
         queuesFlow.collect { changes: ResultsChange<PlayQueue> ->
             queuesLive = changes.list
-            val q = queuesLive.find { it.id == actQueue.id }
-            if (q != null) actQueue = q
+            val q = queuesLive.find { it.id == actQueueFlow.value.id }
+            if (q != null) actQueueFlow.value = q
             Logd(TAG, "queuesLive updated")
             when (changes) {
                 is UpdatedResults -> {
@@ -134,7 +133,7 @@ suspend fun addToQueue(episodes: List<Episode>, queue: PlayQueue) {
             if (qes.indexOfFirst { it.episodeId == e.id } >= 0) continue
             val insertPosition = if (queue.autoSort) 0 else {
                 qes = queue.entries
-                calcPosition(qes, EnqueueLocation.fromCode(queue.enqueueLocation), (if (queue.id == actQueue.id) theatres[0].mPlayer?.curEpisode else null))
+                calcPosition(qes, EnqueueLocation.fromCode(queue.enqueueLocation), (if (queue.id == actQueueFlow.value.id) theatres[0].mPlayerFlow.value?.curMediaFlow?.value else null))
             }
             Logd(TAG, "addToQueue insertPosition: $insertPosition")
             val qe = QueueEntry().apply {
@@ -181,10 +180,10 @@ suspend fun queueToVirtual(episode: Episode, episodes: List<Episode>, listIdenti
                     ip += QUEUE_POSITION_DELTA
                 }
             }
-            actQueue = virQueue
+            actQueueFlow.value = virQueue
             Logt(TAG, "first ${virQueue.size()} episodes are added to the Virtual queue")
         }
-    } else actQueue = virQueue
+    } else actQueueFlow.value = virQueue
 }
 
 
@@ -205,32 +204,32 @@ suspend fun smartRemoveFromQueues(item_: Episode, queues_: List<PlayQueue> = lis
     }
     val queues = queues_.ifEmpty { queuesLive }
     for (q in queues) {
-        if (q.id != actQueue.id && q.contains(item)) removeFromQueue(q, listOf(item))
+        if (q.id != actQueueFlow.value.id && q.contains(item)) removeFromQueue(q, listOf(item))
     }
-    //        ensure actQueue is last updated
-    if (actQueue.id in queues.map { it.id }) {
-        Logd(TAG, "actQueue: [${actQueue.name}]")
-        val qes = actQueue.entries
-        curIndexInActQueue = qes.indexOfFirst { it.episodeId == theatres[0].mPlayer?.curEpisode?.id || it.episodeId == theatres[1].mPlayer?.curEpisode?.id }
-        if (actQueue.size() > 0 && actQueue.contains(item)) removeFromQueue(actQueue, listOf(item))
-        else upsertBlk(actQueue) { it.update() }
+    //        ensure actQueueFlow.value is last updated
+    if (actQueueFlow.value.id in queues.map { it.id }) {
+        Logd(TAG, "actQueueFlow.value: [${actQueueFlow.value.name}]")
+        val qes = actQueueFlow.value.entries
+        curIndexInActQueue = qes.indexOfFirst { it.episodeId == theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id || it.episodeId == theatres[1].mPlayerFlow.value?.curMediaFlow?.value?.id }
+        if (actQueueFlow.value.size() > 0 && actQueueFlow.value.contains(item)) removeFromQueue(actQueueFlow.value, listOf(item))
+        else upsertBlk(actQueueFlow.value) { it.update() }
     }
 }
 
 suspend fun removeFromAllQueues(episodes: Collection<Episode>, playState: EpisodeState? = null) {
     Logd(TAG, "removeFromAllQueuesSync called ")
     for (q in queuesLive) {
-        if (q.id != actQueue.id) removeFromQueue(q, episodes, playState)
+        if (q.id != actQueueFlow.value.id) removeFromQueue(q, episodes, playState)
     }
-    //        ensure actQueue is last updated
-    val qes = actQueue.entries
-    curIndexInActQueue = qes.indexOfFirst { it.episodeId == theatres[0].mPlayer?.curEpisode?.id || it.episodeId == theatres[1].mPlayer?.curEpisode?.id }
-    if (actQueue.size() > 0) removeFromQueue(actQueue, episodes, playState)
+    //        ensure actQueueFlow.value is last updated
+    val qes = actQueueFlow.value.entries
+    curIndexInActQueue = qes.indexOfFirst { it.episodeId == theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id || it.episodeId == theatres[1].mPlayerFlow.value?.curMediaFlow?.value?.id }
+    if (actQueueFlow.value.size() > 0) removeFromQueue(actQueueFlow.value, episodes, playState)
 }
 
 internal suspend fun removeFromQueue(queue_: PlayQueue?, episodes: Collection<Episode>, playState: EpisodeState? = null) {
 //    Logd(TAG, "removeFromQueue called ${queue_?.name}")
-    val queue = queue_ ?: actQueue
+    val queue = queue_ ?: actQueueFlow.value
     if (queue.size() == 0) {
         queue.checkAndFill()
         return
@@ -252,7 +251,7 @@ internal suspend fun removeFromQueue(queue_: PlayQueue?, episodes: Collection<Ep
             for (e in episodes) {
                 if (qes.indexOfFirst { it.episodeId == e.id } >= 0) {
                     if (playState != null && e.playState == EpisodeState.QUEUE.code) query(Episode::class).query("id == ${e.id}").first().find()?.setPlayState(playState)
-                    if (queue.id == actQueue.id) removeFromActQueue.add(e)
+                    if (queue.id == actQueueFlow.value.id) removeFromActQueue.add(e)
                 }
             }
             delete(qes)
@@ -303,11 +302,11 @@ suspend fun removeFromAllQueuesQuiet(episodeIds: List<Long>, updateState: Boolea
     }
 
     for (q in queuesLive) {
-        if (q.id == actQueue.id) continue
+        if (q.id == actQueueFlow.value.id) continue
         doit(q)
     }
-    //        ensure actQueue is last updated
-    doit(actQueue, true)
+    //        ensure actQueueFlow.value is last updated
+    doit(actQueueFlow.value, true)
 }
 
 private fun calcPosition(queueEntries: List<QueueEntry>, loc: EnqueueLocation, currentPlaying: Episode?): Long {

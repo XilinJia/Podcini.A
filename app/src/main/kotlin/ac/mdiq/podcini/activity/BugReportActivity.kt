@@ -7,8 +7,8 @@ import ac.mdiq.podcini.config.settings.githubAddress
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.utils.div
 import ac.mdiq.podcini.storage.utils.internalDir
-import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.CommonToast
+import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.PodciniTheme
 import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.textColor
@@ -17,7 +17,6 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.openInSystemDefault
-import ac.mdiq.podcini.utils.toastMessages
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -108,7 +107,7 @@ class BugReportActivity : ComponentActivity() {
     fun MainView() {
         Scaffold(topBar = { MyTopAppBar() }) { innerPadding ->
             Column(modifier = Modifier.padding(innerPadding).fillMaxSize().padding(horizontal = 5.dp).verticalScroll(rememberScrollState())) {
-                if (toastMessages.isNotEmpty()) CommonToast(toasts = toastMessages, onDismiss = { })
+                CommonToast(onDismiss = { })
                 ConfirmDialog(0, stringResource(R.string.confirm_export_log_dialog_message), showConfirmExport) {
                     runOnIOScope { exportLog() }
                     showConfirmExport.value = false

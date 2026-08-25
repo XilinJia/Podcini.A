@@ -5,7 +5,7 @@ import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.utils.Logd
-import ac.mdiq.podcini.utils.ToastMessage
+import ac.mdiq.podcini.utils.toastMessagesFlow
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -92,6 +92,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.update
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -269,7 +270,9 @@ fun TitleSummarySwitchRow(titleRes: Int, summaryRes: Int, initVal: Boolean, cb: 
 }
 
 @Composable
-fun CommonToast(toasts: MutableList<ToastMessage>, onDismiss: () -> Unit) {
+fun CommonToast(onDismiss: () -> Unit) {
+    val toasts by toastMessagesFlow.collectAsStateWithLifecycle()
+    if (toasts.isEmpty()) return
     var isForeground by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -288,7 +291,7 @@ fun CommonToast(toasts: MutableList<ToastMessage>, onDismiss: () -> Unit) {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp)).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 var onHold by remember { mutableStateOf(false) }
                 Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-                    Icon(Icons.Filled.Close, contentDescription = "close", modifier = Modifier.padding(start = 8.dp).clickable { toasts.removeAll(toasts.take(3)) })
+                    Icon(Icons.Filled.Close, contentDescription = "close", modifier = Modifier.padding(start = 8.dp).clickable { toastMessagesFlow.update { it.filterNot { t-> t in toasts.take(3) } } })
                     Spacer(Modifier.weight(1f))
                     Icon(Icons.Filled.Lock, tint = if (onHold) Color.Red else Color.Green, contentDescription = "lock", modifier = Modifier.padding(end = 8.dp).clickable { onHold = !onHold })
                 }
@@ -297,7 +300,7 @@ fun CommonToast(toasts: MutableList<ToastMessage>, onDismiss: () -> Unit) {
                         if (toast.m.isNotBlank() && isForeground) {
                             val durationMillis = if (onHold) 60 else 3
                             delay(durationMillis.seconds)
-                            toasts.remove(toast)
+                            toastMessagesFlow.update { it - toast }
                         }
                     }
                     val color = if (toast.m.contains("Error:")) Color.Red else MaterialTheme.colorScheme.onSecondary

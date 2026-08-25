@@ -512,6 +512,7 @@
     <string name="pref_backup_on_google_sum">Auto backup OPML files to Google. Once enabled, after Podcini is uninstalled and re-installed, the subscriptions can be restored. Toggle this setting will restart Podcini.</string>
     <string name="algorithm">Algorithm</string>
     <string name="automation">Automation</string>
+    <string name="others">Others</string>
 
     <string name="download_pref_details">Details</string>
     <string name="import_export_pref">Import/Export</string>

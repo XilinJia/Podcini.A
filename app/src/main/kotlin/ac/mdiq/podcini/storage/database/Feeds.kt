@@ -24,15 +24,13 @@ import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import android.app.backup.BackupManager
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
 import io.github.xilinjia.krdb.ext.isManaged
 import io.github.xilinjia.krdb.notifications.ResultsChange
 import io.github.xilinjia.krdb.notifications.UpdatedResults
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 private const val TAG: String = "Feeds"
@@ -40,7 +38,7 @@ private const val TAG: String = "Feeds"
 var allFeeds = realm.query(Feed::class).find()
 var feedsMap: Map<Long, Feed> = allFeeds.associateBy { it.id }
 
-var feedCount by mutableIntStateOf(-1)
+val feedCountFlow = MutableStateFlow(-1)
 
 @Synchronized
 fun getFeedList(queryString: String = ""): List<Feed> {
@@ -100,7 +98,7 @@ fun monitorFeeds() {
                 }
                 else -> Logd(TAG, "monitorFeedList other $changes")
             }
-            feedCount = allFeeds.size
+            feedCountFlow.value = allFeeds.size
         }
     }
 }

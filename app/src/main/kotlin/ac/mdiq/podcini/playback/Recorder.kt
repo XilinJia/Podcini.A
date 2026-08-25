@@ -6,18 +6,16 @@ import ac.mdiq.podcini.storage.utils.div
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.LogeFor
 import android.net.Uri
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.TransferListener
 import androidx.media3.datasource.cache.CacheDataSource
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import okio.BufferedSink
 import okio.buffer
 
-var isRecording by mutableStateOf(false)
+val isRecordingFlow = MutableStateFlow(false)
 
 class SegmentSavingDataSource(private val cacheDataSource: CacheDataSource) : DataSource {
     private val TAG = "SegmentSavingDataSource"
@@ -40,6 +38,10 @@ class SegmentSavingDataSource(private val cacheDataSource: CacheDataSource) : Da
         Logd(TAG, "open cacheKey=${dataSpec.key}")
 //        val existingSpans = getCache().getCachedSpans(mediaId)
 //        Logd(TAG, "open Before listener: mediaId=[$mediaId] spans=${existingSpans.size}, totalBytes=${existingSpans.sumOf { it.length }}")
+        Logd(TAG, "open uri=${dataSpec.uri}")
+        Logd(TAG, "open scheme=${dataSpec.uri.scheme}")
+        Logd(TAG, "open key=${dataSpec.key}")
+        Logd(TAG, "open position=${dataSpec.position} length=${dataSpec.length}")
 
         val bytesToRead = cacheDataSource.open(dataSpec)
         Logd(TAG, "Open: position=${dataSpec.position}, length=$bytesToRead")
@@ -55,7 +57,7 @@ class SegmentSavingDataSource(private val cacheDataSource: CacheDataSource) : Da
         readCalls++
         if (bytesRead > 0) totalBytesRead += bytesRead
         if (readCalls % 1000 == 0L) Logd(TAG, "read readCalls=$readCalls totalBytes=$totalBytesRead")
-        if (isRecording) {
+        if (isRecordingFlow.value) {
 //            if (readCalls % 100 == 0L) Logd(TAG, "read isRecording readCalls=$readCalls totalBytes=$totalBytesRead")
             if (bytesRead > 0) {
                 clipTempFos?.write(buffer, offset, bytesRead)
@@ -71,8 +73,8 @@ class SegmentSavingDataSource(private val cacheDataSource: CacheDataSource) : Da
     }
 
     fun startRecording(startPositionMs: Long, bitrate: Int, tmpDir: UnifiedFile) {
-        if (!isRecording) {
-            isRecording = true
+        if (!isRecordingFlow.value) {
+            isRecordingFlow.value = true
             this.bitrate = bitrate
             clipTempFile = tmpDir / "clip_temp_${nowInMillis()}.tmp"
             clipTempFos = clipTempFile!!.sink().buffer()
@@ -83,9 +85,9 @@ class SegmentSavingDataSource(private val cacheDataSource: CacheDataSource) : Da
     }
 
     fun stopRecording(endPositionMs: Long): UnifiedFile? {
-        Logd(TAG, "stopRecording isRecording: $isRecording")
-        if (isRecording) {
-            isRecording = false
+        Logd(TAG, "stopRecording isRecording: ${isRecordingFlow.value}")
+        if (isRecordingFlow.value) {
+            isRecordingFlow.value = false
             clipTempFos?.flush()
             clipTempFos?.close()
             val endByte = (endPositionMs * bitrate / 8 / 1000)
