@@ -216,7 +216,12 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     )
                     when (playbackState) {
                         STATE_BUFFERING -> bufferedPercentFlow.value = BUFFERING_STARTED
-                        STATE_READY -> bufferedPercentFlow.value = BUFFERING_ENDED
+                        STATE_READY -> {
+                            bufferedPercentFlow.value = BUFFERING_ENDED
+                            val duration = exoPlayer?.duration ?: 0
+                            if (curMediaFlow.value != null && duration > curMediaFlow.value!!.duration) runOnIOScope { upsert(curMediaFlow.value!!) { it.duration = duration.toInt() } }
+                            Logd(TAG, "onPlaybackStateChanged duration=${exoPlayer?.duration} ms")
+                        }
                         STATE_ENDED -> {
                             val currentPos = exoPlayer?.currentPosition ?: 0L
                             val totalDuration = exoPlayer?.duration ?: 0L

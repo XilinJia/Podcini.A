@@ -1,0 +1,2 @@
+* correct media duration (if invalid) on start of playback
+* exclude play-services-cronet in media3, for f-droid build

@@ -1,13 +1,18 @@
+# 12.8.3
+
+* correct media duration (if invalid) on start of playback
+* exclude play-services-cronet in media3, for f-droid build
+
 # 12.8.2
 
 * fixed error playing downloaded file
 * player buffer updates on a flow every 5 seconds
-* show updated duration (when invalid) in episodes list and playerUI
 * in PlayerUI
 	* skip forward text is shown on top of Skip button (consistent with other single clicks)
 	* button positions and buffer indicator are adjusted
 * in AVPlayer screen, changing speed in video player is reflected in PlayerUI
-* likely fixed possible PlayUI flickers on start
+* likely fixed possible PlayerUI flickers on start
+* show updated duration (when invalid) in episodes list and playerUI
 * in OnlineFeed, ensure "Likely removed" list has not duplicates
 * cleared dependency on compose runtime in non-UI routines
 * re-worked curMedia monitoring

@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 109
-        versionName = "12.8.2"
+        versionCode = 110
+        versionName = "12.8.3"
 
         ndkVersion = "29.0.14206865"
 
@@ -211,7 +211,12 @@ dependencies {
     implementation("androidx.media3:media3-common:1.11.0")
     implementation("androidx.media3:media3-session:1.11.0")
     implementation("androidx.media3:media3-exoplayer-hls:1.11.0")
-    implementation("androidx.media3:media3-datasource-cronet:1.11.0")
+    implementation("androidx.media3:media3-datasource-cronet:1.11.0") {
+        exclude(
+            group = "com.google.android.gms",
+            module = "play-services-cronet"
+        )
+    }
 
     implementation("org.chromium.net:cronet-embedded:500.0.2")
 
