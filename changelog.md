@@ -1,3 +1,14 @@
+# 12.8.4
+
+* amended coroutine scope for binding with external source apps
+	* likely fixed external client unavailable on feed updates
+* in FeedUpdater, when external clients not bound, avoid running normal podcast routine on feed from external sources
+* Close icon on toast popup clears all current toasts in queue
+* likely fixed again possible PlayerUI flickers on start
+* fixed repeat for Stream/Play
+* in popup menu on Long press of Pause button, added "Repeat this", and removed irrelevant options
+* in Speed settings popup, removed "Repeat current media"
+
 # 12.8.3
 
 * correct media duration (if invalid) on start of playback

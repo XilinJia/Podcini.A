@@ -380,15 +380,6 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                     Text(stringResource(R.string.pref_skip_silence_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
                     HorizontalDivider(thickness = 5.dp, modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        val shouldRepeat by player.shouldRepeatFlow.collectAsStateWithLifecycle()
-                        Checkbox(checked = shouldRepeat, onCheckedChange = { isChecked ->
-                            player.shouldRepeatFlow.value = isChecked
-                            player.setRepeat(isChecked)
-                        })
-                        Text(stringResource(R.string.repeat_current_media))
-                    }
-                    HorizontalDivider(thickness = 5.dp, modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.pref_rewind), style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         NumberEditor(rewindSecs, modifier = Modifier.weight(0.6f)) { rewindSecs = it }
                     }

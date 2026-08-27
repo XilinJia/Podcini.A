@@ -237,7 +237,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 //                                }
                             }
                             exoPlayer?.seekTo(C.TIME_UNSET)
-                            endPlayback(hasEnded = true, wasSkipped = false)
+                            if (!shouldRepeatFlow.value) endPlayback(hasEnded = true, wasSkipped = false)
                         }
                         STATE_IDLE -> {
                             Logd(TAG, "exoplayerListener onPlaybackStateChanged STATE_IDLE ")

@@ -279,6 +279,8 @@
     <string name="play_label">Play</string>
     <string name="play_one">Play one</string>
     <string name="play_repeat">Play repeat</string>
+    <string name="repeat_this">Repeat this</string>
+
     <string name="pause_label">Pause</string>
     <string name="stream_label">Stream</string>
     <string name="stream_one">Stream one</string>

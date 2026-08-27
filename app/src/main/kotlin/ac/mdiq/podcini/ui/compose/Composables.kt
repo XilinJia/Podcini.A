@@ -291,7 +291,10 @@ fun CommonToast(onDismiss: () -> Unit) {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp)).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 var onHold by remember { mutableStateOf(false) }
                 Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-                    Icon(Icons.Filled.Close, contentDescription = "close", modifier = Modifier.padding(start = 8.dp).clickable { toastMessagesFlow.update { it.filterNot { t-> t in toasts.take(3) } } })
+                    Icon(Icons.Filled.Close, contentDescription = "close", modifier = Modifier.padding(start = 8.dp).clickable {
+//                        toastMessagesFlow.update { it.filterNot { t-> t in toasts.take(3) } }
+                        toastMessagesFlow.update { emptyList() }
+                    })
                     Spacer(Modifier.weight(1f))
                     Icon(Icons.Filled.Lock, tint = if (onHold) Color.Red else Color.Green, contentDescription = "lock", modifier = Modifier.padding(end = 8.dp).clickable { onHold = !onHold })
                 }

@@ -37,7 +37,7 @@ object ClientConfig {
 
         getRealmInstance()
         initAppPrefs()
-        AppGatewayRegistry.initialize(appPrefsFlow!!.value.loadExternalApp, CoroutineScope(Dispatchers.Default))
+        AppGatewayRegistry.initialize(appPrefsFlow!!.value.loadExternalApp, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
 
         if (nmJob == null) nmJob = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch { networkMonitor.networkFlow.collect { isConnected -> networkChangedDetected(isConnected) } }
 

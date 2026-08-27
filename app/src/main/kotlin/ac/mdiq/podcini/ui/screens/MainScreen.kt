@@ -112,23 +112,28 @@ fun MainScreen() {
     val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
     val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 
-    // Sheet -> state
-    LaunchedEffect(Unit) { snapshotFlow { sheetState.bottomSheetState.currentValue }.distinctUntilChanged().collect { value ->
-        Logd(TAG, "snapshotFlow { sheetState.bottomSheetState.currentValue }")
-        val state = PSState.fromSheet(value)
+    LaunchedEffect(Unit) { snapshotFlow { sheetState.bottomSheetState.targetValue }.distinctUntilChanged().collect { targetValue ->
+        Logd(TAG, "snapshotFlow { sheetState.bottomSheetState.currentValue } $targetValue")
+        val state = PSState.fromSheet(targetValue)
         if (psState != state) psState = state
     } }
 
     LaunchedEffect(psState, curMedia0?.id) {
-        Logd(TAG, "LaunchedEffect(psState, curMedia0?.id) ${curMedia0?.id} ${psState.name}")
         if ((curMedia0?.id ?: -1L) <= 0) {
-            if (sheetState.bottomSheetState.currentValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()
+            if (sheetState.bottomSheetState.targetValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()
             return@LaunchedEffect
         }
-        when (psState) {
-            PSState.Expanded -> if (sheetState.bottomSheetState.currentValue != SheetValue.Expanded) sheetState.bottomSheetState.expand()
-            PSState.PartiallyExpanded -> if (sheetState.bottomSheetState.currentValue != SheetValue.PartiallyExpanded) sheetState.bottomSheetState.partialExpand()
-            PSState.Hidden -> if (sheetState.bottomSheetState.currentValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()
+        val targetSheetValue = when (psState) {
+            PSState.Expanded -> SheetValue.Expanded
+            PSState.PartiallyExpanded -> SheetValue.PartiallyExpanded
+            PSState.Hidden -> SheetValue.Hidden
+        }
+        if (sheetState.bottomSheetState.targetValue != targetSheetValue) {
+            when (targetSheetValue) {
+                SheetValue.Expanded -> sheetState.bottomSheetState.expand()
+                SheetValue.PartiallyExpanded -> sheetState.bottomSheetState.partialExpand()
+                SheetValue.Hidden -> sheetState.bottomSheetState.hide()
+            }
         }
     }
 
