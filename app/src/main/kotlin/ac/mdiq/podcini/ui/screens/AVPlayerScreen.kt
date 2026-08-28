@@ -1233,6 +1233,7 @@ fun AVPlayerScreen() {
         }
     } else Box(modifier = Modifier.fillMaxWidth().then(if (psState == PSState.PartiallyExpanded) Modifier.windowInsetsPadding(WindowInsets.navigationBars) else Modifier.statusBarsPadding().navigationBarsPadding())) {
         Column(Modifier.align(if (psState == PSState.PartiallyExpanded) Alignment.TopCenter else Alignment.BottomCenter).zIndex(1f)) {
+            Logd(TAG, "activeTheatres: $activeTheatres playerMinHeight: $playerMinHeight")
             if (activeTheatres == 2) {
                 PlayerUI(vms[1], Modifier)
                 var sliderValue by remember { mutableFloatStateOf(0.5f) }

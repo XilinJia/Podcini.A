@@ -1,0 +1,7 @@
+* on playback start, correct all applicable media duration if difference is greater than 5 seconds
+* in updateFeedFull, avoid resetting episode duration if status greater than Progress
+* amended MainScreen config to avoid hiding PlayerUI on down swipe
+* in onResume of MainActivity, popup confirm message on external apps
+* in MediaPlayer,
+	* fixed crash when creating the second player
+	* ensure Pause button in episodes lists is tied to the player

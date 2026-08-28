@@ -394,7 +394,7 @@ suspend fun updateFeedFull(newFeed: Feed, removeUnlistedItems: Boolean = false, 
     var idLong = getEntityId()
     Logd(TAG, "updateFeedFull building savedFeedAssistant")
     val savedFeedAssistant = FeedAssistant(savedFeed)
-    val oldestDate = realm.query(Episode::class).query("feedId == ${savedFeed.id} SORT (pubDate ASC)").first().find()?.pubDate ?: 0L
+//    val oldestDate = realm.query(Episode::class).query("feedId == ${savedFeed.id} SORT (pubDate ASC)").first().find()?.pubDate ?: 0L
     var nNew = 0
     var nUpdated = 0
     for (idx in newFeed.episodes.indices) {
@@ -421,7 +421,7 @@ suspend fun updateFeedFull(newFeed: Feed, removeUnlistedItems: Boolean = false, 
                 }
             }
             nUpdated++
-            upsertBlk(oldItems[0]) { it.updateFromOther(episode, overwriteStates) }
+            upsertBlk(oldItems[0]) { it.updateFromOther(episode, includeState = overwriteStates, includeDuration = it.playState < EpisodeState.PROGRESS.code ) }
         } else {
             Logd(TAG, "updateFeedFull Found new episode: ${episode.pubDate} ${episode.title}")
             nNew++

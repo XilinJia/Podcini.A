@@ -9,6 +9,8 @@ import ac.mdiq.podcini.playback.base.startTheatres
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.Media3Player
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.buildMetadata
+import ac.mdiq.podcini.playback.base.Media3Player.Companion.cronetEngine
+import ac.mdiq.podcini.playback.base.Media3Player.Companion.httpEngine
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.releaseCache
 import ac.mdiq.podcini.playback.base.SleepManager
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
@@ -22,6 +24,7 @@ import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
+import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.LogsFor
 import ac.mdiq.podcini.utils.LogtFor
@@ -351,15 +354,20 @@ class PlaybackService : MediaLibraryService() {
             .build()
     }
 
-    fun recreateMediaPlayers() {
-        for (id in 0..<activeTheatresFlow.value) {
-            Logd(TAG, "recreateMediaPlayer creating player $id of ${activeTheatresFlow.value}")
-            var wasPlaying = false
+    fun shutdownPlayer(id: Int) {
+        try {
             if (theatres[id].mPlayerFlow.value != null) {
-                wasPlaying = theatres[id].mPlayerFlow.value!!.isPlaying
+                val wasPlaying = theatres[id].mPlayerFlow.value!!.isPlaying
                 if (wasPlaying) theatres[id].mPlayerFlow.value!!.pause(reinit = false)
                 theatres[id].mPlayerFlow.value!!.shutdown()
             }
+        } catch (e: Exception) { Loge(TAG, e, "Error shutting down player $id")}
+    }
+
+    fun recreateMediaPlayers() {
+        for (id in 0..<activeTheatresFlow.value) {
+            Logd(TAG, "recreateMediaPlayer creating player $id of ${activeTheatresFlow.value}")
+            shutdownPlayer(id)
             theatres[id].mPlayerFlow.value = Media3Player(id, if (activeTheatresFlow.value > 1) { if (id == 0) -1 else 1} else 0)
         }
     }
@@ -386,6 +394,8 @@ class PlaybackService : MediaLibraryService() {
             mediaSession = null
         }
         theatres[1].mPlayerFlow.value?.onDestroy()
+        httpEngine = null
+        cronetEngine = null
 
         cancelFlowEvents()
         unregisterReceiver(autoStateUpdated)

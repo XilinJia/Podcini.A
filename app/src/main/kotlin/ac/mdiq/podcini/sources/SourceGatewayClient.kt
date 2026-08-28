@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.sources
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.net.searcher.PodcastSearcherRegistry.searcherInfos
@@ -107,7 +108,7 @@ object AppGatewayRegistry {
     private var isInitializing = false
 
     fun initialize(loadExternal: Boolean, scope: CoroutineScope) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch {
             Logd(TAG, "initialize loadExternal: $loadExternal")
             var currentDeferred: CompletableDeferred<List<SourceGatewayClient>>
             mutex.withLock {
@@ -200,37 +201,31 @@ object AppGatewayRegistry {
                 override fun onServiceDisconnected(name: ComponentName?) {
                     Logt(TAG, "Service ${client.attributes?.name} disconnected")
                     searcherInfos.clear()
-                    client.attributes?.apply { typeClientMap.remove(feedType) }
-                    client.attributes = null
-                    client.gateway = null
-                    client.feedSearcher = null
+                    appIOScope.launch { client.disconnect() }
                     clients.remove(client)
-                    client.connection = null
                 }
                 override fun onBindingDied(name: ComponentName?) {
                     Logt(TAG, "${client.attributes?.name} binding died, trying to rebind service")
                     searcherInfos.clear()
-                    client.attributes = null
-                    client.gateway = null
-                    client.feedSearcher = null
+                    appIOScope.launch { client.disconnect() }
                     clients.remove(client)
-                    context.unbindService(this)
-                    client.connection = null
                     if (continuation.isActive) continuation.resumeWith(Result.success(null))
                 }
                 override fun onNullBinding(name: ComponentName?) {
                     Logt(TAG, "Service ${client.attributes?.name} not bond: null binding, trying to rebind")
                     searcherInfos.clear()
-                    client.attributes = null
-                    client.gateway = null
-                    client.feedSearcher = null
+                    appIOScope.launch { client.disconnect() }
                     clients.remove(client)
-                    context.unbindService(this)
                     if (continuation.isActive) continuation.resumeWith(Result.success(null))
                 }
             }
             Logd(TAG, "bindSingleClient before bind")
-            val success = context.bindService(explicitIntent, connection, Context.BIND_AUTO_CREATE or Context.BIND_IMPORTANT)
+            val success = try {
+                context.bindService(explicitIntent, connection, Context.BIND_AUTO_CREATE or Context.BIND_IMPORTANT)
+            } catch (e: Exception) {
+                Loge(TAG, e, "Failed to bind external service")
+                false
+            }
             Logd(TAG, "bindSingleClient after bind")
 
             if (!success && continuation.isActive) continuation.resumeWith(Result.success(null))
@@ -250,7 +245,6 @@ object AppGatewayRegistry {
             var client = bindSingleClient(explicitIntent)
             Logd(TAG, "getSourceClients after bindSingleClient")
             if (client == null) client = bindSingleClient(explicitIntent)
-
             if (client != null) clients.add(client)
         }
         return clients
@@ -319,10 +313,13 @@ class SourceGatewayClient() {
     suspend fun disconnect() {
         mutex.withLock {
             if (gateway != null) Logt(TAG, "Disconnecting ${gateway!!.attributes?.name}")
-            attributes?.apply { typeClientMap.remove(feedType) }
-            gateway = null
             connection?.let { try { getAppContext().unbindService(it) } catch (_: Exception) { } }
             connection = null
+            attributes?.apply { typeClientMap.remove(feedType) }
+            attributes = null
+            gateway = null
+            feedSearcher = null
+            mediaSearcher = null
             bindDeferred = null
         }
     }

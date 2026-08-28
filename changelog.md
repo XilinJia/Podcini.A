@@ -1,3 +1,16 @@
+# 12.8.5
+
+* on playback start, correct all applicable media duration if difference is greater than 5 seconds
+* in updateFeedFull, avoid resetting episode duration if status greater than Progress 
+* amended MainScreen config to avoid hiding PlayerUI on down swipe
+* adjusted routine binding with external source apps
+* in onResume of MainActivity, popup confirm message if "Use external apps" is set but no apps are connected
+* in MediaPlayer, 
+	* fixed forcing cronet engine on Android 12 or newer
+	* fixed crash when creating the second player
+	* ensure Pause button in episodes lists is tied to the player
+	* disabled speed setting at renderer level (device dependent nature)
+
 # 12.8.4
 
 * amended coroutine scope for binding with external source apps

@@ -12,7 +12,6 @@ import ac.mdiq.podcini.net.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.playback.base.activeTheatresFlow
-import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.MediaPlayerBase.Companion.handleAudioFocus
 import ac.mdiq.podcini.playback.base.TTSEngine
@@ -75,6 +74,8 @@ import kotlinx.coroutines.runBlocking
 class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: Boolean = false, typeInit: ButtonTypes = ButtonTypes.NULL) {
     private val TAG = this::class.simpleName ?: "ItemActionButton"
 
+    private var playerId = 0
+
     private var _type = mutableStateOf(typeInit)
     var type: ButtonTypes
         get() = _type.value
@@ -101,6 +102,12 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
 //            else update(item)
             update(item)
         }
+    }
+
+    private fun isCurrentlyPlaying(media: Episode?): Boolean {
+        return try {
+            theatres[playerId].mPlayerFlow.value?.isCurrentlyPlaying(item) == true
+        } catch (e: Exception) { false}
     }
 
     fun onClick() {
@@ -138,8 +145,13 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 message = "",
                 confirmRes = R.string.the_default,
                 cancelRes = R.string.secondary,
-                onConfirm = { play(0) },
-                onCancel = { play(1) }))
+                onConfirm = {
+                    playerId = 0
+                    play(playerId) },
+                onCancel = {
+                    playerId = 1
+                    play(playerId)
+                }))
             return
         }
         Logd(TAG, "onClick type: $type")
@@ -238,11 +250,13 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             }
             ButtonTypes.PAUSE -> {
                 if (isCurrentlyPlaying(item)) {
-                    for (i in 0..1) {
-                        if (item.id != theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) continue
-                        theatres[i].mPlayerFlow.value?.pause(false)
-                        update(item)
-                    }
+                    theatres[playerId].mPlayerFlow.value?.pause(false)
+                    update(item)
+//                    for (i in 0..1) {
+//                        if (item.id != theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) continue
+//                        theatres[i].mPlayerFlow.value?.pause(false)
+//                        update(item)
+//                    }
                 }
                 if (tts?.isSpeaking == true) tts?.stop()
             }

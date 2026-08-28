@@ -250,7 +250,7 @@ class Episode : RealmObject {
         if (feed != null) this.feedId = feed.id
     }
 
-    fun updateFromOther(other: Episode, includingState: Boolean = false) {
+    fun updateFromOther(other: Episode, includeState: Boolean = false, includeDuration: Boolean = true) {
 //        Logd(TAG, "updateFromOther ${other.viewCount} ${other.title} $title")
         if (other.imageUrl != null) this.imageUrl = other.imageUrl
         if (other.title != null) title = other.title
@@ -262,7 +262,7 @@ class Episode : RealmObject {
 
         if (other.size > 0) size = other.size
         // Do not overwrite duration that we measured after downloading
-        if (other.duration > 0 && duration <= 0) duration = other.duration
+        if (includeDuration && other.duration > 0 && duration <= 0) duration = other.duration
         if (other.mimeType != null) mimeType = other.mimeType
 
         if (other.paymentLink != null) paymentLink = other.paymentLink
@@ -274,7 +274,7 @@ class Episode : RealmObject {
         if (other.viewCount > 0) viewCount = other.viewCount
         if (other.likeCount > 0) likeCount = other.likeCount
 
-        if (includingState) {
+        if (includeState) {
             this.rating = other.rating
             this.playState = other.playState
             this.playStateSetTime = other.playStateSetTime

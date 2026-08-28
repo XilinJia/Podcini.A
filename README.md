@@ -20,7 +20,7 @@ Available such apps are:
 
 ## Notable features
 
-1. Not only handling podcasts, but also local media, and any remote media served by external source providers.
+1. Not only handling podcasts, local media, but also any remote media served by external source providers.
 2. Features multiple, natural and circular play queues associable with any feed.
 3. Features volume hierarchies each of which can contain sub-volumes and feeds.
 4. Presents synthetic feeds and allows media to be separately shelved.

@@ -113,12 +113,11 @@ fun MainScreen() {
     val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 
     LaunchedEffect(Unit) { snapshotFlow { sheetState.bottomSheetState.targetValue }.distinctUntilChanged().collect { targetValue ->
-        Logd(TAG, "snapshotFlow { sheetState.bottomSheetState.currentValue } $targetValue")
         val state = PSState.fromSheet(targetValue)
         if (psState != state) psState = state
     } }
 
-    LaunchedEffect(psState, curMedia0?.id) {
+    LaunchedEffect(curMedia0?.id, psState) {
         if ((curMedia0?.id ?: -1L) <= 0) {
             if (sheetState.bottomSheetState.targetValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()
             return@LaunchedEffect

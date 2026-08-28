@@ -11,6 +11,8 @@ import ac.mdiq.podcini.net.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.playback.base.TTSEngine.closeTTS
 import ac.mdiq.podcini.playback.cast.BaseActivity
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.sources.AppGatewayRegistry
+import ac.mdiq.podcini.sources.sourceClients
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -83,6 +85,7 @@ import androidx.core.view.WindowCompat.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -123,7 +126,6 @@ class MainActivity : BaseActivity() {
     private var showUnrestrictedBackgroundPermissionDialog by mutableStateOf(false)
 
     private var hasFeedUpdateObserverStarted = false
-    private var hasDownloadObserverStarted = false
 
     private var hasInitialized = mutableStateOf(false)
 
@@ -252,13 +254,21 @@ class MainActivity : BaseActivity() {
         cancelFlowEvents()
     }
 
+    private var firstStart = true
     override fun onResume() {
         super.onResume()
         autoBackup()
-//        if (lastTheme != appTheme) {
-//            finish()
-//            forceRestart()
-//        }
+        if (!firstStart && appPrefsFlow?.value?.loadExternalApp == true && sourceClients.isEmpty()) {
+            commonConfirms.add(CommonConfirmAttrib(title = getString(R.string.reconnect_external_apps), message = getString(R.string.reconnect_external_apps_sum),
+                confirmRes = R.string.reconnect, cancelRes = R.string.setting_off,
+                onConfirm = { AppGatewayRegistry.initialize(true, CoroutineScope(Dispatchers.Default)) },
+                onCancel = {
+                    upsertBlk(appPrefsFlow!!.value) { p-> p.loadExternalApp = false}
+                    Logt(TAG, getString(R.string.pref_use_external_apps) + " " + getString(R.string.setting_off))
+                }
+            ))
+        }
+        firstStart = false
         val curTime = nowInMillis()
         Logd(TAG, "onResume curTime: $curTime postRepeatsTime: ${appPrefsFlow!!.value.postRepeatsTime}")
         if ((curTime - appPrefsFlow!!.value.postRepeatsTime) > 3600000L * 24)

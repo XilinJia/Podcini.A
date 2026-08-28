@@ -25,6 +25,7 @@ import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.storage.utils.cacheDir
 import ac.mdiq.podcini.storage.utils.div
+import ac.mdiq.podcini.storage.utils.durationStringFull
 import ac.mdiq.podcini.storage.utils.durationStringShort
 import ac.mdiq.podcini.storage.utils.parent
 import ac.mdiq.podcini.storage.utils.toSafeUri
@@ -218,9 +219,9 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                         STATE_BUFFERING -> bufferedPercentFlow.value = BUFFERING_STARTED
                         STATE_READY -> {
                             bufferedPercentFlow.value = BUFFERING_ENDED
-                            val duration = exoPlayer?.duration ?: 0
-                            if (curMediaFlow.value != null && duration > curMediaFlow.value!!.duration) runOnIOScope { upsert(curMediaFlow.value!!) { it.duration = duration.toInt() } }
-                            Logd(TAG, "onPlaybackStateChanged duration=${exoPlayer?.duration} ms")
+//                            val duration = exoPlayer?.duration ?: 0
+//                            if (curMediaFlow.value != null && duration > curMediaFlow.value!!.duration) runOnIOScope { upsert(curMediaFlow.value!!) { it.duration = duration.toInt() } }
+//                            Logd(TAG, "onPlaybackStateChanged duration=${exoPlayer?.duration} ms")
                         }
                         STATE_ENDED -> {
                             val currentPos = exoPlayer?.currentPosition ?: 0L
@@ -265,6 +266,14 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                                     player.play()
                                 }
                             }
+                        }
+                    }
+                    if (events.contains(Player.EVENT_TIMELINE_CHANGED) || events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) {
+                        val duration = player.duration
+                        val curDuration = curMediaFlow.value?.duration
+                        if (duration != C.TIME_UNSET && duration > 0 && curDuration != null && abs(duration - curDuration) > 5000) {
+                            runOnIOScope { upsert(curMediaFlow.value!!) { it.duration = duration.toInt() } }
+                            Logt(TAG, "Media duration adjusted to : ${durationStringFull(duration.toInt())}")
                         }
                     }
                     if (events.contains(Player.EVENT_IS_LOADING_CHANGED) || events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED)) {
@@ -582,12 +591,13 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     fun createCronetEngine(context: Context, config: ProxyConfig?, executor: Executor): CronetEngine {
+        Logd(TAG, "createCronetEngine")
         val builder = CronetEngine.Builder(context)
             .enableHttp2(true)
             .enableQuic(true)
             .enableBrotli(true)
 //            .setUserAgent(USER_AGENT)
-            .setStoragePath(File(context.cacheDir, "cronet").apply { mkdirs() }.absolutePath)
+            .setStoragePath(File(context.cacheDir, "cronet$playerId").apply { mkdirs() }.absolutePath)
             .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024)
         if (config?.type == Type.HTTP && !config.host.isNullOrEmpty()) {
             val port = if (config.port > 0) config.port else ProxyConfig.DEFAULT_PORT
@@ -612,19 +622,21 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     fun createHttpDataSourceFactory(context: Context, executor: Executor): HttpDataSource.Factory {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 7 && proxyConfig == null) {
-            val httpEngine = HttpEngine.Builder(context)
+        Logd(TAG, "createHttpDataSourceFactory proxyConfig: ${proxyConfig?.host}")
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 7 && (proxyConfig == null || proxyConfig!!.host == null)) {
+            Logd(TAG, "createHttpDataSourceFactory setting HttpEngine")
+            if (httpEngine == null) httpEngine = HttpEngine.Builder(context)
                 .setEnableQuic(true)
 //                .setUserAgent(USER_AGENT)
-                .setStoragePath(File(context.cacheDir, "httpengine").apply { mkdirs() }.absolutePath)
+                .setStoragePath(File(context.cacheDir, "httpengine$playerId").apply { mkdirs() }.absolutePath)
                 .setEnableHttpCache(HttpEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024)
                 .build()
-            HttpEngineDataSource.Factory(httpEngine, executor)
+            HttpEngineDataSource.Factory(httpEngine!!, executor)
                 .setConnectionTimeoutMs(8_000)
                 .setReadTimeoutMs(8_000)
         } else {
-            val cronetEngine = createCronetEngine(context, proxyConfig, executor)
-            CronetDataSource.Factory(cronetEngine, executor)
+            if (cronetEngine == null) cronetEngine = createCronetEngine(context, proxyConfig, executor)
+            CronetDataSource.Factory(cronetEngine!!, executor)
                 .setConnectionTimeoutMs(8_000)
                 .setReadTimeoutMs(8_000)
         }
@@ -633,8 +645,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     override fun createNativePlayer() {
         if (exoPlayer != null) return
         timeIt("$TAG createNativePlayer")
-
-        Logt(TAG, "creating media3 player...")
 
         loadControl = DynamicLoadControl()
         val audioOffloadPreferences = AudioOffloadPreferences.Builder()
@@ -647,7 +657,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         trackSelector = DefaultTrackSelector(context)
         val renderersFactory = object : DefaultRenderersFactory(context) {
             init {
-                setEnableAudioOutputPlaybackParameters(true)
+                setEnableAudioOutputPlaybackParameters(false)
             }
             override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink {
                 val builder = DefaultAudioSink.Builder(context)
@@ -1289,11 +1299,8 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 
         private var enableFloat = false     // float is not well handled in Android devices
 
-//        var httpDataSourceFactory:  OkHttpDataSource.Factory? = null
-//            get() {
-//                if (field == null) field = OkHttpDataSource.Factory(getOKHttpClient() as okhttp3.Call.Factory)
-//                return field
-//            }
+        var httpEngine: HttpEngine? = null
+        var cronetEngine: CronetEngine? = null
 
         var simpleCache: SimpleCache? = null
 

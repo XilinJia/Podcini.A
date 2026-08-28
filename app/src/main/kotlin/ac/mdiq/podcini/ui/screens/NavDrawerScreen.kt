@@ -146,10 +146,14 @@ fun NavDrawerScreen() {
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_settings), tint = textColor, contentDescription = "settings", modifier = Modifier.padding(start = 10.dp))
                 Text(stringResource(R.string.settings_label), color = textColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 20.dp))
                 Spacer(Modifier.weight(1f))
-                val playersRes = remember(activeTheatres) { if (activeTheatres == 1) R.drawable.teaser else R.drawable.ic_launcher_foreground }
+                val playersRes = if (activeTheatres == 1) R.drawable.teaser else R.drawable.ic_launcher_foreground
                 AsyncImage(model = playersRes, contentDescription = "Players", modifier = Modifier.height(24.dp).clickable {
-                    activeTheatresFlow.value = if (activeTheatres == 1) 2 else 1
-                    playerMinHeight = if (activeTheatres == 1) 100 else 210
+                    Logd(TAG,"activeTheatres: $activeTheatres")
+                    activeTheatresFlow.value = if (activeTheatres == 1) 2 else {
+                        playbackService?.shutdownPlayer(1)
+                        1
+                    }
+                    playerMinHeight = if (activeTheatresFlow.value == 1) 100 else 210
                     playbackService?.switchPlayersMode()
                 })
                 Spacer(Modifier.width(10.dp))
