@@ -208,6 +208,7 @@ enum class PSState {
 
 private var activePlayer by mutableIntStateOf(0)
 
+var allowSheetHide by mutableStateOf(false)
 var psState by mutableStateOf(PSState.PartiallyExpanded)
 
 var curVideoMode by mutableStateOf(VideoMode.DEFAULT)
@@ -423,7 +424,10 @@ fun ControlUI(vm: AVPlayerVM) {
                     Logd(TAG, "detectHorizontalDragGestures velocity: $velocity distance: $distance")
                     val shouldSwipe = abs(distance) > swipeDistanceThreshold && abs(velocity) > swipeVelocityThreshold
                     if (shouldSwipe) {
-                        if (distance < 0) psState = PSState.Hidden
+                        if (distance < 0) {
+                            allowSheetHide = true
+                            psState = PSState.Hidden
+                        }
                         else showSleepTimeDialog = true
                     }
 //                    offsetX.animateTo(targetValue = 0f, animationSpec = tween(300))

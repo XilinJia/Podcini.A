@@ -1026,7 +1026,7 @@
     <string name="TV_Film">TV Film</string>
     <string name="All">All</string>
 
-    <string name="player_in_drawer">Player UI is in the drawer</string>
+    <string name="player_in_drawer">Player UI in the drawer. Click to restore.</string>
 
     <string name="search_powered_by">Results by %1$s</string>
     <string name="select_country">Select country</string>

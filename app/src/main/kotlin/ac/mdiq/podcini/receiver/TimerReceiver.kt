@@ -27,7 +27,7 @@ class TimerReceiver : BroadcastReceiver() {
         Logd(TAG, "onReceive: message $message")
         if (message.startsWith(AlarmTypes.PLAY_EPISODE.name)) {
             CoroutineScope(Dispatchers.IO).launch {
-                if (appPrefsFlow!!.value.loadExternalApp)  AppGatewayRegistry.awaitReadyClients()
+                if (appPrefsFlow!!.value.loadExternalApp)  AppGatewayRegistry.awaitReady()
                 delay(5.seconds)
                 val msgs = message.split(':')
                 if (msgs.size < 2) return@launch

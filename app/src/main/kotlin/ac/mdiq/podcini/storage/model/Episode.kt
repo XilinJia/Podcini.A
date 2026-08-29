@@ -10,6 +10,7 @@ import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Feed.Companion.TAG_SEPARATOR
+import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.takeCodePoints
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.MediaType
 import ac.mdiq.podcini.storage.specs.Rating
@@ -818,7 +819,7 @@ data class WidgetEpisode(
 
 fun Episode.toWidget() = WidgetEpisode(
     id = this.id,
-    t = this.title?.take(40),
+    t = this.title?.takeCodePoints(40),
     pd = this.pubDate,
     s = this.playState,
     du = this.duration,

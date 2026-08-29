@@ -21,6 +21,7 @@ import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.Feed.Companion.EPISODES_LIMIT
 import ac.mdiq.podcini.storage.model.SubscriptionLog
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.feedLogsMap
+import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.takeCodePoints
 import ac.mdiq.podcini.storage.model.Volume
 import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.storage.specs.Rating
@@ -145,15 +146,14 @@ fun RemoveFeedDialog(feeds: List<Feed>, onDismiss: () -> Unit, callback: ()->Uni
             BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().height(100.dp).padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             val reasonText = stringResource(R.string.reason_to_remove)
             Button(onClick = {
-                callback()
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         for (f in feeds) {
                             if (!f.isSynthetic()) {
                                 val sLog = SubscriptionLog(f.id, f.title ?: "", f.downloadUrl ?: "", f.link ?: "", SubscriptionLog.Type.Feed.name)
                                 upsert(sLog) {
-                                    it.description = f.description?.take(100).orEmpty()
                                     it.rating = f.rating
+                                    it.description = f.description?.takeCodePoints(100).orEmpty()
                                     it.comment = if (f.comment.isBlank()) "" else (f.comment + "\n")
                                     it.comment += fullDateTimeString() + "\n$reasonText:\n" + textState.text
                                     it.cancelDate = nowInMillis()
@@ -165,6 +165,7 @@ fun RemoveFeedDialog(feeds: List<Feed>, onDismiss: () -> Unit, callback: ()->Uni
                         feedLogsMap = null
                     } catch (e: Throwable) { Logs("RemoveFeedDialog", e) }
                 }
+                callback()
                 onDismiss()
             }) { Text(stringResource(R.string.confirm_label)) }
         }

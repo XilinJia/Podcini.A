@@ -27,6 +27,7 @@ import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.SubscriptionLog
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.feedLogsMap
+import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.takeCodePoints
 import ac.mdiq.podcini.storage.model.allVolumes
 import ac.mdiq.podcini.storage.specs.EpisodeFilter
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
@@ -283,7 +284,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
             feedLogsMap?.get(feed!!.id.toString())?.apply { results.add(this) }
             if (!feed?.title.isNullOrBlank()) feedLogsMap?.get(feed!!.title)?.apply { results.add(this) }
             if (!feed?.downloadUrl.isNullOrBlank()) feedLogsMap?.get(feed!!.downloadUrl)?.apply { results.add(this) }
-            feed?.description?.take(100).takeIf { !it.isNullOrBlank() }.apply { feedLogsMap?.get(this)?.apply { results.add(this) } }
+            feed?.description?.takeCodePoints(100).takeIf { !it.isNullOrBlank() }.apply { feedLogsMap?.get(this)?.apply { results.add(this) } }
             if (results.isNotEmpty()) deletionLogs.addAll(results)
         }
     }

@@ -186,8 +186,8 @@ object FeedUpdateManager {
             setForegroundAsync(getForegroundInfo())
 //            ClientConfig.initialize()
             if (appPrefsFlow!!.value.loadExternalApp) {
-                AppGatewayRegistry.awaitReadyClients()
-                delay(1000.milliseconds)
+                AppGatewayRegistry.awaitReady()
+                delay(3000.milliseconds)
             }
 
             fun rescheduleUpdateTaskOnce() {

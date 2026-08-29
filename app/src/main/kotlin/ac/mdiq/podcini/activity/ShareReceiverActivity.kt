@@ -165,7 +165,7 @@ class ShareReceiverActivity : ComponentActivity() {
                         activity.startActivity(intent)
                         if (finish) activity.finish()
                     }
-                    if (appPrefsFlow!!.value.loadExternalApp) AppGatewayRegistry.awaitReadyClients()
+                    if (appPrefsFlow!!.value.loadExternalApp) AppGatewayRegistry.awaitReady()
                     val client = sourceClients.find { it.withProviderBlocking { p-> p.canHandleUrl(sharedText) == 1 } == true }
                     Logd(TAG, "receiveShared canHandleUrl==1 client: ${client!= null}")
                     if (client != null) {

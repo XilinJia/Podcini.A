@@ -14,6 +14,7 @@ import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.SubscriptionLog
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.feedLogsMap
+import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.takeCodePoints
 import ac.mdiq.podcini.storage.specs.EpisodeFilter
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.reorderWith
@@ -191,7 +192,7 @@ suspend fun eraseEpisodes(episodes: List<Episode>, msg: String = "") {
         for (e in episodes) {
             val sLog = SubscriptionLog(e.id, e.title ?: "", e.downloadUrl ?: "", e.link ?: "", SubscriptionLog.Type.Media.name)
             sLog.let {
-                it.description = e.description?.take(100).orEmpty()
+                it.description = e.description?.takeCodePoints(100).orEmpty()
                 it.rating = e.rating
                 it.comment = if (e.comment.isBlank()) "" else (e.comment + "\n")
                 it.comment += fullDateTimeString() + "\n$reasonText:\n" + msg

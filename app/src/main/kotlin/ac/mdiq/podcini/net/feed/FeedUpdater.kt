@@ -281,35 +281,39 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
     suspend fun refreshFeed(feed: Feed) {
         if (feed.downloadUrl.isNullOrBlank()) return
 
-        val client = if (feed.type != null) typeClientMap[feed.type] else null
         val feed_ = when {
-            client != null -> {
-                val feedIpc = client.withProvider { it.feedToUpdate(feed.downloadUrl!!) }
-                if (feedIpc != null) {
-                    val eList = mutableListOf<EpisodeIPC>()
-                    var episodes = client.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, if (fullUpdate) 0L else feed.lastUpdateTime) } ?: listOf()
-                    while (episodes.isNotEmpty()) {
-                        if (fullUpdate) eList.addAll(episodes)
-                        else {
-                            val eps = mutableListOf<EpisodeIPC>()
-                            for (e in episodes) if (e.pubDate > feed.lastUpdateTime) eps.add(e)
-                            if (eps.isEmpty()) break
-                            eList.addAll(eps)
+            feed.type in listOf(FeedType.Unknown.name, FeedType.RSS.name, FeedType.ATOM.name) -> downloadFeed(feed)
+            else -> {
+                val client = if (feed.type != null) typeClientMap[feed.type] else null
+                when {
+                    client != null -> {
+                        val feedIpc = client.withProvider { it.feedToUpdate(feed.downloadUrl!!) }
+                        if (feedIpc != null) {
+                            val eList = mutableListOf<EpisodeIPC>()
+                            var episodes = client.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, if (fullUpdate) 0L else feed.lastUpdateTime) } ?: listOf()
+                            while (episodes.isNotEmpty()) {
+                                if (fullUpdate) eList.addAll(episodes)
+                                else {
+                                    val eps = mutableListOf<EpisodeIPC>()
+                                    for (e in episodes) if (e.pubDate > feed.lastUpdateTime) eps.add(e)
+                                    if (eps.isEmpty()) break
+                                    eList.addAll(eps)
+                                }
+                                val numEpisodes = eList.size
+                                if (feed.limitEpisodesCount in 1..<numEpisodes || numEpisodes > EPISODES_LIMIT || episodes.size < EPISODE_BATCH_SIZE) break
+                                Logd(TAG, "Subscribing eList: ${eList.size}")
+                                episodes = client.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, if (fullUpdate) 0L else feed.lastUpdateTime) } ?: listOf()
+                            }
+                            feedIpc.episodes = eList
                         }
-                        val numEpisodes = eList.size
-                        if (feed.limitEpisodesCount in 1..<numEpisodes || numEpisodes > EPISODES_LIMIT || episodes.size < EPISODE_BATCH_SIZE) break
-                        Logd(TAG, "Subscribing eList: ${eList.size}")
-                        episodes = client.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, if (fullUpdate) 0L else feed.lastUpdateTime) } ?: listOf()
+                        feedIpc?.toFeed()?.apply {
+                            this.id = feed.id
+                            this.title = feed.title
+                        }
                     }
-                    feedIpc.episodes = eList
-                }
-                feedIpc?.toFeed()?.apply {
-                    this.id = feed.id
-                    this.title = feed.title
+                    else -> null
                 }
             }
-            feed.type in listOf(FeedType.Unknown.name, FeedType.RSS.name, FeedType.ATOM.name) -> downloadFeed(feed)
-            else -> null
         }
 
         Logd(TAG, "refreshFeed feed_: ${feed_?.id} ${feed_?.title}")

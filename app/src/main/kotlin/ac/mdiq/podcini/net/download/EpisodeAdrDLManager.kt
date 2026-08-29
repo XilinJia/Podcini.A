@@ -19,6 +19,7 @@ import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Episode
+import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.takeCodePoints
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.quietlyDeleteFile
 import ac.mdiq.podcini.storage.utils.toSafeUri
@@ -238,7 +239,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
         fun sendMessage(episodeTitle_: String, isImmediateFail: Boolean) {
             var episodeTitle = episodeTitle_
             val retrying = !isLastRunAttempt && !isImmediateFail
-            if (episodeTitle.length > 20) episodeTitle = episodeTitle.take(19) + "…"
+            if (episodeTitle.length > 20) episodeTitle = episodeTitle.takeCodePoints(19) + "…"
 
             // TODO: the action may need to be changed
             EventFlow.postEvent(FlowEvent.MessageEvent(

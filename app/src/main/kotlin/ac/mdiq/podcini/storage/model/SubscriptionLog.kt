@@ -44,6 +44,16 @@ class SubscriptionLog: RealmObject {
     companion object {
         private const val TAG: String = "SubscriptionLog"
 
+        fun String.takeCodePoints(maxCodePoints: Int): String {
+            var end = 0
+            var count = 0
+            while (end < length && count < maxCodePoints) {
+                end += Character.charCount(codePointAt(end))
+                count++
+            }
+            return substring(0, end)
+        }
+
         // needs to be reset when log is added or removed
         var feedLogsMap: Map<String, SubscriptionLog>? = null
             get() {

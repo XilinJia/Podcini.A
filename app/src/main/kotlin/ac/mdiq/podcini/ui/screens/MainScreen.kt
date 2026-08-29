@@ -16,6 +16,7 @@ import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -108,7 +109,9 @@ fun MainScreen() {
         onDispose {}
     }
 
-    val sheetState = rememberBottomSheetScaffoldState(bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded, skipHiddenState = false))
+    val sheetState = rememberBottomSheetScaffoldState(bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded,
+        confirmValueChange = { targetValue -> if (targetValue == SheetValue.Hidden) allowSheetHide else true },
+        skipHiddenState = false))
     val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
     val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 
@@ -133,6 +136,7 @@ fun MainScreen() {
                 SheetValue.PartiallyExpanded -> sheetState.bottomSheetState.partialExpand()
                 SheetValue.Hidden -> sheetState.bottomSheetState.hide()
             }
+            allowSheetHide = false
         }
     }
 
@@ -205,8 +209,7 @@ fun MainScreen() {
             BottomSheetScaffold(sheetContent = { AVPlayerScreen() }, scaffoldState = sheetState, sheetMaxWidth = screenWidth, sheetPeekHeight = bottomInsetPadding + playerMinHeight.dp, sheetDragHandle = {}, sheetShape = RectangleShape, topBar = {}) { paddingValues ->
                 Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize().padding(top = paddingValues.calculateTopPadding(), bottom = dynamicBottomPadding)) {
                     NavDisplay(backStack = backStack, onBack = { navBack() }, entryProvider = myEntryProvider, entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()))
-                    if ((curMedia0?.id ?: -1L) > 0 && psState == PSState.Hidden) Text(stringResource(R.string.player_in_drawer), color = Color.Black, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.LightGray).align(Alignment.BottomCenter))
-//                    if () Text(stringResource(R.string.player_in_drawer), color = Color.Red, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.background(Color.LightGray).align(Alignment.BottomCenter))
+                    if ((curMedia0?.id ?: -1L) > 0 && psState == PSState.Hidden) Text(stringResource(R.string.player_in_drawer), color = Color.Yellow, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.DarkGray).align(Alignment.BottomCenter).clickable { psState = PSState.PartiallyExpanded })
                 }
             }
         }

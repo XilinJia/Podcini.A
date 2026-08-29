@@ -107,21 +107,57 @@ object AppGatewayRegistry {
     private val mutex = Mutex()
     private var isInitializing = false
 
+//    fun initialize(loadExternal: Boolean, scope: CoroutineScope) {
+//        scope.launch {
+//            Logd(TAG, "initialize loadExternal: $loadExternal")
+//            var currentDeferred: CompletableDeferred<List<SourceGatewayClient>>
+//            mutex.withLock {
+//                if (readyDeferred.isCompleted) readyDeferred.complete(emptyList())
+//                if (isInitializing) return@launch
+//                isInitializing = true
+//                _state.value = GatewayState.Initializing
+//
+//                if (readyDeferred.isCompleted) readyDeferred = CompletableDeferred()
+//                currentDeferred = readyDeferred
+//            }
+//            try {
+//                sourceClients.forEach { it.disconnect() }
+//                sourceClients.clear()
+//                if (loadExternal) {
+//                    val cs = getSourceClients()
+//                    if (cs.isNotEmpty()) sourceClients.addAll(cs)
+//                }
+//                forcePlaybackReset = true
+//                if (sourceClients.isNotEmpty()) {
+//                    _state.value = GatewayState.Ready(sourceClients)
+//                    currentDeferred.complete(sourceClients)
+//                } else {
+//                    _state.value = GatewayState.Failed()
+//                    currentDeferred.complete(emptyList())
+//                }
+//            } catch (e: Exception) {
+//                _state.value = GatewayState.Failed(e)
+//                currentDeferred.complete(emptyList())
+//            } finally { mutex.withLock { isInitializing = false } }
+//        }
+//    }
+
     fun initialize(loadExternal: Boolean, scope: CoroutineScope) {
         scope.launch {
             Logd(TAG, "initialize loadExternal: $loadExternal")
-            var currentDeferred: CompletableDeferred<List<SourceGatewayClient>>
+            val currentDeferred: CompletableDeferred<List<SourceGatewayClient>>
             mutex.withLock {
-                if (readyDeferred.isCompleted) readyDeferred.complete(emptyList())
-                if (isInitializing) return@launch
+                if (isInitializing) {
+                    Logd(TAG, "initialize skipped, already in progress")
+                    return@launch
+                }
                 isInitializing = true
                 _state.value = GatewayState.Initializing
-
                 if (readyDeferred.isCompleted) readyDeferred = CompletableDeferred()
                 currentDeferred = readyDeferred
             }
             try {
-                sourceClients.forEach { it.disconnect() }
+                sourceClients.forEach { runCatching { it.disconnect() } }
                 sourceClients.clear()
                 if (loadExternal) {
                     val cs = getSourceClients()
@@ -135,6 +171,8 @@ object AppGatewayRegistry {
                     _state.value = GatewayState.Failed()
                     currentDeferred.complete(emptyList())
                 }
+//            } catch (e: CancellationException) {
+//                throw e
             } catch (e: Exception) {
                 _state.value = GatewayState.Failed(e)
                 currentDeferred.complete(emptyList())
@@ -183,7 +221,6 @@ object AppGatewayRegistry {
                             if (aidlSearchProvider != null) client.feedSearcher = GatewaySearcherAdapter(aidlSearchProvider)
                             val aidlMediaSearcher = client.gateway?.mediaSearcher
                             if (aidlMediaSearcher != null) client.mediaSearcher = GatewayMediaSearcherAdapter(aidlMediaSearcher)
-
                             typeClientMap[attr.feedType] = client
                             Logt(TAG, "External service ${attr.name} connected")
                         } else {
@@ -197,7 +234,6 @@ object AppGatewayRegistry {
                     }
                     if (continuation.isActive) continuation.resumeWith(Result.success(client))
                 }
-
                 override fun onServiceDisconnected(name: ComponentName?) {
                     Logt(TAG, "Service ${client.attributes?.name} disconnected")
                     searcherInfos.clear()
@@ -210,6 +246,7 @@ object AppGatewayRegistry {
                     appIOScope.launch { client.disconnect() }
                     clients.remove(client)
                     if (continuation.isActive) continuation.resumeWith(Result.success(null))
+                    runCatching { context.unbindService(this) }
                 }
                 override fun onNullBinding(name: ComponentName?) {
                     Logt(TAG, "Service ${client.attributes?.name} not bond: null binding, trying to rebind")
@@ -250,8 +287,9 @@ object AppGatewayRegistry {
         return clients
     }
 
-    suspend fun awaitReadyClients(): List<SourceGatewayClient> {
-        return withTimeoutOrNull(10000.milliseconds) { readyDeferred.await() } ?: listOf()
+    suspend fun awaitReady(timeoutMs: Long = 10000): List<SourceGatewayClient> {
+        val deferred = mutex.withLock { readyDeferred }
+        return withTimeoutOrNull(timeoutMs.milliseconds) { deferred.await() } ?: emptyList()
     }
 
     fun getClientsOrNull(): List<SourceGatewayClient>? {
@@ -312,7 +350,7 @@ class SourceGatewayClient() {
 
     suspend fun disconnect() {
         mutex.withLock {
-            if (gateway != null) Logt(TAG, "Disconnecting ${gateway!!.attributes?.name}")
+            if (gateway != null) Logt(TAG, "Disconnecting ${gateway?.attributes?.name}")
             connection?.let { try { getAppContext().unbindService(it) } catch (_: Exception) { } }
             connection = null
             attributes?.apply { typeClientMap.remove(feedType) }

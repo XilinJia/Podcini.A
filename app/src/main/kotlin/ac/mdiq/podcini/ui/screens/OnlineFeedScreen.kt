@@ -33,6 +33,7 @@ import ac.mdiq.podcini.storage.model.Feed.Companion.EPISODES_LIMIT
 import ac.mdiq.podcini.storage.model.ShareLog
 import ac.mdiq.podcini.storage.model.SubscriptionLog
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.feedLogsMap
+import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.takeCodePoints
 import ac.mdiq.podcini.storage.model.tmpQueue
 import ac.mdiq.podcini.storage.model.toFeed
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
@@ -318,8 +319,8 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
             fun getDomain(url: String): String? = try { URI(url).host?.removePrefix("www.") } catch (e: Exception) { null }
             val d1 = getDomain(f.downloadUrl?:"")
             val d2 = getDomain(feed_?.downloadUrl?:"")
-            val ds1 = f.description?.take(100).orEmpty()
-            val ds2 = f.description?.take(100).orEmpty()
+            val ds1 = f.description?.takeCodePoints(100).orEmpty()
+            val ds2 = f.description?.takeCodePoints(100).orEmpty()
             Logd(TAG, "isSameFeed d1: $d1 d2: $d2")
             return  (f.title == feed_?.title && f.author == feed_?.author && d1 == d2 && ds1 == ds2)
         }
@@ -346,7 +347,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
         val results = mutableSetOf<SubscriptionLog>()
         if (!feed_.title.isNullOrBlank()) feedLogsMap?.get(feed_.title)?.apply { results.add(this) }
         if (!feed_.downloadUrl.isNullOrBlank()) feedLogsMap?.get(feed_.downloadUrl)?.apply { results.add(this) }
-        feed_.description?.take(100).takeIf { !it.isNullOrBlank() }.apply { feedLogsMap?.get(this)?.apply { results.add(this) } }
+        feed_.description?.takeCodePoints(100).takeIf { !it.isNullOrBlank() }.apply { feedLogsMap?.get(this)?.apply { results.add(this) } }
         if (results.isNotEmpty()) {
             subLogs.clear()
             subLogs.addAll(results)

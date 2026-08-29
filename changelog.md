@@ -1,3 +1,10 @@
+# 12.8.6
+
+* further amended MainScreen config to avoid hiding PlayerUI on down swipe
+* adjusted FeedUpdater to ensure external clients are ready before starting
+* when PlauerUI is hidden, click on "PlayerUI in the drawer" at bottom also restores it
+* fixed crash when removing feed with special characters in first 100 letters in description
+
 # 12.8.5
 
 * on playback start, correct all applicable media duration if difference is greater than 5 seconds
