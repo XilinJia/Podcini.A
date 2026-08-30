@@ -79,6 +79,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -98,6 +99,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.xilinjia.krdb.query.Sort
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -110,49 +114,50 @@ enum class LogsModes(val res: Int) {
 
 class LogsVM: ViewModel() {
     internal var shareLogs by mutableStateOf<List<ShareLog>>(listOf())
+
     internal var deletionLogs by mutableStateOf<List<SubscriptionLog>>(listOf())
+
     internal var downloadLogs by mutableStateOf<List<DownloadResult>>(listOf())
     internal var mode by mutableStateOf(LogsModes.Session )
-    internal var showDeleteConfirmDialog = mutableStateOf(false)
 
     var showSuccessLogs by mutableStateOf(false)
 
+    init {
+        viewModelScope.launch {
+            snapshotFlow { mode }.distinctUntilChanged().collectLatest { m ->
+                when (m) {
+                    LogsModes.Shares -> realm.query(ShareLog::class).sort("id", Sort.DESCENDING).asFlow().distinctUntilChanged().map { it.list }.collect { v->
+                        val logs = withContext(Dispatchers.Default) { v.toList().distinctBy { it.url }.toList() }
+                        if (logs.isNotEmpty()) shareLogs = logs
+                        else {
+                            Logt(TAG, "Share log is empty")
+                            mode = LogsModes.Session
+                        }
+                    }
+                    LogsModes.Downloads -> realm.query(DownloadResult::class).sort("completionTime",  Sort.DESCENDING).asFlow().distinctUntilChanged().map { it.list }.collect { v->
+                        val logs = withContext(Dispatchers.Default) { v.toList().distinctBy { it.feedfileId } }
+                        if (logs.isNotEmpty()) downloadLogs = logs
+                        else {
+                            Logt(TAG, "Download log is empty")
+                            mode = LogsModes.Session
+                        }
+                    }
+                    LogsModes.Deletions -> realm.query(SubscriptionLog::class).sort("cancelDate", Sort.DESCENDING).asFlow().distinctUntilChanged().map { it.list }.collect { v->
+                        if (v.isNotEmpty()) deletionLogs = v
+                        else {
+                            Logt(TAG, "Deletion log is empty")
+                            mode = LogsModes.Session
+                        }
+                    }
+                    else -> {}
+                }
+            }
+        }
+    }
     internal fun clearAllLogs() {
         deletionLogs = listOf()
         shareLogs = listOf()
         downloadLogs = listOf()
-    }
-    internal fun loadShareLog() {
-        viewModelScope.launch {
-            Logd(TAG, "loadShareLog() called")
-            val result =  realm.query(ShareLog::class).sort("id", Sort.DESCENDING).find()
-            if (result.isNotEmpty()) withContext(Dispatchers.Main) {
-                shareLogs = result.toList().distinctBy { it.url }.toList()
-                mode = LogsModes.Shares
-            } else Logt(TAG, "Share log is empty")
-        }
-    }
-
-    internal fun loadDeletionLog() {
-        viewModelScope.launch {
-            Logd(TAG, "loadDeletionLog() called")
-            val result = realm.query(SubscriptionLog::class).sort("cancelDate", Sort.DESCENDING).find()
-            if (result.isNotEmpty()) withContext(Dispatchers.Main) {
-                deletionLogs = result
-                mode = LogsModes.Deletions
-            } else Logt(TAG, "Deletion log is empty")
-        }
-    }
-
-    internal fun loadDownloadLog() {
-        viewModelScope.launch {
-            Logd(TAG, "getDownloadLog() called")
-            val result =  realm.query(DownloadResult::class).sort("completionTime",  Sort.DESCENDING).find()
-            if (result.isNotEmpty()) withContext(Dispatchers.Main) {
-                downloadLogs = result.toList().distinctBy { it.feedfileId }
-                mode = LogsModes.Downloads
-            } else Logt(TAG, "Download log is empty")
-        }
     }
 }
 
@@ -213,7 +218,7 @@ fun LogsScreen() {
     }
 
     @Composable
-     fun SharedLogView() {
+    fun SharedLogView() {
         val lazyListState = rememberLazyListState()
         val showSharedDialog = remember { mutableStateOf(false) }
         val sharedlogState = remember { mutableStateOf(ShareLog()) }
@@ -256,8 +261,8 @@ fun LogsScreen() {
             sharedUrl = ""
         }
 
+        val logs = remember(vm.shareLogs, vm.showSuccessLogs) { vm.shareLogs.filter { vm.showSuccessLogs == (it.status == ShareLog.Status.SUCCESS.code) } }
         LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            val logs = vm.shareLogs.filter { vm.showSuccessLogs == (it.status == ShareLog.Status.SUCCESS.code) }
             items(logs) { log ->
                 Column(modifier = Modifier.fillMaxWidth().clickable {
                     Logd(TAG, "shared log url: ${log.url}")
@@ -288,7 +293,6 @@ fun LogsScreen() {
                             Logt(TAG, "Handling shared url...")
                             val log_ = upsertBlk(log) { it.status = ShareLog.Status.MISSING.code }
                             vm.shareLogs = listOf()
-                            vm.loadShareLog()
                             receiveShared(log_.url!!, context as MainActivity, false, log_) { _, _ -> sharedUrl = log_.url!! }
                         }
                     }
@@ -342,13 +346,11 @@ fun LogsScreen() {
         var dialogParam by remember { mutableStateOf<SubscriptionLog?>(null) }
         if (dialogParam != null) DeletionDetailDialog(log = dialogParam!!, onDismiss = { dialogParam = null })
 
-        LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(vm.deletionLogs) { log ->
                 Row (verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp, end = 10.dp).clickable { dialogParam = log }) {
                     val iconRes = remember { fromCode(log.rating).res  }
-                    Icon(imageVector = ImageVector.vectorResource(iconRes), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating",
-                        modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).width(40.dp).height(40.dp).padding(end = 15.dp))
+                    Icon(imageVector = ImageVector.vectorResource(iconRes), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).width(40.dp).height(40.dp).padding(end = 15.dp))
                     Column {
                         Text(log.type + ": " + formatDateTimeFlex(log.id) + " -- " + formatDateTimeFlex(log.cancelDate), color = textColor)
                         Text(log.title, color = textColor)
@@ -362,8 +364,8 @@ fun LogsScreen() {
     fun SessionLogView() {
         val lazyListState = rememberLazyListState()
         val sessionLogs by sessionLogsFlow.collectAsStateWithLifecycle()
+        val logs = remember(sessionLogs, vm.showSuccessLogs) { sessionLogs.reversed().filter { vm.showSuccessLogs == !it.contains("Error", ignoreCase = true) } }
         LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            val logs = sessionLogs.reversed().filter { vm.showSuccessLogs == !it.contains("Error", ignoreCase = true) }
             items(logs) { log -> Text(log, color = if (log.contains("Error", ignoreCase = true)) Color.Red else textColor) }
         }
     }
@@ -429,8 +431,8 @@ fun LogsScreen() {
         var dialogParam by remember { mutableStateOf(DownloadResult()) }
         if (showDialog) DownlaodDetailDialog(status = dialogParam, onDismiss = { showDialog = false })
 
+        val logs = remember(vm.downloadLogs, vm.showSuccessLogs) { vm.downloadLogs.filter { vm.showSuccessLogs == it.isSuccessful } }
         LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            val logs = vm.downloadLogs.filter { vm.showSuccessLogs == it.isSuccessful }
             items(logs) { status ->
                 Column(modifier = Modifier.fillMaxWidth().clickable {
                     showDialog = true
@@ -454,11 +456,12 @@ fun LogsScreen() {
         }
     }
 
+    val showDeleteConfirmDialog = remember { mutableStateOf(false) }
+
     @Composable
      fun MyTopAppBar() {
         Box {
-            TopAppBar(title = { Icon(imageVector = ImageVector.vectorResource(vm.mode.res), contentDescription = "mode") },
-                navigationIcon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_history), contentDescription = "Open Drawer", modifier = Modifier.padding(7.dp).clickable { drawerController?.open() }) },
+            TopAppBar(title = {  }, navigationIcon = { Icon(imageVector = ImageVector.vectorResource(vm.mode.res), contentDescription = "Open Drawer", modifier = Modifier.padding(7.dp).clickable { drawerController?.open() }) },
                 actions = {
                     if (vm.mode in listOf(LogsModes.Session, LogsModes.Downloads, LogsModes.Shares)) Switch(checked = vm.showSuccessLogs, onCheckedChange = { vm.showSuccessLogs = !vm.showSuccessLogs },
                         thumbContent = { Icon(imageVector = if (vm.showSuccessLogs) Icons.Filled.Info else Icons.Filled.Warning, contentDescription = null, tint = if (vm.showSuccessLogs) Color.Green else Color.Yellow , modifier = Modifier.size(SwitchDefaults.IconSize)) })
@@ -468,21 +471,21 @@ fun LogsScreen() {
                     }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Session.res), contentDescription = "session") }
                     if (vm.mode != LogsModes.Downloads) IconButton(onClick = {
                         vm.clearAllLogs()
-                        vm.loadDownloadLog()
+                        vm.mode = LogsModes.Downloads
                     }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Downloads.res), contentDescription = "download") }
                     if (vm.mode != LogsModes.Shares) IconButton(onClick = {
                         vm.clearAllLogs()
-                        vm.loadShareLog()
+                        vm.mode = LogsModes.Shares
                     }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Shares.res), contentDescription = "share") }
                     if (vm.mode != LogsModes.Deletions) IconButton(onClick = {
                         vm.clearAllLogs()
-                        vm.loadDeletionLog()
+                        vm.mode = LogsModes.Deletions
                     }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Deletions.res), contentDescription = "Deletions") }
                     var expanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                     DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.clear_logs)) }, onClick = {
-                            vm.showDeleteConfirmDialog.value = true
+                            showDeleteConfirmDialog.value = true
                             expanded = false
                         })
                     }
@@ -493,7 +496,7 @@ fun LogsScreen() {
 
     Scaffold(topBar = { MyTopAppBar() }) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-            ConfirmDialog(R.string.confirm_delete_logs_label, stringResource(R.string.confirm_delete_logs_message), vm.showDeleteConfirmDialog) {
+            ConfirmDialog(R.string.confirm_delete_logs_label, stringResource(R.string.confirm_delete_logs_message), showDeleteConfirmDialog) {
                 runOnIOScope {
                     when {
                         vm.shareLogs.isNotEmpty() -> {
@@ -502,7 +505,6 @@ fun LogsScreen() {
                                 delete(items)
                             }
                             vm.shareLogs = listOf()
-                            vm.loadShareLog()
                         }
                         vm.deletionLogs.isNotEmpty() -> {
                             realm.write {
@@ -510,7 +512,6 @@ fun LogsScreen() {
                                 delete(items)
                             }
                             vm.deletionLogs = listOf()
-                            vm.loadDeletionLog()
                         }
                         vm.downloadLogs.isNotEmpty() -> {
                             realm.write {
@@ -518,7 +519,6 @@ fun LogsScreen() {
                                 delete(items)
                             }
                             vm.downloadLogs = listOf()
-                            vm.loadDownloadLog()
                         }
                     }
                 }

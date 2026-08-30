@@ -1163,8 +1163,8 @@ fun FeedsSettingsScreen() {
                     }
                 }
 
-                if (feedToSet.autoDLEQs.isNotEmpty()) ConfigAutoDLEQ(0)
-                if (enabledSecond && feedToSet.autoDLEQs.size > 1) ConfigAutoDLEQ(1)
+                if (feedToSet.autoDLEQs.isNotEmpty() || feedsToSet.size > 1) ConfigAutoDLEQ(0)
+                if (enabledSecond && (feedToSet.autoDLEQs.size > 1 || feedsToSet.size > 1)) ConfigAutoDLEQ(1)
             }
 
             //                    auto delete

@@ -122,7 +122,9 @@ fun MainScreen() {
 
     LaunchedEffect(curMedia0?.id, psState) {
         if ((curMedia0?.id ?: -1L) <= 0) {
+            allowSheetHide = true
             if (sheetState.bottomSheetState.targetValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()
+            allowSheetHide = false
             return@LaunchedEffect
         }
         val targetSheetValue = when (psState) {

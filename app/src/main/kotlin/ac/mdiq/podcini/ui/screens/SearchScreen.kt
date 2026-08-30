@@ -264,7 +264,7 @@ class SearchVM: ViewModel() {
             Logd(TAG, "Search found feeds: ${feeds.size}")
             results_.episodes.map { it.list }
         }
-    }.distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = emptyList())
+    }.distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList())
 
     val assFeedsFlow = episodesFlow.map { es -> es.mapNotNull { e -> e.feed }.distinctBy { it.id } }.distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = emptyList())
 }

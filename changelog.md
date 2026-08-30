@@ -1,3 +1,11 @@
+# 12.8.7
+
+* hide PlayerUI when no media to play
+* in feed settings, show AudoEQDL policy options when setting for multiple feeds
+* in FeedDetails, when remove the feed, navigate back to previous screen
+* in Logs screen, mode icon is used as the navigation icon, logs are live updated, efficiency improved
+* in Library, subPrefs is changed into a flow
+
 # 12.8.6
 
 * further amended MainScreen config to avoid hiding PlayerUI on down swipe

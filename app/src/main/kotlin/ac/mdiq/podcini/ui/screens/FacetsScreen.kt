@@ -320,7 +320,7 @@ class FacetsVM(modeName_: String): ViewModel() {
     }
 
     val episodesFlow: StateFlow<List<Episode>> = snapshotFlow { Triple(facetsMode, filterChanged, sortOrder) }.distinctUntilChanged().flatMapLatest { buildFlow() }
-        .distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = emptyList())
+        .distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList())
 
     val feedsAssFlow: StateFlow<List<Feed>> = combine(episodesFlow, snapshotFlow { showFeeds }) { episodes, showFeeds -> Pair(episodes, showFeeds) }.distinctUntilChanged().flatMapLatest { (episodes, showFeeds) ->
         if (!showFeeds) updateToolbar(episodes)

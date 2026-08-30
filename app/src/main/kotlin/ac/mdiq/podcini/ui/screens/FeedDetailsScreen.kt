@@ -184,26 +184,13 @@ enum class ADLIncExc {
     EXCLUDE
 }
 
-//private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-//    if (isGranted) return@registerForActivityResult
-//    if (notificationPermissionDenied) {
-//        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-//        val uri = Uri.fromParts("package", requireContext().packageName, null)
-//        intent.setData(uri)
-//        startActivity(intent)
-//        return@registerForActivityResult
-//    }
-//    Toast.makeText(context, R.string.notification_permission_denied, Toast.LENGTH_LONG).show()
-//    notificationPermissionDenied = true
-//}
-
 class FeedDetailsVM(feedId: Long = 0L, modeName: String = FeedScreenMode.List.name): ViewModel() {
     val screenModeFlow = MutableStateFlow(FeedScreenMode.valueOf(modeName))
 
     var enableFilter by  mutableStateOf(true)
 
     val feedFlow: StateFlow<Feed?> = realm.query(Feed::class).query("id == $0", feedId).asFlow().map { change -> change.list.firstOrNull() }
-    .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = null)
+    .stateIn(scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = null)
 
     val episodesFlow: StateFlow<List<Episode>> = combine(feedFlow.filterNotNull(), screenModeFlow, snapshotFlow { enableFilter })
         { feed, mode, enableFilter -> Triple(feed, mode, enableFilter) }.distinctUntilChanged().flatMapLatest { (feed, mode, enableFilter) ->
@@ -363,7 +350,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
 
         if (showChooseRatingDialog) ChooseRatingDialog(listOf(feed!!)) { showChooseRatingDialog = false }
 
-        if (showRemoveFeedDialog) RemoveFeedDialog(listOf(feed!!), onDismiss = { showRemoveFeedDialog = false }) { navTo(Library) }
+        if (showRemoveFeedDialog) RemoveFeedDialog(listOf(feed!!), onDismiss = { showRemoveFeedDialog = false }) { navBack() }
 
         if (feed != null && showFilterDialog) {
             vm.showHeader = false
