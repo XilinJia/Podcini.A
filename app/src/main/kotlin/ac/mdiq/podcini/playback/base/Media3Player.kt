@@ -6,7 +6,6 @@ import ac.mdiq.podcini.playback.SegmentSavingDataSourceFactory
 import ac.mdiq.podcini.playback.cast.CastMediaPlayer.buildCastPlayer
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
-import ac.mdiq.podcini.playback.service.QuickSettingsTileService
 import ac.mdiq.podcini.receiver.PodciniWidget
 import ac.mdiq.podcini.shared.PodciniHttpClient.proxyConfig
 import ac.mdiq.podcini.shared.ProxyConfig
@@ -36,17 +35,13 @@ import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.LogsFor
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.LogtFor
-import ac.mdiq.podcini.utils.sendLocalBroadcast
 import ac.mdiq.podcini.utils.timeIt
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.media.RingtoneManager
 import android.media.audiofx.LoudnessEnhancer
 import android.net.http.HttpEngine
 import android.os.Build
 import android.os.ext.SdkExtensions
-import android.service.quicksettings.TileService
 import android.util.Base64
 import android.util.Pair
 import androidx.core.net.toUri
@@ -68,7 +63,6 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Player.COMMAND_GET_CURRENT_MEDIA_ITEM
 import androidx.media3.common.Player.COMMAND_PLAY_PAUSE
-import androidx.media3.common.Player.DiscontinuityReason
 import androidx.media3.common.Player.Listener
 import androidx.media3.common.Player.PositionInfo
 import androidx.media3.common.Player.STATE_BUFFERING
@@ -140,6 +134,7 @@ import kotlin.time.Instant
 class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     private var exoPlayer: ExoPlayer? = null
 
+    private var curDataSource: SegmentSavingDataSource? = null
     private var recordingFactory: SegmentSavingDataSourceFactory? = null
 
     private var loadControl: DynamicLoadControl? = null
@@ -150,7 +145,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     private var exoplayerListener: Listener? = null
 
     private var exoplayerOffloadListener: ExoPlayer.AudioOffloadListener? = null
-//    private var bufferingUpdater: ((Int) -> Unit)? = null
     private var loudnessEnhancer: LoudnessEnhancer? = null
 
     private var trackSelector: DefaultTrackSelector? = null
@@ -205,6 +199,8 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         if (exoPlayer == null) {
             exoplayerListener = object: Listener {
                 private var hasStarted = false
+                private var isSeeking = false
+                private var wasPlayingBeforeSeek = false
                 override fun onPlaybackStateChanged(playbackState: @State Int) {
                     Logd(TAG, "exoplayerListener onPlaybackStateChanged $playbackState")
                     Logd(TAG, "onPlaybackStateChanged state=$playbackState " +
@@ -251,10 +247,13 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                 override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
                     Logd(TAG, "onPlayWhenReadyChanged value=$playWhenReady reason=$reason state=${exoPlayer?.playbackState} isPlaying=${exoPlayer?.isPlaying}")
                 }
+                override fun onPositionDiscontinuity(oldPosition: PositionInfo, newPosition: PositionInfo, reason: Int) {
+                    Logd(TAG, "onPositionDiscontinuity ${oldPosition.positionMs} ${newPosition.positionMs} $reason")
+                    if (reason == Player.DISCONTINUITY_REASON_SEEK) isSeeking = true
+                }
                 override fun onEvents(player: Player, events: Player.Events) {
                     if (isCasting) {
-                        if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
-                            events.contains(Player.EVENT_IS_PLAYING_CHANGED)) {
+                        if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) || events.contains(Player.EVENT_IS_PLAYING_CHANGED)) {
                             val currentPos = player.currentPosition
                             val totalDuration = player.duration
                             if (player.playbackState == STATE_ENDED && totalDuration > 0 && (totalDuration - currentPos) > 10000) {
@@ -290,20 +289,33 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 //                    if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) endPlayback(hasEnded = true, wasSkipped = false)
                 }
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    Logd(TAG, "exoplayerListener onIsPlayingChanged $isPlaying")
-//                    val pos = getPosition()
-                    if (isPlaying) hasStarted = true
-//                    else onPlaybackPause(curMediaFlow.value, pos)
-//                    val stat = if (isPlaying) PlayerStatus.PLAYING else PlayerStatus.PAUSED
-//                    setPlayerStatus(stat, curMediaFlow.value)
-//                    savePlayerStatus(null, stat)
+                    Logd(TAG, "exoplayerListener onIsPlayingChanged $isPlaying $isSeeking $wasPlayingBeforeSeek")
+                    val media = curMediaFlow.value
+                    if (isSeeking) {
+                        if (isPlaying) {
+                            if (wasPlayingBeforeSeek) {
+                                isSeeking = false
+                                return
+                            }
+                            isSeeking = false
+                        } else return
+                    }
+                    if (isPlaying) {
+                        hasStarted = true
+                        wasPlayingBeforeSeek = true
+                        media?.let { onPlaybackStart(it, it.position) }
+                    } else {
+                        wasPlayingBeforeSeek = false
+                        onPlaybackPause(media, getPosition())
+                    }
+                    handlePlayerStatus(if (isPlaying) PlayerStatus.PLAYING else PlayerStatus.PAUSED, media)
                 }
                 override fun onPlayerError(error: PlaybackException) {
                     fun handleTerminalError(message: String) {
                         LogeFor(TAG, curMediaFlow.value?.id, message)
                         castPlayer?.stop()
                         castPlayer?.clearMediaItems()
-                        setPlayerStatus(PlayerStatus.STOPPED, curMediaFlow.value)
+                        handlePlayerStatus(PlayerStatus.STOPPED, curMediaFlow.value)
                     }
                     Loge(TAG, error, "exoplayerListener onPlayerError")
                     when (error.errorCode) {
@@ -390,10 +402,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 //                        Logpe(TAG, "audioErrorListener: ${if (cause != null) cause.message else error.message}")
 //                        setPlayerStatus(PlayerStatus.ERROR, curMediaFlow.value)
 //                    }
-                }
-                override fun onPositionDiscontinuity(oldPosition: PositionInfo, newPosition: PositionInfo, reason: @DiscontinuityReason Int) {
-//                    Logt(TAG, "onPositionDiscontinuity ${oldPosition.positionMs} ${newPosition.positionMs} $reason")
-//                    if (reason == DISCONTINUITY_REASON_SEEK) audioSeekCompleteListener?.invoke()
                 }
                 override fun onAudioSessionIdChanged(audioSessionId: Int) {
                     Logd(TAG, "exoplayerListener onAudioSessionIdChanged $audioSessionId")
@@ -893,7 +901,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         resetPosSaverInterval(speed)
 
         if (abs(castPlayer!!.playbackParameters.speed - speed) < 0.01f) return
-//        EventFlow.postEvent(FlowEvent.SpeedChangedEvent(playerId, speed))
         Logd(TAG, "setPlaybackParams speed=$speed pitch=${playbackParameters.pitch}")
         val wantsOffload = speed == 1f
         if (wantsOffload != speedEnablesOffload) {
@@ -1035,7 +1042,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 //        if (isCasting) release()
         if (curMediaFlow.value == null) {
             release()
-            setPlayerStatus(PlayerStatus.STOPPED, null)
+            handlePlayerStatus(PlayerStatus.STOPPED, null)
             return
         }
         val i = curMediaFlow.value?.feed?.audioType?: C.AUDIO_CONTENT_TYPE_SPEECH
@@ -1044,39 +1051,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         Logd(TAG, "activeTheatres: ${activeTheatresFlow.value}")
         exoPlayer?.setAudioAttributes(b.build(), activeTheatresFlow.value <= 1 && handleAudioFocus)
         Logd(TAG, "AudioAttributes: usage=${b.build().usage} contentType=${b.build().contentType} handleAudioFocus=${activeTheatresFlow.value <= 1}")
-
-//        bufferingUpdater = { percent: Int ->
-//            Logd(TAG, "bufferingUpdateListener percent: $percent")
-//            if (curMediaFlow.value != null) {
-//                when (percent) {
-//                    BUFFERING_STARTED -> EventFlow.postEvent(FlowEvent.BufferUpdateEvent.started(curMediaFlow.value!!))
-//                    BUFFERING_ENDED -> EventFlow.postEvent(FlowEvent.BufferUpdateEvent.ended(curMediaFlow.value!!))
-//                    else -> EventFlow.postEvent(FlowEvent.BufferUpdateEvent.progressUpdate(curMediaFlow.value!!, 0.01f * percent))
-//                }
-//            }
-//        }
-    }
-
-    override fun notifySystem() {
-        TileService.requestListeningState(context, ComponentName(context, QuickSettingsTileService::class.java))
-        sendLocalBroadcast(ACTION_PLAYER_STATUS_CHANGED)
-        bluetoothNotifyChange(AVRCP_ACTION_PLAYER_STATUS_CHANGED)
-        bluetoothNotifyChange(AVRCP_ACTION_META_CHANGED)
-    }
-
-    private fun bluetoothNotifyChange(whatChanged: String) {
-        Logd(TAG, "bluetoothNotifyChange $whatChanged")
-        if (curMediaFlow.value != null) {
-            val i = Intent(whatChanged)
-            i.putExtra("id", 1L)
-            i.putExtra("artist", "")
-            i.putExtra("album", curMediaFlow.value!!.feed?.title?:"")
-            i.putExtra("track", curMediaFlow.value!!.getEpisodeTitle())
-            i.putExtra("playing", isPlaying)
-            i.putExtra("duration", curMediaFlow.value!!.duration.toLong())
-            i.putExtra("position", curMediaFlow.value!!.position.toLong())
-            context.sendBroadcast(i)
-        }
     }
 
     fun isRangeCached(cache:  SimpleCache, key: String, startByte: Long, endByte: Long): Boolean {
@@ -1094,8 +1068,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         }
         return false
     }
-
-    private var curDataSource: SegmentSavingDataSource? = null
 
     override fun recordClip(startPositionMs: Long, endPositionMs: Long?) {
         val mediaItem = exoPlayer!!.currentMediaItem ?: run {
@@ -1289,10 +1261,9 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     companion object {
         private val TAG: String = Media3Player::class.simpleName ?: "Anonymous"
 
-        private const val ACTION_PLAYER_STATUS_CHANGED: String = "action.ac.mdiq.podcini.service.playerStatusChanged"
-
-        private const val AVRCP_ACTION_PLAYER_STATUS_CHANGED = "com.android.music.playstatechanged"
-        private const val AVRCP_ACTION_META_CHANGED = "com.android.music.metachanged"
+//        private const val ACTION_PLAYER_STATUS_CHANGED: String = "action.ac.mdiq.podcini.service.playerStatusChanged"
+//        private const val AVRCP_ACTION_PLAYER_STATUS_CHANGED = "com.android.music.playstatechanged"
+//        private const val AVRCP_ACTION_META_CHANGED = "com.android.music.metachanged"
 
         const val BUFFERING_STARTED: Int = -1
         const val BUFFERING_ENDED: Int = -2

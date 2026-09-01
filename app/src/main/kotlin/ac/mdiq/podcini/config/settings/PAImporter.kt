@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.config.settings
 
-import ac.mdiq.podcini.storage.database.updateFeedFull
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed

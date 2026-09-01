@@ -2,14 +2,13 @@ package ac.mdiq.podcini.storage.database
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.net.download.EpisodeAdrDLManager
-import ac.mdiq.podcini.net.sync.SynchronizationSettings.isProviderConnected
-import ac.mdiq.podcini.net.sync.model.EpisodeAction
-import ac.mdiq.podcini.net.sync.queue.SynchronizationQueueSink
+import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
+import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
+import ac.mdiq.podcini.sync.model.EpisodeAction
+import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.ACTION_SHUTDOWN_PLAYBACK_SERVICE
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sources.clientByEpisode
+import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.SubscriptionLog
@@ -31,7 +30,6 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.fullDateTimeString
-import ac.mdiq.podcini.utils.sendLocalBroadcast
 import androidx.core.app.NotificationManagerCompat
 import io.github.xilinjia.krdb.notifications.ResultsChange
 import kotlinx.coroutines.CompletableDeferred
@@ -44,12 +42,7 @@ import kotlin.math.min
 
 private const val TAG: String = "Episodes"
 
-/**
- * @param offset The first episode that should be loaded.
- * @param limit The maximum number of episodes that should be loaded.
- * @param filter The filter describing which episodes to filter out.
- * TODO: filters of queued and notqueued don't work in this
- */
+// TODO: filters of queued and notqueued don't work in this
 fun getEpisodes(filter: EpisodeFilter?, sortOrder: EpisodeSortOrder?, feedId: Long = -1, offset: Int = 0, limit: Int = Int.MAX_VALUE, copy: Boolean = true): List<Episode> {
     var queryString = filter?.queryString()?:"id > 0"
     if (feedId >= 0) queryString += " AND feedId == $feedId "
@@ -96,13 +89,6 @@ fun getEpisodesCount(filter: EpisodeFilter?, feedId: Long = -1): Int {
     return realm.query(Episode::class).query(queryString).count().find().toInt()
 }
 
-/**
- * Loads a specific FeedItem from the database.
- * @param guid feed episode guid
- * @param episodeUrl the feed episode's url
- * @return The FeedItem or null if the FeedItem could not be found.
- * Does NOT load additional attributes like feed or queue state.
- */
 fun episodeByGuidOrUrl(guid: String?, episodeUrl: String, copy: Boolean = true): Episode? {
     Logd(TAG, "episodeByGuidOrUrl called $guid $episodeUrl")
     val episode = if (guid != null) realm.query(Episode::class).query("identifier == $0", guid).first().find()
@@ -227,17 +213,14 @@ suspend fun deleteMedia(episode: Episode): Episode {
             EventFlow.postEvent(FlowEvent.EpisodeMediaEvent.removed(episode))
         } catch (e: Throwable) { Logs(TAG, e, "deleteMedia failed") }
     }
-
     for (i in 0..1) {
         if (episode.id == theatres[i].mPlayerFlow.value?.curState?.curMediaId) {
             theatres[i].mPlayerFlow.value?.savePlayerStatus(null, null)
-            sendLocalBroadcast(ACTION_SHUTDOWN_PLAYBACK_SERVICE)
             val nm = NotificationManagerCompat.from(context)
             nm.cancel(R.id.notification_playing)
         }
     }
-
-    if (isProviderConnected) {
+    if (isSyncProviderConnected) {
         // Gpodder: queue delete action for synchronization
         val action = EpisodeAction.Builder(episode, EpisodeAction.DELETE).currentTimestamp().build()
         SynchronizationQueueSink.enqueueEpisodeActionIfSyncActive(action)

@@ -3,7 +3,7 @@ package ac.mdiq.podcini.ui.screens
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.automation.AutoDownloadAlgorithm
 import ac.mdiq.podcini.automation.AutoEnqueueAlgorithm
-import ac.mdiq.podcini.net.feed.FeedUpdateManager.runOnceOrAsk
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
 import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.service.PlaybackService

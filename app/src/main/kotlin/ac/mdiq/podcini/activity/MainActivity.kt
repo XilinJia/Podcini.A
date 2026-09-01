@@ -2,17 +2,16 @@ package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.activity.starter.MainActivityStarter
-import ac.mdiq.podcini.net.feed.FeedUpdateManager
-import ac.mdiq.podcini.net.feed.FeedUpdateManager.runOnceOrAsk
-import ac.mdiq.podcini.net.feed.FeedUpdateManager.scheduleUpdateTaskOnce
-import ac.mdiq.podcini.net.sync.SyncService
-import ac.mdiq.podcini.net.sync.queue.SynchronizationQueueSink
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.scheduleUpdateTaskOnce
+import ac.mdiq.podcini.sync.SyncService
+import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.playback.base.TTSEngine.closeTTS
 import ac.mdiq.podcini.playback.cast.BaseActivity
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sources.AppGatewayRegistry
-import ac.mdiq.podcini.sources.sourceClients
+import ac.mdiq.podcini.sourcing.AppGatewayRegistry
+import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -39,6 +38,7 @@ import ac.mdiq.podcini.ui.screens.navTo
 import ac.mdiq.podcini.ui.screens.psState
 import ac.mdiq.podcini.ui.screens.searchFeedsOnline
 import ac.mdiq.podcini.ui.screens.setSearchTerms
+import ac.mdiq.podcini.utils.CrashReportWriter.Companion.crashLogFile
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
@@ -168,9 +168,11 @@ class MainActivity : BaseActivity() {
         if (savedInstanceState == null) {
             timeIt("$TAG after checking permission")
             val currentVersion = packageManager.getPackageInfo(packageName, 0).versionName ?: "0"
-            val lastScheduledVersion = appPrefsFlow!!.value.lastVersion
-            if (currentVersion != lastScheduledVersion) {
-                upsertBlk(appPrefsFlow!!.value) { it.lastVersion = currentVersion }
+            if (currentVersion != appPrefsFlow!!.value.lastVersion) {
+                runOnIOScope {
+                    upsert(appPrefsFlow!!.value) { it.lastVersion = currentVersion }
+                    crashLogFile.delete()
+                }
             }
 
             SynchronizationQueueSink.setServiceStarterImpl { SyncService.sync() }
@@ -179,21 +181,21 @@ class MainActivity : BaseActivity() {
 
         runOnIOScope { SynchronizationQueueSink.syncNowIfNotSyncedRecently() }
 
-        WorkManager.getInstance(this).getWorkInfosByTagLiveData(FeedUpdateManager.WORK_TAG_FEED_UPDATE)
-            .observe(this) { workInfos: List<WorkInfo> ->
-                if (!hasFeedUpdateObserverStarted) {
-                    hasFeedUpdateObserverStarted = true
-                    return@observe
-                }
-                var isRefreshingFeeds = false
-                for (workInfo in workInfos) {
-                    when (workInfo.state) {
-                        WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED -> isRefreshingFeeds = true
-                        else -> {}
-                    }
-                }
-                EventFlow.postStickyEvent(FlowEvent.FeedUpdatingEvent(isRefreshingFeeds))
+        WorkManager.getInstance(this).getWorkInfosByTagLiveData(FeedUpdateManager.WORK_TAG_FEED_UPDATE).observe(this) { workInfos: List<WorkInfo> ->
+            if (!hasFeedUpdateObserverStarted) {
+                hasFeedUpdateObserverStarted = true
+                return@observe
             }
+            var isRefreshingFeeds = false
+            for (workInfo in workInfos) {
+                when (workInfo.state) {
+                    WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED -> isRefreshingFeeds = true
+                    else -> {}
+                }
+            }
+            EventFlow.postStickyEvent(FlowEvent.FeedUpdatingEvent(isRefreshingFeeds))
+        }
+
         timeIt("$TAG end of onCreate")
     }
 
@@ -354,7 +356,7 @@ class MainActivity : BaseActivity() {
                 searchFeedsOnline(query = intent.getStringExtra(Extras.search_string.name))
                 navTo(FindFeeds)
             }
-            intent.getBooleanExtra(MainActivityStarter.Extras.open_player.name, false) -> psState = PSState.Expanded
+            intent.getBooleanExtra(Extras.open_player.name, false) -> psState = PSState.Expanded
             intent.hasExtra("shortcut_route") -> {
                 val route = intent.getStringExtra("shortcut_route")
                 Logd(TAG, "intent.hasExtra(shortcut_route) route $route")
@@ -417,7 +419,8 @@ class MainActivity : BaseActivity() {
         generated_view_id,
         search_string,
         isShared,
-        source
+        source,
+        open_player
     }
 
     companion object {

@@ -1,8 +1,8 @@
 package ac.mdiq.podcini.config.settings
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
-import ac.mdiq.podcini.net.sync.model.EpisodeAction
-import ac.mdiq.podcini.net.sync.model.SyncServiceException
+import ac.mdiq.podcini.sync.model.EpisodeAction
+import ac.mdiq.podcini.sync.model.SyncServiceException
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -118,11 +118,7 @@ class FavoritesWriter : ExportWriter {
         }
         Logd(TAG, "Finished writing document")
     }
-    /**
-     * Group favorite episodes by feed, sorting them by publishing date in descending order.
-     * @param favoritesList `List` of all favorite episodes.
-     * @return A `Map` favorite episodes, keyed by feed ID.
-     */
+
     private fun buildFeedMap(favoritesList: List<Episode>): Map<Long, MutableList<Episode>> {
         val feedMap: MutableMap<Long, MutableList<Episode>> = mutableMapOf()
         for (item in favoritesList) {

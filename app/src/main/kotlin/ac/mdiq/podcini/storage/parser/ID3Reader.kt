@@ -93,9 +93,6 @@ open class ID3Reader(private val source: CountingSource) {
         skipBytes(frameHeader.size)
     }
 
-    /**
-     * Skip a certain number of bytes on the given input stream.
-     */
     @Throws(ID3ReaderException::class)
     protected fun skipBytes(number: Int) {
         if (number < 0) throw ID3ReaderException("Trying to skip a negative number of bytes: $number")

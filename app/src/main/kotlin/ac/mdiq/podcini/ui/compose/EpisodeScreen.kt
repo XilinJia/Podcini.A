@@ -7,14 +7,14 @@ package ac.mdiq.podcini.ui.compose
 //import io.github.kdroidfilter.webview.web.rememberWebViewState
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.net.download.DownloadStatus
-import ac.mdiq.podcini.net.download.Downloader.Companion.downloadStatesFlow
-import ac.mdiq.podcini.net.utils.NetworkUtils.fetchHtmlSource
-import ac.mdiq.podcini.net.utils.NetworkUtils.isImageDownloadAllowed
+import ac.mdiq.podcini.sourcing.download.DownloadStatus
+import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
+import ac.mdiq.podcini.utils.NetworkUtils.fetchHtmlSource
+import ac.mdiq.podcini.utils.NetworkUtils.isImageDownloadAllowed
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.PlayerStatus
 import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
-import ac.mdiq.podcini.sources.isExtFeed
+import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -39,7 +39,7 @@ import ac.mdiq.podcini.ui.screens.psState
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
-import ac.mdiq.podcini.utils.ShownotesCleaner
+import ac.mdiq.podcini.ui.utils.ShownotesCleaner
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatShortFileSize
 import ac.mdiq.podcini.utils.openInSystemDefault

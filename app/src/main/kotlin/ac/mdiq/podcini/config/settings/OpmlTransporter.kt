@@ -37,7 +37,6 @@ import kotlin.time.Clock
 
 class OpmlTransporter {
 
-    /** Represents a single feed in an OPML file.  */
     class OpmlElement {
         var text: String? = null
         var xmlUrl: String? = null
@@ -45,7 +44,6 @@ class OpmlTransporter {
         var type: String? = null
     }
 
-    /** Contains symbols for reading and writing OPML documents.  */
     private object OpmlSymbols {
         const val OPML: String = "opml"
         const val OUTLINE: String = "outline"
@@ -144,9 +142,6 @@ class OpmlTransporter {
         private var isInOpml = false
         private val elementList: MutableList<OpmlElement> = mutableListOf()
 
-        /**
-         * Reads an Opml document and returns a list of all OPML elements it can find
-         */
         suspend fun readDocument(reader: UnifiedFile): List<OpmlElement> {
             return try {
                 val xml = XML { defaultPolicy { ignoreUnknownChildren() } }

@@ -20,7 +20,7 @@ class CrashReportWriter : Thread.UncaughtExceptionHandler {
     private fun writeCrashToFile(ex: Throwable) {
         Logd(TAG, "writeCrashToFile ${ex.message}")
         fun Int.pad() = this.toString().padStart(2, '0')
-        crashLogFile1.sink().buffer().use { sink ->
+        crashLogFile.sink().buffer().use { sink ->
             sink.writeString("## Crash info\n", Charsets.UTF_8)
             sink.writeString("Time: " + with(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())) { "${day.pad()}-${month.ordinal.pad()}-$year ${hour.pad()}:${minute.pad()}:${second.pad()}" }, Charsets.UTF_8)
             sink.writeString("Podcini version: " + BuildConfig.VERSION_NAME, Charsets.UTF_8)
@@ -36,7 +36,7 @@ class CrashReportWriter : Thread.UncaughtExceptionHandler {
     companion object {
         private val TAG: String = CrashReportWriter::class.simpleName ?: "Anonymous"
 
-        val crashLogFile1: UnifiedFile
+        val crashLogFile: UnifiedFile
             get() = internalDir / "crash-report.log"
     }
 }

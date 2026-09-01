@@ -18,9 +18,9 @@ import ac.mdiq.podcini.config.settings.OpmlTransporter.OpmlElement
 import ac.mdiq.podcini.config.settings.OpmlTransporter.OpmlWriter
 import ac.mdiq.podcini.config.settings.importAP
 import ac.mdiq.podcini.config.settings.importPA
-import ac.mdiq.podcini.net.sync.SyncService.Companion.isValidGuid
-import ac.mdiq.podcini.net.sync.model.EpisodeAction
-import ac.mdiq.podcini.net.sync.model.EpisodeAction.Companion.readFromJsonObject
+import ac.mdiq.podcini.sync.SyncService.Companion.isValidGuid
+import ac.mdiq.podcini.sync.model.EpisodeAction
+import ac.mdiq.podcini.sync.model.EpisodeAction.Companion.readFromJsonObject
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
 import ac.mdiq.podcini.storage.database.upsertBlk

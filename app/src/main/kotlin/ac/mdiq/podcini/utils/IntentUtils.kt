@@ -19,10 +19,6 @@ fun isCallable(intent: Intent?): Boolean {
     return false
 }
 
-fun sendLocalBroadcast(action: String?) {
-    getAppContext().sendBroadcast(Intent(action).setPackage(getAppContext().packageName))
-}
-
 fun openInSystemDefault(url: String) {
     Logd(TAG, "url: $url")
     val context = getAppContext()

@@ -1,3 +1,15 @@
+# 12.9.0
+
+* in Logs screen
+	* clearing SubscriptionLogs is disabled (needed in future subscription events)
+	* on start, download logs older than 30 days are trimmed
+* enabled compact DB on launch, to compact DB if 50% allocated space is not used, not triggered often though
+* crash report from previous version is cleared
+* ensure proper reactions to play/pause demand from outside controls
+* in FeedSettings, moved "enable second algorithm" after the first algorithm
+* in media Player, removed obsolete broadcasts
+* code refactoring and restructuring
+
 # 12.8.7
 
 * hide PlayerUI when no media to play

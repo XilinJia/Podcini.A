@@ -1,8 +1,8 @@
 package ac.mdiq.podcini.storage.model
 
-import ac.mdiq.podcini.net.download.DownloadError
-import ac.mdiq.podcini.net.download.DownloadError.Companion.fromCode
-import ac.mdiq.podcini.net.download.RequestType
+import ac.mdiq.podcini.sourcing.download.DownloadError
+import ac.mdiq.podcini.sourcing.download.DownloadError.Companion.fromCode
+import ac.mdiq.podcini.sourcing.download.RequestType
 import ac.mdiq.podcini.shared.FeedIPC
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.upsert
@@ -25,7 +25,8 @@ class DownloadResult : RealmObject {
 
     var isSuccessful: Boolean
 
-    @Ignore var reason: DownloadError? = DownloadError.ERROR_NOT_FOUND
+    @Ignore
+    var reason: DownloadError? = DownloadError.ERROR_NOT_FOUND
         get() = fromCode(reasonCode)
         set(value) {
             field = value

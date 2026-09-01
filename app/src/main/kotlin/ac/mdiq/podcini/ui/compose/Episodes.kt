@@ -6,22 +6,22 @@ import ac.mdiq.podcini.automation.cancel
 import ac.mdiq.podcini.automation.cancelTimer
 import ac.mdiq.podcini.automation.playEpisodeAtTime
 import ac.mdiq.podcini.automation.reset
-import ac.mdiq.podcini.net.download.RequestType
-import ac.mdiq.podcini.net.sync.SynchronizationSettings.isProviderConnected
-import ac.mdiq.podcini.net.sync.model.EpisodeAction
-import ac.mdiq.podcini.net.sync.queue.SynchronizationQueueSink
-import ac.mdiq.podcini.net.sync.transceive.DiscoveredReceiver
-import ac.mdiq.podcini.net.sync.transceive.listenForUDPBroadcasts
-import ac.mdiq.podcini.net.sync.transceive.sendEpisodes
+import ac.mdiq.podcini.sourcing.download.RequestType
+import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
+import ac.mdiq.podcini.sync.model.EpisodeAction
+import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
+import ac.mdiq.podcini.sourcing.DiscoveredReceiver
+import ac.mdiq.podcini.sourcing.listenForUDPBroadcasts
+import ac.mdiq.podcini.sourcing.sendEpisodes
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sources.clientByEpisode
-import ac.mdiq.podcini.sources.clientByFeed
-import ac.mdiq.podcini.sources.clientshaveLikeCounts
-import ac.mdiq.podcini.sources.clientshaveViewCounts
+import ac.mdiq.podcini.sourcing.clientByEpisode
+import ac.mdiq.podcini.sourcing.clientByFeed
+import ac.mdiq.podcini.sourcing.clientshaveLikeCounts
+import ac.mdiq.podcini.sourcing.clientshaveViewCounts
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.addToQueue
 import ac.mdiq.podcini.storage.database.allFeeds
@@ -68,7 +68,7 @@ import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.LogtFor
-import ac.mdiq.podcini.utils.ShownotesCleaner
+import ac.mdiq.podcini.ui.utils.ShownotesCleaner
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.fullDateTimeString
 import ac.mdiq.podcini.utils.sessionLogsFlow
@@ -607,7 +607,7 @@ fun PlayStateDialog(selected: List<Episode>, onDismiss: () -> Unit, futureCB: (E
                                     var item_ = upsert(e) { it.setPlayState(state, hasAlmostEnded) }
                                     when (state) {
                                         EpisodeState.UNPLAYED -> {
-                                            if (isProviderConnected && item_.feed?.isLocal != true) {
+                                            if (isSyncProviderConnected && item_.feed?.isLocal != true) {
                                                 val actionNew: EpisodeAction = EpisodeAction.Builder(item_, EpisodeAction.NEW).currentTimestamp().build()
                                                 SynchronizationQueueSink.enqueueEpisodeActionIfSyncActive(actionNew)
                                             }
@@ -619,7 +619,7 @@ fun PlayStateDialog(selected: List<Episode>, onDismiss: () -> Unit, futureCB: (E
                                                 item_ = deleteMedia(item_)
                                                 if (appPrefs.deleteRemovesFromQueue) removeFromAllQueues(listOf(item_))
                                             } else if (appPrefs.removeFromQueueMarkPlayed) removeFromAllQueues(listOf(item_))
-                                            if (item_.feed?.isLocal != true && isProviderConnected) { // not all items have media, Gpodder only cares about those that do
+                                            if (item_.feed?.isLocal != true && isSyncProviderConnected) { // not all items have media, Gpodder only cares about those that do
                                                 val actionPlay: EpisodeAction = EpisodeAction.Builder(item_, EpisodeAction.PLAY).currentTimestamp().started(item_.duration / 1000).position(item_.duration / 1000).total(item_.duration / 1000).build()
                                                 SynchronizationQueueSink.enqueueEpisodeActionIfSyncActive(actionPlay)
                                             }
@@ -631,7 +631,7 @@ fun PlayStateDialog(selected: List<Episode>, onDismiss: () -> Unit, futureCB: (E
                                                 item_ = deleteMedia(item_)
                                                 if (appPrefs.deleteRemovesFromQueue) removeFromAllQueues(listOf(item_))
                                             } else if (appPrefs.removeFromQueueMarkPlayed) removeFromAllQueues(listOf(item_))
-                                            if (item_.feed?.isLocal != true && isProviderConnected) { // not all items have media, Gpodder only cares about those that do
+                                            if (item_.feed?.isLocal != true && isSyncProviderConnected) { // not all items have media, Gpodder only cares about those that do
                                                 val actionPlay: EpisodeAction = EpisodeAction.Builder(item_, EpisodeAction.PLAY).currentTimestamp().started(item_.duration / 1000).position(item_.duration / 1000).total(item_.duration / 1000).build()
                                                 SynchronizationQueueSink.enqueueEpisodeActionIfSyncActive(actionPlay)
                                             }

@@ -1,0 +1,16 @@
+package ac.mdiq.podcini.sync
+
+import ac.mdiq.podcini.R
+
+enum class SynchronizationProviderViewData( val identifier: String, val summaryResource: Int, val iconResource: Int) {
+    NEXTCLOUD_GPODDER("NEXTCLOUD_GPODDER", R.string.synchronization_summary_nextcloud, R.drawable.nextcloud_logo);
+
+    companion object {
+        fun fromIdentifier(provider: String): SynchronizationProviderViewData? {
+            for (synchronizationProvider in entries) {
+                if (synchronizationProvider.identifier == provider) return synchronizationProvider
+            }
+            return null
+        }
+    }
+}

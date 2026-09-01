@@ -1,11 +1,11 @@
 package ac.mdiq.podcini.config
 
 import ac.mdiq.podcini.config.settings.OpmlTransporter
-import ac.mdiq.podcini.net.feed.FeedUpdateManager
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.runOnIOScope
-import ac.mdiq.podcini.storage.database.updateFeedFull
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.utils.UnifiedFile
@@ -136,11 +136,7 @@ class OpmlBackupAgent : BackupAgentHelper() {
         override fun writeNewStateDescription(newState: ParcelFileDescriptor) {
             writeNewStateDescription(newState, mChecksum)
         }
-        /**
-         * Writes the new state description, which is the checksum of the OPML file.
-         * @param newState
-         * @param checksum
-         */
+
         private fun writeNewStateDescription(newState: ParcelFileDescriptor, checksum: ByteArray?) {
             if (checksum == null) return
             try {

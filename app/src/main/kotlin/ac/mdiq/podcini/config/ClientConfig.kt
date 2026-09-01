@@ -1,11 +1,11 @@
 package ac.mdiq.podcini.config
 
-import ac.mdiq.podcini.net.ssl.SslProviderInstaller
-import ac.mdiq.podcini.net.utils.NetworkUtils.networkChangedDetected
-import ac.mdiq.podcini.net.utils.NetworkUtils.networkMonitor
+import ac.mdiq.podcini.sourcing.ssl.SslProviderInstaller
+import ac.mdiq.podcini.utils.NetworkUtils.networkChangedDetected
+import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.playback.base.releaseAController
 import ac.mdiq.podcini.shared.PodciniHttpClient.configProxy
-import ac.mdiq.podcini.sources.AppGatewayRegistry
+import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.cancelAppPrefs
 import ac.mdiq.podcini.storage.database.cancelMonitorFeeds

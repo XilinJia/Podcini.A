@@ -4,7 +4,7 @@ package ac.mdiq.podcini.utils
 
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
-import ac.mdiq.podcini.net.download.DownloadError
+import ac.mdiq.podcini.sourcing.download.DownloadError
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.runOnIOScope

@@ -25,11 +25,6 @@ import com.fleeksoft.ksoup.select.NodeVisitor
  * @author Podcini open source community
  */
 class HtmlToPlainText {
-    /**
-     * Format an Element to plain-text
-     * @param element the root element to format
-     * @return formatted text
-     */
     fun getPlainText(element: Element): String {
         val formatter = FormattingVisitor()
         // walk the DOM, and call .head() and .tail() for each node
@@ -75,7 +70,6 @@ class HtmlToPlainText {
         /**
          * Use this method to strip off HTML encoding from given text.
          * Replaces bullet points with *, ignores colors/bold/...
-         *
          * @param str_ String with any encoding
          * @return Human readable text with minimal HTML formatting
          */
@@ -88,12 +82,6 @@ class HtmlToPlainText {
             return str
         }
 
-        /**
-         * Use this method to determine if a given text has any HTML tag
-         *
-         * @param str String to be tested for presence of HTML content
-         * @return **True** if text contains any HTML tags<br></br>**False** is no HTML tag is found
-         */
         private fun isHtml(str: String?): Boolean {
             return Regex("<(\"[^\"]*\"|'[^']*'|[^'\">])*>").containsMatchIn(str.toString())
         }

@@ -4,23 +4,23 @@ import ac.mdiq.podcini.PodciniApp.Companion.forceRestart
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.settings.MediaFilesTransporter
-import ac.mdiq.podcini.net.feed.FeedUpdateManager.checkAndScheduleUpdateTaskOnce
-import ac.mdiq.podcini.net.feed.FeedUpdateManager.intervalInMillis
-import ac.mdiq.podcini.net.sync.SyncService
-import ac.mdiq.podcini.net.sync.SynchronizationProviderViewData
-import ac.mdiq.podcini.net.sync.SynchronizationSettings
-import ac.mdiq.podcini.net.sync.SynchronizationSettings.isProviderConnected
-import ac.mdiq.podcini.net.sync.SynchronizationSettings.setSelectedSyncProvider
-import ac.mdiq.podcini.net.sync.SynchronizationSettings.setWifiSyncEnabled
-import ac.mdiq.podcini.net.sync.nextcloud.NextcloudLoginFlow
-import ac.mdiq.podcini.net.sync.nextcloud.NextcloudLoginFlow.AuthenticationCallback
-import ac.mdiq.podcini.net.sync.wifi.WifiSyncService.Companion.startInstantSync
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.checkAndScheduleUpdateTaskOnce
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.intervalInMillis
+import ac.mdiq.podcini.sync.SyncService
+import ac.mdiq.podcini.sync.SynchronizationProviderViewData
+import ac.mdiq.podcini.sync.SynchronizationSettings
+import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
+import ac.mdiq.podcini.sync.SynchronizationSettings.setSelectedSyncProvider
+import ac.mdiq.podcini.sync.SynchronizationSettings.setWifiSyncEnabled
+import ac.mdiq.podcini.sync.nextcloud.NextcloudLoginFlow
+import ac.mdiq.podcini.sync.nextcloud.NextcloudLoginFlow.AuthenticationCallback
+import ac.mdiq.podcini.sync.wifi.WifiSyncService.Companion.startInstantSync
 import ac.mdiq.podcini.shared.PodciniHttpClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.resetClient
 import ac.mdiq.podcini.shared.ProxyConfig
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sources.AppGatewayRegistry
+import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.proxyConfig
@@ -47,6 +47,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.MobileUpdateOptions
 import ac.mdiq.podcini.utils.fullDateTimeString
 import android.app.Activity.RESULT_OK
 import android.content.Context.WIFI_SERVICE
@@ -125,16 +126,6 @@ import java.net.Proxy
 import java.net.SocketAddress
 
 private const val TAG = "NetworkPreferences"
-
-@Suppress("EnumEntryName")
-enum class MobileUpdateOptions(val res: Int) {
-    feed_refresh(R.string.pref_mobileUpdate_refresh),
-    episode_download(R.string.pref_mobileUpdate_episode_download),
-    auto_download(R.string.pref_mobileUpdate_auto_download),
-    streaming(R.string.pref_mobileUpdate_streaming),
-    images(R.string.pref_mobileUpdate_images),
-    sync(R.string.synchronization_pref);
-}
 
 @Composable
 fun NetworkStorageScreen() {
@@ -574,7 +565,7 @@ fun SynchronizationScreen() {
 
     val selectedSyncProviderKey: String = SynchronizationSettings.selectedSyncProviderKey?:""
     var selectedProvider by remember { mutableStateOf(SynchronizationProviderViewData.fromIdentifier(selectedSyncProviderKey)) }
-    var loggedIn by remember { mutableStateOf(isProviderConnected) }
+    var loggedIn by remember { mutableStateOf(isSyncProviderConnected) }
 
     @Composable
     fun NextcloudAuthenticationDialog(onDismiss: ()->Unit) {
@@ -593,7 +584,7 @@ fun SynchronizationScreen() {
                 SynchronizationSettings.hosturl = server
                 SynchronizationSettings.username = username
                 SyncService.fullSync()
-                loggedIn = isProviderConnected
+                loggedIn = isSyncProviderConnected
                 onDismiss()
             }
             override fun onNextcloudAuthError(errorMessage: String?) {
@@ -655,7 +646,7 @@ fun SynchronizationScreen() {
                                     //                                    SynchronizationProviderViewData.GPODDER_NET -> GpodderAuthenticationFragment().show(activity.supportFragmentManager, GpodderAuthenticationFragment.TAG)
                                     SynchronizationProviderViewData.NEXTCLOUD_GPODDER -> showNextCloudAuthDialog = true
                                 }
-                                loggedIn = isProviderConnected
+                                loggedIn = isSyncProviderConnected
                                 onDismiss()
                             }) {
                             Icon(painter = painterResource(id = option.iconResource), contentDescription = "", modifier = Modifier.size(40.dp).padding(end = 15.dp))
@@ -813,7 +804,7 @@ fun SynchronizationScreen() {
             SynchronizationSettings.clear()
             Logt("SynchronizationPreferencesScreen", context.getString(R.string.pref_synchronization_logout_toast))
             setSelectedSyncProvider(null)
-            loggedIn = isProviderConnected
+            loggedIn = isSyncProviderConnected
         }
     }
 }

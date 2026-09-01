@@ -297,7 +297,6 @@ fun formatEpochMillisSimple(epochMillis: Long, pattern: String): String {
 
 private data class DateTimeFields(val year: Int, val month: Int, val day: Int, val hour: Int, val minute: Int, val second: Int, val milli: Int)
 
-/** Convert epoch millis to UTC fields (year,month,day,hour,minute,second,millis). */
 private fun utcFieldsFromEpochMillis(ms: Long): DateTimeFields {
     val dayMs = 86_400_000L
     var days = floorDiv(ms, dayMs)
@@ -314,10 +313,6 @@ private fun utcFieldsFromEpochMillis(ms: Long): DateTimeFields {
     return DateTimeFields(year, month, day, hour, minute, second, milli)
 }
 
-/**
- * Convert days since 1970-01-01 (UTC) to year, month, day in proleptic Gregorian calendar.
- * Algorithm adapted to be compact and correct for wide range of years.
- */
 private fun ymdFromDaysSinceEpoch(daysSinceEpoch: Long): Triple<Int, Int, Int> {
     // days since 0000-03-01 proleptic Gregorian
     val z = daysSinceEpoch + 719468L

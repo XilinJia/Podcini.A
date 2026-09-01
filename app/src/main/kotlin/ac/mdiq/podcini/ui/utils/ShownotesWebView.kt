@@ -6,7 +6,6 @@ import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
-import ac.mdiq.podcini.utils.ShownotesCleaner
 import ac.mdiq.podcini.utils.isCallable
 import ac.mdiq.podcini.utils.openInSystemDefault
 import ac.mdiq.podcini.utils.shareLink

@@ -2,7 +2,7 @@ package ac.mdiq.podcini
 
 import ac.mdiq.podcini.activity.MainActivity
 import ac.mdiq.podcini.config.ClientConfig
-import ac.mdiq.podcini.sources.sourceClients
+import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.utils.CrashReportWriter
 import ac.mdiq.podcini.utils.startTiming

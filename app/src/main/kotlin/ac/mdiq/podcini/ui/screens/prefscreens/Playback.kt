@@ -3,7 +3,7 @@ package ac.mdiq.podcini.ui.screens.prefscreens
 import ac.mdiq.podcini.PodciniApp.Companion.forceRestart
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.forcePlaybackReset
-import ac.mdiq.podcini.sources.clientsHaveMultiQ
+import ac.mdiq.podcini.sourcing.clientsHaveMultiQ
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload

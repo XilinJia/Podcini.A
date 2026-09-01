@@ -42,11 +42,6 @@ sealed class FlowEvent {
         }
     }
 
-    // TODO: perhaps FeedDetails Settings need to post this?
-//    data class FeedChangeEvent(val feed: Feed, val changedFields: Array<String>) : FlowEvent()
-
-//    data class SpeedChangedEvent(val playerId: Int, val newSpeed: Float) : FlowEvent()
-
     data class EpisodeMediaEvent(val action: Action, val episodes: List<Episode>) : FlowEvent() {
         enum class Action { REMOVED }
         companion object {

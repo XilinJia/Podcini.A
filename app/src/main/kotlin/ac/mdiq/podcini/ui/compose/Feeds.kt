@@ -2,19 +2,19 @@ package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.settings.OpmlTransporter
-import ac.mdiq.podcini.net.feed.FeedBuilder
-import ac.mdiq.podcini.net.feed.subscribe
-import ac.mdiq.podcini.net.sync.transceive.listenForUDPBroadcasts
+import ac.mdiq.podcini.sourcing.feed.FeedBuilder
+import ac.mdiq.podcini.sourcing.feed.subscribe
+import ac.mdiq.podcini.sourcing.listenForUDPBroadcasts
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sources.EPISODE_BATCH_SIZE
-import ac.mdiq.podcini.sources.clientBySearcher
+import ac.mdiq.podcini.sourcing.EPISODE_BATCH_SIZE
+import ac.mdiq.podcini.sourcing.clientBySearcher
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.createSynthetic
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.runOnIOScope
-import ac.mdiq.podcini.storage.database.updateFeedFull
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Feed

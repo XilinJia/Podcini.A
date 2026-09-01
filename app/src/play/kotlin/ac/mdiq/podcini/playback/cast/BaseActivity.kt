@@ -17,9 +17,6 @@ import com.google.android.gms.cast.framework.CastButtonFactory
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 
-/**
- * Activity that allows for showing the MediaRouter button whenever there's a cast device in the network.
- */
 abstract class BaseActivity : AppCompatActivity() {
     private var canCast by mutableStateOf(false)
 

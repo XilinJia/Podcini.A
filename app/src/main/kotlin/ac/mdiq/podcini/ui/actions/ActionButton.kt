@@ -2,13 +2,13 @@ package ac.mdiq.podcini.ui.actions
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.net.download.DownloadRequest.Companion.requestFor
-import ac.mdiq.podcini.net.download.Downloader.Companion.downloaderFor
-import ac.mdiq.podcini.net.download.EpisodeAdrDLManager
-import ac.mdiq.podcini.net.download.EpisodeDLManager.Companion.updateDB
-import ac.mdiq.podcini.net.utils.NetworkUtils
-import ac.mdiq.podcini.net.utils.NetworkUtils.mobileAllowEpisodeDownload
-import ac.mdiq.podcini.net.utils.NetworkUtils.networkMonitor
+import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
+import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
+import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
+import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
+import ac.mdiq.podcini.utils.NetworkUtils
+import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
+import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.playback.base.activeTheatresFlow
@@ -23,7 +23,7 @@ import ac.mdiq.podcini.playback.base.TTSEngine.ttsJob
 import ac.mdiq.podcini.playback.base.TTSEngine.ttsTmpFiles
 import ac.mdiq.podcini.playback.base.isCurMedia
 import ac.mdiq.podcini.playback.service.PlaybackService
-import ac.mdiq.podcini.sources.clientByEpisode
+import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
 import ac.mdiq.podcini.storage.database.isMediaDownloadable

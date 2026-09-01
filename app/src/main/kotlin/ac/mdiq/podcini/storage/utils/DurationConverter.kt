@@ -11,9 +11,6 @@ private const val HOURS_MIL = 3600000
 private const val MINUTES_MIL = 60000
 private const val SECONDS_MIL = 1000
 
-/**
- * Converts milliseconds to a string containing hours, minutes and seconds.
- */
 fun durationStringFull(duration: Int): String {
     fun millisecondsToHms(duration: Long): IntArray {
         val h = (duration / HOURS_MIL).toInt()
@@ -40,9 +37,6 @@ fun durationStringAdapt(ms: Int): String {
     else minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0')
 }
 
-/**
- * Converts milliseconds to a string containing hours and minutes or minutes and seconds.
- */
 fun durationStringShort(duration: Long, inHours: Boolean, delim: String = ":"): String {
     val firstPartBase = if (inHours) HOURS_MIL else MINUTES_MIL
     val firstPart = duration / firstPartBase
@@ -71,9 +65,6 @@ fun durationStringShortToMs(input: String, inHours: Boolean): Int {
     return (parts[0].toInt() * 60 * 1000 * modifier + parts[1].toInt() * 1000 * modifier)
 }
 
-/**
- * Converts milliseconds to a localized string containing hours and minutes.
- */
 //fun getDurationStringLocalized(duration: Long): String {
 //    val resources = getAppContext().resources
 //    var result = ""
@@ -98,11 +89,6 @@ fun durationStringShortToMs(input: String, inHours: Boolean): Int {
 //    return result
 //}
 
-/**
- * Converts seconds to a localized representation.
- * @param time The time in seconds
- * @return "HH:MM hours"
- */
 fun durationInHours(time: Long, showHoursText: Boolean = true): String {
     val hours = time.toFloat() / 3600f
     return hours.format(2) + if (showHoursText) getAppContext().getString(R.string.time_hours) else ""

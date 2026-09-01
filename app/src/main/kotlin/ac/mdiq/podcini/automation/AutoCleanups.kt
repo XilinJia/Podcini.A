@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.automation
 
-import ac.mdiq.podcini.net.download.EpisodeAdrDLManager
+import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
 import ac.mdiq.podcini.storage.database.EPISODE_CACHE_SIZE_UNLIMITED
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteMedia

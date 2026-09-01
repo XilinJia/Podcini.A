@@ -88,7 +88,7 @@ class BugReportActivity : ComponentActivity() {
         enableEdgeToEdge(window)
 
         var stacktrace = "No crash report recorded"
-        val crashFile = CrashReportWriter.crashLogFile1
+        val crashFile = CrashReportWriter.crashLogFile
         runBlocking {
             if (crashFile.exists()) stacktrace = crashFile.readString()
             else Logt(TAG, stacktrace)

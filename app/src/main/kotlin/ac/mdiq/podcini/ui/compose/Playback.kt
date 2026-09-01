@@ -289,11 +289,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                         player.curSpeed = chipSpeed
                                         player.setPlaybackParams(chipSpeed)
                                     }
-                                }
-                                else {
-                                    upsertBlk(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
-//                                    EventFlow.postEvent(FlowEvent.SpeedChangedEvent(playerId, chipSpeed))
-                                }
+                                } else upsertBlk(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
                                 onDismiss()
                             },
                             trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon", modifier = Modifier.size(30.dp).padding(start = 3.dp).clickable {

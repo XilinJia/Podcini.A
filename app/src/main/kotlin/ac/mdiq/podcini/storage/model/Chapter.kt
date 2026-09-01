@@ -3,8 +3,7 @@ package ac.mdiq.podcini.storage.model
 import io.github.xilinjia.krdb.types.EmbeddedRealmObject
 
 class Chapter : EmbeddedRealmObject {
-    /** Defines starting point in milliseconds.  */
-    var start: Long = 0
+    var start: Long = 0     // milliseconds
     var title: String? = null
     var link: String? = null
     var imageUrl: String? = null

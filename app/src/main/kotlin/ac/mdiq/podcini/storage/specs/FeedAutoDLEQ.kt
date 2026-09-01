@@ -19,12 +19,6 @@ class FeedAutoDLEQFilter(
     val includeTerms: List<String> by lazy { parseTerms(includeFilterRaw ?: "") }
     val excludeTerms: List<String> by lazy { parseTerms(excludeFilterRaw ?: "") }
 
-    /**
-     * Parses the text in to a list of single words or quoted strings.
-     * Example: "One "Two Three"" returns ["One", "Two Three"]
-     * @param filter string to parse in to terms
-     * @return list of terms
-     */
     private fun parseTerms(filter: String): List<String> {
         val list = FILTER_REGEX.findAll(filter)
             .mapNotNull { it.groups[1]?.value }

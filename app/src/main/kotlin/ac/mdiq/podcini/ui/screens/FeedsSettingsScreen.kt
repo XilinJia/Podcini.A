@@ -1,13 +1,13 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.net.feed.FeedUpdater
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.forcePlaybackReset
-import ac.mdiq.podcini.sources.SourceGatewayClient
-import ac.mdiq.podcini.sources.clientByFeed
-import ac.mdiq.podcini.sources.clientsHaveMultiQ
-import ac.mdiq.podcini.sources.typeClientMap
+import ac.mdiq.podcini.sourcing.SourceGatewayClient
+import ac.mdiq.podcini.sourcing.clientByFeed
+import ac.mdiq.podcini.sourcing.clientsHaveMultiQ
+import ac.mdiq.podcini.sourcing.typeClientMap
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.database.queuesLive
@@ -931,32 +931,6 @@ fun FeedsSettingsScreen() {
                     Text(text = stringResource(R.string.pref_auto_download_include_soon_summary), style = MaterialTheme.typography.bodyMedium, color = textColor)
                 }
 
-                //                    second algorithm
-                var enabledSecond by remember { mutableStateOf(feedToSet.enabledSecondDLEQ) }
-                Column(modifier = Modifier.padding(start = 20.dp)) {
-                    Row(Modifier.fillMaxWidth()) {
-                        Text(text = stringResource(R.string.pref_enable_second_algorithm), style = CustomTextStyles.titleCustom, color = textColor)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Switch(checked = enabledSecond, modifier = Modifier.height(24.dp),
-                            onCheckedChange = { checked->
-                                runOnIOScope {
-                                    realm.write { for (f in feedsToSet) {
-                                        findLatest(f)?.let { f->
-                                            if (checked) {
-                                                if (f.autoDLEQs.size < 2) f.autoDLEQs.add(AutoDLEQ())
-                                                else f.autoDLEQs[1] = AutoDLEQ()
-                                            } else if (f.autoDLEQs.size == 2) f.autoDLEQs.removeAt(1)
-                                            f.enabledSecondDLEQ = checked
-                                        }
-                                    } }
-                                    enabledSecond = checked
-                                }
-                            }
-                        )
-                    }
-                    Text(text = stringResource(R.string.pref_enable_second_algorithm_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
-                }
-
                 @Composable
                 fun ConfigAutoDLEQ(index: Int) {
                     Text(text = stringResource(R.string.algorithm) + " ${index+1}: ", style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.padding(start = 20.dp))
@@ -1164,6 +1138,34 @@ fun FeedsSettingsScreen() {
                 }
 
                 if (feedToSet.autoDLEQs.isNotEmpty() || feedsToSet.size > 1) ConfigAutoDLEQ(0)
+
+                HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
+                //                    second algorithm
+                var enabledSecond by remember { mutableStateOf(feedToSet.enabledSecondDLEQ) }
+                Column(modifier = Modifier.padding(start = 20.dp)) {
+                    Row(Modifier.fillMaxWidth()) {
+                        Text(text = stringResource(R.string.pref_enable_second_algorithm), style = CustomTextStyles.titleCustom, color = textColor)
+                        Spacer(modifier = Modifier.weight(1f))
+                        Switch(checked = enabledSecond, modifier = Modifier.height(24.dp),
+                            onCheckedChange = { checked->
+                                runOnIOScope {
+                                    realm.write { for (f in feedsToSet) {
+                                        findLatest(f)?.let { f->
+                                            if (checked) {
+                                                if (f.autoDLEQs.size < 2) f.autoDLEQs.add(AutoDLEQ())
+                                                else f.autoDLEQs[1] = AutoDLEQ()
+                                            } else if (f.autoDLEQs.size == 2) f.autoDLEQs.removeAt(1)
+                                            f.enabledSecondDLEQ = checked
+                                        }
+                                    } }
+                                    enabledSecond = checked
+                                }
+                            }
+                        )
+                    }
+                    Text(text = stringResource(R.string.pref_enable_second_algorithm_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
+                }
+
                 if (enabledSecond && (feedToSet.autoDLEQs.size > 1 || feedsToSet.size > 1)) ConfigAutoDLEQ(1)
             }
 

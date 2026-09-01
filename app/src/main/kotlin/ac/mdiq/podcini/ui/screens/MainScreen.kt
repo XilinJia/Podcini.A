@@ -40,7 +40,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -110,8 +109,7 @@ fun MainScreen() {
     }
 
     val sheetState = rememberBottomSheetScaffoldState(bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded,
-        confirmValueChange = { targetValue -> if (targetValue == SheetValue.Hidden) allowSheetHide else true },
-        skipHiddenState = false))
+        confirmValueChange = { targetValue -> if (targetValue == SheetValue.Hidden) allowSheetHide else true }, skipHiddenState = false))
     val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
     val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 
@@ -144,14 +142,10 @@ fun MainScreen() {
 
     val bottomInsets = WindowInsets.ime.union(WindowInsets.navigationBars)
     val bottomInsetPadding = bottomInsets.asPaddingValues().calculateBottomPadding()
-    val dynamicBottomPadding by remember {
-        derivedStateOf {
-            when (sheetState.bottomSheetState.currentValue) {
-                SheetValue.Expanded -> bottomInsetPadding + 300.dp
-                SheetValue.PartiallyExpanded -> bottomInsetPadding + playerMinHeight.dp
-                else -> bottomInsetPadding
-            }
-        }
+    val dynamicBottomPadding = when (sheetState.bottomSheetState.targetValue) {
+        SheetValue.Expanded -> bottomInsetPadding + 300.dp
+        SheetValue.PartiallyExpanded -> bottomInsetPadding + playerMinHeight.dp
+        else -> bottomInsetPadding
     }
     var savedDrawerValue by rememberSaveable { mutableStateOf(DrawerValue.Closed) }
 

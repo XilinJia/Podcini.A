@@ -14,7 +14,7 @@
     <string name="pafeeds" translatable="false">PAFeeds</string>
 
     <string name="preferred_languages">Preferred languages</string>
-    <string name="preferred_languages_sum">When media contains multiple language tracks, the player uses this setting to select proper tracks. Every feed containing such media also enables this setting. The player checks on feed setting first, if not set, uses the global setting, if still not set, default to [en-US, en-GB, en].</string>
+    <string name="preferred_languages_sum">When media contains multiple language tracks, the player uses this setting to select proper tracks. The player checks on this feed setting first, if not set, uses the global setting, if still not set, default to [en-US, en-GB, en].</string>
 
     <string name="statistics_label">Statistics</string>
     <string name="add_feed_label">Add feeds</string>
@@ -176,12 +176,12 @@
 
     <string name="enqueue">Enqueue</string>
     <string name="download">Download</string>
-    <string name="auto_enqueue_sum">Enabling auto-enqueue adds qualified episodes to associated queue (on (auto-)refreshing).</string>
-    <string name="auto_enqueue_sum1">Auto-enqueue requires associated queue not set to None.</string>
-    <string name="auto_download_sum">Enabling auto-download downloads of qualified episodes and add them to associated queue (when it\'s not be set to None on (auto-)refreshing).</string>
+    <string name="auto_enqueue_sum">Enabling auto-enqueue adds qualified episodes to associated queue on refreshing.</string>
+    <string name="auto_enqueue_sum1">Auto-enqueue requires the associated queue of the feed not set to None.</string>
+    <string name="auto_download_sum">Enabling auto-download downloads qualified episodes and adds them to the associated queue (not set to None) on refreshing.</string>
 
     <string name="limit_episodes_to">Limit episodes to</string>
-    <string name="limit_episodes_to_sum">Suggest a maximum number of episodes to keep. When exceeded, older episodes are erased. Specially marked episodes will be kept.</string>
+    <string name="limit_episodes_to_sum">Suggest a maximum number of episodes to maintain. When exceeded, older episodes are erased. Specially marked episodes will be kept though.</string>
     <string name="skip_first_hint">Skip first (seconds)</string>
     <string name="skip_last_hint">Skip last (seconds)</string>
 
@@ -190,7 +190,7 @@
     <string name="auto_delete_episode">Auto delete episode</string>
     <string name="auto_delete_sum">Delete after marked played</string>
     <string name="feed_volume_adapdation">Volume adaptation</string>
-    <string name="feed_volume_adaptation_summary">Turn volume for episodes of this podcast up or down: %1$s</string>
+    <string name="feed_volume_adaptation_summary">Turn volume for episodes of this feed up or down: %1$s</string>
     <string name="feed_volume_reduction_off">No adaption</string>
     <string name="feed_volume_reduction_light">Light reduction</string>
     <string name="feed_volume_reduction_heavy">Heavy reduction</string>
@@ -654,10 +654,10 @@
     <string name="pref_enable_second_algorithm_sum">Second algorithm has independent config. Episodes list generated will be randomly interlaced with that from the primary algorithm. Note the two algorimths share the same episode cache specified.</string>
 
     <string name="pref_auto_download_include_soon_title">Include "Soon"</string>
-    <string name="pref_auto_download_include_soon_summary">Set to include episodes with play status set to Soon.</string>
+    <string name="pref_auto_download_include_soon_summary">Set to first include episodes with play status set to Soon.</string>
 
     <string name="pref_episode_cache_title">Episode cache</string>
-    <string name="pref_episode_cache_summary">Total number of episodes to be downloaded or enqueued (0 means unlimited). Automatic download/enqueue will be suspended if this number is reached.</string>
+    <string name="pref_episode_cache_summary">Total number of episodes to be downloaded/enqueued (0 means unlimited). Automatic download/enqueue will be suspended if this number is reached.</string>
     <string name="pref_auto_download_counting_played_title">Counting played</string>
     <string name="pref_auto_download_counting_played_summary">Set if downloaded episodes already played count into the episode cache, not applicable to enqueue algorithms.</string>
     <string name="pref_episode_cover_title">Use episode cover</string>
@@ -668,9 +668,9 @@
     <string name="pref_theme_title_light">Light</string>
     <string name="pref_theme_title_dark">Dark</string>
     <string name="pref_playback_speed_sum">Customize the speeds available for variable speed playback</string>
-    <string name="pref_feed_playback_speed_sum">The speed to use when starting audio playback for episodes in this podcast</string>
+    <string name="pref_feed_playback_speed_sum">The speed to use when starting audio playback for episodes in this feed</string>
     <string name="pref_feed_skip">Auto skip</string>
-    <string name="pref_feed_skip_sum">Skip introductions and ending credits.</string>
+    <string name="pref_feed_skip_sum">Skip introductions and ending segments.</string>
     <string name="pref_feed_intervals">Repeat intervals</string>
     <string name="pref_feed_intervals_sum">Used for auto-download or auto-enqueue episodes set to Again.</string>
     <string name="pref_feed_audio_type">Audio type</string>
@@ -683,7 +683,7 @@
     <string name="pref_feed_video_quality_sum">Global equals low quality, Quality setting here takes precedence over the setting of prefLowQualityMedia for metered network.</string>
     <string name="pref_video_quality_sum">Quality setting here takes precedence over the setting of prefLowQualityMedia for metered network.</string>
     <string name="pref_feed_associated_queue">Associated queue</string>
-    <string name="pref_feed_associated_queue_sum">The queue to which epiosdes in the feed will added by default</string>
+    <string name="pref_feed_associated_queue_sum">The queue to which episodes in the feed will e added by default</string>
     <string name="pref_feed_type">Feed type</string>
     <string name="pref_feed_type_sum">Feed type is needed for properly accessing some properties of the feed. For generic feed (not handled optimally), type is better set to null. Otherwise, all media in the feed should better be of the same type.</string>
     <string name="pref_feed_skip_ending_toast">Skipped last %d seconds</string>
@@ -937,7 +937,7 @@
     <string name="status_downloading_label">Episode is being downloaded</string>
 
     <string name="preferred_action">Preferred action</string>
-    <string name="preferred_action_sum">Choose a preferred action button on episodes lists for this feed. This is defaulted to Auto, but you can set otherwise in special situations.</string>
+    <string name="preferred_action_sum">Choose a preferred action button on episodes lists for this feed. This is defaulted to Auto, but you can set otherwise for special needs.</string>
 
     <!-- Feed settings/information screen -->
     <string name="authentication_label">Authentication</string>
@@ -971,10 +971,7 @@
     <string name="accept_tiny_episodes">Accept tiny episodes</string>
     <string name="accept_tiny_episodes_sum">Some episodes can have duration less than 1 second. These are normally rejected during feed updates. Turning on this will accept them.</string>
 
-
-
-
-    <string name="auto_download_disabled_sum">Auto download here can be enabled when auto-download is enabled in the global settings and streaming is not preferred in the feed.</string>
+    <string name="auto_download_disabled_sum">Auto download can be enabled here when auto-download is enabled in the global settings and streaming is not preferred in the feed.</string>
     <string name="statistics_length_played">Duration of all started:</string>
     <string name="statistics_time_played">Time played:</string>
     <string name="statistics_time_spent">Time spent:</string>

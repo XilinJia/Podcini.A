@@ -3,7 +3,7 @@ package ac.mdiq.podcini.receiver
 import ac.mdiq.podcini.automation.ALARM_TYPE
 import ac.mdiq.podcini.automation.AlarmTypes
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.sources.AppGatewayRegistry
+import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.utils.Logd

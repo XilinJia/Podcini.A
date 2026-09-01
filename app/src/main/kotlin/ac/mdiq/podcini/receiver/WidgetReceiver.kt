@@ -5,7 +5,6 @@ import ac.mdiq.podcini.activity.EpisodeInfoActivity
 import ac.mdiq.podcini.activity.MainActivity
 import ac.mdiq.podcini.activity.PlayerUIActivity
 import ac.mdiq.podcini.activity.QueuePickerActivity
-import ac.mdiq.podcini.activity.starter.MainActivityStarter
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.ensureAController
 import ac.mdiq.podcini.playback.base.theatres
@@ -289,7 +288,9 @@ class ToggleAction : ActionCallback {
                     val mediaType = episode.mediaType
                     val showVideoPlayer = if (isRunning) mediaType == MediaType.VIDEO && !isCasting else player.curState.curIsVideo
                     player.playingVideoFlow.value = showVideoPlayer
-                    context.startActivity(MainActivityStarter(context).withOpenPlayer().getIntent())
+                    val intent = Intent("ac.mdiq.podcini.intents.MAIN_ACTIVITY")
+                    intent.putExtra(MainActivity.Extras.open_player.name, true)
+                    context.startActivity(intent)
                 } else {
                     Logd(TAG, "Play button clicked: status: ${player.statusFlow.value} is ready: ${playbackService?.isServiceReady()}")
                     PlaybackStarter(episode).setWidgetId(glanceId.toString()).shouldStreamThisTime(null).start()

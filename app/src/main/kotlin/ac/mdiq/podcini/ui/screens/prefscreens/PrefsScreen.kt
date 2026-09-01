@@ -221,7 +221,6 @@ fun AboutScreen() {
             Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_star), contentDescription = "", tint = textColor)
             Column(Modifier.padding(start = 10.dp).clickable {
                 val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-//                val clip = ClipData.newPlainText(context.getString(R.string.bug_report_title), PreferenceManager.getDefaultSharedPreferences(context).getString("about_version", "Default summary"))
                 val versionText = "Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
                 val clip = ClipData.newPlainText(context.getString(R.string.bug_report_title), versionText)
                 clipboard.setPrimaryClip(clip)

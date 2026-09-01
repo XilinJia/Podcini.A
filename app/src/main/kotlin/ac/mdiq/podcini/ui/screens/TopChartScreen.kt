@@ -167,11 +167,6 @@ class DiscoveryVM: ViewModel() {
                 }
                 @Throws(JSONException::class)
                 fun parseFeed(jsonString: String): List<FeedSearchResult> {
-                    /**
-                     * Constructs a Podcast instance from iTunes toplist entry
-                     * @param json object holding the podcast information
-                     * @throws JSONException
-                     */
                     @Throws(JSONException::class)
                     fun fromItunesToplist(json: JSONObject): FeedSearchResult {
                         val title = json.getJSONObject("title").getString("label")

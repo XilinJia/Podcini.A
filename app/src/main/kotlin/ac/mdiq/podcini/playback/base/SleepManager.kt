@@ -38,18 +38,10 @@ class SleepManager {
     val isActive: Boolean
         get() = timerJob != null && (timer?.timeLeft ?: 0) > 0
 
-    /**
-     * Returns the current sleep timer time or 0 if the sleep timer is not active.
-     */
     @get:Synchronized
     val timeLeft: Long
         get() = if (isActive) timer!!.timeLeft else 0
 
-    /**
-     * Starts a new sleep timer with the given waiting time. If another sleep timer is already active, it will be cancelled first.
-     * After waitingTime has elapsed, onSleepTimerExpired() will be called.
-     * @throws java.lang.IllegalArgumentException if waitingTime <= 0
-     */
     @Synchronized
     fun setTimer(waitingTime: Long) {
         require(waitingTime > 0) { "Waiting time <= 0" }

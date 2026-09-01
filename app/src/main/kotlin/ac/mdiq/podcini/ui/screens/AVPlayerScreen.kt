@@ -17,7 +17,7 @@ import ac.mdiq.podcini.playback.isRecordingFlow
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.shared.AudioSpec
 import ac.mdiq.podcini.shared.VideoSpec
-import ac.mdiq.podcini.sources.clientByEpisode
+import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fallbackSpeed
 import ac.mdiq.podcini.storage.database.fastForwardSecs
@@ -178,6 +178,7 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -264,7 +265,7 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
 
     var showPlayButton by mutableStateOf(true)
 
-    private var posJob: Job? = null
+//    private var posJob: Job? = null
     private var curIdJob: Job? = null
     private var curStateJob: Job? = null
 
@@ -273,14 +274,14 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
     fun start() {
         timeIt("$TAG start of init vm $playerId")
 
-        posJob = viewModelScope.launch { theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.curMediaFlow?.map { media -> player to media } ?: flowOf(null) }
-            .distinctUntilChanged().collect { playerAndMedia ->
-                if (showPlayButton) {
-                    val (player, media) = playerAndMedia ?: (null to null)
-                    showPlayButton = player?.isCurrentlyPlaying(media) != true
-                }
-            }
-        }
+//        posJob = viewModelScope.launch { theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.curMediaFlow?.map { media -> player to media } ?: flowOf(null) }
+//            .distinctUntilChanged().collect { playerAndMedia ->
+//                if (showPlayButton) {
+//                    val (player, media) = playerAndMedia ?: (null to null)
+//                    showPlayButton = player?.isCurrentlyPlaying(media) != true
+//                }
+//            }
+//        }
         curIdJob = viewModelScope.launch {
             theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.curMediaFlow?.map { media -> player to media } ?: flowOf(null) }
                 .distinctUntilChanged { old, new -> old?.second?.id == new?.second?.id }
@@ -292,10 +293,18 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
                     forceVideo = false
                 }
         }
-        curStateJob = viewModelScope.launch { theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.statusSimpleFlow ?: flowOf(null) }.collect {
-            showPlayButton = it != PlayerStatusSimple.PLAYING
-            Logd(TAG, "curPlayerStatus changed playerId: $playerId showPlayButton $showPlayButton")
-        } }
+//        curStateJob = viewModelScope.launch { theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.statusSimpleFlow ?: flowOf(null) }.collect {
+//            showPlayButton = it != PlayerStatusSimple.PLAYING
+//            Logd(TAG, "curPlayerStatus changed playerId: $playerId showPlayButton $showPlayButton")
+//        } }
+        curStateJob = viewModelScope.launch {
+            theatres[playerId].mPlayerFlow.flatMapLatest { player -> if (player == null) flowOf(null) else combine(player.statusSimpleFlow, player.curMediaFlow) { status, media -> Triple(player, status, media) } }
+                .distinctUntilChanged().collect { value ->
+                    val (player, status, media) = value ?: Triple(null, null, null)
+                    showPlayButton = status != PlayerStatusSimple.PLAYING && player?.isCurrentlyPlaying(media) != true
+                    Logd(TAG, "playerId: $playerId status=$status showPlayButton=$showPlayButton")
+                }
+        }
         curSpeedJob = viewModelScope.launch { theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.curPlayerSpeedFlow ?: flowOf(1f) }.distinctUntilChanged().collect { speed ->
             curPlaybackSpeed = speed
             Logd(TAG, "curPlaybackSpeed changed playerId: $playerId curPlaybackSpeed $curPlaybackSpeed")
@@ -304,8 +313,8 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
     }
 
     fun stop() {
-        posJob?.cancel()
-        posJob = null
+//        posJob?.cancel()
+//        posJob = null
         curIdJob?.cancel()
         curIdJob = null
         curStateJob?.cancel()
@@ -493,7 +502,7 @@ fun ControlUI(vm: AVPlayerVM) {
             onClick = {
                 Logd(TAG, "onClick Play/Pause: vm.playerId: ${vm.playerId}")
                 if (episode != null) {
-                    vm.showPlayButton = !vm.showPlayButton
+//                    vm.showPlayButton = !vm.showPlayButton
                     if (vm.showPlayButton && recordingStartTime != null) {
                         player?.recordClip(recordingStartTime!!, (player.getPosition()).toLong())
                         recordingStartTime = null
@@ -510,7 +519,7 @@ fun ControlUI(vm: AVPlayerVM) {
                     val speedFB = fallbackSpeed
                     if (speedFB > 0.1f) player.toggleFallbackSpeed(speedFB)
                 } })) {
-            val playButRes by remember(vm.showPlayButton) { mutableIntStateOf(if (vm.showPlayButton) R.drawable.ic_play_48dp else R.drawable.ic_pause) }
+            val playButRes = if (vm.showPlayButton) R.drawable.ic_play_48dp else R.drawable.ic_pause
             Icon(imageVector = ImageVector.vectorResource(playButRes), tint = buttonColor, contentDescription = "play", modifier = Modifier.size(buttonSize).align(Alignment.Center))
             if (fallbackSpeed > 0.1f) Text(fallbackSpeed.toString(), color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.BottomCenter))
         }

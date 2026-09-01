@@ -3,9 +3,10 @@ package ac.mdiq.podcini.ui.screens
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.activity.MainActivity
 import ac.mdiq.podcini.activity.ShareReceiverActivity.Companion.receiveShared
-import ac.mdiq.podcini.net.download.RequestType
-import ac.mdiq.podcini.net.feed.FeedUpdater
-import ac.mdiq.podcini.sources.sourceClients
+import ac.mdiq.podcini.sourcing.download.RequestType
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater
+import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.addToFeed
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
@@ -104,6 +105,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.days
 
 enum class LogsModes(val res: Int) {
     Session(R.drawable.baseline_running_with_errors_24),
@@ -124,6 +126,11 @@ class LogsVM: ViewModel() {
 
     init {
         viewModelScope.launch {
+            val trimTime = nowInMillis() - 30.days.inWholeMilliseconds
+            realm.write {
+                val items = query(DownloadResult::class).query("completionTime < $trimTime").find()
+                if (items.isNotEmpty()) delete(items)
+            }
             snapshotFlow { mode }.distinctUntilChanged().collectLatest { m ->
                 when (m) {
                     LogsModes.Shares -> realm.query(ShareLog::class).sort("id", Sort.DESCENDING).asFlow().distinctUntilChanged().map { it.list }.collect { v->
@@ -483,7 +490,7 @@ fun LogsScreen() {
                     }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Deletions.res), contentDescription = "Deletions") }
                     var expanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
-                    DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
+                    if (vm.mode != LogsModes.Deletions) DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.clear_logs)) }, onClick = {
                             showDeleteConfirmDialog.value = true
                             expanded = false
@@ -505,13 +512,6 @@ fun LogsScreen() {
                                 delete(items)
                             }
                             vm.shareLogs = listOf()
-                        }
-                        vm.deletionLogs.isNotEmpty() -> {
-                            realm.write {
-                                val items = query(SubscriptionLog::class).find()
-                                delete(items)
-                            }
-                            vm.deletionLogs = listOf()
                         }
                         vm.downloadLogs.isNotEmpty() -> {
                             realm.write {

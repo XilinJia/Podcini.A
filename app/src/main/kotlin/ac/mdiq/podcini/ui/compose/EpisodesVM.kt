@@ -1,17 +1,17 @@
 package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.net.download.DownloadStatus
-import ac.mdiq.podcini.net.download.Downloader.Companion.downloadStatesFlow
-import ac.mdiq.podcini.net.download.EpisodeAdrDLManager
-import ac.mdiq.podcini.net.utils.NetworkUtils.mobileAllowEpisodeDownload
-import ac.mdiq.podcini.net.utils.NetworkUtils.networkMonitor
+import ac.mdiq.podcini.sourcing.download.DownloadStatus
+import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
+import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
+import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
+import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.PlayerStatusSimple
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sources.clientByEpisode
+import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.database.addRemoteToMiscSyndicate
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.addToQueue
@@ -278,18 +278,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
         LaunchedEffect(episodes.size, scrollToOnStart) {
             val lifecycleState = lifecycleOwner.lifecycle.currentState
             Logd(TAG, "LaunchedEffect(scrollToOnStart) ${episodes.size} $scrollToOnStart ${lazyListState.firstVisibleItemIndex} $lifecycleState")
-            if (episodes.size > 5 && lifecycleState >= Lifecycle.State.RESUMED) {
-                when {
-                    scrollToOnStart < 0 -> {
-//                        scope.launch { lazyListState.scrollToItem(lazyListState.firstVisibleItemIndex, lazyListState.firstVisibleItemScrollOffset) }
-                        Logd(TAG, "Screen on, triggered scroll for recomposition")
-                    }
-                    scrollToOnStart >= 0 -> {
-                        lazyListState.scrollToItem(scrollToOnStart)
-                        Logd(TAG, "on start, triggered scroll for recomposition: $scrollToOnStart")
-                    }
-                }
-            }
+            if (episodes.size > 5 && lifecycleState >= Lifecycle.State.RESUMED && scrollToOnStart >= 0) lazyListState.scrollToItem(scrollToOnStart)
         }
 
         val swipeVelocityThreshold = 1500f

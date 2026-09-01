@@ -2,14 +2,14 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.net.download.RequestType
-import ac.mdiq.podcini.net.feed.FeedUpdateManager.runOnceOrAsk
-import ac.mdiq.podcini.net.feed.FeedUpdater
-import ac.mdiq.podcini.net.sync.transceive.sendFeed
+import ac.mdiq.podcini.sourcing.download.RequestType
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater
+import ac.mdiq.podcini.sourcing.sendFeed
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sources.isExtFeed
-import ac.mdiq.podcini.sources.typeClientMap
+import ac.mdiq.podcini.sourcing.isExtFeed
+import ac.mdiq.podcini.sourcing.typeClientMap
 import ac.mdiq.podcini.storage.database.FeedAssistant
 import ac.mdiq.podcini.storage.database.buildListInfo
 import ac.mdiq.podcini.ui.compose.feedOperationText
@@ -19,7 +19,7 @@ import ac.mdiq.podcini.storage.database.getHistoryAsFlow
 import ac.mdiq.podcini.storage.database.queueToVirtual
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
-import ac.mdiq.podcini.storage.database.updateFeedFull
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult

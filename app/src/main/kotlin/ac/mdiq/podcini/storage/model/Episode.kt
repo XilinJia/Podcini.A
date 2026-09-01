@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.storage.model
 
-import ac.mdiq.podcini.net.utils.NetworkUtils.isImageDownloadAllowed
+import ac.mdiq.podcini.utils.NetworkUtils.isImageDownloadAllowed
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.nowInMillis
@@ -318,10 +318,6 @@ class Episode : RealmObject {
 
     fun hasAlmostEnded(): Boolean = duration > 0 && position >= duration * smartMarkAsPlayedPercent
 
-    /**
-     * Updates this item's description property if the given argument is longer than the already stored description
-     * @param newDescription The new item description, content:encoded, itunes:description, etc.
-     */
     fun setDescriptionIfLonger(newDescription: String?) {
         if (newDescription.isNullOrEmpty()) return
         when {

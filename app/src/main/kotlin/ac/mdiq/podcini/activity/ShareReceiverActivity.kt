@@ -3,9 +3,9 @@ package ac.mdiq.podcini.activity
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.activity.MainActivity.Extras
-import ac.mdiq.podcini.sources.AppGatewayRegistry
-import ac.mdiq.podcini.sources.SourceGatewayClient
-import ac.mdiq.podcini.sources.sourceClients
+import ac.mdiq.podcini.sourcing.AppGatewayRegistry
+import ac.mdiq.podcini.sourcing.SourceGatewayClient
+import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.addToFeed
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.realm

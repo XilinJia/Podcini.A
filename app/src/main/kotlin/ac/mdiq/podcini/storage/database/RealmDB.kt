@@ -88,36 +88,36 @@ val config: RealmConfiguration by lazy {
                     val fNew = newRealm.query("Feed", "id == $id").first().find()
                     if (fNew != null) {
                         val dleq = AutoDLEQ()
-                        if (dleq != null) {
-                            val filterStringADL = f.getValue<String>("filterStringADL")
-                            dleq.filterStringADL = filterStringADL
-                            val durationFloorADL = f.getValue<Long>("durationFloorADL")
-                            dleq.durationFloorADL = durationFloorADL.toInt()
-                            val durationCeilingADL = f.getValue<Long>("durationCeilingADL")
-                            dleq.durationCeilingADL = durationCeilingADL.toInt()
-                            val sortOrderCodeADL = f.getValue<Long>("sortOrderCodeADL")
-                            dleq.sortOrderCodeADL = sortOrderCodeADL.toInt()
-                            val autoDLInclude = f.getNullableValue<String>("autoDLInclude")
-                            dleq.autoDLInclude = autoDLInclude
-                            val autoDLExclude = f.getNullableValue<String>("autoDLExclude")
-                            dleq.autoDLExclude = autoDLExclude
-                            val autoDLMinDuration = f.getValue<Long>("autoDLMinDuration")
-                            dleq.autoDLMinDuration = autoDLMinDuration.toInt()
-                            val autoDLMaxDuration = f.getValue<Long>("autoDLMinDuration")
-                            dleq.autoDLMaxDuration = autoDLMaxDuration.toInt()
-                            val markExcludedPlayed = f.getValue<Boolean>("markExcludedPlayed")
-                            dleq.markExcludedPlayed = markExcludedPlayed
-                            val autoDLPolicyCode = f.getValue<Long>("autoDLPolicyCode")
-                            dleq.autoDLPolicyCode = autoDLPolicyCode.toInt()
-                            val autoDLPolicyReplace = f.getValue<Boolean>("autoDLPolicyReplace")
-                            dleq.autoDLPolicyReplace = autoDLPolicyReplace
-                            val dleqs = realmListOf(dleq)
-                            fNew.set("autoDLEQs", dleqs)
-                        } else Log.d(TAG, "dleq is null")
+                        val filterStringADL = f.getValue<String>("filterStringADL")
+                        dleq.filterStringADL = filterStringADL
+                        val durationFloorADL = f.getValue<Long>("durationFloorADL")
+                        dleq.durationFloorADL = durationFloorADL.toInt()
+                        val durationCeilingADL = f.getValue<Long>("durationCeilingADL")
+                        dleq.durationCeilingADL = durationCeilingADL.toInt()
+                        val sortOrderCodeADL = f.getValue<Long>("sortOrderCodeADL")
+                        dleq.sortOrderCodeADL = sortOrderCodeADL.toInt()
+                        val autoDLInclude = f.getNullableValue<String>("autoDLInclude")
+                        dleq.autoDLInclude = autoDLInclude
+                        val autoDLExclude = f.getNullableValue<String>("autoDLExclude")
+                        dleq.autoDLExclude = autoDLExclude
+                        val autoDLMinDuration = f.getValue<Long>("autoDLMinDuration")
+                        dleq.autoDLMinDuration = autoDLMinDuration.toInt()
+                        val autoDLMaxDuration = f.getValue<Long>("autoDLMinDuration")
+                        dleq.autoDLMaxDuration = autoDLMaxDuration.toInt()
+                        val markExcludedPlayed = f.getValue<Boolean>("markExcludedPlayed")
+                        dleq.markExcludedPlayed = markExcludedPlayed
+                        val autoDLPolicyCode = f.getValue<Long>("autoDLPolicyCode")
+                        dleq.autoDLPolicyCode = autoDLPolicyCode.toInt()
+                        val autoDLPolicyReplace = f.getValue<Boolean>("autoDLPolicyReplace")
+                        dleq.autoDLPolicyReplace = autoDLPolicyReplace
+                        val dleqs = realmListOf(dleq)
+                        fNew.set("autoDLEQs", dleqs)
                     } else Log.d(TAG, "fNew is null")
                 }
             }
-        }).build()
+        })
+        .compactOnLaunch()
+        .build()
 }
 
 lateinit var realm: Realm

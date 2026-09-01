@@ -42,9 +42,6 @@ import java.io.File
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 
-/**
- * Utility functions for handling storage errors
- */
 private const val TAG: String = "StorageUtils"
 
 const val MAX_FILENAME_LENGTH: Int = 242 // limited by CircleCI
@@ -89,9 +86,6 @@ val clipsDir: UnifiedFile
         return dir
     }
 
-/**
- * Get the number of free bytes that are available on the external storage.
- */
 val freeSpaceAvailable: Long
     get() {
         return if (customMediaUriString.isBlank()) {

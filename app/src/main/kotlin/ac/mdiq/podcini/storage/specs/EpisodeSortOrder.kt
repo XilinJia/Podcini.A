@@ -57,10 +57,6 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
     SMART_SHUFFLE_DESC(106, R.string.smart_shuffle, true);
 
     companion object {
-        /**
-         * Converts the string representation to its enum value. If the string value is unknown,
-         * the given default value is returned.
-         */
         fun parseWithDefault(value: String, defaultValue: EpisodeSortOrder): EpisodeSortOrder {
             return try {
                 valueOf(value)
