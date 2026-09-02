@@ -213,12 +213,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     )
                     when (playbackState) {
                         STATE_BUFFERING -> bufferedPercentFlow.value = BUFFERING_STARTED
-                        STATE_READY -> {
-                            bufferedPercentFlow.value = BUFFERING_ENDED
-//                            val duration = exoPlayer?.duration ?: 0
-//                            if (curMediaFlow.value != null && duration > curMediaFlow.value!!.duration) runOnIOScope { upsert(curMediaFlow.value!!) { it.duration = duration.toInt() } }
-//                            Logd(TAG, "onPlaybackStateChanged duration=${exoPlayer?.duration} ms")
-                        }
+                        STATE_READY -> bufferedPercentFlow.value = BUFFERING_ENDED
                         STATE_ENDED -> {
                             val currentPos = exoPlayer?.currentPosition ?: 0L
                             val totalDuration = exoPlayer?.duration ?: 0L
@@ -945,12 +940,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         return retVal
     }
 
-    override fun fixDuration() {
-        Logd(TAG, "prepare Setting duration of media")
-        val dur = if (exoPlayer?.duration == C.TIME_UNSET) Episode.INVALID_TIME else castPlayer!!.duration.toInt()
-        if (dur > 0) upsertBlk(curMediaFlow.value!!) { it.duration = dur }
-    }
-
     override fun getPlayerPosition(): Int {
         return if (castPlayer?.isCommandAvailable(COMMAND_GET_CURRENT_MEDIA_ITEM) == true) castPlayer!!.currentPosition.toInt() else Episode.INVALID_TIME
     }
@@ -1008,7 +997,8 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             if (exoPlayer?.isPlaying == true) exoPlayer?.stop()
         } catch (e: Exception) { LogsFor(TAG, curMediaFlow.value?.id, e) }
         release()
-        statusFlow.value = PlayerStatus.STOPPED
+        status = PlayerStatus.STOPPED
+        statusSimpleFlow.value = PlayerStatusSimple.fromStatus(status)
     }
 
     override fun setAudioTrack(track: Int) {
@@ -1048,9 +1038,9 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         val i = curMediaFlow.value?.feed?.audioType?: C.AUDIO_CONTENT_TYPE_SPEECH
         val a = exoPlayer!!.audioAttributes
         val b = AudioAttributes.Builder().setContentType(i).setUsage(C.USAGE_MEDIA)
-        Logd(TAG, "activeTheatres: ${activeTheatresFlow.value}")
-        exoPlayer?.setAudioAttributes(b.build(), activeTheatresFlow.value <= 1 && handleAudioFocus)
-        Logd(TAG, "AudioAttributes: usage=${b.build().usage} contentType=${b.build().contentType} handleAudioFocus=${activeTheatresFlow.value <= 1}")
+        Logd(TAG, "activeTheatres: ${activeTheatresCount.value}")
+        exoPlayer?.setAudioAttributes(b.build(), activeTheatresCount.value <= 1 && handleAudioFocus)
+        Logd(TAG, "AudioAttributes: usage=${b.build().usage} contentType=${b.build().contentType} handleAudioFocus=${activeTheatresCount.value <= 2}")
     }
 
     fun isRangeCached(cache:  SimpleCache, key: String, startByte: Long, endByte: Long): Boolean {

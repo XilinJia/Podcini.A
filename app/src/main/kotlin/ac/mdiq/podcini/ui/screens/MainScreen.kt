@@ -119,6 +119,7 @@ fun MainScreen() {
     } }
 
     LaunchedEffect(curMedia0?.id, psState) {
+        Logd(TAG, "LaunchedEffect(curMedia0?.id, psState) curMedia0: ${curMedia0?.id} ${psState.name}")
         if ((curMedia0?.id ?: -1L) <= 0) {
             allowSheetHide = true
             if (sheetState.bottomSheetState.targetValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()

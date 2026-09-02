@@ -1,3 +1,9 @@
+# 12.9.1
+
+* reworked some states handling in Queues screen, likely fixed issues of changing names and adding/removing queues
+* some code cleaning and refactoring
+* AGP upped to 9.4.0, gradle upped to 9.7.1, and  some dependencies update
+
 # 12.9.0
 
 * in Logs screen
@@ -5,7 +11,7 @@
 	* on start, download logs older than 30 days are trimmed
 * enabled compact DB on launch, to compact DB if 50% allocated space is not used, not triggered often though
 * crash report from previous version is cleared
-* ensure proper reactions to play/pause demand from outside controls
+* ensure proper reactions to play/pause demand from external controls
 * in FeedSettings, moved "enable second algorithm" after the first algorithm
 * in media Player, removed obsolete broadcasts
 * code refactoring and restructuring

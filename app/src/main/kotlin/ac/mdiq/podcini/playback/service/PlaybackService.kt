@@ -4,8 +4,7 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.activeTheatresFlow
-import ac.mdiq.podcini.playback.base.startTheatres
+import ac.mdiq.podcini.playback.base.activeTheatresCount
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.Media3Player
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.buildMetadata
@@ -18,8 +17,14 @@ import ac.mdiq.podcini.playback.base.cleanupTheatres
 import ac.mdiq.podcini.playback.base.isCurMedia
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
+import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.storage.database.fastForwardSecs
+import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.rewindSecs
+import ac.mdiq.podcini.storage.database.upsertBlk
+import ac.mdiq.podcini.storage.model.CurrentState
+import ac.mdiq.podcini.storage.model.PlayQueue
+import ac.mdiq.podcini.storage.model.QueueEntry
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
@@ -96,10 +101,6 @@ class PlaybackService : MediaLibraryService() {
             else {
                 when  {
                     player.isPaused || player.isPrepared -> player.play()
-                    player.isPreparing -> {
-                        val value = player.isStartWhenPrepared
-                        player.isStartWhenPrepared = !value
-                    }
                     player.isInitialized -> {
                         player.isStartWhenPrepared = true
                         player.prepareInitialized()
@@ -335,6 +336,34 @@ class PlaybackService : MediaLibraryService() {
         timeIt("$TAG onCreate Service end")
     }
 
+    private fun startTheatres() {
+        timeIt("$TAG start of init")
+        CoroutineScope(Dispatchers.IO).launch {
+            for (i in 0..1) {
+                val player = theatres[i].mPlayerFlow.value
+                Logd(TAG, "starting curState for player: ${player?.playerId}")
+                player?.curState = realm.query(CurrentState::class).query("id == $i").first().find() ?: run {
+                    val cs = CurrentState()
+                    cs.id = i.toLong()
+                    upsertBlk(cs) { }
+                }
+                if (player != null && player.curState.curMediaId > 0L) player.setAsCurMedia(episodeById(player.curState.curMediaId))
+
+                Logd(TAG, "curMediaFlow.value from preference: ${player?.curMediaFlow?.value?.title}")
+                if (player?.curMediaFlow?.value != null) {
+                    val qes = realm.query(QueueEntry::class).query("episodeId == ${player.curMediaFlow.value!!.id}").find()
+                    if (qes.isNotEmpty()) {
+                        realm.query(PlayQueue::class).query("id == ${qes[0].queueId}").first().find()?. let { actQueueFlow.value = it }
+                    }
+                }
+                theatres[i].curStateMonitor?.cancel()
+                theatres[i].curStateMonitor = null
+                theatres[i].monitorState()
+            }
+        }
+        timeIt("$TAG end of init")
+    }
+
     fun createMediaSessionAndPlayers() {
         Logd(TAG, "recreateMediaSession")
         setMediaNotificationProvider(CustomMediaNotificationProvider())
@@ -362,10 +391,10 @@ class PlaybackService : MediaLibraryService() {
     }
 
     fun recreateMediaPlayers() {
-        for (id in 0..<activeTheatresFlow.value) {
-            Logd(TAG, "recreateMediaPlayer creating player $id of ${activeTheatresFlow.value}")
+        for (id in 0..<activeTheatresCount.value) {
+            Logd(TAG, "recreateMediaPlayer creating player $id of ${activeTheatresCount.value}")
             shutdownPlayer(id)
-            theatres[id].mPlayerFlow.value = Media3Player(id, if (activeTheatresFlow.value > 1) { if (id == 0) -1 else 1} else 0)
+            theatres[id].mPlayerFlow.value = Media3Player(id, if (activeTheatresCount.value > 1) { if (id == 0) -1 else 1} else 0)
         }
     }
 
@@ -432,7 +461,6 @@ class PlaybackService : MediaLibraryService() {
                 when {
                     player.isPlaying -> player.pause(false)
                     player.isPlaying || player.isPrepared -> player.play()
-                    player.isPreparing -> player.isStartWhenPrepared = !player.isStartWhenPrepared
                     player.isInitialized -> {
                         player.isStartWhenPrepared = true
                         player.prepareInitialized()

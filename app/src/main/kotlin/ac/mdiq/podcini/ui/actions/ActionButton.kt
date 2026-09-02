@@ -11,7 +11,7 @@ import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.activeTheatresFlow
+import ac.mdiq.podcini.playback.base.activeTheatresCount
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.MediaPlayerBase.Companion.handleAudioFocus
 import ac.mdiq.podcini.playback.base.TTSEngine
@@ -22,6 +22,7 @@ import ac.mdiq.podcini.playback.base.TTSEngine.tts
 import ac.mdiq.podcini.playback.base.TTSEngine.ttsJob
 import ac.mdiq.podcini.playback.base.TTSEngine.ttsTmpFiles
 import ac.mdiq.podcini.playback.base.isCurMedia
+import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -104,12 +105,6 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
         }
     }
 
-    private fun isCurrentlyPlaying(media: Episode?): Boolean {
-        return try {
-            theatres[playerId].mPlayerFlow.value?.isCurrentlyPlaying(item) == true
-        } catch (e: Exception) { false}
-    }
-
     fun onClick() {
         val context = getAppContext()
         handleAudioFocus = true
@@ -173,14 +168,14 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             }
             ButtonTypes.PLAY -> {
                 if (fileNotExist()) return
-                if (activeTheatresFlow.value == 1) {
+                if (activeTheatresCount.value == 1) {
                     PlaybackStarter(item).start(0)
                     playVideoIfNeeded(item)
                 } else askForPlayer { i-> PlaybackStarter(item).start(i) }
             }
             ButtonTypes.PLAY_ONE -> {
                 if (fileNotExist()) return
-                if (activeTheatresFlow.value == 1) {
+                if (activeTheatresCount.value == 1) {
                     PlaybackStarter(item).start(0)
                     playVideoIfNeeded(item)
                     actQueueFlow.value = tmpQueue()
@@ -191,7 +186,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             }
             ButtonTypes.PLAY_REPEAT -> {
                 if (fileNotExist()) return
-                if (activeTheatresFlow.value == 1) {
+                if (activeTheatresCount.value == 1) {
                     PlaybackStarter(item).setToRepeat(true).start(0)
                     playVideoIfNeeded(item)
                     actQueueFlow.value = tmpQueue()
@@ -215,7 +210,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             ButtonTypes.STREAM -> {
                 //        Logd("StreamActionButton", "item.feed: ${item.feedId}")
                 askToStream {
-                    if (activeTheatresFlow.value == 1) {
+                    if (activeTheatresCount.value == 1) {
                         PlaybackStarter(item).shouldStreamThisTime(true).start(0)
                         playVideoIfNeeded(item)
                     } else askForPlayer { i-> PlaybackStarter(item).shouldStreamThisTime(true).start(i) }
@@ -224,7 +219,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             ButtonTypes.STREAM_REPEAT -> {
                 //        Logd("StreamActionButton", "item.feed: ${item.feedId}")
                 askToStream {
-                    if (activeTheatresFlow.value == 1) {
+                    if (activeTheatresCount.value == 1) {
                         PlaybackStarter(item).shouldStreamThisTime(true).setToRepeat(true).start(0)
                         playVideoIfNeeded(item)
                         actQueueFlow.value = tmpQueue()
@@ -235,7 +230,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 }
             }
             ButtonTypes.STREAM_ONE -> {
-                if (activeTheatresFlow.value == 1) {
+                if (activeTheatresCount.value == 1) {
                     PlaybackStarter(item).shouldStreamThisTime(true).start(0)
                     playVideoIfNeeded(item)
                     actQueueFlow.value = tmpQueue()
@@ -249,7 +244,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 update(item)
             }
             ButtonTypes.PAUSE -> {
-                if (isCurrentlyPlaying(item)) {
+                if (isCurrentlyPlaying(item, playerId)) {
                     theatres[playerId].mPlayerFlow.value?.pause(false)
                     update(item)
 //                    for (i in 0..1) {
@@ -339,7 +334,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                         theatres[i].mPlayerFlow.value?.play()
                     }
                 } else {
-                    if (activeTheatresFlow.value == 1) {
+                    if (activeTheatresCount.value == 1) {
                         PlaybackStarter(item).start(0)
                         if (item.playState < EpisodeState.PROGRESS.code || item.playState == EpisodeState.SKIPPED.code || item.playState == EpisodeState.AGAIN.code) item = upsertBlk(item) { it.setPlayState(EpisodeState.PROGRESS) }
                     } else askForPlayer { i->
@@ -376,12 +371,12 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
         }
         when (type) {
             ButtonTypes.WEBSITE -> {}
-            ButtonTypes.PLAY_LOCAL -> if (isCurrentlyPlaying(item)) type = ButtonTypes.PAUSE
+            ButtonTypes.PLAY_LOCAL -> if (isCurrentlyPlaying(item, playerId)) type = ButtonTypes.PAUSE
             ButtonTypes.PLAY, ButtonTypes.PLAY_ONE, ButtonTypes.PLAY_REPEAT -> {
                 if (!item.downloaded) type = undownloadedType()
-                else if (isCurrentlyPlaying(item)) type = ButtonTypes.PAUSE
+                else if (isCurrentlyPlaying(item, playerId)) type = ButtonTypes.PAUSE
             }
-            ButtonTypes.STREAM, ButtonTypes.STREAM_ONE, ButtonTypes.STREAM_REPEAT -> if (isCurrentlyPlaying(item)) type = ButtonTypes.PAUSE
+            ButtonTypes.STREAM, ButtonTypes.STREAM_ONE, ButtonTypes.STREAM_REPEAT -> if (isCurrentlyPlaying(item, playerId)) type = ButtonTypes.PAUSE
             ButtonTypes.PAUSE -> {
                 type = when {
                     item.feed?.isLocal == true -> ButtonTypes.PLAY_LOCAL
@@ -396,7 +391,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 //        val media = item.media ?: return TTSActionButton(item)
                 //        Logd("ItemActionButton", "forItem: local feed: ${item.feed?.isLocal} downloaded: ${item.downloaded} playing: ${isCurrentlyPlaying(item)}  ${item.title} ")
                 type = when {
-                    isCurrentlyPlaying(item) -> ButtonTypes.PAUSE
+                    isCurrentlyPlaying(item, playerId) -> ButtonTypes.PAUSE
                     item.feed?.isLocal == true -> ButtonTypes.PLAY_LOCAL
                     item.downloaded -> typeOfDownloaded()
                     else -> undownloadedType()

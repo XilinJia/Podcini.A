@@ -89,10 +89,7 @@ class BugReportActivity : ComponentActivity() {
 
         var stacktrace = "No crash report recorded"
         val crashFile = CrashReportWriter.crashLogFile
-        runBlocking {
-            if (crashFile.exists()) stacktrace = crashFile.readString()
-            else Logt(TAG, stacktrace)
-        }
+        runBlocking { if (crashFile.exists()) stacktrace = crashFile.readString() }
 
         crashDetailsTextView = """
             $systemInfo

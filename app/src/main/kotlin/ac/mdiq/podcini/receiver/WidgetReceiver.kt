@@ -292,7 +292,7 @@ class ToggleAction : ActionCallback {
                     intent.putExtra(MainActivity.Extras.open_player.name, true)
                     context.startActivity(intent)
                 } else {
-                    Logd(TAG, "Play button clicked: status: ${player.statusFlow.value} is ready: ${playbackService?.isServiceReady()}")
+                    Logd(TAG, "Play button clicked: status: ${player.statusSimpleFlow.value} is ready: ${playbackService?.isServiceReady()}")
                     PlaybackStarter(episode).setWidgetId(glanceId.toString()).shouldStreamThisTime(null).start()
                 }
             }

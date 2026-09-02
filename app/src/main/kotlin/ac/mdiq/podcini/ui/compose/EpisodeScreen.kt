@@ -7,13 +7,11 @@ package ac.mdiq.podcini.ui.compose
 //import io.github.kdroidfilter.webview.web.rememberWebViewState
 
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.playback.base.PlayerStatusSimple
+import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.sourcing.download.DownloadStatus
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
-import ac.mdiq.podcini.utils.NetworkUtils.fetchHtmlSource
-import ac.mdiq.podcini.utils.NetworkUtils.isImageDownloadAllowed
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.base.PlayerStatus
-import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
 import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
@@ -36,10 +34,12 @@ import ac.mdiq.podcini.ui.screens.handleBackSubScreens
 import ac.mdiq.podcini.ui.screens.navBack
 import ac.mdiq.podcini.ui.screens.navTo
 import ac.mdiq.podcini.ui.screens.psState
+import ac.mdiq.podcini.ui.utils.ShownotesCleaner
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
-import ac.mdiq.podcini.ui.utils.ShownotesCleaner
+import ac.mdiq.podcini.utils.NetworkUtils.fetchHtmlSource
+import ac.mdiq.podcini.utils.NetworkUtils.isImageDownloadAllowed
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatShortFileSize
 import ac.mdiq.podcini.utils.openInSystemDefault
@@ -214,8 +214,8 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
     if (showAltActionsDialog) actionButton?.AltActionsDialog(onDismiss = { showAltActionsDialog = false })
     val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
     val player1 by theatres[1].mPlayerFlow.collectAsStateWithLifecycle()
-    val status0 by player0?.statusFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf( PlayerStatus.STOPPED) }
-    val status1 by player1?.statusFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(PlayerStatus.STOPPED) }
+    val status0 by player0?.statusSimpleFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf( PlayerStatusSimple.OTHER) }
+    val status1 by player1?.statusSimpleFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(PlayerStatusSimple.OTHER) }
     LaunchedEffect(key1 = status0, status1, episode) {
         actionButton = ActionButton(episode)
         actionButton?.type = when {

@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 115
-        versionName = "12.9.0"
+        versionCode = 116
+        versionName = "12.9.1"
 
         ndkVersion = "29.0.14206865"
 
@@ -232,8 +232,8 @@ dependencies {
    implementation("com.github.XilinJia:PodciniLib:1.1.2")
     implementation("io.github.xilinjia.krdb:library-base:${project.property("krdb_version")}")
 
-    implementation("io.coil-kt.coil3:coil-compose:3.5.0")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.5.0")
+    implementation("io.coil-kt.coil3:coil-compose:3.6.1")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.1")
 
     implementation("io.ktor:ktor-http:3.5.2")
     implementation("io.ktor:ktor-client-core:3.5.2")
@@ -244,9 +244,9 @@ dependencies {
     implementation("com.fleeksoft.ksoup:ksoup:0.2.6")
     implementation("com.fleeksoft.ksoup:ksoup-network:0.2.6")
 
-    implementation("io.github.pdvrieze.xmlutil:core:1.0.2")
-    implementation("io.github.pdvrieze.xmlutil:serialization:1.0.2")
-    implementation("io.github.pdvrieze.xmlutil:core-android:1.0.2")
+    implementation("io.github.pdvrieze.xmlutil:core:1.0.2.1")
+    implementation("io.github.pdvrieze.xmlutil:serialization:1.0.2.1")
+    implementation("io.github.pdvrieze.xmlutil:core-android:1.0.2.1")
 
     implementation("com.squareup.okhttp3:okhttp:5.5.0")
     implementation("com.squareup.okhttp3:okhttp-urlconnection:5.5.0")

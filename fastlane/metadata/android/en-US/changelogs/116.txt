@@ -1,0 +1,3 @@
+* reworked some states handling in Queues screen, likely fixed issues of changing names and adding/removing queues
+* some code cleaning and refactoring
+* AGP upped to 9.4.0, gradle upped to 9.7.1, and  some dependencies update

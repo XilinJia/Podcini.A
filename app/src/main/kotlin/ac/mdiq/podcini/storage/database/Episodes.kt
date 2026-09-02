@@ -215,7 +215,7 @@ suspend fun deleteMedia(episode: Episode): Episode {
     }
     for (i in 0..1) {
         if (episode.id == theatres[i].mPlayerFlow.value?.curState?.curMediaId) {
-            theatres[i].mPlayerFlow.value?.savePlayerStatus(null, null)
+            theatres[i].mPlayerFlow.value?.saveCurState()
             val nm = NotificationManagerCompat.from(context)
             nm.cancel(R.id.notification_playing)
         }

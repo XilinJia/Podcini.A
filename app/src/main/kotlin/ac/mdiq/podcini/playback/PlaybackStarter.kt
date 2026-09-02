@@ -77,9 +77,9 @@ class PlaybackStarter(private val media: Episode) {
                 Loge(TAG, "processTask mPlayerFlow.value == null")
                 return
             }
-            Logd(TAG, "aCtrlFuture: ${aCtrlFuture != null} player status: ${player.statusFlow.value}")
+            Logd(TAG, "aCtrlFuture: ${aCtrlFuture != null} player status: ${player.status}")
             player.shouldRepeatFlow.value = repeat
-            Logd(TAG, "start: statusFlow.value: ${player.statusFlow.value} sameMedia: $sameMedia")
+            Logd(TAG, "start: statusFlow: ${player.status} sameMedia: $sameMedia")
             player.isStreaming = shouldStreamThisTime
             player.widgetId = widgetId
             when {
@@ -119,7 +119,7 @@ class PlaybackStarter(private val media: Episode) {
         }
         aCtrlFuture?.let { future ->
             if (future.isDone && aController?.isConnected == true) {
-                Logd(TAG, "aCtrlFuture aController ready, play, ${player?.statusFlow?.value} $shouldStreamThisTime")
+                Logd(TAG, "aCtrlFuture aController ready, play, ${player?.status} $shouldStreamThisTime")
                 if (shouldStreamThisTime && !isStreamingCapable(media)) return
                 processTask()
             } else {

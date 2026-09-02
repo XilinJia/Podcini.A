@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.activeTheatresFlow
+import ac.mdiq.podcini.playback.base.activeTheatresCount
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.storage.database.feedCountFlow
 import ac.mdiq.podcini.storage.database.getEpisodesCount
@@ -98,7 +98,7 @@ fun NavDrawerScreen() {
         }
     }
 
-    val activeTheatres by activeTheatresFlow.collectAsStateWithLifecycle()
+    val theatresCount by activeTheatresCount.collectAsStateWithLifecycle()
     LaunchedEffect(drawerState.isOpen) {
         Logd(TAG, "LaunchedEffect(drawerState.currentValue): ${drawerState.isOpen}")
         if (drawerState.isOpen) withContext(Dispatchers.IO) {
@@ -146,14 +146,14 @@ fun NavDrawerScreen() {
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_settings), tint = textColor, contentDescription = "settings", modifier = Modifier.padding(start = 10.dp))
                 Text(stringResource(R.string.settings_label), color = textColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 20.dp))
                 Spacer(Modifier.weight(1f))
-                val playersRes = if (activeTheatres == 1) R.drawable.teaser else R.drawable.ic_launcher_foreground
+                val playersRes = if (theatresCount == 1) R.drawable.teaser else R.drawable.ic_launcher_foreground
                 AsyncImage(model = playersRes, contentDescription = "Players", modifier = Modifier.height(24.dp).clickable {
-                    Logd(TAG,"activeTheatres: $activeTheatres")
-                    activeTheatresFlow.value = if (activeTheatres == 1) 2 else {
+                    Logd(TAG,"activeTheatres: $theatresCount")
+                    activeTheatresCount.value = if (theatresCount == 1) 2 else {
                         playbackService?.shutdownPlayer(1)
                         1
                     }
-                    playerMinHeight = if (activeTheatresFlow.value == 1) 100 else 210
+                    playerMinHeight = if (activeTheatresCount.value == 1) 100 else 210
                     playbackService?.switchPlayersMode()
                 })
                 Spacer(Modifier.width(10.dp))
