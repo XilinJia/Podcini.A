@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 116
-        versionName = "12.9.1"
+        versionCode = 117
+        versionName = "12.9.2"
 
         ndkVersion = "29.0.14206865"
 
@@ -89,9 +89,31 @@ configure<ApplicationExtension> {
         create("free") {
             dimension = "market"
         }
+        create("freeLegacy") {
+            dimension = "market"
+        }
         create("play") {
             dimension = "market"
-//             applicationIdSuffix = ".play"
+        }
+        create("playLegacy") {
+            dimension = "market"
+        }
+    }
+
+    sourceSets {
+        named("freeLegacy") {
+            kotlin.directories.add("src/free/kotlin")
+            res.directories.add("src/free/res")
+            if (file("src/free/AndroidManifest.xml").exists()) {
+                manifest.srcFile("src/free/AndroidManifest.xml")
+            }
+        }
+        named("playLegacy") {
+            kotlin.directories.add("src/play/kotlin")
+            res.directories.add("src/play/res")
+            if (file("src/play/AndroidManifest.xml").exists()) {
+                manifest.srcFile("src/play/AndroidManifest.xml")
+            }
         }
     }
 
@@ -156,23 +178,39 @@ androidComponents {
     val androidExt = extensions.getByType<ApplicationExtension>()
     val appName = "Podcini.A"
     val versionName = androidExt.defaultConfig.versionName ?: "0.0.0"
+
     onVariants { variant ->
         val variantName = variant.name
         val capitalized = variantName.replaceFirstChar { it.uppercase() }
+        val rawFlavor = variant.flavorName ?: ""
+        val formattedFlavor = rawFlavor.replace("Legacy", "-legacy")
+
+        if (rawFlavor.endsWith("Legacy")) {
+            variant.packaging.jniLibs.useLegacyPackaging.set(true)
+            variant.packaging.dex.useLegacyPackaging.set(true)
+        }
+
         val copyTask = tasks.register<Copy>("export${capitalized}Apks") {
             from(variant.artifacts.get(SingleArtifact.APK)) {
                 include("**/*.apk")
-                eachFile {
-                    name = name
-                        .replace(Regex("-(release|debug)(?=\\.apk$)"), "")
-                        .replace("app", appName)
+                rename { filename ->
+                    filename
+                        .replace(Regex("^app"), appName)
+                        .replace(rawFlavor, formattedFlavor)
+                        .replace(Regex("-(release|debug)"), "")
                         .replace(".apk", "-$versionName.apk")
                 }
-                into("")
             }
             into(layout.buildDirectory.dir("exported-apks/$variantName"))
         }
         tasks.matching { it.name == "assemble$capitalized" }.configureEach { finalizedBy(copyTask) }
+    }
+}
+
+configurations {
+    listOf("Implementation", "Api", "CompileOnly", "RuntimeOnly").forEach { configType ->
+        named("freeLegacy$configType") { extendsFrom(getByName("free$configType")) }
+        named("playLegacy$configType") { extendsFrom(getByName("play$configType")) }
     }
 }
 
@@ -205,17 +243,13 @@ dependencies {
     implementation("androidx.glance:glance-appwidget:1.2.0")
 
     implementation("androidx.media3:media3-exoplayer:1.11.0")
-    implementation("androidx.media3:media3-datasource-okhttp:1.11.0")
     implementation("androidx.media3:media3-ui:1.11.0")
     implementation("androidx.media3:media3-ui-compose:1.11.0")
     implementation("androidx.media3:media3-common:1.11.0")
     implementation("androidx.media3:media3-session:1.11.0")
     implementation("androidx.media3:media3-exoplayer-hls:1.11.0")
     implementation("androidx.media3:media3-datasource-cronet:1.11.0") {
-        exclude(
-            group = "com.google.android.gms",
-            module = "play-services-cronet"
-        )
+        exclude(group = "com.google.android.gms", module = "play-services-cronet")
     }
 
     implementation("org.chromium.net:cronet-embedded:500.0.2")
@@ -229,7 +263,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.9.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
-   implementation("com.github.XilinJia:PodciniLib:1.1.2")
+    implementation("com.github.XilinJia:PodciniLib:1.1.2")
     implementation("io.github.xilinjia.krdb:library-base:${project.property("krdb_version")}")
 
     implementation("io.coil-kt.coil3:coil-compose:3.6.1")
@@ -238,7 +272,7 @@ dependencies {
     implementation("io.ktor:ktor-http:3.5.2")
     implementation("io.ktor:ktor-client-core:3.5.2")
     implementation("io.ktor:ktor-client-okhttp:3.5.2")
-    implementation("io.ktor:ktor-client-cio:3.5.2")
+//     implementation("io.ktor:ktor-client-cio:3.5.2")
     implementation("io.ktor:ktor-utils:3.5.2")
 
     implementation("com.fleeksoft.ksoup:ksoup:0.2.6")
@@ -249,25 +283,25 @@ dependencies {
     implementation("io.github.pdvrieze.xmlutil:core-android:1.0.2.1")
 
     implementation("com.squareup.okhttp3:okhttp:5.5.0")
-    implementation("com.squareup.okhttp3:okhttp-urlconnection:5.5.0")
     implementation("com.squareup.okio:okio:3.18.1")
 
     implementation("net.dankito.readability4j:readability4j:1.0.8")
 
-    "freeImplementation"("org.conscrypt:conscrypt-android:2.5.3")
+    "freeImplementation"("org.conscrypt:conscrypt-android:2.7.0")
 
-    "playImplementation"("androidx.media3:media3-cast:1.10.0")
-    "playImplementation"("com.google.android.gms:play-services-base:18.9.0")
+    "playImplementation"("androidx.media3:media3-cast:1.11.0")
     "playImplementation"("androidx.mediarouter:mediarouter:1.8.1")
-    "playImplementation"("com.google.android.gms:play-services-cast-framework:22.2.0")
+    "playImplementation"("com.google.android.gms:play-services-base:18.10.1")
+    "playImplementation"("com.google.android.gms:play-services-cast-framework:22.3.1")
 }
 
-val copyLicenseTask = tasks.register<Copy>("copyLicense") {
-    from("../LICENSE")
-    into("src/main/assets/")
-    rename { "$it.txt" }
-}
+ val copyLicenseTask = tasks.register<Copy>("copyLicense") {
+     from("../LICENSE")
+     into("src/main/assets/")
+     rename { "$it.txt" }
+ }
 
-tasks.named("preBuild") {
-    dependsOn(copyLicenseTask)
-}
+
+ tasks.named("preBuild") {
+     dependsOn(copyLicenseTask)
+ }

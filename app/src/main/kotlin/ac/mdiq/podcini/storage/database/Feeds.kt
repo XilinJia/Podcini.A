@@ -400,25 +400,16 @@ class FeedAssistant(val feed: Feed, savedFeedId: Long = 0L, isNew: Boolean = fal
                 val ers = v.sortedByDescending { it.rating }
                 if (ers[0].rating > Rating.UNRATED.code) {
                     episode = if (ers[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(ers[0]) { it.addComment(comment) } else ers[0]
-                    runOnIOScope { realm.write { for (i in 1..<ers.size) {
-                        val e = query(Episode::class).query("id == ${ers[i].id}").first().find()
-                        if (e != null) delete(e)
-                    } } }
+                    runOnIOScope { realm.write { for (i in 1..<ers.size) query(Episode::class).query("id == ${ers[i].id}").first().find()?.let { delete(it) } } }
                 } else {
                     val eps = v.sortedByDescending { it.lastPlayedTime }
                     if (eps[0].lastPlayedTime > 0L) {
                         episode = if (eps[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(eps[0]) { it.addComment(comment) } else eps[0]
-                        runOnIOScope { realm.write { for (i in 1..<eps.size) {
-                            val e = query(Episode::class).query("id == ${eps[i].id}").first().find()
-                            if (e != null) delete(e)
-                        } } }
+                        runOnIOScope { realm.write { for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) } } }
                     } else {
                         val eps = v.sortedByDescending { it.pubDate }
                         episode = if (eps[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(eps[0]) { it.addComment(comment) } else eps[0]
-                        runOnIOScope { realm.write { for (i in 1..<eps.size) {
-                            val e = query(Episode::class).query("id == ${eps[i].id}").first().find()
-                            if (e != null) delete(e)
-                        } } }
+                        runOnIOScope { realm.write { for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) } } }
                     }
                 }
                 map[k] = mutableListOf(episode)

@@ -466,7 +466,7 @@ private val ACCENT_MAP: Map<Char, Char> = mapOf(
 
 fun guessFileName(url: String, contentDisposition: String?, mimeType: String?): String {
     var filename: String? = null
-    if (contentDisposition != null) filename = Regex("filename\\s*=\\s*\"?([^\";]+)\"?").find(contentDisposition)?.groupValues?.get(1)
+    contentDisposition?.let { filename = Regex("filename\\s*=\\s*\"?([^\";]+)\"?").find(it)?.groupValues?.get(1) }
     if (filename == null) {
         val decodedUrl = try { Url(url).encodedPath } catch (e: Exception) { url }
         val lastSegment = decodedUrl.split('/').lastOrNull { it.isNotEmpty() }

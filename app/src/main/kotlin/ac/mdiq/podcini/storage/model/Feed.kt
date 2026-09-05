@@ -1,7 +1,6 @@
 package ac.mdiq.podcini.storage.model
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.shared.FeedIPC
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getFeed
@@ -290,32 +289,16 @@ class Feed : RealmObject {
     // ============= Queue ==============
     @Ignore
     var queue: PlayQueue? = null
-        get() = when {
-            queueId >= 0 -> queuesLive.find { it.id == queueId }
-            queueId == -1L -> actQueueFlow.value
-            queueId == -2L -> null
-            else -> null
-        }
-        set(value) {
-            field = value
-            queueId = value?.id ?: -2L
+        get() = if (queueId >= 0) queuesLive.find { it.id == queueId } else null
+        set(q) {
+            field = q
+            queueId = q?.id ?: -2L
             feedQueueUpdated.value++
         }
     @Ignore
     val queueText: String
-        get() = when (queueId) {
-            0L -> "Default"
-            -1L -> "Active"
-            -2L -> "None"
-            else -> "Custom"
-        }
-    @Ignore
-    val queueTextExt: String
-        get() = when (queueId) {
-            -1L -> "Active"
-            -2L -> "None"
-            else -> queue?.name ?: "Default"
-        }
+        get() = if (queueId >= 0) queue?.name ?: "Default" else "None"
+
     var queueId: Long = 0L
         private set
 

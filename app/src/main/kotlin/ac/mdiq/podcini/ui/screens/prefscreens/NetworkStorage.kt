@@ -724,12 +724,10 @@ fun SynchronizationScreen() {
                         }) { Text(stringResource(R.string.guest_butLabel)) }
                     }
                     Row {
-                        if (showHostAddress) TextField(value = hostAddress, modifier = Modifier.weight(0.6f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        if (showHostAddress) TextField(value = hostAddress, modifier = Modifier.weight(0.6f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             onValueChange = { input -> hostAddress = input },
                             label = { Text(stringResource(id = R.string.synchronization_host_address_label)) })
-                        TextField(value = portString, modifier = Modifier.weight(0.4f).padding(start = 3.dp),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        TextField(value = portString, modifier = Modifier.weight(0.4f).padding(start = 3.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             onValueChange = { input ->
                                 portString = input
                                 portNum = input.toInt()
@@ -783,9 +781,9 @@ fun SynchronizationScreen() {
         var onClick: (() -> Unit)? = null
         if (loggedIn) {
             selectedProvider = SynchronizationProviderViewData.fromIdentifier(selectedSyncProviderKey)
-            if (selectedProvider != null) {
-                summaryRes = selectedProvider!!.summaryResource
-                iconRes = selectedProvider!!.iconResource
+            selectedProvider?.let {
+                summaryRes = it.summaryResource
+                iconRes = it.iconResource
                 Icon(painter = painterResource(id = iconRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
             }
         } else {

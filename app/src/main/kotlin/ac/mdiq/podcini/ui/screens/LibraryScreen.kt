@@ -1705,14 +1705,7 @@ fun LibraryScreen() {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     for (rating in Rating.entries.reversed()) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp).clickable {
-                            runOnIOScope {
-                                realm.write {
-                                    for (f_ in selected) {
-                                        val f = findLatest(f_)
-                                        if (f != null) f.rating = rating.code
-                                    }
-                                }
-                            }
+                            runOnIOScope { realm.write { for (f_ in selected) findLatest(f_)?.let { it.rating = rating.code } } }
                             onDismiss()
                         }) {
                             Icon(imageVector = ImageVector.vectorResource(id = rating.res), "")

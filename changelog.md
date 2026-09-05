@@ -1,3 +1,10 @@
+# 12.9.2
+
+* created a separate "legacy" flavor by compressing libs to generate smaller apk's, only for apk-size conscious people
+	* downside is the install size is larger and first launch somewhat slower
+* some code refactoring
+* some dependencies update
+
 # 12.9.1
 
 * reworked some states handling in Queues screen, likely fixed issues of changing names and adding/removing queues

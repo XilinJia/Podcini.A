@@ -65,8 +65,7 @@ fun initQueues() {
 
         queuesFlow.collect { changes: ResultsChange<PlayQueue> ->
             queuesLive = changes.list
-            val q = queuesLive.find { it.id == actQueueFlow.value.id }
-            if (q != null) actQueueFlow.value = q
+            queuesLive.find { it.id == actQueueFlow.value.id }?.let { actQueueFlow.value = it }
             Logd(TAG, "queuesLive updated")
             when (changes) {
                 is UpdatedResults -> {
@@ -281,12 +280,7 @@ suspend fun removeFromAllQueuesQuiet(episodeIds: List<Long>, updateState: Boolea
         val qes = realm.query(QueueEntry::class).query("queueId == $0 AND episodeId IN $1", q.id, episodeIds).find()
         val idsInQueuesToRemove = qes.map { it.episodeId }
         if (idsInQueuesToRemove.isNotEmpty()) {
-            realm.write {
-                for (qe in qes) {
-                    val qe_ = findLatest(qe)
-                    if (qe_ != null) delete (qe_)
-                }
-            }
+            realm.write { for (qe in qes) findLatest(qe)?.let { delete(it) } }
             if (updateState) {
                 val eList = realm.query(Episode::class).query("id IN $0 AND playState < ${EpisodeState.SKIPPED.code}", idsInQueuesToRemove).find().filter { !shouldPreserve(it.playState) }
                 if (eList.isNotEmpty()) realm.write { for (e in eList) findLatest(e)?.setPlayState(EpisodeState.SKIPPED, false) }

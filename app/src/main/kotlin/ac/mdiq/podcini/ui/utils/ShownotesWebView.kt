@@ -109,8 +109,8 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
         if (selectedUrl == null) return false
         val itemId = item.itemId
         when (itemId) {
-            R.id.open_in_browser_item -> if (selectedUrl != null) openInSystemDefault(selectedUrl!!)
-            R.id.share_url_item -> if (selectedUrl != null) shareLink(context, selectedUrl!!)
+            R.id.open_in_browser_item -> openInSystemDefault(selectedUrl!!)
+            R.id.share_url_item -> shareLink(context, selectedUrl!!)
             R.id.copy_url_item -> {
                 val clipData: ClipData = ClipData.newPlainText(selectedUrl, selectedUrl)
                 val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -159,7 +159,7 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
      */
     private fun setOnClickListeners(menu: Menu?, listener: MenuItem.OnMenuItemClickListener?) {
         for (i in 0 until menu!!.size) {
-            if (menu[i].subMenu != null) setOnClickListeners(menu[i].subMenu, listener)
+            menu[i].subMenu?.let { setOnClickListeners(it, listener) }
             menu[i].setOnMenuItemClickListener(listener)
         }
     }

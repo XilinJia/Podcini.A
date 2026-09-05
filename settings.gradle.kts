@@ -1,3 +1,4 @@
+
 pluginManagement {
     repositories {
 //       mavenLocal() // 👈 Add this line
@@ -12,6 +13,12 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
+plugins {
+    id("com.android.application") version "9.4.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.4.0" apply false
+}
+
 // plugins {
 //     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 // }
@@ -26,9 +33,3 @@ dependencyResolutionManagement {
 }
 
 include(":app")
-
-// includeBuild('../VistaGuide') {
-//     dependencySubstitution {
-//         substitute module('com.github.XilinJia.vistaguide:VistaGuide') using project(':extractor')
-//     }
-// }

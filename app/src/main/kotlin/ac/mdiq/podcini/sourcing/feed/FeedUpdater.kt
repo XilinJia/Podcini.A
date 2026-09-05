@@ -215,7 +215,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
             feedRaw.id = request.feedfileId
             feedRaw.limitEpisodesCount = feed.limitEpisodesCount
             feedRaw.fillPreferences(false, Feed.AutoDeleteAction.GLOBAL, VolumeAdaptionSetting.OFF, request.username, request.password)
-            if (request.arguments != null) feedRaw.pageNr = request.arguments.getInt(DownloadRequest.REQUEST_ARG_PAGE_NR, 0)
+            request.arguments?.let { feedRaw.pageNr = it.getInt(DownloadRequest.REQUEST_ARG_PAGE_NR, 0) }
 
             try {
                 feedHandlerResult = PodcastHandler.parseFeed(source, feedRaw)
@@ -223,7 +223,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                 if (feedRaw.title.isNullOrBlank()) throw InvalidFeedException("Feed has no title")
                 for (item in feedRaw.episodes) if (item.title.isNullOrBlank()) LogFor(TAG, feedRaw, true, "episode ${item.id} title is empty", toastAnyway = true)
                 if (feedRaw.imageUrl.isNullOrEmpty()) feedRaw.imageUrl = feedRaw.downloadUrl
-                if (feedHandlerResult != null) feed_ = feedHandlerResult!!.feed
+                feedHandlerResult?.let { feed_ = it.feed }
                 Logd(TAG, "downloadFeed completed feed_: ${feed_?.title}")
             } catch (e: SAXException) {
                 isSuccessful = false

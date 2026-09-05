@@ -113,7 +113,7 @@ class ShareReceiverActivity : ComponentActivity() {
                             }
                             Button(modifier = Modifier.align(Alignment.BottomEnd) , onClick = { addAsNew =  true }) { Text(stringResource(R.string.add_as_new)) }
                         }
-                        if (episodeForInfo != null) EpisodeScreen(episodeForInfo!!)
+                        episodeForInfo?.let { EpisodeScreen(it) }
                     }
                 }
                 else -> {
@@ -181,13 +181,11 @@ class ShareReceiverActivity : ComponentActivity() {
                     val clients = sourceClients.filter { it.withProviderBlocking { p-> p.canHandleUrl(sharedText) == 0 } == true }
                     Logd(TAG, "receiveShared canHandleUrl==0 clients: ${clients.size}")
                     for (client in clients) {
-                        val episode = client.withProviderBlocking { it.buildEpisode(sharedText)?.toEpisode() }
-                        if (episode != null) {
-                            val existing = realm.query(Episode::class).query("title == $0", episode.title).find()
-                            if (log != null) upsertBlk(log) { it.type = ShareLog.ShareType.Media.name }
-                            extMediaCB(client, existing)
-                            return
-                        }
+                        val episode = client.withProviderBlocking { it.buildEpisode(sharedText)?.toEpisode() } ?: continue
+                        val existing = realm.query(Episode::class).query("title == $0", episode.title).find()
+                        if (log != null) upsertBlk(log) { it.type = ShareLog.ShareType.Media.name }
+                        extMediaCB(client, existing)
+                        return
                     }
                     openAsFeed(null)
                 }

@@ -152,7 +152,7 @@ fun FeedsSettingsScreen() {
     var videoQuality by remember { mutableStateOf(feedToSet.videoQualitySetting.tag) }
 
     var autoDeleteSummaryResId by remember { mutableIntStateOf(R.string.global_default) }
-    var curPrefQueue by remember { mutableStateOf(feedToSet.queueTextExt) }
+    var curPrefQueue by remember { mutableStateOf(feedToSet.queueText) }
     var autoDeletePolicy by remember { mutableStateOf(AutoDeleteAction.GLOBAL.name) }
     var videoModeSummaryResId by remember { mutableIntStateOf(R.string.global_default) }
 
@@ -205,7 +205,7 @@ fun FeedsSettingsScreen() {
     }
 
     val feedChange by feedFlow.collectAsStateWithLifecycle(initialValue = null)
-    if (feedChange?.obj != null) feedToSet = feedChange?.obj!!
+    feedChange?.obj?.let { feedToSet = it }
 
     
     @Composable
@@ -323,7 +323,7 @@ fun FeedsSettingsScreen() {
 
             //                    associated queue
             Column {
-                curPrefQueue = feedToSet.queueTextExt
+                curPrefQueue = feedToSet.queueText
                 @Composable
                 fun SetAssociatedQueue(selectedOption: String, onDismiss: () -> Unit) {
                     CommonPopupCard(onDismiss = { onDismiss() }) {

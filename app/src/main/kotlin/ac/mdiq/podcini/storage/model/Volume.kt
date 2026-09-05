@@ -178,8 +178,5 @@ suspend fun deleteVolumeTree(volume: Volume) {
     val iterator = realm.query(Volume::class).query("parentId == ${volume.id}").find().iterator()
     while (iterator.hasNext()) deleteVolumeTree(iterator.next())
 
-    realm.write {
-        val v = findLatest(volume)
-        if (v != null) delete(v)
-    }
+    realm.write { findLatest(volume)?.let { delete(it) } }
 }

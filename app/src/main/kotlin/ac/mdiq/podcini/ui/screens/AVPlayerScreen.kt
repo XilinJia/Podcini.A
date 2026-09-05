@@ -450,15 +450,15 @@ fun ControlUI(vm: AVPlayerVM) {
                 Logd(TAG, "playerUi icon was clicked $psState")
                 actPlayerId = vm.playerId
                 if (psState == PSState.PartiallyExpanded) {
-                    if (episode != null) {
-                        if (playbackService == null) PlaybackStarter(episode!!).start(vm.playerId)
+                    episode?.let {
+                        if (playbackService == null) PlaybackStarter(it).start(vm.playerId)
                         psState = PSState.Expanded
                     }
                 } else psState = PSState.PartiallyExpanded
             },
             onLongClick = {
-                if (vm.episodeFeed != null) {
-                    navTo(FeedDetails(feedId=vm.episodeFeed!!.id))
+                vm.episodeFeed?.let {
+                    navTo(FeedDetails(it.id))
                     psState = PSState.PartiallyExpanded
                 }
             }))
@@ -689,10 +689,10 @@ fun AVPlayerScreen() {
     }
 
     LaunchedEffect(actPlayerId, curMedia?.position) {
-        if (curMedia != null) {
+        curMedia?.let {
             if (psState == PSState.Expanded) {
-                chapterIndex = curMedia.getCurrentChapterIndex(curMedia.position)
-                displayedChapterIndex = if (curMedia.position > curMedia.duration || chapterIndex >= curMedia.chapters.size - 1) curMedia.chapters.size - 1 else chapterIndex
+                chapterIndex = it.getCurrentChapterIndex(it.position)
+                displayedChapterIndex = if (it.position > it.duration || chapterIndex >= it.chapters.size - 1) it.chapters.size - 1 else chapterIndex
                 Logd(TAG, "LaunchedEffect(curEpisode?.position) chapterIndex $chapterIndex $displayedChapterIndex")
             }
         }
@@ -804,7 +804,7 @@ fun AVPlayerScreen() {
                             expanded = false
                         })
                         DropdownMenuItem(text = { Text(stringResource(R.string.open_podcast)) }, onClick = {
-                            if (vm.episodeFeed != null) navTo(FeedDetails(feedId=vm.episodeFeed!!.id))
+                            vm.episodeFeed?.let { navTo(FeedDetails(feedId=it.id)) }
                             expanded = false
                         })
                         DropdownMenuItem(text = { Text(stringResource(R.string.share_label)) }, onClick = {
@@ -824,11 +824,10 @@ fun AVPlayerScreen() {
                         expanded = false
                     })
                     DropdownMenuItem(text = { Text(stringResource(R.string.visit_website_label)) }, onClick = {
-                        val url = when {
+                        when {
                             !episode.link.isNullOrBlank() -> episode.link
                             else -> episode.linkOrFeedlink
-                        }
-                        if (url != null) openInSystemDefault(url)
+                        }?.let { openInSystemDefault(it) }
                         expanded = false
                     })
                 }
@@ -926,11 +925,13 @@ fun AVPlayerScreen() {
             var resolutions by remember { mutableStateOf<List<String>>(listOf()) }
             var resolution by remember { mutableStateOf(player.useResolution) }
             fun buildResoSet(s: VideoSpec, rSet: MutableSet<String>) {
-                if (s.resolution != null) when {
-                    vcodec == null && protocol == null -> rSet.add(s.resolution!!)
-                    protocol == null -> if (s.codec == vcodec) rSet.add(s.resolution!!)
-                    vcodec == null -> if (s.deliveryMethod == protocol) rSet.add(s.resolution!!)
-                    else -> if (s.deliveryMethod == protocol && s.codec == vcodec) rSet.add(s.resolution!!)
+                s.resolution?.let {
+                    when {
+                        vcodec == null && protocol == null -> rSet.add(it)
+                        protocol == null -> if (s.codec == vcodec) rSet.add(it)
+                        vcodec == null -> if (s.deliveryMethod == protocol) rSet.add(it)
+                        else -> if (s.deliveryMethod == protocol && s.codec == vcodec) rSet.add(it)
+                    }
                 }
             }
             fun buildBRSet(s: AudioSpec, bSet: MutableSet<Int>) {
@@ -962,8 +963,8 @@ fun AVPlayerScreen() {
                 val vSpecs = if (client?.attributes?.hasSeparateAVs == true) player.videoSpecs else player.muxedSpecs
                 for (s in vSpecs) {
                     buildResoSet(s, rSet)
-                    if (s.codec != null) vcSet.add(s.codec!!)
-                    if (s.deliveryMethod != null) vpSet.add(s.deliveryMethod!!)
+                    s.codec?.let { vcSet.add(it) }
+                    s.deliveryMethod?.let { vpSet.add(it) }
                 }
                 protocols = vpSet.toList()
                 resolutions = rSet.toList()
@@ -1091,8 +1092,8 @@ fun AVPlayerScreen() {
                             player.pause(false)
                             getCache().removeResource(episode.id.toString())
                             player.setAudioStream(locale, codec, bitrate)
-                            if (resolution != null) player.useResolution = resolution
-                            if (vcodec != null) player.useVCodex = vcodec
+                            resolution?.let { player.useResolution = it }
+                            vcodec?.let { player.useVCodex = it }
                             val media = if (vm.forceVideo) upsertBlk(episode) { it.forceVideo = true } else null
                             player.startPlaying(media)
                             reset = false

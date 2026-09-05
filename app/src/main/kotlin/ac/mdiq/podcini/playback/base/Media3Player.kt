@@ -36,6 +36,7 @@ import ac.mdiq.podcini.utils.LogsFor
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.LogtFor
 import ac.mdiq.podcini.utils.timeIt
+import android.annotation.SuppressLint
 import android.content.Context
 import android.media.RingtoneManager
 import android.media.audiofx.LoudnessEnhancer
@@ -191,7 +192,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             simpleCache = SimpleCache(cacheDir, evictor, databaseProvider)
         }
     }
-    private val networkExecutor = Executors.newSingleThreadExecutor()
 
     init {
         this.playerId = playerId
@@ -315,7 +315,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     Loge(TAG, error, "exoplayerListener onPlayerError")
                     when (error.errorCode) {
                         PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED -> {
-                            if (curMediaFlow.value != null) getCache().removeResource(curMediaFlow.value!!.id.toString())
+                            curMediaFlow.value?.let { getCache().removeResource(it.id.toString()) }
                             Logt(TAG, "corrupted cache is cleared, try playing it again")
                         }
                         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
@@ -403,11 +403,10 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     runOnIOScope {
                         try {
                             val newEnhancer = LoudnessEnhancer(audioSessionId)
-                            val oldEnhancer = loudnessEnhancer
-                            if (oldEnhancer != null) {
-                                newEnhancer.enabled = oldEnhancer.enabled
-                                if (oldEnhancer.enabled) newEnhancer.setTargetGain(oldEnhancer.targetGain.toInt())
-                                oldEnhancer.release()
+                            loudnessEnhancer?.let {
+                                newEnhancer.enabled = it.enabled
+                                if (it.enabled) newEnhancer.setTargetGain(it.targetGain.toInt())
+                                it.release()
                             }
                             loudnessEnhancer = newEnhancer
                         } catch (e: Throwable) { LogsFor(TAG, curMediaFlow.value?.id, e, "Failed to init LoudnessEnhancer") }
@@ -593,58 +592,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         override fun onReleased(playerId: PlayerId) = delegate.onReleased(playerId)
     }
 
-    fun createCronetEngine(context: Context, config: ProxyConfig?, executor: Executor): CronetEngine {
-        Logd(TAG, "createCronetEngine")
-        val builder = CronetEngine.Builder(context)
-            .enableHttp2(true)
-            .enableQuic(true)
-            .enableBrotli(true)
-//            .setUserAgent(USER_AGENT)
-            .setStoragePath(File(context.cacheDir, "cronet$playerId").apply { mkdirs() }.absolutePath)
-            .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024)
-        if (config?.type == Type.HTTP && !config.host.isNullOrEmpty()) {
-            val port = if (config.port > 0) config.port else ProxyConfig.DEFAULT_PORT
-            val proxy = Proxy.createHttpProxy(Proxy.SCHEME_HTTP, config.host!!, port, executor,
-                object : Proxy.HttpConnectCallback() {
-                    override fun onBeforeRequest(request: Request) {
-                        if (!config.username.isNullOrEmpty() && config.password != null) {
-                            val credentials = "${config.username}:${config.password}"
-                            val encoded = Base64.encodeToString(credentials.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
-                            request.proceed(listOf(Pair("Proxy-Authorization", "Basic $encoded")))
-                        } else request.proceed(emptyList())
-                    }
-                    override fun onResponseReceived(responseHeaders: MutableList<Pair<String, String>>, statusCode: Int): Int {
-                        return RESPONSE_ACTION_PROCEED
-                    }
-                }
-            )
-            val proxyOptions = ProxyOptions.fromProxyList(listOf(proxy), ProxyOptions.ALL_PROXIES_FAILED_BEHAVIOR_DISALLOW_DIRECT)
-            builder.setProxyOptions(proxyOptions)
-        }
-        return builder.build()
-    }
-
-    fun createHttpDataSourceFactory(context: Context, executor: Executor): HttpDataSource.Factory {
-        Logd(TAG, "createHttpDataSourceFactory proxyConfig: ${proxyConfig?.host}")
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 7 && (proxyConfig == null || proxyConfig!!.host == null)) {
-            Logd(TAG, "createHttpDataSourceFactory setting HttpEngine")
-            if (httpEngine == null) httpEngine = HttpEngine.Builder(context)
-                .setEnableQuic(true)
-//                .setUserAgent(USER_AGENT)
-                .setStoragePath(File(context.cacheDir, "httpengine$playerId").apply { mkdirs() }.absolutePath)
-                .setEnableHttpCache(HttpEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024)
-                .build()
-            HttpEngineDataSource.Factory(httpEngine!!, executor)
-                .setConnectionTimeoutMs(8_000)
-                .setReadTimeoutMs(8_000)
-        } else {
-            if (cronetEngine == null) cronetEngine = createCronetEngine(context, proxyConfig, executor)
-            CronetDataSource.Factory(cronetEngine!!, executor)
-                .setConnectionTimeoutMs(8_000)
-                .setReadTimeoutMs(8_000)
-        }
-    }
-
+    @SuppressLint("NewApi")
     override fun createNativePlayer() {
         if (exoPlayer != null) return
         timeIt("$TAG createNativePlayer")
@@ -677,7 +625,10 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         //        val mediaSourceFactory = DefaultMediaSourceFactory(context).setDataSourceFactory(upstreamFactory)
 
         val extractorsFactory = DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
-        val httpDataSourceFactory = createHttpDataSourceFactory(context, networkExecutor)
+        val httpDataSourceFactory =
+            if (httpEngine != null) HttpEngineDataSource.Factory(httpEngine!!, networkExecutor).setConnectionTimeoutMs(8_000).setReadTimeoutMs(8_000)
+            else CronetDataSource.Factory(cronetEngine!!, networkExecutor).setConnectionTimeoutMs(8_000).setReadTimeoutMs(8_000)
+
         val upstreamFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
         val cacheDataSourceFactory = CacheDataSource.Factory()
             .setCache(getCache())
@@ -710,13 +661,13 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             .build()
 
         Logd(TAG, "createNativePlayer exoplayerListener == null: ${exoplayerListener == null}")
-        if (exoplayerListener != null) {
-            exoPlayer?.removeListener(exoplayerListener!!)
-            exoPlayer?.addListener(exoplayerListener!!)
+        exoplayerListener?.let {
+            exoPlayer?.removeListener(it)
+            exoPlayer?.addListener(it)
         }
-        if (exoplayerOffloadListener != null) {
-            exoPlayer?.removeAudioOffloadListener(exoplayerOffloadListener!!)
-            exoPlayer?.addAudioOffloadListener(exoplayerOffloadListener!!)
+        exoplayerOffloadListener?.let {
+            exoPlayer?.removeAudioOffloadListener(it)
+            exoPlayer?.addAudioOffloadListener(it)
         }
         castPlayer = buildCastPlayer(exoPlayer!!)
 
@@ -767,11 +718,10 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             var aSource: ProgressiveMediaSource? = null
             if (audioSpecs.isNotEmpty()) {
                 Logd(TAG, "mediaSourceFromClient audioSpecs ${audioSpecs.size}")
-                val audioSpec = setAudioSpec(audioSpecs, media)
-                if (audioSpec != null) {
-                    if (!audioSpec.url.isNullOrBlank()) {
-                        aSource = ProgressiveMediaSource.Factory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(audioSpec.url!!.toSafeUri()).setCustomCacheKey(media.id.toString()).build())
-                        Logd(TAG, "mediaSourceFromClient aSource set to: ${audioSpec.url}")
+                setAudioSpec(audioSpecs, media)?.let {
+                    if (!it.url.isNullOrBlank()) {
+                        aSource = ProgressiveMediaSource.Factory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(it.url!!.toSafeUri()).setCustomCacheKey(media.id.toString()).build())
+                        Logd(TAG, "mediaSourceFromClient aSource set to: ${it.url}")
                     } else Loge(TAG, "eligible audioStream or its url is null or blank")
                 }
             } else Logt(TAG, "Client provided no audio stream, trying with muxed video stream")
@@ -1026,7 +976,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         return -1
     }
 
-    override fun resetMediaPlayer() {
+    override fun resetPlayerAttributes() {
         Logd(TAG, "resetMediaPlayer()")
         // TODO: test
 //        if (isCasting) release()
@@ -1234,8 +1184,8 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     override fun onDestroy() {
-        if (exoplayerListener != null) exoPlayer?.removeListener(exoplayerListener!!)
-        if (exoplayerOffloadListener != null) exoPlayer?.removeAudioOffloadListener(exoplayerOffloadListener!!)
+        exoplayerListener?.let { exoPlayer?.removeListener(it) }
+        exoplayerOffloadListener?.let { exoPlayer?.removeAudioOffloadListener(it) }
         exoplayerListener = null
         exoplayerOffloadListener = null
 //        bufferingUpdater = null
@@ -1244,6 +1194,10 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 
         castPlayer = null
         exoPlayer = null
+        httpEngine = null
+        cronetEngine = null
+
+        releaseCache()
 
         super.onDestroy()
     }
@@ -1259,6 +1213,8 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         const val BUFFERING_ENDED: Int = -2
 
         private var enableFloat = false     // float is not well handled in Android devices
+
+        private val networkExecutor = Executors.newSingleThreadExecutor()
 
         var httpEngine: HttpEngine? = null
         var cronetEngine: CronetEngine? = null
@@ -1280,6 +1236,47 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                 val success = cacheDir.deleteRecursively()
                 Logt(TAG, "Physical cache folder deleted: $success")
             }
+        }
+
+        fun createCronetEngine(config: ProxyConfig?, executor: Executor): CronetEngine {
+            val builder = CronetEngine.Builder(getAppContext())
+            builder.enableHttp2(true)
+                .enableQuic(true)
+                .enableBrotli(true)
+                //            .setUserAgent(USER_AGENT)
+                .setStoragePath(File(getAppContext().cacheDir, "cronet").apply { mkdirs() }.absolutePath)
+                .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024)
+            if (config?.type == Type.HTTP && !config.host.isNullOrEmpty()) {
+                val port = if (config.port > 0) config.port else ProxyConfig.DEFAULT_PORT
+                val proxy = Proxy.createHttpProxy(Proxy.SCHEME_HTTP, config.host!!, port, executor,
+                    object : Proxy.HttpConnectCallback() {
+                        override fun onBeforeRequest(request: Request) {
+                            if (!config.username.isNullOrEmpty() && config.password != null) {
+                                val credentials = "${config.username}:${config.password}"
+                                val encoded = Base64.encodeToString(credentials.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                                request.proceed(listOf(Pair("Proxy-Authorization", "Basic $encoded")))
+                            } else request.proceed(emptyList())
+                        }
+                        override fun onResponseReceived(responseHeaders: MutableList<Pair<String, String>>, statusCode: Int): Int {
+                            return RESPONSE_ACTION_PROCEED
+                        }
+                    }
+                )
+                val proxyOptions = ProxyOptions.fromProxyList(listOf(proxy), ProxyOptions.ALL_PROXIES_FAILED_BEHAVIOR_DISALLOW_DIRECT)
+                builder.setProxyOptions(proxyOptions)
+            }
+            return builder.build()
+        }
+
+        fun createDataSourceEngine() {
+            val appContext = getAppContext()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 7 && (proxyConfig == null || proxyConfig!!.host == null)) {
+                Logd(TAG, "createHttpDataSourceFactory setting HttpEngine")
+                if (httpEngine == null) httpEngine = HttpEngine.Builder(appContext).setEnableQuic(true)
+                    //                .setUserAgent(USER_AGENT)
+                    .setStoragePath(File(appContext.cacheDir, "httpengine").apply { mkdirs() }.absolutePath)
+                    .setEnableHttpCache(HttpEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024).build()
+            } else if (cronetEngine == null) cronetEngine = createCronetEngine(proxyConfig, networkExecutor)
         }
 
         fun buildMetadata(e: Episode): MediaMetadata {

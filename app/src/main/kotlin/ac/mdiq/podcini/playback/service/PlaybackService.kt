@@ -3,18 +3,16 @@ package ac.mdiq.podcini.playback.service
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.activeTheatresCount
-import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.Media3Player
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.buildMetadata
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.cronetEngine
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.httpEngine
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.releaseCache
+import ac.mdiq.podcini.playback.base.Media3Player.Companion.createDataSourceEngine
 import ac.mdiq.podcini.playback.base.SleepManager
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
+import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.base.activeTheatresCount
 import ac.mdiq.podcini.playback.base.cleanupTheatres
 import ac.mdiq.podcini.playback.base.isCurMedia
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
 import ac.mdiq.podcini.storage.database.episodeById
@@ -313,6 +311,8 @@ class PlaybackService : MediaLibraryService() {
         Logd(TAG, "onCreate Service created.")
         timeIt("$TAG onCreate Service")
 
+        createDataSourceEngine()
+
         isRunning = true
         playbackService = this
 
@@ -350,11 +350,9 @@ class PlaybackService : MediaLibraryService() {
                 if (player != null && player.curState.curMediaId > 0L) player.setAsCurMedia(episodeById(player.curState.curMediaId))
 
                 Logd(TAG, "curMediaFlow.value from preference: ${player?.curMediaFlow?.value?.title}")
-                if (player?.curMediaFlow?.value != null) {
-                    val qes = realm.query(QueueEntry::class).query("episodeId == ${player.curMediaFlow.value!!.id}").find()
-                    if (qes.isNotEmpty()) {
-                        realm.query(PlayQueue::class).query("id == ${qes[0].queueId}").first().find()?. let { actQueueFlow.value = it }
-                    }
+                player?.curMediaFlow?.value?.let {
+                    val qes = realm.query(QueueEntry::class).query("episodeId == ${it.id}").find()
+                    if (qes.isNotEmpty()) realm.query(PlayQueue::class).query("id == ${qes[0].queueId}").first().find()?.let { q-> actQueueFlow.value = q }
                 }
                 theatres[i].curStateMonitor?.cancel()
                 theatres[i].curStateMonitor = null
@@ -382,10 +380,10 @@ class PlaybackService : MediaLibraryService() {
 
     fun shutdownPlayer(id: Int) {
         try {
-            if (theatres[id].mPlayerFlow.value != null) {
-                val wasPlaying = theatres[id].mPlayerFlow.value!!.isPlaying
-                if (wasPlaying) theatres[id].mPlayerFlow.value!!.pause(reinit = false)
-                theatres[id].mPlayerFlow.value!!.shutdown()
+            theatres[id].mPlayerFlow.value?.let {
+                val wasPlaying = it.isPlaying
+                if (wasPlaying) it.pause(reinit = false)
+                it.shutdown()
             }
         } catch (e: Exception) { Loge(TAG, e, "Error shutting down player $id")}
     }
@@ -420,8 +418,6 @@ class PlaybackService : MediaLibraryService() {
             mediaLibrarySession = null
         }
         theatres[1].mPlayerFlow.value?.onDestroy()
-        httpEngine = null
-        cronetEngine = null
 
         cancelFlowEvents()
         unregisterReceiver(autoStateUpdated)
@@ -430,8 +426,6 @@ class PlaybackService : MediaLibraryService() {
         unregisterReceiver(bluetoothStateUpdated)
         unregisterReceiver(audioBecomingNoisy)
         sleepManager?.disable()
-
-        releaseCache()
 
         cleanupTheatres()
         playbackService = null
@@ -638,7 +632,7 @@ class PlaybackService : MediaLibraryService() {
             val notificationMediaButtons = ImmutableList.builder<CommandButton>().apply {
                 add(NotificationCustomButton.RESTART.commandButton)
                 add(NotificationCustomButton.REWIND.commandButton)
-                if (defaultPlayPauseButton != null) add(defaultPlayPauseButton)
+                defaultPlayPauseButton?.let { add(it) }
                 add(NotificationCustomButton.FORWARD.commandButton)
                 if (appPrefsFlow!!.value.showSkip) add(NotificationCustomButton.SKIP.commandButton)
             }.build()

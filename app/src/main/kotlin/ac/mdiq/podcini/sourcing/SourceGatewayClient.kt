@@ -111,41 +111,6 @@ object AppGatewayRegistry {
     private val mutex = Mutex()
     private var isInitializing = false
 
-//    fun initialize(loadExternal: Boolean, scope: CoroutineScope) {
-//        scope.launch {
-//            Logd(TAG, "initialize loadExternal: $loadExternal")
-//            var currentDeferred: CompletableDeferred<List<SourceGatewayClient>>
-//            mutex.withLock {
-//                if (readyDeferred.isCompleted) readyDeferred.complete(emptyList())
-//                if (isInitializing) return@launch
-//                isInitializing = true
-//                _state.value = GatewayState.Initializing
-//
-//                if (readyDeferred.isCompleted) readyDeferred = CompletableDeferred()
-//                currentDeferred = readyDeferred
-//            }
-//            try {
-//                sourceClients.forEach { it.disconnect() }
-//                sourceClients.clear()
-//                if (loadExternal) {
-//                    val cs = getSourceClients()
-//                    if (cs.isNotEmpty()) sourceClients.addAll(cs)
-//                }
-//                forcePlaybackReset = true
-//                if (sourceClients.isNotEmpty()) {
-//                    _state.value = GatewayState.Ready(sourceClients)
-//                    currentDeferred.complete(sourceClients)
-//                } else {
-//                    _state.value = GatewayState.Failed()
-//                    currentDeferred.complete(emptyList())
-//                }
-//            } catch (e: Exception) {
-//                _state.value = GatewayState.Failed(e)
-//                currentDeferred.complete(emptyList())
-//            } finally { mutex.withLock { isInitializing = false } }
-//        }
-//    }
-
     fun initialize(loadExternal: Boolean, scope: CoroutineScope) {
         scope.launch {
             Logd(TAG, "initialize loadExternal: $loadExternal")

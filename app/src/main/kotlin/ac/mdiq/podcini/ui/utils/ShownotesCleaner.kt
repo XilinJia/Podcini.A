@@ -150,18 +150,8 @@ class ShownotesCleaner {
         }
 
         fun getTimecodeLinkTime(link: String?): Int {
-            if (isTimecodeLink(link)) {
-                val match = TIMECODE_LINK_REGEX.find(link!!)
-                if (match != null) try { return match.groupValues[1].toInt() } catch (e: Exception) {
-                    Logs(TAG, e)
-                }
-            }
-            if (isHTTPTimecodeLink(link)) {
-                val match = HTTP_TIMECODE_LINK_REGEX.find(link!!)
-                if (match != null) try { return match.groupValues[1].toInt() * 1000 } catch (e: Exception) {
-                    Logs(TAG, e)
-                }
-            }
+            if (isTimecodeLink(link)) TIMECODE_LINK_REGEX.find(link!!)?.let { try { return it.groupValues[1].toInt() } catch (e: Exception) { Logs(TAG, e) } }
+            if (isHTTPTimecodeLink(link)) HTTP_TIMECODE_LINK_REGEX.find(link!!)?.let { try { return it.groupValues[1].toInt() * 1000 } catch (e: Exception) { Logs(TAG, e) } }
             return -1
         }
     }

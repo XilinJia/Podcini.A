@@ -247,10 +247,7 @@ abstract class MediaPlayerBase {
                     realm.query(Episode::class).query("id == $0", episode_.id).asFlow().map { it.list.firstOrNull() }.collect { curMediaFlow.value = it }
                     if (!actQueueFlow.value.contains(curMediaFlow.value!!)) {
                         val qes = realm.query(QueueEntry::class).query("episodeId == ${curMediaFlow.value!!.id}").find()
-                        if (qes.isNotEmpty()) {
-                            val q = queuesLive.find { it.id == qes[0].queueId }
-                            if (q != null) actQueueFlow.value = q
-                        }
+                        if (qes.isNotEmpty()) queuesLive.find { it.id == qes[0].queueId }?.let { actQueueFlow.value = it }
                     }
                 }
             }
@@ -277,9 +274,7 @@ abstract class MediaPlayerBase {
             isInitialized -> saveCurState(media, newStatus)
             isPrepared -> {
                 saveCurState(media, newStatus)
-                if (media != null) runOnIOScope {
-                    try { loadChapters(media, false) } catch (e: Throwable) { LogsFor(TAG, media.id, e, "Error loading chapters for: ${media.title}") }
-                }
+                if (media != null) runOnIOScope { try { loadChapters(media, false) } catch (e: Throwable) { LogsFor(TAG, media.id, e, "Error loading chapters for: ${media.title}") } }
             }
             isPaused -> saveCurState(status_ = newStatus)
             isStopped -> {}
@@ -413,7 +408,7 @@ abstract class MediaPlayerBase {
 
     open fun getSelectedAudioTrack(): Int = -1
 
-    open fun resetMediaPlayer() {}
+    open fun resetPlayerAttributes() {}
 
     open fun createNativePlayer() {}
 
@@ -471,9 +466,9 @@ abstract class MediaPlayerBase {
         }
         Logd(TAG, "prepareMedia media.forceVideo: ${curMediaFlow.value?.forceVideo}")
         this.isStreaming = streaming
-        if (curMediaFlow.value != null) currentMediaType = curMediaFlow.value!!.mediaType
+        currentMediaType = curMediaFlow.value!!.mediaType
 //        videoSize = null
-        resetMediaPlayer()
+        resetPlayerAttributes()
 
         isStartWhenPrepared = startWhenPrepared
         prefSpeedPitchOf(curMediaFlow.value!!).let { (sp, pi)-> setPlaybackParams(sp, pi) }
@@ -582,10 +577,10 @@ abstract class MediaPlayerBase {
             isPlaying || isPaused || isPrepared -> {
                 Logd(TAG, "seekTo t: $t statusFlow: $status")
                 castPlayer?.seekTo(t.toLong())
-                if (curMediaFlow.value != null) upsertBlk(curMediaFlow.value!!) { it.position = t }
+                curMediaFlow.value?.let { m-> upsertBlk(m) { it.position = t } }
             }
             isInitialized -> {
-                if (curMediaFlow.value != null) upsertBlk(curMediaFlow.value!!) { it.position = t }
+                curMediaFlow.value?.let { m-> upsertBlk(m) { it.position = t } }
                 isStartWhenPrepared = false
                 prepareInitialized()
             }
@@ -682,7 +677,7 @@ abstract class MediaPlayerBase {
                 // Start playback immediately if continuous playback is enabled
                 val nextMedia = getNextInQueue()
                 if (nextMedia == null) {
-                    if (currentMedia != null) onPostPlayback(currentMedia, hasEnded, wasSkipped, false)
+                    currentMedia?.let { onPostPlayback(it, hasEnded, wasSkipped, false) }
                     stopPlayer()
                 } else {
                     Logd(TAG, "endPlayback has nextMedia. statusFlow: $status ${nextMedia.title}")
@@ -697,7 +692,7 @@ abstract class MediaPlayerBase {
                     val needStreaming = (nextMedia.feed?.isLocal != true && nextMedia.fileUrl.isNullOrBlank())
                     if (needStreaming) {
                         if (!isStreamingCapable(nextMedia)) {
-                            if (currentMedia != null) onPostPlayback(currentMedia, hasEnded, wasSkipped, false)
+                            currentMedia?.let { onPostPlayback(it, hasEnded, wasSkipped, false) }
                             return
                         }
                     }
@@ -714,7 +709,7 @@ abstract class MediaPlayerBase {
 
             else -> {
                 Logd(TAG, "endPlayback else")
-                if (currentMedia != null) onPostPlayback(currentMedia, hasEnded, wasSkipped, false)
+                currentMedia?.let { onPostPlayback(it, hasEnded, wasSkipped, false) }
                 stopPlayer()
             }
         }
@@ -776,7 +771,7 @@ abstract class MediaPlayerBase {
         cancelPositionSaver()
         persistCurrentPosition(position == Episode.INVALID_TIME || playable == null, playable, position)
         Logd(TAG, "onPlaybackPause start ${playable?.timeSpent}")
-        if (playable != null) SynchronizationQueueSink.enqueueEpisodePlayedIfSyncActive(playable, false)
+        playable?.let { SynchronizationQueueSink.enqueueEpisodePlayedIfSyncActive(it, false) }
     }
 
     private fun onPostPlayback(playable: Episode, ended: Boolean, skipped: Boolean, playingNext: Boolean) {

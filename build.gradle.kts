@@ -4,9 +4,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "${project.findProperty("kotlin_version")}" apply false
     kotlin("plugin.serialization") version "${project.findProperty("kotlin_version")}" apply false
     id("io.github.xilinjia.krdb") version "${project.findProperty("krdb_version")}" apply false
-//    id("com.google.gms.google-services") version "4.4.4" apply false
 }
 
 buildscript {
-    dependencies {}
+    dependencies {
+        classpath("com.android.tools.build:gradle:9.4.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0")
+    }
 }

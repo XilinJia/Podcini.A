@@ -375,12 +375,7 @@ fun QueuesScreen(id: Long = -1L) {
                 if (toSetStat.isNotEmpty()) realm.write { for (e in toSetStat) findLatest(e)?.setPlayState(EpisodeState.SKIPPED, false) }
                 if (curQueue.id == actQueue.id) EventFlow.postEvent(FlowEvent.QueueEvent.cleared())
                 curQueue.checkAndFill()
-                realm.writeBlocking {
-                    for (qe in qes) {
-                        val qe_ = findLatest(qe)
-                        if (qe_ != null) delete(qe_)
-                    }
-                }
+                realm.write { for (qe in qes) findLatest(qe)?.let { delete(it) } }
             }
         }
 
@@ -657,8 +652,7 @@ fun QueuesScreen(id: Long = -1L) {
                                     episodes.forEach { findLatest(it)?.setPlayState(EpisodeState.UNPLAYED) }
                                     val qDef = queuesLive.find { q-> q.id == 0L }
                                     allFeeds.filter { it.queueId == curQueue.id }.forEach { findLatest(it)?.queue = qDef }
-                                    val q = findLatest(curQueue)
-                                    if (q != null) delete(q)
+                                    findLatest(curQueue)?.let { delete(it) }
                                 }
                                 upsert(appAttribs) { it.queuesMode = QueuesScreenMode.Queue.name }
                                 withContext(Dispatchers.Main) {
