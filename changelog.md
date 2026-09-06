@@ -2,6 +2,7 @@
 
 * created a separate "legacy" flavor by compressing libs to generate smaller apk's, only for apk-size conscious people
 	* downside is the install size is larger and first launch somewhat slower
+	* note: you can download/install any one and re-try another one, they are inter-changeable, except that the v8a apk's don't work on older phones (which perhaps don't exist now given minSDK required for the app is 26), or on a Chromebook.
 * some code refactoring
 * some dependencies update
 
