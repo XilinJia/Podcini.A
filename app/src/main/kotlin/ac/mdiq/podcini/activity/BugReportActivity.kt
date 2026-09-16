@@ -2,6 +2,7 @@ package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.config.settings.developerEmail
 import ac.mdiq.podcini.config.settings.githubAddress
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -84,6 +85,8 @@ class BugReportActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        initialize()
 
         window.requestFeature(Window.FEATURE_ACTION_MODE_OVERLAY)
         enableEdgeToEdge(window)

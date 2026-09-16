@@ -29,7 +29,6 @@ class PodciniApp : Application() {
             val builder: StrictMode.VmPolicy.Builder = StrictMode.VmPolicy.Builder().detectAll().penaltyLog().penaltyDropBox()
             StrictMode.setVmPolicy(builder.build())
         }
-        ClientConfig.initialize()
     }
 
     override fun onTerminate() {

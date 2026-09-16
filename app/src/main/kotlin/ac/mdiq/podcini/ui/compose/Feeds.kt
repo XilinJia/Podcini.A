@@ -32,6 +32,7 @@ import ac.mdiq.podcini.ui.screens.navTo
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.formatLargeInteger
 import ac.mdiq.podcini.utils.formatWithGrouping
 import ac.mdiq.podcini.utils.fullDateTimeString
@@ -220,7 +221,7 @@ fun OnlineFeedItem(result: FeedSearchResult, log: SubscriptionLog? = null) {
         
         Row {
             Box(modifier = Modifier.width(80.dp).height(80.dp)) {
-                AsyncImage(model = ImageRequest.Builder(context).data(result.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.fillMaxSize())
+                AsyncImage(model = ImageRequest.Builder(context).data(result.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.fillMaxSize())
                 if (result.feedId > 0 || log != null) {
                     Logd("OnlineFeedItem", "${result.feedId} $log")
                     val iRes = remember(result) { if (result.feedId > 0) R.drawable.ic_check else R.drawable.baseline_clear_24 }
@@ -376,7 +377,7 @@ fun AssociatedFeedsGrid(feedsAssociated: List<Feed>) {
         items(feedsAssociated, key = {it.id}) { feed ->
             ConstraintLayout {
                 val (coverImage, episodeCount, rating, _) = createRefs()
-                AsyncImage(model = ImageRequest.Builder(context).data(feed.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "coverImage",
+                AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "coverImage",
                     colorFilter = if (!feed.inNormalVolume) ColorFilter.tint(color = Color.Gray.copy(alpha = 0.5f), blendMode = BlendMode.SrcAtop) else null,
                     modifier = Modifier.height(100.dp).aspectRatio(1f)
                         .constrainAs(coverImage) {

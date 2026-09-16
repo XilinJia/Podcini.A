@@ -2,17 +2,19 @@ package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager
-import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
-import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.scheduleUpdateTaskOnce
-import ac.mdiq.podcini.sync.SyncService
-import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
+import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.ClientConfig.isInitialized
 import ac.mdiq.podcini.playback.base.TTSEngine.closeTTS
 import ac.mdiq.podcini.playback.cast.BaseActivity
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.scheduleUpdateTaskOnce
 import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.appPrefsFlow
+import ac.mdiq.podcini.storage.database.migrationProg
+import ac.mdiq.podcini.storage.database.migrationStep
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
@@ -20,6 +22,8 @@ import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.autoBackup
+import ac.mdiq.podcini.sync.SyncService
+import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.PodciniTheme
 import ac.mdiq.podcini.ui.compose.commonConfirms
@@ -62,14 +66,21 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,11 +91,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat.enableEdgeToEdge
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -132,8 +144,6 @@ class MainActivity : BaseActivity() {
 
 
     public override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
-
         window.requestFeature(Window.FEATURE_ACTION_MODE_OVERLAY)
         enableEdgeToEdge(window)
 
@@ -146,58 +156,84 @@ class MainActivity : BaseActivity() {
         }
 
         super.onCreate(savedInstanceState)
-        handleNavIntent()
 
         timeIt("$TAG after handleNavIntent")
-        intentState = intent
 
 //        if (savedInstanceState != null) hasInitialized.value = savedInstanceState.getBoolean(INIT_KEY, false)
 //        if (!hasInitialized.value) hasInitialized.value = true
 
         title = "Podcini.MainActivity"
 
-        setContent { PodciniTheme { intentState?.let {
-            if (showUnrestrictedBackgroundPermissionDialog) UnrestrictedBackgroundPermissionDialog { showUnrestrictedBackgroundPermissionDialog = false }
-            MainScreen()
-        } } }
-
-        timeIt("$TAG after setContent")
-
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) postForNotificationPermission()
-        else checkAndRequestUnrestrictedBackgroundActivity()
-
-        if (savedInstanceState == null) {
-            timeIt("$TAG after checking permission")
-            val currentVersion = packageManager.getPackageInfo(packageName, 0).versionName ?: "0"
-            if (currentVersion != appPrefsFlow!!.value.lastVersion) {
-                runOnIOScope {
-                    upsert(appPrefsFlow!!.value) { it.lastVersion = currentVersion }
-                    crashLogFile.delete()
+        setContent {
+            val initialized by isInitialized.collectAsStateWithLifecycle()
+            if (!initialized) {
+                val step by migrationStep.collectAsStateWithLifecycle()
+                val prog by migrationProg.collectAsStateWithLifecycle()
+                MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        Column(verticalArrangement = Arrangement.Center) {
+                            AsyncImage(model = R.drawable.teaser, contentDescription = "Teaser", modifier = Modifier.fillMaxWidth())
+                            Text(text = stringResource(R.string.init_text), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                            Text(text = "$step: $prog" , style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            } else {
+                PodciniTheme {
+                    intentState?.let {
+                        if (showUnrestrictedBackgroundPermissionDialog) UnrestrictedBackgroundPermissionDialog { showUnrestrictedBackgroundPermissionDialog = false }
+                        MainScreen()
+                    }
                 }
             }
-
-            SynchronizationQueueSink.setServiceStarterImpl { SyncService.sync() }
-            scheduleUpdateTaskOnce(replace = false)
         }
 
-        runOnIOScope { SynchronizationQueueSink.syncNowIfNotSyncedRecently() }
+        window.decorView.postOnAnimation {
+            lifecycleScope.launch(Dispatchers.IO) {
+                initialize()
 
-        WorkManager.getInstance(this).getWorkInfosByTagLiveData(FeedUpdateManager.WORK_TAG_FEED_UPDATE).observe(this) { workInfos: List<WorkInfo> ->
-            if (!hasFeedUpdateObserverStarted) {
-                hasFeedUpdateObserverStarted = true
-                return@observe
-            }
-            var isRefreshingFeeds = false
-            for (workInfo in workInfos) {
-                when (workInfo.state) {
-                    WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED -> isRefreshingFeeds = true
-                    else -> {}
+                withContext(Dispatchers.Main) {
+                    handleNavIntent()
+                    intentState = intent
+
+                    timeIt("$TAG after setContent")
+
+                    if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) postForNotificationPermission()
+                    else checkAndRequestUnrestrictedBackgroundActivity()
+
+                    if (savedInstanceState == null) {
+                        timeIt("$TAG after checking permission")
+                        val currentVersion = packageManager.getPackageInfo(packageName, 0).versionName ?: "0"
+                        if (currentVersion != appPrefsFlow!!.value.lastVersion) {
+                            runOnIOScope {
+                                upsert(appPrefsFlow!!.value) { it.lastVersion = currentVersion }
+                                crashLogFile.delete()
+                            }
+                        }
+                        SynchronizationQueueSink.setServiceStarterImpl { SyncService.sync() }
+                        scheduleUpdateTaskOnce(replace = false)
+                    }
+
+                    runOnIOScope { SynchronizationQueueSink.syncNowIfNotSyncedRecently() }
+
+                    WorkManager.getInstance(this@MainActivity).getWorkInfosByTagLiveData(FeedUpdateManager.WORK_TAG_FEED_UPDATE).observe(this@MainActivity) { workInfos: List<WorkInfo> ->
+                        if (!hasFeedUpdateObserverStarted) {
+                            hasFeedUpdateObserverStarted = true
+                            return@observe
+                        }
+                        var isRefreshingFeeds = false
+                        for (workInfo in workInfos) {
+                            when (workInfo.state) {
+                                WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED -> isRefreshingFeeds = true
+                                else -> {}
+                            }
+                        }
+                        EventFlow.postStickyEvent(FlowEvent.FeedUpdatingEvent(isRefreshingFeeds))
+                    }
+                    timeIt("$TAG end of onCreate")
                 }
             }
-            EventFlow.postStickyEvent(FlowEvent.FeedUpdatingEvent(isRefreshingFeeds))
         }
-
-        timeIt("$TAG end of onCreate")
     }
 
     @Composable
@@ -260,6 +296,8 @@ class MainActivity : BaseActivity() {
     private var firstStart = true
     override fun onResume() {
         super.onResume()
+        if (!isInitialized.value) return
+
         autoBackup()
 
         if (!firstStart && appPrefsFlow?.value?.loadExternalApp == true && sourceClients.isEmpty())

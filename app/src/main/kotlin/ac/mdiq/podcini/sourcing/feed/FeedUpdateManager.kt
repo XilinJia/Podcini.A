@@ -3,6 +3,8 @@ package ac.mdiq.podcini.sourcing.feed
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.NotificationIds
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.createNotification
 import ac.mdiq.podcini.utils.NetworkUtils.isFeedRefreshAllowed
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowFeedRefresh
@@ -184,8 +186,9 @@ object FeedUpdateManager {
 
         @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
         override suspend fun doWork(): Result {
+            initialize()
             setForegroundAsync(getForegroundInfo())
-//            ClientConfig.initialize()
+
             if (appPrefsFlow!!.value.loadExternalApp) {
                 AppGatewayRegistry.awaitReady()
                 delay(4.seconds)
@@ -258,7 +261,7 @@ object FeedUpdateManager {
 
         override suspend fun getForegroundInfo(): ForegroundInfo {
             return withContext(Dispatchers.Main) {
-                ForegroundInfo(R.id.notification_updating_feeds, createNotification(null),
+                ForegroundInfo(NotificationIds.updating_feeds, createNotification(null),
                     if (Build.VERSION.SDK_INT >= 29) FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0 )
             }
         }

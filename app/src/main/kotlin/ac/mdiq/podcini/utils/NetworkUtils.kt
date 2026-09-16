@@ -1,8 +1,10 @@
 package ac.mdiq.podcini.utils
 
 import ac.mdiq.podcini.PodciniApp
+import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.PodciniHttpClient
+import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.upsertBlk
 import android.annotation.SuppressLint
@@ -10,6 +12,8 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import coil3.ImageLoader
+import coil3.network.ktor3.KtorNetworkFetcherFactory
 import io.github.xilinjia.krdb.ext.toRealmSet
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -201,6 +205,8 @@ object NetworkUtils {
 //            }
 //        }
     }
+
+    val imageLoader by lazy { ImageLoader.Builder(getAppContext()).components { add(KtorNetworkFetcherFactory(httpClient = getKtorClient())) }.build() }
 
     val networkMonitor: NetworkMonitor by lazy { NetworkMonitor() }
 

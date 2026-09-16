@@ -37,6 +37,7 @@ import ac.mdiq.podcini.storage.database.shelveToFeed
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.database.upsertBlkEmb
+import ac.mdiq.podcini.storage.model.CaptionCue
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -87,6 +88,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -110,7 +112,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
@@ -141,6 +142,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -313,16 +315,53 @@ fun Context.findActivity(): Activity? = when (this) {
 
 @Composable
 fun TranscriptDialog(episode: Episode, player:  MediaPlayerBase? = null, cueIndex: Int = -1, onDismiss: () -> Unit) {
-    CommonDialogSurface(onDismiss = onDismiss) {
-        Box(Modifier.height(300.dp)) {
-            SelectionContainer {
-                LazyColumn {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(4.dp), border = BorderStroke(1.dp, borderColor)) {
+            var selectMode by remember { mutableStateOf(false) }
+            val selected = remember { mutableStateSetOf<CaptionCue>() }
+            Column(Modifier.fillMaxWidth().height(300.dp)) {
+                LazyColumn(modifier = Modifier.weight(1f)) {
                     itemsIndexed(episode.captionCues) { i, c ->
-                        val color = if (i == cueIndex) textColor else textColor.copy(alpha = 0.75f)
-                        Text("${durationStringAdapt(c.startMs.toInt())}| ${c.speaker}: ${c.text}", color = color, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.then(if (i == cueIndex) Modifier.border(width = 1.dp, color = borderColor.copy(alpha = 0.5f)) else Modifier).clickable {
-                            player?.seekTo(c.startMs.toInt())
-                        })
+                        val color = if (cueIndex == -1 || i == cueIndex) textColor else textColor.copy(alpha = 0.75f)
+                        var isSelected by remember(i,  selectMode, selected.size) { mutableStateOf( selectMode && c in selected ) }
+                        Text("${durationStringAdapt(c.startMs.toInt())}| ${c.speaker}: ${c.text}", color = color, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.then(if (i == cueIndex) Modifier.border(width = 1.dp, color = borderColor.copy(alpha = 0.5f)) else Modifier).background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface).combinedClickable(
+                            onClick = {
+                                if (selectMode) {
+                                    if (c in selected) selected.remove(c)
+                                    else selected.add(c)
+                                } else player?.seekTo(c.startMs.toInt())
+                            },
+                            onLongClick = {
+                                selectMode = !selectMode
+                                if (selectMode) selected.add(c)
+                                else selected.clear()
+                            }
+                        ) )
                     }
+                }
+                if (selected.isNotEmpty()) {
+                    HorizontalDivider()
+                    TextButton(modifier = Modifier.align(Alignment.End), onClick = {
+                        val selList = selected.sortedBy { it.startMs }
+                        runOnIOScope {
+                            val commentText = buildString {
+                                for (t in selList) {
+                                    if (isNotEmpty()) append('\n')
+                                    append(durationStringAdapt(t.startMs.toInt()))
+                                    append("| ")
+                                    append(t.speaker)
+                                    append(": ")
+                                    append(t.text)
+                                }
+                            }
+                            upsert(episode) {
+                                it.marks.add(selList[0].startMs)
+                                it.addComment(commentText)
+                            }
+                        }
+                        selected.clear()
+                        selectMode = false
+                    }) { Text(text = stringResource(R.string.save)) }
                 }
             }
         }
@@ -330,7 +369,7 @@ fun TranscriptDialog(episode: Episode, player:  MediaPlayerBase? = null, cueInde
 }
 
 @Composable
-fun EpisodeDetails(episode: Episode, player:  MediaPlayerBase? = null, cueIndex: Int = -1, fetchWebdata: Boolean = true, fetchChapters: Boolean = false) {
+fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters: Boolean = false) {
     val context by rememberUpdatedState(LocalContext.current)
     val activity = context.findActivity() ?: error("WebView requires an Activity context")
 
@@ -405,7 +444,7 @@ fun EpisodeDetails(episode: Episode, player:  MediaPlayerBase? = null, cueIndex:
             val playTimeText = remember(episode.lastPlayedTime) { formatDateTimeFlex(episode.lastPlayedTime) }
             Text(stringResource(R.string.last_played_date) + ": " + playTimeText, color = textColor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, top = 10.dp, bottom = 4.dp))
         }
-
+        if (episode.aiContent == true) Text(stringResource(R.string.is_ai_content), color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp))
         if (episode.transcriptMetas.isNotEmpty()) {
             var showTransOptions by remember { mutableStateOf(false) }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1310,7 +1349,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                         onFilterChanged(filter)
                     }) { Text(stringResource(R.string.reset)) }
                     Spacer(Modifier.weight(0.4f))
-                    Button(onClick = { onDismiss() }) { Text(stringResource(R.string.close_label)) }
+                    Button(onClick = { onDismiss() }) { Text(stringResource(R.string.close)) }
                     Spacer(Modifier.weight(0.3f))
                 }
             }

@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 122
-        versionName = "12.10.1"
+        versionCode = 123
+        versionName = "12.11.0"
 
         ndkVersion = "29.0.14206865"
 
@@ -236,7 +236,7 @@ dependencies {
     implementation("androidx.annotation:annotation:1.10.0")
     implementation("androidx.core:core-ktx:1.19.0")
     implementation("androidx.documentfile:documentfile:1.1.0")
-    implementation("androidx.core:core-splashscreen:1.2.0")
+//    implementation("androidx.core:core-splashscreen:1.2.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     implementation("androidx.webkit:webkit:1.17.0")
     implementation("androidx.work:work-runtime:2.11.2")
@@ -268,7 +268,7 @@ dependencies {
     implementation("io.github.xilinjia.krdb:library-base:${project.property("krdb_version")}")
 
     implementation("io.coil-kt.coil3:coil-compose:3.6.2")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.2")
+    implementation("io.coil-kt.coil3:coil-network-ktor3:3.6.2")
 
     implementation("io.ktor:ktor-http:3.5.2")
     implementation("io.ktor:ktor-client-core:3.5.2")

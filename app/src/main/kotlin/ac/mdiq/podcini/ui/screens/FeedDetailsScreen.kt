@@ -2,24 +2,23 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.download.RequestType
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater
-import ac.mdiq.podcini.sourcing.sendFeed
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.sourcing.isExtFeed
+import ac.mdiq.podcini.sourcing.sendFeed
 import ac.mdiq.podcini.sourcing.typeClientMap
 import ac.mdiq.podcini.storage.database.FeedAssistant
 import ac.mdiq.podcini.storage.database.buildListInfo
-import ac.mdiq.podcini.ui.compose.feedOperationText
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesAsListFlow
 import ac.mdiq.podcini.storage.database.getHistoryAsFlow
 import ac.mdiq.podcini.storage.database.queueToVirtual
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult
@@ -32,7 +31,6 @@ import ac.mdiq.podcini.storage.model.allVolumes
 import ac.mdiq.podcini.storage.specs.EpisodeFilter
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.compareToNatural
-import ac.mdiq.podcini.storage.specs.FeedFunding
 import ac.mdiq.podcini.storage.specs.Rating
 import ac.mdiq.podcini.storage.specs.Rating.Companion.fromCode
 import ac.mdiq.podcini.storage.utils.AddLocalFolder
@@ -59,12 +57,14 @@ import ac.mdiq.podcini.ui.compose.TagSettingDialog
 import ac.mdiq.podcini.ui.compose.TagType
 import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.episodeForInfo
+import ac.mdiq.podcini.ui.compose.feedOperationText
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.utils.HtmlToPlainText
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.formatAbbrev
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.fullDateTimeString
@@ -263,6 +263,8 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     val feed by vm.feedFlow.collectAsStateWithLifecycle()
     val screenMode by vm.screenModeFlow.collectAsStateWithLifecycle()
 
+    Logd(TAG, "FeedDetailsScreen guid: ${feed?.identifier} medium: ${feed?.medium} aiContent: ${feed?.aiContent} images: ${feed?.images?.size}")
+    feed?.images?.forEach { Logd(TAG, "FeedDetailsScreen image: ${it.type} ${it.purpose} ${it.aspectRatio} ${it.width} ${it.height} ${it.href}") }
     val deletionLogs = remember { mutableStateSetOf<SubscriptionLog>() }
     LaunchedEffect(feed?.id) {
         deletionLogs.clear()
@@ -428,12 +430,12 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
         val buttonAltColor = lerp(MaterialTheme.colorScheme.tertiary, Color.Green, 0.5f)
 
         Box(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
-            AsyncImage(model = feed?.imageUrl?:"", contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 5.dp, radiusY = 5.dp))
+            AsyncImage(model = feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, error = painterResource(R.drawable.teaser), contentDescription = "bgImage", contentScale = ContentScale.FillBounds, modifier = Modifier.matchParentSize().blur(radiusX = 5.dp, radiusY = 5.dp))
             Box(modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)))
             Column {
                 Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(ImageVector.vectorResource(R.drawable.outline_square_dot_24), contentDescription = "Open Drawer", modifier = Modifier.padding(end = 10.dp).clickable { drawerController?.open() } )
-                    AsyncImage(model = feed?.imageUrl ?: "", alignment = Alignment.TopStart, contentDescription = "imgvCover", error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(24.dp).height(24.dp).border(2.dp, MaterialTheme.colorScheme.tertiary).combinedClickable(
+                    AsyncImage(model = feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, alignment = Alignment.TopStart, contentDescription = "imgvCover", error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(24.dp).height(24.dp).border(2.dp, MaterialTheme.colorScheme.tertiary).combinedClickable(
                         onClick = { if (feed != null) vm.screenModeFlow.value = if (screenMode == FeedScreenMode.List) FeedScreenMode.Info else FeedScreenMode.List },
                         onLongClick = { onImgLongClick() }))
                     Spacer(Modifier.weight(1f))
@@ -568,6 +570,8 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                 Column {
                     Text(feed?.title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 16.dp))
                     Text(stringResource(R.string.by) + ": " + (feed?.author?.ifBlank { "Anonymous" } ?: "Anonymous"), color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                    if (!feed?.medium.isNullOrBlank()) Text(stringResource(R.string.medium) + ": " + feed!!.medium!!, color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                    if (feed?.aiContent == true) Text(stringResource(R.string.is_ai_content), color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)) {
                         Text(stringResource(R.string.score) + ": " + (feed?.score).toString() + " (" + feed?.scoreCount + ")", textAlign = TextAlign.End, color = textColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
                         Spacer(modifier = Modifier.weight(0.2f))
@@ -637,7 +641,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                         }
                     }
                 }
-                AsyncImage(model = feed?.imageUrl ?: "", contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
+                AsyncImage(model = feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
                 Text(text = feed?.downloadUrl ?: "", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 15.dp).combinedClickable(
                     onClick = { if (!feed?.downloadUrl.isNullOrBlank()) openInSystemDefault(feed!!.downloadUrl!!) },
                     onLongClick = {
@@ -649,32 +653,15 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                         }
                     }
                 ))
-                if (!feed?.paymentLinkList.isNullOrEmpty()) {
-                    Text(stringResource(R.string.support_funding_label), color = textColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
-                    fun fundingText(): String {
-                        val fundingList: MutableList<FeedFunding> = feed!!.paymentLinkList
-                        val i: MutableIterator<FeedFunding> = fundingList.iterator()
-                        while (i.hasNext()) {
-                            val funding: FeedFunding = i.next()
-                            for (other in fundingList) {
-                                if (other.url == funding.url) {
-                                    if (other.content != null && funding.content != null && other.content!!.length > funding.content!!.length) {
-                                        i.remove()
-                                        break
-                                    }
-                                }
-                            }
-                        }
-                        val sb = StringBuilder()
-                        val supportPodcast = getAppContext().resources.getString(R.string.support_podcast)
-                        for (funding in fundingList) {
-                            sb.append(if (funding.content == null || funding.content!!.isEmpty())  supportPodcast else funding.content).append(" ").append(funding.url)
-                            sb.append("\n")
-                        }
-                        return StringBuilder(sb.toString().trim()).toString()
+                if (!feed?.fundings.isNullOrEmpty()) {
+                    for (fund in feed!!.fundings) {
+                        val url = fund.url.takeIf { !it.isNullOrBlank() } ?: continue
+                        Text("${fund.content?:""} $url", color = textColor, modifier = Modifier.clickable {
+                            val uri = Uri.parse(url)
+                            val intent = Intent(Intent.ACTION_VIEW, uri).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                            try { context.startActivity(intent) } catch (e: ActivityNotFoundException) { Loge(TAG, e,"No app found to handle this link") }
+                        })
                     }
-                    val fundText = remember { fundingText() }
-                    Text(fundText, color = textColor)
                 }
             }
         }

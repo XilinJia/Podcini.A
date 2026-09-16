@@ -53,6 +53,7 @@ import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatLargeIntegerBrief
 import ac.mdiq.podcini.utils.formatNumberKmp
@@ -448,7 +449,7 @@ fun ControlUI(vm: AVPlayerVM) {
             },
         )
     }) {
-        AsyncImage(model = ImageRequest.Builder(context).data(episode?.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(50.dp).height(50.dp).border(border = BorderStroke(1.dp, borderColor)).padding(start = 5.dp).combinedClickable(
+        AsyncImage(model = ImageRequest.Builder(context).data(episode?.images?.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(50.dp).height(50.dp).border(border = BorderStroke(1.dp, borderColor)).padding(start = 5.dp).combinedClickable(
             onClick = {
                 Logd(TAG, "playerUi icon was clicked $psState")
                 actPlayerId = vm.playerId
@@ -723,7 +724,7 @@ fun AVPlayerScreen() {
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { showAudioControlDialog = false }) { Text(stringResource(R.string.close_label)) } }
+        confirmButton = { TextButton(onClick = { showAudioControlDialog = false }) { Text(stringResource(R.string.close)) } }
     )
 
     var showVolumeDialog by remember { mutableStateOf(false) }
@@ -737,7 +738,7 @@ fun AVPlayerScreen() {
 
     var cueIndex by remember { mutableIntStateOf(-1) }
     var showTransDialog by remember { mutableStateOf(false) }
-    if (showTransDialog && curMedia != null) TranscriptDialog(curMedia, player, cueIndex) { showTransDialog = false }
+    if (showTransDialog && curMedia != null) TranscriptDialog(curMedia, player = player, cueIndex = cueIndex) { showTransDialog = false }
 
     @Composable
     fun PlayerUI(vm: AVPlayerVM, modifier: Modifier) {
@@ -745,7 +746,7 @@ fun AVPlayerScreen() {
         val episode by player?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 //        Logd(TAG, "PlayerUI vm.playerId: ${vm.playerId} ${episode?.id}")
         Box(modifier = modifier.fillMaxWidth().height(100.dp).border(1.dp, MaterialTheme.colorScheme.tertiary)) {
-            AsyncImage(model = episode?.imageUrl?:episode?.feed?.imageUrl?:"", contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 3.dp, radiusY = 3.dp))
+            AsyncImage(model = (episode?.images?.firstOrNull() ?: episode?.feed?.images?.firstOrNull())?.href, imageLoader = imageLoader, contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 3.dp, radiusY = 3.dp))
             Box(modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)))
             Column {
                 Text(episode?.title ?: "No title", maxLines = 1, color = textColor, style = MaterialTheme.typography.bodyMedium)
@@ -781,22 +782,19 @@ fun AVPlayerScreen() {
                     PlaybackStarter(media).shouldStreamThisTime(null).start()
                     player?.playingVideoFlow?.value = false
                 }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_audiotrack_24), contentDescription = "audio only") }
-                var sleepIconRes by remember { mutableIntStateOf(if (!isSleepTimerActive()) R.drawable.ic_sleep else R.drawable.ic_sleep_off) }
-                IconButton(onClick = { showSleepTimeDialog = true }) { Icon(imageVector = ImageVector.vectorResource(sleepIconRes), contentDescription = "sleeper") }
+                if (client?.attributes?.hasMultiQualities == true) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_stream_24), contentDescription = "change stream", modifier = Modifier.clickable { showAVChooser = true })
+                Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_volume_adaption), tint = textColor, contentDescription = "Volume adaptation", modifier = Modifier.clickable {
+                    actPlayerId = vm.playerId
+                    showVolumeDialog = true
+                })
                 (context as? BaseActivity)?.CastIconButton()
-                IconButton(onClick = { actPlayerId = vm.playerId; showShareDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_share), contentDescription = "share") }
             }
             Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                 IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                 DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
-                    if (client?.attributes?.hasMultiQualities == true) DropdownMenuItem(text = { Text(stringResource(R.string.change_stream)) }, onClick = {
-                        showAVChooser = true
-                        expanded = false
-                    })
                     if (vm0.landscape) {
-                        var sleeperRes by remember { mutableIntStateOf(if (!isSleepTimerActive()) R.string.set_sleeptimer_label else R.string.sleep_timer_label) }
-                        DropdownMenuItem(text = { Text(stringResource(sleeperRes)) }, onClick = {
-                            showSleepTimeDialog = true
+                        if (client?.attributes?.hasMultiQualities == true) DropdownMenuItem(text = { Text(stringResource(R.string.change_stream)) }, onClick = {
+                            showAVChooser = true
                             expanded = false
                         })
                         DropdownMenuItem(text = { Text(stringResource(R.string.queue)) }, onClick = {
@@ -807,18 +805,23 @@ fun AVPlayerScreen() {
                             vm.episodeFeed?.let { navTo(FeedDetails(feedId=it.id)) }
                             expanded = false
                         })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.share_label)) }, onClick = {
-                            actPlayerId = vm.playerId
-                            showShareDialog = true
-                            expanded = false
-                        })
                         DropdownMenuItem(text = { Text(stringResource(R.string.playback_speed)) }, onClick = {
                             actPlayerId = vm.playerId
                             showSpeedDialog = true
                             expanded = false
                         })
                     }
-                    if ((player?.audioTracks?.size?:0) >= 2) DropdownMenuItem(text = { Text(stringResource(R.string.audio_controls)) }, onClick = {
+                    var sleeperRes by remember { mutableIntStateOf(if (!isSleepTimerActive()) R.string.set_sleeptimer_label else R.string.sleep_timer_label) }
+                    DropdownMenuItem(text = { Text(stringResource(sleeperRes)) }, onClick = {
+                        showSleepTimeDialog = true
+                        expanded = false
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.share_label)) }, onClick = {
+                        actPlayerId = vm.playerId
+                        showShareDialog = true
+                        expanded = false
+                    })
+                    if ((player?.audioTracks?.size?:0) > 1) DropdownMenuItem(text = { Text(stringResource(R.string.audio_controls)) }, onClick = {
                         actPlayerId = vm.playerId
                         showAudioControlDialog = true
                         expanded = false
@@ -854,18 +857,22 @@ fun AVPlayerScreen() {
                     PlaybackStarter(media).shouldStreamThisTime(null).start()
                     player?.playingVideoFlow?.value = true
                 })
-            Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_volume_adaption), tint = textColor, contentDescription = "Volume adaptation", modifier = Modifier.clickable {
-                actPlayerId = vm.playerId
-                showVolumeDialog = true
-            })
+            if (client?.attributes?.hasMultiQualities == true) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_stream_24), contentDescription = "change stream", modifier = Modifier.clickable { showAVChooser = true })
+
             val sleepRes = if (vm0.sleepTimerActive) R.drawable.ic_sleep_off else R.drawable.ic_sleep
             Icon(imageVector = ImageVector.vectorResource(sleepRes), tint = textColor, contentDescription = "Sleep timer", modifier = Modifier.clickable { showSleepTimeDialog = true })
             (context as? BaseActivity)?.CastIconButton()
             Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                 IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                 DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
-                    if (client?.attributes?.hasMultiQualities == true) DropdownMenuItem(text = { Text(stringResource(R.string.change_stream)) }, onClick = {
-                        showAVChooser = true
+                    if ((player?.audioTracks?.size?:0) > 1) DropdownMenuItem(text = { Text(stringResource(R.string.audio_controls)) }, onClick = {
+                        actPlayerId = vm.playerId
+                        showAudioControlDialog = true
+                        expanded = false
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.volume_adaptation)) }, onClick = {
+                        actPlayerId = vm.playerId
+                        showVolumeDialog = true
                         expanded = false
                     })
                     DropdownMenuItem(text = { Text(stringResource(R.string.share_label)) }, onClick = {
@@ -1140,7 +1147,10 @@ fun AVPlayerScreen() {
                 Spacer(modifier = Modifier.weight(0.1f))
                 if (episode.captionCues.isNotEmpty()) Icon(imageVector = if (showCaption) Icons.Default.CheckCircle else ImageVector.vectorResource(androidx.media3.session.R.drawable.media3_icon_closed_captions),
                     contentDescription = "caption", tint = if (showCaption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.combinedClickable(
-                        onClick = { showCaption = !showCaption },
+                        onClick = {
+                            showCaption = !showCaption
+                            if (!showCaption) cueIndex = -1
+                        },
                         onLongClick = {
                             val pos = player?.getPosition()?:0
                             runOnIOScope { upsert(episode) { it.transcriptStartPos = pos } }
@@ -1201,12 +1211,12 @@ fun AVPlayerScreen() {
                     })
                 }
             }
-            EpisodeDetails(episode, player = player, cueIndex = cueIndex, fetchWebdata =  psState == PSState.Expanded, fetchChapters = true)
+            EpisodeDetails(episode, fetchWebdata =  psState == PSState.Expanded, fetchChapters = true)
             val imgLarge = remember(episode.id, displayedChapterIndex) {
-                if (displayedChapterIndex == -1 || episode.chapters.isEmpty() || episode.chapters[displayedChapterIndex].imageUrl.isNullOrEmpty()) episode.imageUrl ?: episode.feed?.imageUrl
+                if (displayedChapterIndex == -1 || episode.chapters.isEmpty() || episode.chapters[displayedChapterIndex].imageUrl.isNullOrEmpty()) (episode.images.firstOrNull() ?: episode.feed?.images?.firstOrNull())?.href
                 else EmbeddedChapterImage.getModelFor(episode, displayedChapterIndex)?.toString()
             }
-            if (imgLarge != null) AsyncImage( ImageRequest.Builder(context).data(imgLarge).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
+            if (imgLarge != null) AsyncImage( ImageRequest.Builder(context).data(imgLarge).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), imageLoader = imageLoader, contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
             Text(episode.link ?: "Link not included", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 15.dp).combinedClickable(
                 onClick = { if (!episode.link.isNullOrBlank()) openInSystemDefault(episode.link!!) },
                 onLongClick = { if (!episode.link.isNullOrBlank()) context.shareText(episode.link!!, R.string.share_url_label) }

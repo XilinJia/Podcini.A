@@ -1,0 +1,7 @@
+* added support of more Podcasting 2.0 attributes
+* fixed possibly getting rejected when loading some feed/episode image
+* amended transcript popup
+	* captions can be multi-selected
+	* once selected, bottom button adds the text into comment, and the first start position is added to marks
+* use custom startup screen in place of splash screen
+**** db migration is performed on first start, may take a couple minutes with large DB

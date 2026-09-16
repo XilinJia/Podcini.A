@@ -99,8 +99,7 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun CommonDialogSurface(onDismiss: () -> Unit, content: @Composable (() -> Unit)) {
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
+        Surface(shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
             content()
         }
     }

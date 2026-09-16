@@ -5,12 +5,14 @@ import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.storage.model.AppAttribs
 import ac.mdiq.podcini.storage.model.AppPrefs
 import ac.mdiq.podcini.storage.model.AutoDLEQ
+import ac.mdiq.podcini.storage.model.CaptionCue
 import ac.mdiq.podcini.storage.model.Chapter
 import ac.mdiq.podcini.storage.model.CurrentState
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.FacetsPrefs
 import ac.mdiq.podcini.storage.model.Feed
+import ac.mdiq.podcini.storage.model.Image
 import ac.mdiq.podcini.storage.model.PAFeed
 import ac.mdiq.podcini.storage.model.PlayQueue
 import ac.mdiq.podcini.storage.model.QueueEntry
@@ -21,9 +23,9 @@ import ac.mdiq.podcini.storage.model.SubscriptionsPrefs
 import ac.mdiq.podcini.storage.model.SyncPrefs
 import ac.mdiq.podcini.storage.model.Timer
 import ac.mdiq.podcini.storage.model.Todo
-import ac.mdiq.podcini.storage.model.CaptionCue
 import ac.mdiq.podcini.storage.model.TranscriptMeta
 import ac.mdiq.podcini.storage.model.Volume
+import ac.mdiq.podcini.storage.specs.FeedFunding
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
 import android.util.Log
@@ -40,9 +42,13 @@ import io.github.xilinjia.krdb.types.RealmObject
 import io.github.xilinjia.krdb.types.TypedRealmObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.ContinuationInterceptor
+
+val migrationStep = MutableStateFlow("")
+val migrationProg = MutableStateFlow("")
 
 private const val TAG: String = "RealmDB"
 
@@ -50,8 +56,10 @@ val config: RealmConfiguration by lazy {
     RealmConfiguration.Builder(schema = setOf(
         Volume::class,
         Feed::class,
+        FeedFunding::class,
         AutoDLEQ::class,
         Episode::class,
+        Image::class,
         CurrentState::class,
         PlayQueue::class,
         QueueEntry::class,
@@ -70,13 +78,16 @@ val config: RealmConfiguration by lazy {
         FacetsPrefs::class,
         SleepPrefs::class,
         SyncPrefs::class,
-    )).name("Podcini.realm").schemaVersion(162)
+    )).name("Podcini.realm").schemaVersion(165)
         .migration({ mContext ->
             val oldRealm = mContext.oldRealm // old realm using the previous schema
             val newRealm = mContext.newRealm // new realm using the new schema
             if (oldRealm.schemaVersion() < 157) {
+                migrationStep.value = "migrating for 157"
                 Log.d(TAG, "migrating DB from below 157")
                 var feeds = oldRealm.query("Feed").find().toList()
+                var count = 0
+                migrationProg.value = "feeds $count/${feeds.size}"
                 for (f in feeds) {
                     val id = f.getValue<Long>("id")
                     Log.d(TAG, "migrating feed: $id")
@@ -108,7 +119,49 @@ val config: RealmConfiguration by lazy {
                         val dleqs = realmListOf(dleq)
                         fNew.set("autoDLEQs", dleqs)
                     } else Log.d(TAG, "fNew is null")
+                    migrationProg.value = "feeds ${++count}/${feeds.size}"
                 }
+            }
+            if (oldRealm.schemaVersion() < 163) {
+                migrationStep.value = "migrating for 163"
+                Log.d(TAG, "migrating DB from below 163")
+                val feeds = oldRealm.query("Feed").find().toList()
+                var count = 0
+                migrationProg.value = "feeds $count/${feeds.size}"
+                for (f in feeds) {
+                    val id = f.getValue<Long>("id")
+                    Log.d(TAG, "migrating feed: $id")
+                    val fNew = newRealm.query("Feed", "id == $id").first().find()
+                    if (fNew != null) {
+                        val imgurl = f.getNullableValue<String>("imageUrl")
+                        if (!imgurl.isNullOrBlank()) {
+                            val images = realmListOf(Image(imgurl))
+                            fNew.set("images", images)
+                        }
+                    }
+                    migrationProg.value = "feeds ${++count}/${feeds.size}"
+                }
+                var offset = 0
+                migrationProg.value = "episodes $offset"
+                while (true) {
+                    Log.d(TAG, "migrating episodes: $offset")
+                    val episodes = oldRealm.query("Episode").query("imageUrl != nil").find().drop(offset).take(1000)
+                    if (episodes.isEmpty()) break
+                    for (e in episodes) {
+                        val id = e.getValue<Long>("id")
+                        val eNew = newRealm.query("Episode", "id == $id").first().find()
+                        if (eNew != null) {
+                            val imgurl = e.getNullableValue<String>("imageUrl")
+                            if (!imgurl.isNullOrBlank()) {
+                                val images = realmListOf(Image(imgurl))
+                                eNew.set("images", images)
+                            }
+                        }
+                    }
+                    offset += episodes.size
+                    migrationProg.value = "episodes $offset"
+                }
+                Log.d(TAG, "migrating DB below 163 complete")
             }
         })
         .compactOnLaunch()

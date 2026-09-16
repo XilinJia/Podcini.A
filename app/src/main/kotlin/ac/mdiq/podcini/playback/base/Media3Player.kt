@@ -450,10 +450,10 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             }
             exoplayerOffloadListener = object: ExoPlayer.AudioOffloadListener {
                 override fun onOffloadedPlayback(offloadSchedulingEnabled: Boolean) {
-                    LogtFor(TAG, curMediaFlow.value?.id,  "AudioOffloadListener Offload scheduling enabled: $offloadSchedulingEnabled")
+//                    LogtFor(TAG, curMediaFlow.value?.id,  "AudioOffloadListener Offload scheduling enabled: $offloadSchedulingEnabled")
                 }
                 override fun onSleepingForOffloadChanged(isSleepingForOffload: Boolean) {
-                    LogtFor(TAG, curMediaFlow.value?.id, "AudioOffloadListener CPU is sleeping for offload: $isSleepingForOffload")
+//                    LogtFor(TAG, curMediaFlow.value?.id, "AudioOffloadListener CPU is sleeping for offload: $isSleepingForOffload")
                 }
             }
             createNativePlayer()
@@ -484,7 +484,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             return
         }
         offloadEnabled = enabled
-        Logt(TAG, "switchOffload set audio offload $offloadEnabled")
+//        Logt(TAG, "switchOffload set audio offload $offloadEnabled")
 
         val wasPlaying = castPlayer!!.isPlaying
         castPlayer!!.pause()
@@ -680,7 +680,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         val media = curMediaFlow.value ?: return null
         if (curClient == null)  return null
 
-        runOnIOScope {
+        if (media.transcriptMetas.isEmpty()) runOnIOScope {
             val captions = curClient!!.withProvider { it.getCaptionSpecs(media.toIPC()) }
             if (!captions.isNullOrEmpty()) {
                 val tm = captions.map { it.toTranscriptMeta() }.toRealmList()
@@ -759,7 +759,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         val url = media.downloadUrl
         if (url.isNullOrBlank()) {
             LogeFor(TAG, media.id, "prepareDataSource: media downloadUrl is null or blank ${media.title}")
-            upsertBlk(media) { it.setPlayState(EpisodeState.ERROR) }
+            runOnIOScope { upsert(media) { it.setPlayState(EpisodeState.ERROR) } }
             throw IllegalArgumentException("blank url")
         }
         val feed = media.feed
@@ -780,7 +780,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             }
         } catch (e: Throwable) {
             LogsFor(TAG, media.id, "prepareDataSource: ${e.message}")
-            upsertBlk(media) { it.setPlayState(EpisodeState.ERROR) }
+            runOnIOScope { upsertBlk(media) { it.setPlayState(EpisodeState.ERROR) } }
             throw e
         }
     }
@@ -823,7 +823,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             val enabled = speedEnablesOffload && silenceEnablesOffload
             if (enabled != offloadEnabled) {
                 offloadEnabled = enabled
-                Logt(TAG, "switchOffload set audio offload $offloadEnabled")
+//                Logt(TAG, "switchOffload set audio offload $offloadEnabled")
                 exoPlayer!!.trackSelectionParameters = exoPlayer!!.trackSelectionParameters.buildUpon().setAudioOffloadPreferences(AudioOffloadPreferences.Builder().setAudioOffloadMode(if (offloadEnabled) AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED else AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED).build()).build()
             }
             needChangeOffload = false
@@ -1299,7 +1299,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                 .setRecordingMonth(date.month.number)
                 .setRecordingYear(date.year)
 
-                .setArtworkUri((e.imageUrl ?: e.feed?.imageUrl ?: "").toSafeUri())
+                .setArtworkUri(((e.images.firstOrNull() ?: e.feed?.images?.firstOrNull())?.href ?: "").toSafeUri())
             return builder.build()
         }
     }

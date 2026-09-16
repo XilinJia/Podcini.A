@@ -5,6 +5,7 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.automation.AutoDownloadAlgorithm
 import ac.mdiq.podcini.automation.AutoEnqueueAlgorithm
 import ac.mdiq.podcini.config.CHANNEL_ID
+import ac.mdiq.podcini.config.NotificationIds
 import ac.mdiq.podcini.sourcing.download.DownloadError
 import ac.mdiq.podcini.sourcing.download.DownloadRequest
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
@@ -40,6 +41,7 @@ import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.Feed.Companion.EPISODES_LIMIT
+import ac.mdiq.podcini.storage.model.Image
 import ac.mdiq.podcini.storage.model.toFeed
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.FeedType
@@ -161,7 +163,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         val feedIdsToRefresh = feedsToUpdate.map { it.id }.toMutableList()
         var i = 0
         while (i < feedsToUpdate.size) {
-            notificationManager.notify(R.id.notification_updating_feeds, createNotification(titles))
+            notificationManager.notify(NotificationIds.updating_feeds, createNotification(titles))
             val feed = unmanaged(feedsToUpdate[i++])
             try {
                 Logd(TAG, "refresh updating local feed? ${feed.isLocal} ${feed.title}")
@@ -178,7 +180,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         compileLanguages()
         compileTags()
 
-        notificationManager.cancel(R.id.notification_updating_feeds)
+        notificationManager.cancel(NotificationIds.updating_feeds)
         withContext(Dispatchers.Main) { feedOperationText = context.getString(R.string.post_refreshing) }
 
         try {
@@ -222,7 +224,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                 Logd(TAG,  "downloadFeed Parsed ${feedRaw.title}")
                 if (feedRaw.title.isNullOrBlank()) throw InvalidFeedException("Feed has no title")
                 for (item in feedRaw.episodes) if (item.title.isNullOrBlank()) LogFor(TAG, feedRaw, true, "episode ${item.id} title is empty", toastAnyway = true)
-                if (feedRaw.imageUrl.isNullOrEmpty()) feedRaw.imageUrl = feedRaw.downloadUrl
+                if (feedRaw.images.isEmpty() && !feedRaw.downloadUrl.isNullOrBlank()) feedRaw.addImage(Image(feedRaw.downloadUrl!!))
                 feedHandlerResult?.let { feed_ = it.feed }
                 Logd(TAG, "downloadFeed completed feed_: ${feed_?.title}")
             } catch (e: SAXException) {
@@ -294,7 +296,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         if (feed.downloadUrl.isNullOrBlank()) return
 
         val feed_ = when {
-            feed.type in listOf(FeedType.Unknown.name, FeedType.RSS.name, FeedType.ATOM.name) -> downloadFeed(feed)
+            feed.type in listOf(null, FeedType.Unknown.name, FeedType.RSS.name, FeedType.ATOM.name) -> downloadFeed(feed)
             else -> {
                 val client = if (feed.type != null) typeClientMap[feed.type] else null
                 when {
@@ -318,12 +320,16 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                             }
                             feedIpc.episodes = eList
                         }
+                        if (feedIpc == null) LogFor(TAG, feed, false, "refreshFeed: feed update failed: external client can not update it.")
                         feedIpc?.toFeed()?.apply {
                             this.id = feed.id
                             this.title = feed.title
                         }
                     }
-                    else -> null
+                    else -> {
+                        LogFor(TAG, feed, false, "refreshFeed: feed update failed: ${feed.type}, no external client can handle the type.")
+                        null
+                    }
                 }
             }
         }

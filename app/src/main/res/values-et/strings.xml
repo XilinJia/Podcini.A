@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--Activity and fragment titles-->
-  <string name="feed_update_receiver_name">Uuenda tellimusi</string>
     <string name="statistics_label">Statistika</string>
   <string name="add_feed_label">Lisa taskuhääling</string>
   <string name="episodes_label">Saated</string>
@@ -14,7 +13,6 @@
   <string name="subscriptions_label">Tellimused</string>
 
   <string name="cancel_download_label">Katkesta allalaadimine</string>
-  <string name="playback_history_label">Esitamise ajalugu</string>
 
 
     <string name="notification_pref_fragment">Teavitused</string>
@@ -40,8 +38,7 @@
 
 
     <!--Bug report activity-->
-  <string name="log_file_share_exception">Ühtegi ühilduvat rakendust ei leitud</string>
-  <string name="export_logs_menu_title">Ekspordi täpne logi</string>
+    <string name="export_logs_menu_title">Ekspordi täpne logi</string>
   <string name="confirm_export_log_dialog_message">Täpne logi võib sisaldada tundlikku infot nagu sinu tellimuste nimekiri</string>
   <!--Webview actions-->
   <string name="open_in_browser_label">Ava veebisirvijas</string>
@@ -61,8 +58,8 @@
   <string name="reset">Nulli</string>
   <string name="global_default">Üldine vaikeväärtus</string>
 
-  <string name="support_funding_label">Toeta</string>
-  <string name="support_podcast">Toeta seda taskuhäälingut</string>
+
+
   <string name="error_label">Viga</string>
   <string name="error_msg_prefix">Tekkis viga:</string>
   <string name="refresh_label">Värskenda</string>
@@ -73,12 +70,12 @@
 
 
   <string name="episodes_suffix">\u0020saadet</string>
-  <string name="close_label">Sulge</string>
-  <string name="retry_label">Proovi uuesti</string>
-  <string name="auto_download_label">Lisa automaatsetesse allalaadimistesse</string>
+  <string name="close">Sulge</string>
+  <string name="retry">Proovi uuesti</string>
+  <string name="include_in_auto_downloads">Lisa automaatsetesse allalaadimistesse</string>
   <string name="auto_delete_episode">Saadete automaatne kustutamine</string>
-  <string name="feed_auto_download_always">Alati</string>
-  <string name="feed_auto_download_never">Mitte kunagi</string>
+  <string name="always">Alati</string>
+  <string name="never">Mitte kunagi</string>
   <string name="episode_cleanup_never">Mitte kunagi</string>
   <string name="episode_cleanup_except_favorite">Kui pole lemmik</string>
   <string name="episode_cleanup_not_in_queue">Kui pole järjekorras</string>
@@ -159,10 +156,7 @@
   <!--Mediaplayer messages-->
 
 
-
-
-  <string name="no_media_playing_label">Mingit faili ei esitata</string>
-  <string name="unknown_media_key">Podcini - Tundmatu meedia võti: %1$d</string>
+    <string name="unknown_media_key">Podcini - Tundmatu meedia võti: %1$d</string>
   <string name="error_file_not_found">Faili ei leitud</string>
     <!--Queue operations-->
   <string name="lock_queue">Lukusta järjekord</string>
@@ -199,8 +193,7 @@
   <string name="project_pref">Projekt</string>
   <string name="synchronization_pref">Sünkroonimine</string>
 
-  <string name="download_pref_details">Üksikasjad</string>
-  <string name="import_export_pref">Import/eksport</string>
+    <string name="import_export_pref">Import/eksport</string>
     <string name="appearance">Välimus</string>
   <string name="external_elements">Välised elemendid</string>
   <string name="interruptions">Katkestused</string>
@@ -278,8 +271,7 @@
   <string name="licenses">Litsentsid</string>
   <string name="licenses_summary">Podcini kasutab teiste suurepärast tarkvara</string>
   <!--Search-->
-  <string name="search_status_no_results">Ei leitud midagi</string>
-  <string name="search_label">Otsi</string>
+    <string name="search_label">Otsi</string>
   <string name="no_results_for_query">\"%1$s\" otsimine ei andnud tulemusi</string>
   <!--Synchronization-->
   <string name="sync_status_started">Sünkroonimine algas</string>
@@ -295,8 +287,7 @@
     <string name="html_export_summary">Näita oma tellimusi sõbrale</string>
   <string name="opml_export_summary">Tellimuste liigutamine teise taskuhäälingu äppi</string>
   <string name="opml_import_summary">Tellimuste importimine teisest taskuhäälingu äpist</string>
-    <string name="opml_add_podcast_label">Impordi taskuhäälingute nimekiri (OPML)</string>
-  <string name="opml_reader_error">OPML dokumendi lugemisel tekkis tõrge:</string>
+    <string name="opml_reader_error">OPML dokumendi lugemisel tekkis tõrge:</string>
     <string name="opml_export_label">OPML eksport</string>
   <string name="html_export_label">HTML eksport</string>
     <string name="import_export_error_label">Viga eksportimisel</string>
@@ -316,14 +307,6 @@
   <string name="timer_vibration_label">Enne lõppu lühike värin</string>
     <string name="time_minutes">minutit</string>
   <string name="time_hours">tundi</string>
-  <plurals name="time_minutes_quantified">
-    <item quantity="one">1 minut</item>
-    <item quantity="other">%d minutit</item>
-  </plurals>
-  <plurals name="time_hours_quantified">
-    <item quantity="one">1 tund</item>
-    <item quantity="other">%d tundi</item>
-  </plurals>
     <!--Synchronisation-->
   <string name="gpodnetauth_login_butLabel">Logi sisse</string>
     <string name="username_label">Kasutajanimi</string>
@@ -338,8 +321,6 @@
 
   <string name="gpodnetsync_error_title">gpodder.net sünkroonimise viga</string>
   <string name="gpodnetsync_error_descr">Sünkroonimise ajal tekkis viga:\u0020</string>
-  <string name="gpodnetsync_pref_report_successful">Korras</string>
-  <string name="gpodnetsync_pref_report_failed">Ebaõnnestus</string>
     <!--Directory chooser-->
     <!--Online feed view-->
   <string name="subscribe_label">Telli</string>
@@ -359,19 +340,13 @@
   <string name="statistics_space_used">Kasutatud kettaruum:</string>
 
   <!--PodciniSP-->
-  <string name="sp_apps_importing_feeds_msg">Tellimuste importimine teistest äppidest…</string>
 
-  <string name="search_podcast_hint">Otsi taskuhäälingut…</string>
-
-    <string name="advanced">Täpsem</string>
+    <string name="search_podcast_hint">Otsi taskuhäälingut…</string>
 
 
-
-
-  <string name="search_powered_by">Tulemused: %1$s</string>
+    <string name="search_powered_by">Tulemused: %1$s</string>
   <!--Local feeds-->
-  <string name="add_local_folder">Lisa kohalik kaust</string>
-  <string name="local_folder">Kohalik kaust</string>
+    <string name="local_folder">Kohalik kaust</string>
   <string name="reconnect_local_folder">Ühenda kohalik kaust uuesti</string>
   <string name="reconnect_local_folder_warning">Ligipääsuõiguste keelamise puhul võid kasutada seda, et täpselt sama kausta uuesti ühendada. Ära valli mõnda teist kausta.</string>
   <string name="local_feed_description">See virtuaalne taskuhääling loodi kausta lisamisega Podcinii.</string>
@@ -410,8 +385,7 @@
   <string name="proxy_test_failed">Kontroll ebaõnnestus</string>
   <string name="proxy_host_empty_error">Hostinimi ei saa olla tühi</string>
   <string name="proxy_host_invalid_error">See pole korrektne IP aadress või domeen</string>
-  <string name="proxy_port_invalid_error">Port pole korrektne</string>
-  <!--Subscriptions fragment-->
+    <!--Subscriptions fragment-->
 
   <!--Notification channels-->
   <string name="notification_group_errors">Vead</string>
@@ -420,16 +394,11 @@
   <string name="notification_channel_user_action_description">Näidatakse, kui mingi tegevus on vajalik, näiteks tuleb sisestada parool.</string>
   <string name="notification_channel_downloading">Allalaadimine</string>
   <string name="notification_channel_downloading_description">Näidatakse allalaadimise ajal.</string>
-  <string name="notification_channel_playing">Praegu esitatakse</string>
-  <string name="notification_channel_playing_description">Võimaldab esitust juhtida. See on saate kuulamise ajal peamine teade.</string>
-  <string name="notification_channel_download_error">Allalaadimine ebaõnnestus</string>
+    <string name="notification_channel_download_error">Allalaadimine ebaõnnestus</string>
   <string name="notification_channel_download_error_description">Näita, kui allalaadimine või uudivoo uuendamine ebaõnnestus.</string>
   <string name="notification_channel_sync_error">Sünkroonimine nurjus</string>
   <string name="notification_channel_sync_error_description">Näidatakse, kui gpodder sünkroniseerimine ebaõnnestub.</string>
 
   <!--Widget settings-->
     <!--On-Demand configuration-->
-  <string name="on_demand_config_setting_changed">Seade uuendati edukalt.</string>
-  <string name="on_demand_config_stream_text">Paistab, et striimid palju. Kas soovid, et saadete loetelus oleks striimimise nupud\?</string>
-  <string name="on_demand_config_download_text">Paistab, et laadid tihti saated alla. Kas soovid, et saadete loetelus oleks allalaadimise nupud\?</string>
 </resources>

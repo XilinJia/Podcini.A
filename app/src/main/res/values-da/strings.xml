@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Opdatér abonnementer</string>
     <string name="feeds">Feeds</string>
 
     <string name="statistics_label">Statistik</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Logfiler</string>
     <string name="subscriptions_label">Abonnementer</string>
     <string name="cancel_download_label">Annullér overførsel</string>
-    <string name="playback_history_label">Afspilningshistorik</string>
     <string name="months_statistics_label">Måneder</string>
     <string name="notification_pref_fragment">Notifikationer </string>
     <string name="current_episode">Aktuel</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">Samlet størrelse af afsnit på enheden</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Ingen kompatible apper fundet.</string>
     <string name="export_logs_menu_title">Eksporter detaljeret log</string>
     <string name="confirm_export_log_dialog_message">Detaljerede logger kan indeholde følsom information, såsom din abonnementsliste.</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">Nulstil</string>
     <string name="global_default">Global standard</string>
 
-    <string name="support_funding_label">Støt</string>
-    <string name="support_podcast">Støt denne podcast</string>
+
+
     <string name="error_label">Fejl</string>
     <string name="error_msg_prefix">En fejl er opstået:</string>
     <string name="refresh_label">Opdater</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Ryd ny</string>
     <string name="reconcile_label">Rekoncil</string>
     <string name="chapters_label">Kapitler</string>
-    <string name="chapter_duration0">Varighed: </string>
     <string name="description_label">Beskrivelse</string>
     <string name="episodes_suffix">\u0020afsnit</string>
-    <string name="close_label">Luk</string>
-    <string name="retry_label">Prøv igen</string>
-    <string name="auto_download_label">Inkludér i automatiske overførsler</string>
+    <string name="close">Luk</string>
+    <string name="retry">Prøv igen</string>
+    <string name="include_in_auto_downloads">Inkludér i automatiske overførsler</string>
     <string name="auto_delete_episode">Auto-slet afsnit</string>
-    <string name="feed_volume_adapdation">Tilpasning af lydstyrke</string>
-    <string name="feed_volume_adaptation_summary">Skru op eller ned for lydstyrken for afsnit af denne podcast: %1$s</string>
-    <string name="feed_volume_reduction_off">Ingen tilpasning</string>
-    <string name="feed_volume_reduction_light">Lysreduktion</string>
-    <string name="feed_volume_reduction_heavy">Kraftig reduktion</string>
-    <string name="feed_volume_boost_light">Let forstærkning</string>
-    <string name="feed_volume_boost_medium">Medium forstærkning</string>
-    <string name="feed_volume_boost_heavy">Kraftig forstærkning</string>
-    <string name="feed_auto_download_always">Altid</string>
-    <string name="feed_auto_download_never">Aldrig</string>
-    <string name="video_mode_label">Video-tilstand</string>
+    <string name="volume_adaptation">Tilpasning af lydstyrke</string>
+    <string name="volume_adaptation_summary">Skru op eller ned for lydstyrken for afsnit af denne podcast: %1$s</string>
+    <string name="no_adaptation">Ingen tilpasning</string>
+    <string name="light_reduction">Lysreduktion</string>
+    <string name="heavy_reduction">Kraftig reduktion</string>
+    <string name="light_boost">Let forstærkning</string>
+    <string name="medium_boost">Medium forstærkning</string>
+    <string name="heavy_boost">Kraftig forstærkning</string>
+    <string name="always">Altid</string>
+    <string name="never">Aldrig</string>
+    <string name="video_mode">Video-tilstand</string>
 
 
     <string name="video_mode_audio_only">Kun lyd</string>
@@ -150,8 +146,6 @@
     <string name="reserve_episodes_label">Reserver episoder</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Slet</string>
-    <string name="delete_failed_simple">Kan ikke slette fil.</string>
-    <string name="delete_local_failed">Kan ikke slette filen. Prøv at forbinde den lokale mappe igen fra podcast-infoskærmen.</string>
     <string name="delete_episode_label">Slet afsnit</string>
     <string name="no_action_label">Ingen handling</string>
 
@@ -240,13 +234,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Din VPN-app udgiver sig for at være et mobilnetværk (forbrugsafregnet forbindelse). Overførsel af podcasts via mobildataforbindelse er deaktiveret i indstillingerne.\n\nVil du overføre alligevel\? Hvis du vil have løst dette problem, skal du kontakte udviklerne af din VPN-app.</string>
     <string name="confirm_mobile_download_dialog_download_later">Hent senere</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Hent alligevel</string>
-    <string name="confirm_mobile_streaming_notification_title">Bekræft mobilstreaming</string>
     <string name="confirm_mobile_streaming_notification_message">Streaming via mobildata er slået fra i indstillingerne. Tryk for at streame alligevel.</string>
     <string name="confirm_mobile_streaming_button_always">Altid</string>
     <string name="confirm_mobile_streaming_button_once">Én gang</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Ingen medier afspiller</string>
     <string name="unknown_media_key">Podcini - Ukendt medienøgle: %1$d</string>
     <string name="error_file_not_found">Fil ikke fundet</string>
     <!-- Queue operations -->
@@ -288,11 +280,9 @@
     <!-- Preferences -->
     <string name="project_pref">Projekt</string>
     <string name="synchronization_pref">Synkronisering</string>
-    <string name="synchronization_sum">Synkroniser med andre enheder</string>
     <string name="pref_backup_on_google_title">Automatisk sikkerhedskopiering af OPML</string>
     <string name="pref_backup_on_google_sum">Automatisk sikkerhedskopiering af OPML-filer til Google. Når aktiveret, efter at Podcini er afinstalleret og geninstalleret, kan abonnementerne gendannes. Slå denne indstilling til og fra vil genstarte Podcini.</string>
 
-    <string name="download_pref_details">Detaljer</string>
     <string name="import_export_pref">Import/eksport</string>
     <string name="pref_auto_backup_title">Automatisk sikkerhedskopi</string>
     <string name="pref_auto_backup_sum">Sikkerhedskopiér automatisk DB og præferencer med et angivet interval i en valgt mappe.</string>
@@ -302,7 +292,6 @@
     <string name="pref_auto_backup_limit">Antal sikkerhedskopier der skal beholdes</string>
     <string name="appearance">Udseende</string>
     <string name="external_elements">Eksterne elementer</string>
-    <string name="create_YT_syndicates">Opret YT syndikater</string>
     <string name="add_to_feed">Føj til feed</string>
     <string name="interruptions">Afbrydelser</string>
     <string name="playback_control">Afspilningskontrol</string>
@@ -412,12 +401,6 @@
     <string name="pref_rewind_sum">Indstil antallet af sekunder, der skal springes tilbage, når der trykkes på tilbagespolingsknappen</string>
     <string name="pref_playback_video_mode">Afspilning af video</string>
     <string name="pref_playback_video_mode_sum">Vælg hvordan video episode afspilles som standard</string>
-    <string name="pref_swipe_refresh_title">Stryg for at opdatere</string>
-    <string name="pref_swipe_refresh_sum">Stryg nedad for at opdatere alle abonnementer</string>
-    <string name="pref_feedGridLayout_title">Abonnementer bruger gitterlayout </string>
-    <string name="pref_feedGridLayout_sum">Når angivet, bruger visning af abonnementer et gitterlayout, ellers liste layout</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Vis spring over ved notifikation</string>
@@ -463,7 +446,6 @@
     <string name="licenses_summary">Podcini bruger anden fantastisk software</string>
     <string name="email_sum">Rapporter problemer eller komme med forslag direkte til udvikleren.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Fandt ingen resultater</string>
     <string name="search_label">Søg</string>
     <string name="no_results_for_query">Ingen resultater fundet for \"%1$s\"</string>
 
@@ -487,7 +469,6 @@
     <string name="combo_export_summary">Eksporter valgfrit databasen, præferencer, mediefiler.</string>
     <string name="combo_import_summary">Importer selektivt databasen, præferencer, mediefiler.</string>
     <string name="opml_import_label">OPML-import</string>
-    <string name="opml_add_podcast_label">Importér podcastliste (OPML)</string>
     <string name="opml_reader_error">Der opstod en fejl, da OPML-dokumentet blev forsøgt indlæst:</string>
     <string name="progress_export_label">Episoder fremgang eksport</string>
     <string name="progress_import_label">Episoder fremgang import</string>
@@ -528,22 +509,8 @@
     <string name="timer_vibration_label">Vibrere kort før afslutning</string>
     <string name="time_minutes">minutter</string>
     <string name="time_hours">timer</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 minut</item>
-        <item quantity="other">%d minutter</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 time</item>
-        <item quantity="other">%d timer</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 dag</item>
-        <item quantity="other">%d dage</item>
-    </plurals>
     <string name="auto_enable_label">Aktivér automatisk slukkefunktion ved at tryk på afspil</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Synkronisér med enhed på Wi-Fi</string>
-    <string name="wifi_sync_summary_unchoosen">Du kan tilslutte to enheder på det samme wifi netværk for at synkronisere dine episoder spille stater</string>
     <string name="synchronization_choose_title">Vælg synkroniseringsudbyder</string>
     <string name="synchronization_summary_unchoosen">Du kan vælge mellem flere udbydere til at synkronisere dine abonnementer og afspilningsstatus for afsnit med</string>
     <string name="dialog_choose_sync_service_title">Vælg synkroniseringsudbyder</string>
@@ -573,8 +540,6 @@
     <string name="pref_synchronization_logout_toast">Det er lykkedes at logge af</string>
     <string name="gpodnetsync_error_title">gpodder.net-synkroniseringsfejl</string>
     <string name="gpodnetsync_error_descr">En fejl opstod under synkronisering:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Lykkedes</string>
-    <string name="gpodnetsync_pref_report_failed">Fejlede</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Abonner</string>
@@ -586,7 +551,6 @@
     <string name="tags_label">Etiketter</string>
     <string name="feed_tags_summary">Ændr etiketterne for denne podcast for at hjælpe med organiseringen af dine abonnementer</string>
 
-    <string name="auto_download_settings_label">Indstillinger for automatisk overførsel</string>
     <string name="episode_filters_label">Afsnitsfilter</string>
     <string name="episode_inclusive_filters_label">Episode inklusivt filter</string>
     <string name="episode_exclusive_filters_label">Episode eksklusivt filter</string>
@@ -616,24 +580,16 @@
     <string name="edit_url_menu">Rediger feed-URL</string>
     <string name="edit_url_confirmation_msg">Hvis du ændrer RSS-adressen, kan du nemt ødelægge podcastens afspilningstilstand og afsnitslisterne for podcasten. Vi anbefaler IKKE at ændre den og vil IKKE yde support, hvis noget går galt. Dette kan ikke gøres om. Det ødelagte abonnement KAN IKKE repareres ved blot at ændre adressen tilbage. Vi foreslår, at du opretter en sikkerhedskopi, før du fortsætter.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Importerer abonnementer fra enkeltformålsapps…</string>
 
     <string name="search_podcast_hint">Søg efter podcast …</string>
 
     <string name="search_itunes_label">Søg i Apple Podcasts</string>
     <string name="search_podcastindex_label">Søg i Podcast Index</string>
 
-    <string name="advanced">Avanceret</string>
-
-
-
-
-
 
     <string name="search_powered_by">Resultater fra %1$s</string>
     <string name="select_country">Vælg land</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Tilføj lokal mappe</string>
     <string name="local_folder">Lokal mappe</string>
     <string name="reconnect_local_folder">Genforbind lokal mappe</string>
     <string name="reconnect_local_folder_warning">I tilfælde af nægtelse af tilladelse kan du bruge denne til at forbinde til præcis den samme mappe. Vælg ikke en anden mappe.</string>
@@ -657,8 +613,6 @@
     <string name="has_video">Har video</string>
     <string name="has_comments">Har kommenteret</string>
 
-    <string name="always">Altid</string>
-    <string name="never">Aldrig</string>
     <string name="auto_download">Automatisk download</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Inkluder afspilningsposition</string>
@@ -670,7 +624,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Lydknapper</string>
     <string name="playback_speed">Afspilningshastighed</string>
-    <string name="player_switch_to_audio_only">Skift til ren lyd</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Type</string>
     <string name="host_label">Vært</string>
@@ -682,7 +635,6 @@
     <string name="proxy_test_failed">Afprøvning fejlede</string>
     <string name="proxy_host_empty_error">Vært kan ikke være tom</string>
     <string name="proxy_host_invalid_error">Vært er ikke en gyldig IP-adresse eller et gyldigt domæne</string>
-    <string name="proxy_port_invalid_error">Port ikke gyldig</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Fejl</string>
@@ -690,17 +642,12 @@
     <string name="notification_channel_user_action_description">Vist hvis din handling er nødvendig, for eksempel hvis du skal skrive et kodeord.</string>
     <string name="notification_channel_downloading">Henter</string>
     <string name="notification_channel_downloading_description">Vises samtidig med den hentes.</string>
-    <string name="notification_channel_playing">Spiller nu</string>
-    <string name="notification_channel_playing_description">Giver adgang til at kontrollere afspilning. Dette er den mest normale notifikation du vil se, mens du afspiller en podcast.</string>
     <string name="notification_channel_download_error">Overførsel mislykkedes</string>
     <string name="notification_channel_download_error_description">Vis når overførsel eller opdatering af feed mislykkes.</string>
     <string name="notification_channel_sync_error">Synkronisering mislykkedes</string>
     <string name="notification_channel_sync_error_description">Vises når gpodder-synkronisering fejler.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Indstilling opdateret.</string>
-    <string name="on_demand_config_stream_text">Det ser ud til at du streamer en del. Vil du have vist streamknapper i afsnitslister\?</string>
-    <string name="on_demand_config_download_text">Det ser ud til at du downloader meget. Vil du have downloadknapper vist i afsnitslister\?</string>
 
 
     <string name="add_shortcut">Tilføj genvej</string>

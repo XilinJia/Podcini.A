@@ -42,6 +42,7 @@ import ac.mdiq.podcini.ui.utils.SearchAlgo
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.formatLargeInteger
 import ac.mdiq.podcini.utils.formatWithGrouping
 import androidx.activity.compose.BackHandler
@@ -419,7 +420,7 @@ fun SearchScreen() {
                     @Composable
                     fun FeedRow(feed: Feed) {
                         Row(Modifier.background(MaterialTheme.colorScheme.surface)) {
-                            AsyncImage(model = ImageRequest.Builder(context).data(feed.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(80.dp).height(80.dp).clickable {
+                            AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(80.dp).height(80.dp).clickable {
                                 Logd(TAG, "icon clicked!")
                                 if (!feed.isBuilding) navTo(FeedDetails(feedId = feed.id, modeName = FeedScreenMode.Info.name))
                             })
@@ -459,7 +460,7 @@ fun SearchScreen() {
                     LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         itemsIndexed(vm.pafeeds, key = { _, feed -> feed.id }) { _, feed ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(model = ImageRequest.Builder(context).data(feed.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(60.dp).height(60.dp).clickable { if (feed.feedUrl.isNotBlank()) navTo(OnlineFeed(url = feed.feedUrl)) })
+                                AsyncImage(model = ImageRequest.Builder(context).data(feed.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(60.dp).height(60.dp).clickable { if (feed.feedUrl.isNotBlank()) navTo(OnlineFeed(url = feed.feedUrl)) })
                                 Column(Modifier.weight(1f).padding(start = 10.dp).clickable { if (feed.feedUrl.isNotBlank()) navTo(OnlineFeed(url = feed.feedUrl)) }) {
                                     Text(feed.name, color = textColor, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                                     Text(feed.author, color = textColor, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium)

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Aktualizuj subskrypcje</string>
     <string name="feeds">Kanały</string>
 
     <string name="statistics_label">Statystyki</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Logi</string>
     <string name="subscriptions_label">Subskrypcje</string>
     <string name="cancel_download_label">Anuluj pobieranie</string>
-    <string name="playback_history_label">Historia odtwarzanie</string>
     <string name="months_statistics_label">Miesiące</string>
     <string name="notification_pref_fragment">Powiadomienia</string>
     <string name="current_episode">Bieżący</string>
@@ -48,7 +46,6 @@
     <string name="total_size_downloaded_podcasts">Rozmiar wszystkich pobranych odcinków</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Nie znaleziono kompatybilnych aplikacji</string>
     <string name="export_logs_menu_title">Eksportuj szczegółowe logi</string>
     <string name="confirm_export_log_dialog_message">Szczegółowe logi mogą zawierać wrażliwe dane, takie jak listę twoich subskrypcji </string>
     <!-- Webview actions -->
@@ -69,8 +66,8 @@
     <string name="reset">Reset</string>
     <string name="global_default">Globalnie domyślne</string>
 
-    <string name="support_funding_label">Wsparcie</string>
-    <string name="support_podcast">Wesprzyj ten podcast</string>
+
+
     <string name="error_label">Błąd</string>
     <string name="error_msg_prefix">Wystąpił błąd:</string>
     <string name="refresh_label">Odśwież</string>
@@ -80,24 +77,23 @@
     <string name="clear_new_label">Wyczyść nowy</string>
     <string name="reconcile_label">Uzgodnij</string>
     <string name="chapters_label">Rozdziały</string>
-    <string name="chapter_duration0">Czas trwania: </string>
     <string name="description_label">Opis</string>
     <string name="episodes_suffix">\u0020odcinków</string>
-    <string name="close_label">Zamknij</string>
-    <string name="retry_label">Spróbuj ponownie</string>
-    <string name="auto_download_label">Dołącz do automatycznego pobierania</string>
+    <string name="close">Zamknij</string>
+    <string name="retry">Spróbuj ponownie</string>
+    <string name="include_in_auto_downloads">Dołącz do automatycznego pobierania</string>
     <string name="auto_delete_episode">Automatyczne usuwanie odcinków</string>
-    <string name="feed_volume_adapdation">Dostosowanie wielkości</string>
-    <string name="feed_volume_adaptation_summary">Obróć głośność dla odcinków tego podcastu w górę lub w dół: %1$s</string>
-    <string name="feed_volume_reduction_off">Brak adaptacji</string>
-    <string name="feed_volume_reduction_light">Redukcja światła</string>
-    <string name="feed_volume_reduction_heavy">Ciężka redukcja</string>
-    <string name="feed_volume_boost_light">Podbicie światła</string>
-    <string name="feed_volume_boost_medium">Średni podbicie</string>
-    <string name="feed_volume_boost_heavy">Ciężki wzmacniacz</string>
-    <string name="feed_auto_download_always">Zawsze</string>
-    <string name="feed_auto_download_never">Nigdy</string>
-    <string name="video_mode_label">Tryb wideo</string>
+    <string name="volume_adaptation">Dostosowanie wielkości</string>
+    <string name="volume_adaptation_summary">Obróć głośność dla odcinków tego podcastu w górę lub w dół: %1$s</string>
+    <string name="no_adaptation">Brak adaptacji</string>
+    <string name="light_reduction">Redukcja światła</string>
+    <string name="heavy_reduction">Ciężka redukcja</string>
+    <string name="light_boost">Podbicie światła</string>
+    <string name="medium_boost">Średni podbicie</string>
+    <string name="heavy_boost">Ciężki wzmacniacz</string>
+    <string name="always">Zawsze</string>
+    <string name="never">Nigdy</string>
+    <string name="video_mode">Tryb wideo</string>
 
 
     <string name="video_mode_audio_only">Tylko dźwięk</string>
@@ -154,8 +150,6 @@
     <string name="reserve_episodes_label">Zarezerwuj odcinki</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Usuń</string>
-    <string name="delete_failed_simple">Nie można usunąć pliku.</string>
-    <string name="delete_local_failed">Nie można usunąć pliku. Spróbuj ponownie połączyć folder lokalny z ekranu informacji o podcastie.</string>
     <string name="delete_episode_label">Usuń odcinek</string>
     <string name="no_action_label">Brak akcji</string>
 
@@ -246,13 +240,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Twoja aplikacja VPN udaje się być siecią komórkową (połączenie z licznikami). Pobieranie danych przez połączenie mobilne jest wyłączone w ustawieniach. Jeśli chcesz rozwiązać ten problem, skontaktuj się z twórcami aplikacji VPN.</string>
     <string name="confirm_mobile_download_dialog_download_later">Pobierz później</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Pobierz mimo to</string>
-    <string name="confirm_mobile_streaming_notification_title">Potwierdź streamowanie przy użyciu sieci komórkowej</string>
     <string name="confirm_mobile_streaming_notification_message">Streamowanie przy użyciu danych komórkowych jest wyłączone w ustawieniach. Naciśnij aby streamować mimo to.</string>
     <string name="confirm_mobile_streaming_button_always">Zawsze</string>
     <string name="confirm_mobile_streaming_button_once">Tylko tym razem</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Żadne media nie odtwarzane </string>
     <string name="unknown_media_key">Podcini - Nieznany klawisz: %1$d</string>
     <string name="error_file_not_found">Nie znaleziono pliku</string>
     <!-- Queue operations -->
@@ -294,11 +286,9 @@
     <!-- Preferences -->
     <string name="project_pref">Projekt</string>
     <string name="synchronization_pref">Synchronizacja</string>
-    <string name="synchronization_sum">Synchronizuj z innymi urządzeniami</string>
     <string name="pref_backup_on_google_title">Automatyczna kopia zapasowa OPML</string>
     <string name="pref_backup_on_google_sum">Automatyczna kopia zapasowa plików OPML do Google. Po wyłączeniu, po odinstalowaniu Podcini i ponownym zainstalowaniu, subskrypcje mogą zostać przywrócone. Przełącz to ustawienie zrestartuje Podcini.</string>
 
-    <string name="download_pref_details">Szczegóły</string>
     <string name="import_export_pref">Import/Eksport</string>
     <string name="pref_auto_backup_title">Automatyczna kopia zapasowa</string>
     <string name="pref_auto_backup_sum">Automatycznie wykonaj kopię zapasową bazy danych i preferencji w określonym przedziale czasu w wybranym folderze.</string>
@@ -308,7 +298,6 @@
     <string name="pref_auto_backup_limit">Liczba kopii zapasowych do utrzymania</string>
     <string name="appearance">Wygląd</string>
     <string name="external_elements">Elementy zewnętrzne</string>
-    <string name="create_YT_syndicates">Utwórz syndykaty YT</string>
     <string name="add_to_feed">Dodaj do kanału</string>
     <string name="interruptions">Przerwy</string>
     <string name="playback_control">Sterowanie odtwarzaniem</string>
@@ -418,12 +407,6 @@
     <string name="pref_rewind_sum">Dostosuj liczbę sekund do przeskoczenia przy kliknięciu przewijania do tyłu</string>
     <string name="pref_playback_video_mode">Tryb odtwarzania wideo</string>
     <string name="pref_playback_video_mode_sum">Wybierz jak domyślnie odtwarzany jest odcinek wideo</string>
-    <string name="pref_swipe_refresh_title">Przesuń, aby odświeżyć</string>
-    <string name="pref_swipe_refresh_sum">Przesuń w dół, aby odświeżyć wszystkie subskrypcje</string>
-    <string name="pref_feedGridLayout_title">Subskrypcje używają układu siatki </string>
-    <string name="pref_feedGridLayout_sum">Gdy ustawione, widok Subskrypcji używa układu siatki, w przeciwnym razie lista układu</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Pokaż pomiń powiadomienia</string>
@@ -469,7 +452,6 @@
     <string name="licenses_summary">Podcini używa różnego świetnego oprogramowania/bibliotek</string>
     <string name="email_sum">Zgłaszaj problemy lub zgłaszaj sugestie bezpośrednio programistowi.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Brak wyników</string>
     <string name="search_label">Szukaj</string>
     <string name="no_results_for_query">Brak wyników dla \"%1$s\"</string>
 
@@ -493,7 +475,6 @@
     <string name="combo_export_summary">Eksportuj wybraną bazę danych, preferencje, pliki multimedialne.</string>
     <string name="combo_import_summary">Importuj wybraną bazę danych, preferencje, pliki multimedialne.</string>
     <string name="opml_import_label">Import pliku OMPL</string>
-    <string name="opml_add_podcast_label">Importuj listę podcastów (OPML)</string>
     <string name="opml_reader_error">Wystąpił błąd podczas odczytywania pliku OPML:</string>
     <string name="progress_export_label">Eksport postępu odcinków</string>
     <string name="progress_import_label">Import postępu odcinków</string>
@@ -534,28 +515,8 @@
     <string name="timer_vibration_label">Wibruj krótko przed końcem</string>
     <string name="time_minutes">minut</string>
     <string name="time_hours">godzin</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 minuta</item>
-        <item quantity="few">%d minuty</item>
-        <item quantity="many">%d minut</item>
-        <item quantity="other">%d minut</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 godzina</item>
-        <item quantity="few">%d godziny</item>
-        <item quantity="many">%d godzin</item>
-        <item quantity="other">%d godzin</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 dzień</item>
-        <item quantity="few">%d dni</item>
-        <item quantity="many">%d dni</item>
-        <item quantity="other">%d dni</item>
-    </plurals>
     <string name="auto_enable_label">Automatycznie aktywuj czas uśpienia po naciśnięciu odtwarzania</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Synchronizuj z urządzeniem na Wifi</string>
-    <string name="wifi_sync_summary_unchoosen">Możesz połączyć dwa urządzenia w tej samej sieci wifi, aby zsynchronizować twoje odcinki odtwarzania</string>
     <string name="synchronization_choose_title">Wybierz dostawcę synchronizacji</string>
     <string name="synchronization_summary_unchoosen">Możesz wybrać synchronizację subskrypcji i stanu odtwarzania odcinków z pomocą kilku dostawców</string>
     <string name="dialog_choose_sync_service_title">Wybierz dostawcę synchronizacji</string>
@@ -585,8 +546,6 @@
     <string name="pref_synchronization_logout_toast">Wylogowanie się powiodło</string>
     <string name="gpodnetsync_error_title">Błąd synchronizacji z gpodder.net</string>
     <string name="gpodnetsync_error_descr">Wystąpił błąd podczas synchronizacji:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Sukces</string>
-    <string name="gpodnetsync_pref_report_failed">Porażka</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Subskrybuj</string>
@@ -598,7 +557,6 @@
     <string name="tags_label">Tagi</string>
     <string name="feed_tags_summary">Zmień tagi tego podcastu, żeby lepiej zorganizować swoje subskrypcje</string>
 
-    <string name="auto_download_settings_label">Ustawienia automatycznego pobierania</string>
     <string name="episode_filters_label">Filtr odcinków</string>
     <string name="episode_inclusive_filters_label">Filtr wliczający odcinek</string>
     <string name="episode_exclusive_filters_label">Filtr ekskluzywny odcinka</string>
@@ -628,24 +586,16 @@
     <string name="edit_url_menu">Edytuj adres kanału</string>
     <string name="edit_url_confirmation_msg">Zmiana adresu RSS może łatwo zepsuć stan odtwarzania i listę odcinków podcastu. NIE zalecamy zmiany i NIE zapewniamy wsparcia, jeśli coś pójdzie nie tak. Tego nie da się cofnąć. Uszkodzonej subskrypcji NIE MOŻNA naprawić poprzez zwykłą zmianę adresu z powrotem. Sugerujemy utworzenie kopii zapasowej przed kontynuowaniem.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Importowanie subskrybcji z jednozadaniowych aplikacji</string>
 
     <string name="search_podcast_hint">Szukaj podcast…</string>
 
     <string name="search_itunes_label">Wyszukaj w Apple Podcasts</string>
     <string name="search_podcastindex_label">Wyszukaj w Podcast Index</string>
 
-    <string name="advanced">Zaawansowane</string>
-
-
-
-
-
 
     <string name="search_powered_by">Wyniki z %1$s</string>
     <string name="select_country">Wybierz kraj</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Dodaj lokalny folder</string>
     <string name="local_folder">Lokalny folder</string>
     <string name="reconnect_local_folder">Połącz ponownie lokalny folder</string>
     <string name="reconnect_local_folder_warning">W przypadku odmowy uprawnień, możesz użyć tej opcji do ponownego połączenia do tego samego folderu lokalnego. Nie wybieraj innego folderu.</string>
@@ -669,8 +619,6 @@
     <string name="has_video">Ma film wideo</string>
     <string name="has_comments">Skomentowano</string>
 
-    <string name="always">Zawsze</string>
-    <string name="never">Nigdy</string>
     <string name="auto_download">Automatyczne pobieranie</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Uwzględnianie pozycji odtwarzania</string>
@@ -682,7 +630,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Sterowanie audio</string>
     <string name="playback_speed">Prędkość odtwarzania</string>
-    <string name="player_switch_to_audio_only">Odtwórz tylko dźwięk</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Typ</string>
     <string name="host_label">Host</string>
@@ -694,7 +641,6 @@
     <string name="proxy_test_failed">Test zakończony niepowodzeniem</string>
     <string name="proxy_host_empty_error">Host nie może być pusty!</string>
     <string name="proxy_host_invalid_error">Host nie jest prawidłowym adresem IP albo domeną</string>
-    <string name="proxy_port_invalid_error">Błędny port</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Błędy</string>
@@ -702,17 +648,12 @@
     <string name="notification_channel_user_action_description">Pokazywane, gdy wymagane jest twoje działanie, na przykład jeśli musisz wpisać hasło.</string>
     <string name="notification_channel_downloading">Pobieranie</string>
     <string name="notification_channel_downloading_description">Pokazywane podczas aktywnego pobierania.</string>
-    <string name="notification_channel_playing">Teraz odtwarzane</string>
-    <string name="notification_channel_playing_description">Pozwala na kontrolowanie odtwarzania. To jest główne powiadomienie, które zobaczysz podczas odtwarzania podcastu.</string>
     <string name="notification_channel_download_error">Błąd pobierania</string>
     <string name="notification_channel_download_error_description">Pokazywane, gdy wystąpi błąd pobierania lub aktualizacji.</string>
     <string name="notification_channel_sync_error">Błąd synchronizacji</string>
     <string name="notification_channel_sync_error_description">Pokazywane, gdy synchronizacja z gpodder się nie powiedzie.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Ustawienia uaktualnione pomyślnie.</string>
-    <string name="on_demand_config_stream_text">Wygląda na to, że dużo streamujesz. Czy chcesz, aby na listach odcinków pokazywać przyciski do streamowania\?</string>
-    <string name="on_demand_config_download_text">Wygląda na to, że dużo pobierasz. Czy chcesz, aby na listach odcinków pokazywać przyciski do pobierania\?</string>
 
 
     <string name="add_shortcut">Dodaj skrót</string>

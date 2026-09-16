@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">به‌روز رسانی اشتراک‌ها</string>
     <string name="feeds">Feeds</string>
 
     <string name="statistics_label">آمار</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Logs</string>
     <string name="subscriptions_label">اشتراک‌ها</string>
     <string name="cancel_download_label">لغو بارگیری</string>
-    <string name="playback_history_label">تاریخچهٔ پخش</string>
     <string name="months_statistics_label">Months</string>
     <string name="notification_pref_fragment">آگاهی‌ها</string>
     <string name="current_episode">Current</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">مجموع اندازهٔ قسمت‌ها روی افزاره</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">هیچ اپ سازگاری پیدا نشد</string>
     <string name="export_logs_menu_title">برون‌ریزی گزارش پرجزئیات</string>
     <string name="confirm_export_log_dialog_message">گزارش‌های پرجزئیات ممکن است حاوی اطلاعات حساس شامل فهرست اشتراک‌های شما باشد</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">بازنشانی</string>
     <string name="global_default">پیش‌گزیدهٔ سرتاسری</string>
 
-    <string name="support_funding_label">حمایت</string>
-    <string name="support_podcast">پشتیبانی از این پادکست</string>
+
+
     <string name="error_label">خطا</string>
     <string name="error_msg_prefix">یک خطا رخ داد:</string>
     <string name="refresh_label">تازه کردن</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Clear new</string>
     <string name="reconcile_label">Reconcile</string>
     <string name="chapters_label">فصل‌ها</string>
-    <string name="chapter_duration0">Duration: </string>
     <string name="description_label">شرح</string>
     <string name="episodes_suffix">\u0020قسمت</string>
-    <string name="close_label">بستن</string>
-    <string name="retry_label">تلاش مجدد</string>
-    <string name="auto_download_label">شامل بارگیری خودکار شود</string>
+    <string name="close">بستن</string>
+    <string name="retry">تلاش مجدد</string>
+    <string name="include_in_auto_downloads">شامل بارگیری خودکار شود</string>
     <string name="auto_delete_episode">حذف خودکار قسمت</string>
-    <string name="feed_volume_adapdation">Volume adaptation</string>
-    <string name="feed_volume_adaptation_summary">Turn volume for episodes of this podcast up or down: %1$s</string>
-    <string name="feed_volume_reduction_off">No adaption</string>
-    <string name="feed_volume_reduction_light">Light reduction</string>
-    <string name="feed_volume_reduction_heavy">Heavy reduction</string>
-    <string name="feed_volume_boost_light">Light boost</string>
-    <string name="feed_volume_boost_medium">Medium boost</string>
-    <string name="feed_volume_boost_heavy">Heavy boost</string>
-    <string name="feed_auto_download_always">همیشه</string>
-    <string name="feed_auto_download_never">هیچگاه</string>
-    <string name="video_mode_label">Video mode</string>
+    <string name="volume_adaptation">Volume adaptation</string>
+    <string name="volume_adaptation_summary">Turn volume for episodes of this podcast up or down: %1$s</string>
+    <string name="no_adaptation">No adaption</string>
+    <string name="light_reduction">Light reduction</string>
+    <string name="heavy_reduction">Heavy reduction</string>
+    <string name="light_boost">Light boost</string>
+    <string name="medium_boost">Medium boost</string>
+    <string name="heavy_boost">Heavy boost</string>
+    <string name="always">همیشه</string>
+    <string name="never">هیچگاه</string>
+    <string name="video_mode">Video mode</string>
 
 
     <string name="video_mode_audio_only">Audio only</string>
@@ -150,8 +146,6 @@
     <string name="reserve_episodes_label">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">حذف</string>
-    <string name="delete_failed_simple">Unable to delete file.</string>
-    <string name="delete_local_failed">Unable to delete file. Try re-connecting the local folder from the podcast info screen.</string>
     <string name="delete_episode_label">حذف قسمت</string>
     <string name="no_action_label">No action</string>
 
@@ -240,13 +234,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Your VPN app pretends to be a mobile network (metered connection). Downloading over mobile data connection is disabled in the settings. If you want this problem to be fixed, contact the creators of your VPN app.</string>
     <string name="confirm_mobile_download_dialog_download_later">بعداً بار گرفته شود</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">به هر روی بار گرفته شود</string>
-    <string name="confirm_mobile_streaming_notification_title">تأیید جریان همراه</string>
     <string name="confirm_mobile_streaming_notification_message">پخش جریانی بر روی اتصال داده‌ای همراه در تنظیمات غیر فعال شده است. برای پخش جریانی به هر روی کلیک کنید.</string>
     <string name="confirm_mobile_streaming_button_always">همیشه</string>
     <string name="confirm_mobile_streaming_button_once">یکبار</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">رسانه‌ای در حال پخش نیست</string>
     <string name="unknown_media_key">آنتناپاد - کلید رسانه‌ای ناشناخته: %1$d</string>
     <string name="error_file_not_found">پرونده یافت نشد</string>
     <!-- Queue operations -->
@@ -288,11 +280,9 @@
     <!-- Preferences -->
     <string name="project_pref">پروژه</string>
     <string name="synchronization_pref">هم‌گام‌سازی</string>
-    <string name="synchronization_sum">همگام‌سازی با دیگر افزاره‌ها</string>
     <string name="pref_backup_on_google_title">Auto backup of OPML</string>
     <string name="pref_backup_on_google_sum">Auto backup OPML files to Google. Once enabled, after Podcini is uninstalled and re-installed, the subscriptions can be restored. Toggle this setting will restart Podcini.</string>
 
-    <string name="download_pref_details">جزئیات</string>
     <string name="import_export_pref">وارد/صادر کرد</string>
     <string name="pref_auto_backup_title">Auto backup</string>
     <string name="pref_auto_backup_sum">Automatically back up DB and preferences at a specified interval into a selected folder.</string>
@@ -302,7 +292,6 @@
     <string name="pref_auto_backup_limit">Number of backups to keep</string>
     <string name="appearance">نمایش</string>
     <string name="external_elements">عناصر خارجی</string>
-    <string name="create_YT_syndicates">Create YT syndicates</string>
     <string name="add_to_feed">Add to feed</string>
     <string name="interruptions">وقفه‌ها</string>
     <string name="playback_control">واپایش پخش</string>
@@ -412,12 +401,6 @@
     <string name="pref_rewind_sum">با کلیک روی دکمه برگشت تعداد ثانیه ها را برای پرش به عقب تنظیم کنید</string>
     <string name="pref_playback_video_mode">Video play mode</string>
     <string name="pref_playback_video_mode_sum">Choose how video episode is played by default</string>
-    <string name="pref_swipe_refresh_title">Swipe to refresh</string>
-    <string name="pref_swipe_refresh_sum">Swipe down to refresh all subscriptions</string>
-    <string name="pref_feedGridLayout_title">Subscriptions use grid layout </string>
-    <string name="pref_feedGridLayout_sum">When set, Subscriptions view use a grid layout, otherwise list layout</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Show skip on notification</string>
@@ -463,7 +446,6 @@
     <string name="licenses_summary"> آنتن پاد از نرم افزارهای عالی دیگری نیز استفاده می کند</string>
     <string name="email_sum">Report issues or make suggestions directly to the developer.</string>
     <!-- Search -->
-    <string name="search_status_no_results">نتیجه‌ای یافت نشد</string>
     <string name="search_label">جستجو</string>
     <string name="no_results_for_query">هیچ نتیجه ای برای \"%1$s\" یافت نشد</string>
 
@@ -487,7 +469,6 @@
     <string name="combo_export_summary">Export selectably the database, preferences, media files.</string>
     <string name="combo_import_summary">Import selectably the database, preferences, media files.</string>
     <string name="opml_import_label">وارد کردن OPML</string>
-    <string name="opml_add_podcast_label">وارد کردن لیست پادکست (OPML)</string>
     <string name="opml_reader_error">هنگام خواندن سند OPML خطایی رخ داده است:</string>
     <string name="progress_export_label">Episodes progress export</string>
     <string name="progress_import_label">Episodes progress import</string>
@@ -528,22 +509,8 @@
     <string name="timer_vibration_label">لرزش کوتاه پیش از پایان</string>
     <string name="time_minutes">دقیقه</string>
     <string name="time_hours">ساعت</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">۱ دقیقه</item>
-        <item quantity="other">%d دقیقه</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">۱ ساعت</item>
-        <item quantity="other">%d ساعت</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 day</item>
-        <item quantity="other">%d days</item>
-    </plurals>
     <string name="auto_enable_label">فعّال سازی خودکار شمارشگر معکوس خواب هنگام زدن پخش</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Sync with device on Wifi</string>
-    <string name="wifi_sync_summary_unchoosen">You can connect two devices on the same wifi network to synchronize your episodes play states</string>
     <string name="synchronization_choose_title">گزینش فراهمگر همگام سازی</string>
     <string name="synchronization_summary_unchoosen">می‌توانید فراهمگری را برای همگام سازی اشتراک‌ها و وضعیت پخش قسمت‌هایتان برگزینید</string>
     <string name="dialog_choose_sync_service_title">گزینش فراهمگر همگام سازی</string>
@@ -573,8 +540,6 @@
     <string name="pref_synchronization_logout_toast">خروج موفقیت آمیز بود</string>
     <string name="gpodnetsync_error_title">خطای همگام‌سازی gpodder.net</string>
     <string name="gpodnetsync_error_descr">هنگام همگام‌سازی خطایی رخ داد:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">موفق</string>
-    <string name="gpodnetsync_pref_report_failed">شکست خورد</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">اشتراک</string>
@@ -586,7 +551,6 @@
     <string name="tags_label">برچسب‌ها</string>
     <string name="feed_tags_summary">برای کمک به سازماندهی اشتراک های خود، برچسب های این پادکست را تغییر دهید</string>
 
-    <string name="auto_download_settings_label">تنظیمات بارگیری خودکار</string>
     <string name="episode_filters_label">پالایهٔ قسمت</string>
     <string name="episode_inclusive_filters_label">Episode inclusive filter</string>
     <string name="episode_exclusive_filters_label">Episode exclusive filter</string>
@@ -616,24 +580,16 @@
     <string name="edit_url_menu">URL فید را ویرایش کنید</string>
     <string name="edit_url_confirmation_msg">تغییر نشانی RSS می تواند به سادگی  وضعیت پخش و سیاهه کردن قسمت‌های پادکست را خراب کند. تغییرش را توصیه نکرده و در صورت بروز مشکل، پشتیبانی فراهم نمی‌کنیم. این عمل بازگشت‌پذیر نیست. اشتراک خراب را نمی توان به سادگی با بازگرداندن نشانی درست کرد. پیشنهاد می‌کنیم پیش از ادامه، پشتیبان بگیرید.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">وارد کردن اشتراک از برنامه های تک منظوره</string>
 
     <string name="search_podcast_hint">جستجوی پادکست …</string>
 
     <string name="search_itunes_label">جست‌وجوی پادکست‌های اپل</string>
     <string name="search_podcastindex_label">جست‌وجوی پادکست ایندکس</string>
 
-    <string name="advanced">پیشرفته</string>
-
-
-
-
-
 
     <string name="search_powered_by">نتایج توسط %1$s</string>
     <string name="select_country">کشور را انتخاب کنید</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">پوشه محلی را اضافه کنید</string>
     <string name="local_folder">پوشه محلی</string>
     <string name="reconnect_local_folder">اتصال دوباره پوشه محلی</string>
     <string name="reconnect_local_folder_warning">در صورت عدم پذیرش اجازه ، می توانید این را برای اتصال مجدد  به همان پوشه قبلی استفاده کنید. پوشه دیگری را انتخاب نکنید.</string>
@@ -657,8 +613,6 @@
     <string name="has_video">Has video</string>
     <string name="has_comments">Has commented</string>
 
-    <string name="always">Always</string>
-    <string name="never">Never</string>
     <string name="auto_download">Auto download</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">موقعیت پخش را لحاظ کنید</string>
@@ -670,7 +624,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">کنترل های صوتی</string>
     <string name="playback_speed">سرعت پخش</string>
-    <string name="player_switch_to_audio_only">تعییر به فقط صدا</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">نوع</string>
     <string name="host_label">میزبان</string>
@@ -682,7 +635,6 @@
     <string name="proxy_test_failed">تست ناموفق بود</string>
     <string name="proxy_host_empty_error">میزبان نمی تواند خالی باشد</string>
     <string name="proxy_host_invalid_error">میزبان آدرس IP یا دامنه معتبر نیست</string>
-    <string name="proxy_port_invalid_error">پورت معتبر نیست</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">خطاها</string>
@@ -690,17 +642,12 @@
     <string name="notification_channel_user_action_description">در صورت نیاز به اقدام به عملی ، به عنوان مثال در صورت نیاز به وارد کردن رمز عبور ، نشان داده شود.</string>
     <string name="notification_channel_downloading">درحال بارگیری</string>
     <string name="notification_channel_downloading_description">هنگام بارگیری نشان داده می شود.</string>
-    <string name="notification_channel_playing">در حال اجرا</string>
-    <string name="notification_channel_playing_description">دادن اجازهٔ واپایش پخش. این آگاهی اصلی‌ایست که هنگام پخش یک پادکست می‌بینید.</string>
     <string name="notification_channel_download_error">دانلود ناموفق</string>
     <string name="notification_channel_download_error_description">نمایش به هنگامی که بارگیری یا بروزرسانی فید با شکست مواجه می شود.</string>
     <string name="notification_channel_sync_error">همگام سازی ناموفقیت آمیز</string>
     <string name="notification_channel_sync_error_description">هنگامی که همگام سازی gpodder انجام نشد نشان داده می شود.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">تنظیم با موفقیت به روز شد.</string>
-    <string name="on_demand_config_stream_text">گویا زیاد پخش جریانی می‌کنید. می‌خواهید سیاهه‌های قسمت‌ها دکمهٔ جریان را نشان دهند؟</string>
-    <string name="on_demand_config_download_text">گویا زیاد بارگیری می‌کنید. می‌خواهید سیاهه‌های قسمت‌ها دکمهٔ بارگیری را نشان دهند؟</string>
 
 
     <string name="add_shortcut">افزودن میان‌بر</string>

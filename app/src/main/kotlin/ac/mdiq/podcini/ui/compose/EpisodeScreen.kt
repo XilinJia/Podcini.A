@@ -39,6 +39,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.NetworkUtils.fetchHtmlSource
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.NetworkUtils.isImageDownloadAllowed
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatShortFileSize
@@ -235,7 +236,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
         var expanded by remember { mutableStateOf(false) }
         val buttonAltColor = lerp(MaterialTheme.colorScheme.tertiary, Color.Green, 0.5f)
         Box(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
-            AsyncImage(model = episode.imageUrl ?: episodeFeed?.imageUrl ?: "", contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 5.dp, radiusY = 5.dp))
+            AsyncImage(model = (episode.images.firstOrNull() ?: episodeFeed?.images?.firstOrNull())?.href, imageLoader = imageLoader, contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 5.dp, radiusY = 5.dp))
             Box(modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)))
             Column {
                 Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -318,7 +319,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                 TopBar()
                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 50.dp)) {
                     EpisodeDetails(episode)
-                    AsyncImage(model = ImageRequest.Builder(context).data(episode.imageUrl ?: episodeFeed?.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
+                    AsyncImage(model = ImageRequest.Builder(context).data((episode.images.firstOrNull() ?: episodeFeed?.images?.firstOrNull())?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
                     Text(episode.link ?: "Link not included", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 15.dp).combinedClickable(
                         onClick = { if (!episode.link.isNullOrBlank()) openInSystemDefault(episode.link!!) },
                         onLongClick = { if (!episode.link.isNullOrBlank()) context.shareText(episode.link!!, R.string.share_url_label) }

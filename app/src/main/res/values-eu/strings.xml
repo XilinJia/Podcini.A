@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--Activity and fragment titles-->
-  <string name="feed_update_receiver_name">Eguneratu harpidetzak</string>
     <string name="statistics_label">Estatistikak</string>
   <string name="add_feed_label">Gehitu podcasta</string>
   <string name="episodes_label">Saioak</string>
@@ -15,7 +14,6 @@
   <string name="subscriptions_label">Harpidetzak</string>
 
   <string name="cancel_download_label">Ezeztatu deskarga</string>
-  <string name="playback_history_label">Erreprodukzio historia</string>
 
 
     <string name="notification_pref_fragment">Jakinarazpenak</string>
@@ -43,8 +41,7 @@
 
 
     <!--Bug report activity-->
-  <string name="log_file_share_exception">Ez dago app bateragarririk</string>
-  <string name="export_logs_menu_title">Esportatu log zehatzak</string>
+    <string name="export_logs_menu_title">Esportatu log zehatzak</string>
   <string name="confirm_export_log_dialog_message">Erregistro zehatzek informazio sentikorra izan dezakete, hala nola zure harpidetza-zerrendak.</string>
   <!--Webview actions-->
   <string name="open_in_browser_label">Ireki nabigatzailean</string>
@@ -62,8 +59,8 @@
   <string name="no">Ez</string>
   <string name="reset">Berrezarri</string>
 
-  <string name="support_funding_label">Lagundu</string>
-  <string name="support_podcast">Babestu podcast hau</string>
+
+
   <string name="error_label">Errorea</string>
   <string name="error_msg_prefix">Errorea gertatu da:</string>
   <string name="refresh_label">Eguneratu</string>
@@ -74,19 +71,19 @@
 
 
   <string name="episodes_suffix">\u0020saio</string>
-  <string name="close_label">Itxi</string>
-  <string name="retry_label">Saiatu berriro</string>
-  <string name="auto_download_label">Sartu deskarga automatikoetan</string>
+  <string name="close">Itxi</string>
+  <string name="retry">Saiatu berriro</string>
+  <string name="include_in_auto_downloads">Sartu deskarga automatikoetan</string>
   <string name="auto_delete_episode">Ezabatu automatikoki saioa</string>
-  <string name="feed_volume_adapdation">Bolumena egokitzea</string>
-  <string name="feed_volume_reduction_off">Egokitzerik ez</string>
-  <string name="feed_volume_reduction_light">Jaitsiera arina</string>
-  <string name="feed_volume_reduction_heavy">Jaitsiera handia</string>
-  <string name="feed_volume_boost_light">Igoera arina</string>
-  <string name="feed_volume_boost_medium">Igoera ertaina</string>
-  <string name="feed_volume_boost_heavy">Igoera handia</string>
-  <string name="feed_auto_download_always">Beti</string>
-  <string name="feed_auto_download_never">Inoiz ez</string>
+  <string name="volume_adaptation">Bolumena egokitzea</string>
+  <string name="no_adaptation">Egokitzerik ez</string>
+  <string name="light_reduction">Jaitsiera arina</string>
+  <string name="heavy_reduction">Jaitsiera handia</string>
+  <string name="light_boost">Igoera arina</string>
+  <string name="medium_boost">Igoera ertaina</string>
+  <string name="heavy_boost">Igoera handia</string>
+  <string name="always">Beti</string>
+  <string name="never">Inoiz ez</string>
 
 
   <string name="episode_cleanup_never">Inoiz ez</string>
@@ -185,11 +182,7 @@
   <!--Mediaplayer messages-->
 
 
-
-
-
-  <string name="no_media_playing_label">Ez dago ezer erreproduzitzen</string>
-  <string name="unknown_media_key">Podcini - Media tekla ezezaguna: %1$d</string>
+    <string name="unknown_media_key">Podcini - Media tekla ezezaguna: %1$d</string>
   <string name="error_file_not_found">Ez da fitxategirik aurkitu</string>
     <!--Queue operations-->
   <string name="lock_queue">Blokeatu ilara</string>
@@ -233,10 +226,8 @@
   <!--Preferences-->
   <string name="project_pref">Proiektua</string>
   <string name="synchronization_pref">Sinkronizazioa</string>
-  <string name="synchronization_sum">Beste gailuekin sinkronizatu</string>
 
-  <string name="download_pref_details">Xehetasunak</string>
-  <string name="import_export_pref">Inportatu/esportatu</string>
+    <string name="import_export_pref">Inportatu/esportatu</string>
     <string name="appearance">Itxura</string>
   <string name="external_elements">Kanpo elementuak</string>
   <string name="interruptions">Etenaldiak</string>
@@ -349,9 +340,8 @@
   <string name="licenses">Baimenak</string>
   <string name="licenses_summary">Podcini-ek beste software ezin hobeak erabiltzen ditu</string>
   <!--Search-->
-  <string name="search_status_no_results">Ez da emaitzarik aurkitu</string>
 
-  <string name="search_label">Bilatu</string>
+    <string name="search_label">Bilatu</string>
   <string name="no_results_for_query">Ez da \"%1$s\"emaitzarik aurkitu</string>
 
   <!--Synchronization-->
@@ -369,8 +359,7 @@
   <string name="opml_export_summary">Zure harpidetzak podcast-en beste aplikazio batera transferitu</string>
   <string name="opml_import_summary">Ekarri zure harpidetzak podcast-en beste aplikazio batetik</string>
     <string name="opml_import_label">Inportatu OPMLtik</string>
-  <string name="opml_add_podcast_label">Podcasten zerrenda inportatu (OPML)</string>
-  <string name="opml_reader_error">Errorea OPML dokkumentua irakurtzean:</string>
+    <string name="opml_reader_error">Errorea OPML dokkumentua irakurtzean:</string>
     <string name="opml_export_label">OPMLra esportatu</string>
   <string name="html_export_label">HTMLra esportatu</string>
     <string name="import_export_error_label">Errorea esportatzean</string>
@@ -390,14 +379,6 @@
   <string name="timer_vibration_label">Dardar egin gelditu aurretik</string>
     <string name="time_minutes">minutuak</string>
   <string name="time_hours">ordu</string>
-  <plurals name="time_minutes_quantified">
-    <item quantity="one">1 minutu 1</item>
-    <item quantity="other">%d minutu</item>
-  </plurals>
-  <plurals name="time_hours_quantified">
-    <item quantity="one">ordu 1</item>
-    <item quantity="other">%d ordu</item>
-  </plurals>
     <!--Synchronisation-->
   <string name="synchronization_choose_title">Aukeratu sinkronizazio-hornitzailea</string>
   <string name="synchronization_summary_unchoosen">Hainbat hornitzaileren artean hauta dezakezu zure harpidetzak sinkronizatzeko eta kapituluen jokoaren egoera</string>
@@ -418,8 +399,6 @@
     <string name="pref_synchronization_logout_toast">Saioaren itxiera arrakastatsua izan da</string>
   <string name="gpodnetsync_error_title">Sinkronizatze errorea gpodder.net-en</string>
   <string name="gpodnetsync_error_descr">Sinkronizazio errorea izan da:\u0020</string>
-  <string name="gpodnetsync_pref_report_successful">Arrakastatsua</string>
-  <string name="gpodnetsync_pref_report_failed">Huts egin du</string>
     <!--Directory chooser-->
     <!--Online feed view-->
   <string name="subscribe_label">Harpidetu</string>
@@ -447,24 +426,16 @@
 
   <string name="edit_url_menu">Editatu jarioaren URLa</string>
   <!--PodciniSP-->
-  <string name="sp_apps_importing_feeds_msg">Berariazko erabilerako aplikazioen harpidetzak inportatuz …</string>
 
-  <string name="search_podcast_hint">Bilatu podcasta</string>
+    <string name="search_podcast_hint">Bilatu podcasta</string>
   <string name="search_itunes_label">Bilatu Apple Podcasts-en</string>
   <string name="search_podcastindex_label">Bilatu Podcast Index-en</string>
 
-    <string name="advanced">Aurreratua</string>
 
-
-
-
-
-
-  <string name="search_powered_by">%1$s -ren emaitzak</string>
+    <string name="search_powered_by">%1$s -ren emaitzak</string>
   <string name="select_country">Hautatu herrialdea</string>
   <!--Local feeds-->
-  <string name="add_local_folder">Gehitu tokiko karpeta</string>
-  <string name="local_folder">Tokiko karpeta</string>
+    <string name="local_folder">Tokiko karpeta</string>
   <string name="reconnect_local_folder">Birkonektatu tokiko karpeta</string>
   <string name="reconnect_local_folder_warning">Baimenik izan ezean, hau erabil dezakezu karpeta berdina birkonektatzeko. Ez aukeratu beste karpetarik.</string>
   <string name="local_feed_description">Podcast birtual hau Podcini-i karpeta bat gehituta sortu da</string>
@@ -502,8 +473,7 @@
   <string name="audio_controls">Audio kontrolak</string>
   <string name="playback_speed">Erreprodukzio abiadura</string>
 
-  <string name="player_switch_to_audio_only">Aldatu soilik audiora</string>
-  <!--proxy settings-->
+    <!--proxy settings-->
   <string name="proxy_type_label">Mota</string>
   <string name="host_label">Host</string>
   <string name="port_label">Portua</string>
@@ -514,8 +484,7 @@
   <string name="proxy_test_failed">Testak huts egin du</string>
   <string name="proxy_host_empty_error">Host-ak ezin du hutsik egon</string>
   <string name="proxy_host_invalid_error">Host-a ez da IP helbide edo domeinu baliodun bat</string>
-  <string name="proxy_port_invalid_error">Balio gabeko Portua</string>
-  <!--Subscriptions fragment-->
+    <!--Subscriptions fragment-->
 
   <!--Notification channels-->
   <string name="notification_group_errors">Erroreak</string>
@@ -524,9 +493,7 @@
   <string name="notification_channel_user_action_description">Zure ekintza beharrezkoa den erakusten da, adibidez, pasahitz bat sartu behar duzun edo ez.</string>
   <string name="notification_channel_downloading">Deskargatzen</string>
   <string name="notification_channel_downloading_description">Deskargatu bitartean erakusten da.</string>
-  <string name="notification_channel_playing">Erreproduzitzen</string>
-  <string name="notification_channel_playing_description">Erreprodukzioa kontrolatzeko aukera ematen du. Podcast bat erreproduzitzen den bitartean ikusten den jakinarazpen nagusia da.</string>
-  <string name="notification_channel_download_error">Deskargak huts egin du</string>
+    <string name="notification_channel_download_error">Deskargak huts egin du</string>
   <string name="notification_channel_download_error_description">Deskargak edo jarioen eguneratzeak huts egiten duenean erakusten da.</string>
   <string name="notification_channel_sync_error">Sinkronizazioak huts egin du</string>
   <string name="notification_channel_sync_error_description">Erakutsi gpoder -en sinkronizazioak huts egitean.</string>
@@ -534,10 +501,7 @@
 
   <!--Widget settings-->
     <!--On-Demand configuration-->
-  <string name="on_demand_config_setting_changed">Konfigurazio eguneratua, arrakastaz.</string>
-  <string name="on_demand_config_stream_text">Badirudi asko transmititzen duzula. Saio-zerrendek transmisio-botoiak erakustea nahi duzu?</string>
-  <string name="on_demand_config_download_text">Badirudi asko deskargatzen duzula. Gertaera-zerrendek deskarga-botoiak erakustea nahi duzu?</string>
 
 
-  <string name="add_shortcut">Gehitu lasterbidea</string>
+    <string name="add_shortcut">Gehitu lasterbidea</string>
 </resources>

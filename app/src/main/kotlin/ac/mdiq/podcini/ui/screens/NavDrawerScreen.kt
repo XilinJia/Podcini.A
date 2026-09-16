@@ -15,6 +15,7 @@ import ac.mdiq.podcini.storage.specs.EpisodeFilter
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -111,7 +112,7 @@ fun NavDrawerScreen() {
             val feeds_ = realm.query(Feed::class).sort("lastPlayed", sortOrder = Sort.DESCENDING).limit(8).find()
             withContext(Dispatchers.Main) {
                 feedBriefs.clear()
-                for (f in feeds_) feedBriefs.add(FeedBrief(f.id, f.title, f.imageUrl))
+                for (f in feeds_) feedBriefs.add(FeedBrief(f.id, f.title, f.images.firstOrNull()?.href))
             }
         }
     }
@@ -165,7 +166,7 @@ fun NavDrawerScreen() {
                     drawerCtrl?.close()
                     psState = PSState.PartiallyExpanded
                 }) {
-                    AsyncImage(model = f.imageUrl, contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(40.dp).height(40.dp))
+                    AsyncImage(model = f.imageUrl, imageLoader = imageLoader, contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(40.dp).height(40.dp))
                     Text(f.title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 10.dp))
                 }
             }

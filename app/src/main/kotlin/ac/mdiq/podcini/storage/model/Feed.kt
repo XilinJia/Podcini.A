@@ -69,10 +69,14 @@ class Feed : RealmObject {
 
     var author: String? = null
 
-    var imageUrl: String? = null
+    var images: RealmList<Image> = realmListOf()
 
     //Feed type, options are defined in [FeedType].
     var type: String? = null
+
+    var medium: String? = null
+
+    var aiContent: Boolean? = null
 
     var hasVideoMedia: Boolean = false
 
@@ -125,10 +129,8 @@ class Feed : RealmObject {
             else -> link
         }
 
-    @Ignore
-    var paymentLinkList: MutableList<FeedFunding> = mutableListOf()
+    var fundings: RealmList<FeedFunding> = realmListOf()
         private set
-    var payment_link: String? = null
 
     var isLocal: Boolean = false
 
@@ -369,13 +371,13 @@ class Feed : RealmObject {
     fun updateFromOther(other: Feed, includingPrefs: Boolean = false) {
         // don't update feed's download_url, we do that manually if redirected
         // see PodciniHttpClient
-        if (other.imageUrl != null) this.imageUrl = other.imageUrl
+        if (other.images.isNotEmpty()) this.images = other.images
         if (eigenTitle == null && other.eigenTitle != null) eigenTitle = other.eigenTitle
         if (other.identifier != null) identifier = other.identifier
         if (other.link != null) link = other.link
         if (other.description != null) description = other.description
         if (other.author != null) author = other.author
-        if (other.paymentLinkList.isNotEmpty()) paymentLinkList = other.paymentLinkList
+        if (other.fundings.isNotEmpty()) fundings = other.fundings
 
         // this feed's nextPage might already point to a higher page, so we only update the nextPage value
         // if this feed is not paged and the other feed is.
@@ -397,13 +399,13 @@ class Feed : RealmObject {
     }
 
     fun differentFrom(other: Feed): Boolean {
-        if (other.imageUrl != null && (imageUrl == null || imageUrl != other.imageUrl)) return true
+        if (other.images.isNotEmpty() && (images.isEmpty()  || images.size != other.images.size)) return true
         if (eigenTitle != other.eigenTitle) return true
         if (other.identifier != null && (identifier == null || identifier != other.identifier)) return true
         if (other.link != null && (link == null || link != other.link)) return true
         if (other.description != null && (description == null || description != other.description)) return true
         if (other.author != null && (author == null || author != other.author)) return true
-        if (other.paymentLinkList.isNotEmpty() && (paymentLinkList.isEmpty() || paymentLinkList != other.paymentLinkList)) return true
+        if (other.fundings.isNotEmpty() && (fundings.isEmpty() || fundings != other.fundings)) return true
         if (other.isPaged && !this.isPaged) return true
         if (other.nextPageLink != this.nextPageLink) return true
         return false
@@ -412,7 +414,11 @@ class Feed : RealmObject {
     fun useFeedImage(): Boolean = !appPrefsFlow!!.value.useEpisodeCover || !useEpisodeImage
 
     fun addPayment(funding: FeedFunding) {
-        paymentLinkList.add(funding)
+        if (fundings.none { it.url == funding.url}) fundings.add(funding)
+    }
+
+    fun addImage(img: Image) {
+        if (images.none { it.href == img.href }) images.add(img)
     }
 
     fun isSynthetic(): Boolean = id <= MAX_SYNTHETIC_ID
@@ -452,6 +458,9 @@ class Feed : RealmObject {
         if (id != other.id) return false
         if (volumeId != other.volumeId) return false
         if (useEpisodeImage != other.useEpisodeImage) return false
+        if (aiContent != other.aiContent) return false
+        if (images.size != other.images.size) return false
+        if (fundings.size != other.fundings.size) return false
         if (episodesCount != other.episodesCount) return false
         if (score != other.score) return false
         if (scoreCount != other.scoreCount) return false
@@ -516,7 +525,6 @@ class Feed : RealmObject {
         if (repeatIntervals.size != other.repeatIntervals.size) return false
         if (preferredLnaguages.size != other.preferredLnaguages.size) return false
         if (isBuilding != other.isBuilding) return false
-
         return true
     }
 
@@ -524,7 +532,10 @@ class Feed : RealmObject {
         var result = id.hashCode()
         result = 31 * result + volumeId.hashCode()
         result = 31 * result + useEpisodeImage.hashCode()
+        result = 31 * result + aiContent.hashCode()
         result = 31 * result + episodesCount
+        result = 31 * result + images.size
+        result = 31 * result + fundings.size
         result = 31 * result + score
         result = 31 * result + scoreCount
         result = 31 * result + scoreUpdated.hashCode()
@@ -680,7 +691,7 @@ fun Feed.toDTO() = FeedDTO(
     link = this.link,
     description = this.description,
     author = this.author,
-    imageUrl = this.imageUrl,
+    imageUrl = this.images.firstOrNull()?.href,
     type = this.type,
     hasVideoMedia = this.hasVideoMedia,
     episodesCount = this.episodesCount,
@@ -705,7 +716,7 @@ fun FeedDTO.toFeed(): Feed = Feed().apply {
         if (it.link == null) it.link = this@toFeed.link
         if (it.description == null) it.description = this@toFeed.description
         if (it.author == null) it.author = this@toFeed.author
-        if (it.imageUrl == null) it.imageUrl = this@toFeed.imageUrl
+        if (it.images.isEmpty() && !this@toFeed.imageUrl.isNullOrBlank()) it.addImage(Image(this@toFeed.imageUrl))
         if (it.type == null) it.type = this@toFeed.type
         it.hasVideoMedia = this@toFeed.hasVideoMedia
 
@@ -731,7 +742,7 @@ fun FeedIPC.toFeed(): Feed {
     feed.autoDownload = this.autoDownload
     feed.description = this.description
     feed.author = this.author
-    feed.imageUrl = this.imageUrl
+    if (!this.imageUrl.isNullOrBlank()) feed.addImage(Image(this.imageUrl!!))
     feed.type = this.type
     feed.lastUpdateTime = this.lastUpdateTime
     feed.limitEpisodesCount = this.limitEpisodesCount
@@ -749,7 +760,7 @@ fun Feed.toIPC(): FeedIPC {
     feed.autoDownload = this.autoDownload
     feed.description = this.description
     feed.author = this.author
-    feed.imageUrl = this.imageUrl
+    feed.imageUrl = this.images.firstOrNull()?.href
     feed.type = this.type
     feed.lastUpdateTime = this.lastUpdateTime
     feed.limitEpisodesCount = this.limitEpisodesCount

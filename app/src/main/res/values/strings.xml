@@ -6,9 +6,9 @@
 
     <!-- Activity and fragment titles -->
     <string name="provider_authority" translatable="false">ac.mdiq.podcini.provider</string>
+    <string name="init_text">Performing initialization or migration… Please wait.</string>
 
     <string name="languages">Languages</string>
-    <string name="feed_update_receiver_name">Update subscriptions</string>
     <string name="feeds">Feeds</string>
     <string name="remote">Remote</string>
     <string name="pafeeds" translatable="false">PAFeeds</string>
@@ -33,7 +33,6 @@
     <string name="library">Library</string>
 
     <string name="cancel_download_label">Cancel download</string>
-    <string name="playback_history_label">History</string>
 
     <string name="overview">Overview</string>
     <string name="months_statistics_label">Months</string>
@@ -81,14 +80,10 @@
     <string name="repeats_past_due">Repeat media past due</string>
     <string name="repeats_past_due_sum">You have %d scheduled media past due. Open the list?</string>
 
-    <string name="reconnect">Reconnect</string>
-    <string name="setting_off">Turn off setting</string>
-
     <!-- Download Statistics fragment -->
     <string name="total_size_downloaded_podcasts">Total size of episodes on the device</string>
 
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">No compatible apps found</string>
     <string name="export_logs_menu_title">Export detailed logs</string>
     <string name="confirm_export_log_dialog_message">Detailed logs may contain sensitive information, such as your subscriptions list</string>
 
@@ -119,8 +114,8 @@
 
     <string name="last_full_update">Last full update</string>
     <string name="last_update">Last update</string>
-    <string name="support_funding_label">Support</string>
-    <string name="support_podcast">Support this podcast</string>
+
+
     <string name="error_label">Error</string>
     <string name="error_msg_prefix">An error occurred:</string>
     <string name="refresh_label">Refresh</string>
@@ -148,21 +143,19 @@
     <string name="send_to_device_sum">Ensure the broadcast port number is the same as that on the receiver.</string>
 
     <string name="transfer_to_device">Transfer to device</string>
-    <string name="send_catalog">Send catalog</string>
 
     <string name="send">Send</string>
     <string name="receiver_tag">Receiver: %1$s</string>
     <string name="receive_contents">Receive contents</string>
 
-    <string name="chapter_duration0">Duration: </string>
-
     <string name="by">By</string>
+    <string name="medium">Medium</string>
+    <string name="is_ai_content">Is AI content</string>
 
     <string name="archived_feed">Feed is archived</string>
 
     <string name="description_label">Description</string>
     <string name="transcript">Transcript</string>
-    <string name="show_transcript">Show transcript</string>
 
     <string name="transcript_selections">Transcript selections</string>
 
@@ -172,10 +165,8 @@
     <string name="show_archived">Show archived</string>
 
     <string name="episodes_suffix">\u0020episodes</string>
-    <string name="close_label">Close</string>
-    <string name="retry_label">Retry</string>
-
-    <string name="auto">Auto</string>
+    <string name="close">Close</string>
+    <string name="retry">Retry</string>
 
     <string name="enqueue">Enqueue</string>
     <string name="download">Download</string>
@@ -188,22 +179,19 @@
     <string name="skip_first_hint">Skip first (seconds)</string>
     <string name="skip_last_hint">Skip last (seconds)</string>
 
-
-    <string name="auto_download_label">Include in auto downloads</string>
+    <string name="include_in_auto_downloads">Include in auto downloads</string>
     <string name="auto_delete_episode">Auto delete episode</string>
     <string name="auto_delete_sum">Delete after marked played</string>
-    <string name="feed_volume_adapdation">Volume adaptation</string>
-    <string name="feed_volume_adaptation_summary">Turn volume for episodes of this feed up or down: %1$s</string>
-    <string name="feed_volume_reduction_off">No adaption</string>
-    <string name="feed_volume_reduction_light">Light reduction</string>
-    <string name="feed_volume_reduction_heavy">Heavy reduction</string>
-    <string name="feed_volume_boost_light">Light boost</string>
-    <string name="feed_volume_boost_medium">Medium boost</string>
-    <string name="feed_volume_boost_heavy">Heavy boost</string>
-    <string name="feed_auto_download_always">Always</string>
-    <string name="feed_auto_download_never">Never</string>
+    <string name="volume_adaptation">Volume adaptation</string>
+    <string name="volume_adaptation_summary">Turn volume for episodes of this feed up or down: %1$s</string>
+    <string name="no_adaptation">No adaptation</string>
+    <string name="light_reduction">Light reduction</string>
+    <string name="heavy_reduction">Heavy reduction</string>
+    <string name="light_boost">Light boost</string>
+    <string name="medium_boost">Medium boost</string>
+    <string name="heavy_boost">Heavy boost</string>
 
-    <string name="video_mode_label">Video mode</string>
+    <string name="video_mode">Video mode</string>
     <string name="pref_muxed_video">Prefer muxed video</string>
     <string name="pref_muxed_video_sum">This is only applicable when the source provides separate audio/video streams, as well as muxed video streams.</string>
     <string name="video_mode_window">Window mode</string>
@@ -218,8 +206,8 @@
     <string name="feed_auto_dleq_older">Oldest unplayed</string>
     <string name="feed_auto_dleq_discretion">Discretionary</string>
 
-    <string name="feed_auto_dleq_filter_sort">Current filter and sort</string>
-    <string name="feed_auto_dleq_filter_sort_sum">Filter "Auto downloadable" is suggested to avoid undesired repeats.</string>
+    <string name="current_filter_sort">Current filter and sort</string>
+    <string name="current_filter_sort_sum">Filter "Auto downloadable" is suggested to avoid undesired repeats.</string>
 
     <string name="add_to_queue">Add to queue…</string>
     <string name="remove_from_other_queues">Remove from other queues</string>
@@ -229,7 +217,6 @@
     <string name="add_to_synthetic_note">For media from an external source, ensure to add them to a synthetic feed created for that source.</string>
 
     <string name="recent_episode">Recent episode</string>
-
 
     <string name="episode_cleanup_limit_by">Limit by</string>
     <string name="episode_cleanup_never">Never</string>
@@ -264,7 +251,6 @@
     <string name="progressing_label">Processing</string>
 
     <string name="open_podcast">Open podcast</string>
-    <string name="retry">Retry</string>
     <string name="open">Open</string>
     <string name="update_url">Update url</string>
 
@@ -301,16 +287,13 @@
     <string name="alarm_episodes_label">Play episodes at time</string>
     <string name="reserve_episodes_label">Reserve episodes</string>
     <string name="null_label">Null</string>
-    <string name="null_zap_label">Null</string>
     <string name="delete_label">Delete</string>
-    <string name="delete_failed_simple">Unable to delete file.</string>
 
     <string name="select_player">Select player</string>
     <string name="the_default">Default</string>
     <string name="secondary">Secondary</string>
 
 
-    <string name="delete_local_failed">Unable to delete file. Try re-connecting the local folder from the podcast info screen.</string>
     <string name="delete_episode_label">Delete episode media</string>
 
     <string name="set_related">Set episodes related</string>
@@ -374,8 +357,6 @@
     <string name="forever">Forever</string>
     <string name="ignored">Ignored</string>
     <string name="stop">Stop</string>
-
-    <string name="reset_player">Reset player</string>
 
     <string name="visit_website_label">Visit website</string>
 
@@ -443,14 +424,12 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Your VPN app pretends to be a mobile network (metered connection). Downloading over mobile data connection is disabled in the settings. If you want this problem to be fixed, contact the creators of your VPN app.</string>
     <string name="confirm_mobile_download_dialog_download_later">Download later</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Download anyway</string>
-    <string name="confirm_mobile_streaming_notification_title">Confirm mobile streaming</string>
     <string name="confirm_mobile_streaming_notification_message">Streaming over mobile data connection is disabled in the settings. Tap to stream anyway.</string>
     <string name="confirm_mobile_streaming_button_always">Always</string>
     <string name="confirm_mobile_streaming_button_once">Once</string>
 
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">No media playing</string>
     <string name="unknown_media_key">Podcini - Unknown media key: %1$d</string>
     <string name="error_file_not_found">File not found</string>
 
@@ -489,12 +468,11 @@
     <string name="track_number">Track number</string>
     <string name="last_comment_date">Comment date</string>
     <string name="last_played_date">Played date</string>
-    <string name="time_in_queue">Time in queue</string>
-    <string name="time_out_queue">Time out queue</string>
 
     <string name="between_dates">Between dates</string>
 
     <string name="start">Start</string>
+    <string name="save">Save</string>
 
     <string name="completed_date">Completed date</string>
     <string name="duration">Duration</string>
@@ -521,14 +499,11 @@
     <!-- Preferences -->
     <string name="project_pref">Project</string>
     <string name="synchronization_pref">Synchronization</string>
-    <string name="synchronization_sum">Synchronize with other devices</string>
     <string name="pref_backup_on_google_title">Auto backup of OPML</string>
     <string name="pref_backup_on_google_sum">Auto backup OPML files to Google. Once enabled, after Podcini is uninstalled and re-installed, the subscriptions can be restored. Toggle this setting will restart Podcini.</string>
     <string name="algorithm">Algorithm</string>
     <string name="automation">Automation</string>
-    <string name="others">Others</string>
 
-    <string name="download_pref_details">Details</string>
     <string name="import_export_pref">Import/Export</string>
     <string name="pref_auto_backup_title">Auto backup</string>
     <string name="pref_auto_backup_sum">Automatically back up DB and preferences at a specified interval into a selected folder.</string>
@@ -542,7 +517,6 @@
 
     <string name="appearance">Appearance</string>
     <string name="external_elements">External elements</string>
-    <string name="create_YT_syndicates">Create YT syndicates</string>
     <string name="add_to_feed">Add to feed</string>
     <string name="search_existing_media">Searching existing medias</string>
     <string name="failed_processing_shared">failed processing shared</string>
@@ -592,8 +566,6 @@
 
     <string name="feed_refresh_title">Refresh podcasts</string>
     <string name="feed_refresh_sum">Specify an interval (in minutes, 0 means never) at which Podcini looks for new episodes automatically.</string>
-    <string name="feed_refresh_start">Start</string>
-    <string name="feed_refresh_start_sum">Set start hour (0-23) and minute (0-59) for the periodic refresh interval (exact time may be tempered by Android). Leaving the fields empty means the interval starts now.</string>
     <string name="feed_next_refresh_time">Next refresh time around:</string>
     <string name="before">before</string>
 
@@ -602,9 +574,6 @@
     <string name="remove_volume_msg">This is just to unsubscribe the volume and the contained feeds. Local content will stay intact.</string>
 
     <string name="refresh_associates">Refresh associates</string>
-
-    <string name="alarm_start_time">Timer start time</string>
-    <string name="alarm_start_time_sum">Set start hour (0-23) and minute (0-59) for the episode to be played. Leaving the fields empty means the alarm is not set.</string>
 
     <string name="pref_followQueue_title">Continuous playback</string>
     <string name="pref_followQueue_sum">Jump to next queue item when playback completes</string>
@@ -618,7 +587,6 @@
     <string name="pref_low_quality_on_mobile_sum">On metered network, only low quality media (if available) is fetched</string>
     <string name="pref_use_adaptive_progress_title">Update progress adaptively</string>
     <string name="pref_use_adaptive_progress_sum">Update the progress in an adaptive interval set as the higher of 5 seconds or 2 percent of the media duration. This saves some energy. Otherwise it\'s updated every 5 seconds.</string>
-    <string name="pref_autodl_queues_title">Queues to include</string>
     <string name="pref_metered_network_title">Metered network settings</string>
     <string name="pref_mobileUpdate_sum">Select what should be allowed over the mobile data connection</string>
     <string name="pref_mobileUpdate_refresh">Podcast refresh</string>
@@ -715,10 +683,6 @@
 
     <string name="pref_playback_video_mode">Video play mode</string>
     <string name="pref_playback_video_mode_sum">Choose how video episode is played by default</string>
-    <string name="pref_swipe_refresh_title">Swipe to refresh</string>
-    <string name="pref_swipe_refresh_sum">Swipe down to refresh all subscriptions</string>
-    <string name="pref_feedGridLayout_title">Subscriptions use grid layout </string>
-    <string name="pref_feedGridLayout_sum">When set, Subscriptions view use a grid layout, otherwise list layout</string>
 
     <string name="pref_show_notification_skip_title">Show skip on notification</string>
     <string name="pref_show_notification_skip_sum">Toggle the skip button on the notification panel</string>
@@ -788,7 +752,6 @@
     <string name="email_sum">Report issues or make suggestions directly to the developer.</string>
 
     <!-- Search -->
-    <string name="search_status_no_results">No results were found</string>
 
     <string name="search_label">Search</string>
     <string name="search_hint">delimit by , prefix with - to exclude</string>
@@ -823,7 +786,6 @@
     <string name="combo_export_summary">Export selectably the database, preferences, media files.</string>
     <string name="combo_import_summary">Import selectably the database, preferences, media files.</string>
     <string name="opml_import_label">OPML import</string>
-    <string name="opml_add_podcast_label">Import podcast list (OPML)</string>
     <string name="opml_reader_error">An error has occurred while reading the file. Make sure that you have actually selected an OPML file and that the file is valid.</string>
     <string name="progress_export_label">Episodes progress export</string>
     <string name="progress_import_label">Episodes progress import</string>
@@ -883,24 +845,10 @@
     <string name="show_done">Show done</string>
     <string name="show">Show</string>
 
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 minute</item>
-        <item quantity="other">%d minutes</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 hour</item>
-        <item quantity="other">%d hours</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 day</item>
-        <item quantity="other">%d days</item>
-    </plurals>
     <string name="auto_enable_label">Automatically activate the sleep timer when pressing play</string>
     <string name="auto_enable_sum">Enter the "From" hour and the "To" hour in the two boxes, then press the setting button. Hours are from 0 to 23.</string>
 
     <!-- Synchronisation -->
-    <string name="wifi_sync">Sync with device on Wifi</string>
-    <string name="wifi_sync_summary_unchoosen">You can connect two devices on the same wifi network to synchronize your episodes play states</string>
     <string name="synchronization_choose_title">Choose synchronization provider</string>
     <string name="synchronization_summary_unchoosen">You can choose from multiple providers to synchronize your subscriptions and episode play state with</string>
     <string name="dialog_choose_sync_service_title">Choose synchronization provider</string>
@@ -930,8 +878,6 @@
     <string name="pref_synchronization_logout_toast">Logout was successful</string>
     <string name="gpodnetsync_error_title">gpodder.net sync error</string>
     <string name="gpodnetsync_error_descr">An error occurred during syncing:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Successful</string>
-    <string name="gpodnetsync_pref_report_failed">Failed</string>
 
     <!-- Directory chooser -->
 
@@ -954,7 +900,6 @@
 
     <string name="text_label">Text</string>
 
-    <string name="auto_download_settings_label">Auto download settings</string>
     <string name="episode_filters_label">Episode filter</string>
     <string name="join_categories_with">Join categories with</string>
     <string name="episode_inclusive_filters_label">Episode inclusive filter</string>
@@ -994,7 +939,6 @@
     <string name="edit_url_confirmation_msg">Changing the RSS address can easily break the playback state and episode listings of the podcast. We do NOT recommend changing it and will NOT provide support if anything goes wrong. This cannot be undone. The broken subscription CANNOT be repaired by simply changing the address back. We suggest creating a backup before continuing.</string>
 
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Importing subscriptions from single-purpose apps&#8230;</string>
 
 
     <string name="search_podcast_hint">Search podcast…</string>
@@ -1003,8 +947,6 @@
     <string name="search_itunes_label">Search Apple Podcasts</string>
     <string name="deep_search_itunes">Deep search Apple Podcasts</string>
     <string name="search_podcastindex_label">Search Podcast Index</string>
-
-    <string name="advanced">Advanced</string>
 
     <string name="top_chart">TopChart</string>
 
@@ -1033,10 +975,8 @@
 
     <string name="search_powered_by">Results by %1$s</string>
     <string name="select_country">Select country</string>
-    <string name="country">Country</string>
 
     <!-- Local feeds -->
-    <string name="add_local_folder">Add local folder</string>
     <string name="local_folder">Local folder</string>
 
     <string name="reconnect_local_folder">Re-connect local folder</string>
@@ -1079,13 +1019,12 @@
     <string name="soundcloud">SoundCloud</string>
     <string name="rss">RSS</string>
     <string name="atom">ATOM</string>
-    <string name="none">None</string>
     <string name="has_video">Has video</string>
     <string name="tagged">Tagged</string>
-    <string name="timers">Timers</string>
     <string name="has_comments">Has commented</string>
     <string name="has_clips">Has clips</string>
     <string name="has_marks">Has marks</string>
+    <string name="has_transcripts">Has transcripts</string>
 
     <string name="always">Always</string>
     <string name="never">Never</string>
@@ -1107,8 +1046,6 @@
     <string name="playback_pitch">Playback pitch</string>
     <string name="hz">Hz</string>
     <string name="ratio">Ratio</string>
-
-    <string name="player_switch_to_audio_only">Audio only</string>
 
     <string name="use_ring_tone">Use a ring tone</string>
     <string name="use_ring_tone_sum">When enabled, the chosen ringtone is played when starting a new episode in queue.</string>
@@ -1133,7 +1070,6 @@
     <string name="proxy_test_failed">Test failed</string>
     <string name="proxy_host_empty_error">Host can not be empty</string>
     <string name="proxy_host_invalid_error">Host is not a valid IP address or domain</string>
-    <string name="proxy_port_invalid_error">Port not valid</string>
 
     <!-- Subscriptions fragment -->
 
@@ -1148,8 +1084,6 @@
     <string name="notification_channel_refreshing_description">Shown while updating feeds.</string>
     <string name="notification_channel_downloading">Downloading</string>
     <string name="notification_channel_downloading_description">Shown while currently downloading.</string>
-    <string name="notification_channel_playing">Currently playing</string>
-    <string name="notification_channel_playing_description">Allows to control playback. This is the main notification you see while playing a podcast.</string>
     <string name="notification_channel_download_error">Download failed</string>
     <string name="notification_channel_download_error_description">Shown when download or feed update fails.</string>
     <string name="notification_channel_sync_error">Synchronization failed</string>
@@ -1158,9 +1092,6 @@
     <!-- Widget settings -->
 
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Setting updated successfully.</string>
-    <string name="on_demand_config_stream_text">Looks like you stream a lot. Do you want episode lists to show stream buttons\?</string>
-    <string name="on_demand_config_download_text">Looks like you download a lot. Do you want episode lists to show download buttons\?</string>
 
     <string name="podcast">Podcast</string>
     <string name="queue">Queue</string>

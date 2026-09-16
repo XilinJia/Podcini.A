@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">구독 업데이트</string>
     <string name="feeds">Feeds</string>
 
     <string name="statistics_label">통계</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Logs</string>
     <string name="subscriptions_label">구독</string>
     <string name="cancel_download_label">다운로드 취소</string>
-    <string name="playback_history_label">재생 기록</string>
     <string name="months_statistics_label">Months</string>
     <string name="notification_pref_fragment">알림</string>
     <string name="current_episode">Current</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">장치의 에피소드 전체 크기</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">호환되는 앱이 없습니다</string>
     <string name="export_logs_menu_title">자세한 기록 내보내기</string>
     <string name="confirm_export_log_dialog_message">자세한 기록에는 구독 목록과 같은 민감한 정보가 들어 있을 수도 있습니다</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">초기화</string>
     <string name="global_default">전체 기본값</string>
 
-    <string name="support_funding_label">지원</string>
-    <string name="support_podcast">이 팟캐스트 후원</string>
+
+
     <string name="error_label">오류</string>
     <string name="error_msg_prefix">오류가 발생했습니다:</string>
     <string name="refresh_label">새로 고침</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Clear new</string>
     <string name="reconcile_label">Reconcile</string>
     <string name="chapters_label">챕터</string>
-    <string name="chapter_duration0">Duration: </string>
     <string name="description_label">설명</string>
     <string name="episodes_suffix">\u0020에피소드</string>
-    <string name="close_label">닫기</string>
-    <string name="retry_label">다시 시도</string>
-    <string name="auto_download_label">자동 다운로드에 포함</string>
+    <string name="close">닫기</string>
+    <string name="retry">다시 시도</string>
+    <string name="include_in_auto_downloads">자동 다운로드에 포함</string>
     <string name="auto_delete_episode">에피소드 자동 삭제</string>
-    <string name="feed_volume_adapdation">Volume adaptation</string>
-    <string name="feed_volume_adaptation_summary">Turn volume for episodes of this podcast up or down: %1$s</string>
-    <string name="feed_volume_reduction_off">No adaption</string>
-    <string name="feed_volume_reduction_light">Light reduction</string>
-    <string name="feed_volume_reduction_heavy">Heavy reduction</string>
-    <string name="feed_volume_boost_light">Light boost</string>
-    <string name="feed_volume_boost_medium">Medium boost</string>
-    <string name="feed_volume_boost_heavy">Heavy boost</string>
-    <string name="feed_auto_download_always">항상</string>
-    <string name="feed_auto_download_never">안 함</string>
-    <string name="video_mode_label">Video mode</string>
+    <string name="volume_adaptation">Volume adaptation</string>
+    <string name="volume_adaptation_summary">Turn volume for episodes of this podcast up or down: %1$s</string>
+    <string name="no_adaptation">No adaption</string>
+    <string name="light_reduction">Light reduction</string>
+    <string name="heavy_reduction">Heavy reduction</string>
+    <string name="light_boost">Light boost</string>
+    <string name="medium_boost">Medium boost</string>
+    <string name="heavy_boost">Heavy boost</string>
+    <string name="always">항상</string>
+    <string name="never">안 함</string>
+    <string name="video_mode">Video mode</string>
 
 
     <string name="video_mode_audio_only">Audio only</string>
@@ -149,8 +145,6 @@
     <string name="reserve_episodes_label">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">삭제</string>
-    <string name="delete_failed_simple">Unable to delete file.</string>
-    <string name="delete_local_failed">Unable to delete file. Try re-connecting the local folder from the podcast info screen.</string>
     <string name="delete_episode_label">에피소드 삭제</string>
     <string name="no_action_label">No action</string>
 
@@ -238,13 +232,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Your VPN app pretends to be a mobile network (metered connection). Downloading over mobile data connection is disabled in the settings. If you want this problem to be fixed, contact the creators of your VPN app.</string>
     <string name="confirm_mobile_download_dialog_download_later">나중에 다운로드</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">그래도 다운로드</string>
-    <string name="confirm_mobile_streaming_notification_title">휴대전화 망 스트리밍 확인</string>
     <string name="confirm_mobile_streaming_notification_message">휴대전화 데이터 연결을 통한 스트리밍은 사용하지 않게 설정되어 있습니다. 그래도 스트리밍을 하려면 누르십시오.</string>
     <string name="confirm_mobile_streaming_button_always">항상</string>
     <string name="confirm_mobile_streaming_button_once">한번만</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">재생 중인 미디어 없음</string>
     <string name="unknown_media_key">안테나팟 - 알 수 없는 미디어 키: %1$d</string>
     <string name="error_file_not_found">파일이 없습니다</string>
     <!-- Queue operations -->
@@ -286,11 +278,9 @@
     <!-- Preferences -->
     <string name="project_pref">프로젝트</string>
     <string name="synchronization_pref">동기화</string>
-    <string name="synchronization_sum">다른 장치와 동기화</string>
     <string name="pref_backup_on_google_title">Auto backup of OPML</string>
     <string name="pref_backup_on_google_sum">Auto backup OPML files to Google. Once enabled, after Podcini is uninstalled and re-installed, the subscriptions can be restored. Toggle this setting will restart Podcini.</string>
 
-    <string name="download_pref_details">자세히</string>
     <string name="import_export_pref">가져오기/내보내기</string>
     <string name="pref_auto_backup_title">Auto backup</string>
     <string name="pref_auto_backup_sum">Automatically back up DB and preferences at a specified interval into a selected folder.</string>
@@ -300,7 +290,6 @@
     <string name="pref_auto_backup_limit">Number of backups to keep</string>
     <string name="appearance">모양</string>
     <string name="external_elements">외부 항목</string>
-    <string name="create_YT_syndicates">Create YT syndicates</string>
     <string name="add_to_feed">Add to feed</string>
     <string name="interruptions">끼어들기</string>
     <string name="playback_control">재생 조작</string>
@@ -410,12 +399,6 @@
     <string name="pref_rewind_sum">뒤로 감기 버튼을 눌렀을 때 뒤로 넘어갈 초를 지정합니다.</string>
     <string name="pref_playback_video_mode">Video play mode</string>
     <string name="pref_playback_video_mode_sum">Choose how video episode is played by default</string>
-    <string name="pref_swipe_refresh_title">Swipe to refresh</string>
-    <string name="pref_swipe_refresh_sum">Swipe down to refresh all subscriptions</string>
-    <string name="pref_feedGridLayout_title">Subscriptions use grid layout </string>
-    <string name="pref_feedGridLayout_sum">When set, Subscriptions view use a grid layout, otherwise list layout</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Show skip on notification</string>
@@ -461,7 +444,6 @@
     <string name="licenses_summary">안테나팟은 여러가지 위대한 소프트웨어를 사용하고 있습니다</string>
     <string name="email_sum">Report issues or make suggestions directly to the developer.</string>
     <!-- Search -->
-    <string name="search_status_no_results">검색 결과가 없습니다</string>
     <string name="search_label">검색</string>
     <string name="no_results_for_query">\"%1$s\" 검색 결과가 없습니다</string>
 
@@ -485,7 +467,6 @@
     <string name="combo_export_summary">Export selectably the database, preferences, media files.</string>
     <string name="combo_import_summary">Import selectably the database, preferences, media files.</string>
     <string name="opml_import_label">OPML 가져오기</string>
-    <string name="opml_add_podcast_label">팟캐스트 목록 가져오기 (OPML)</string>
     <string name="opml_reader_error">OPML 문서를 읽는데 오류가 발생했습니다:</string>
     <string name="progress_export_label">Episodes progress export</string>
     <string name="progress_import_label">Episodes progress import</string>
@@ -526,19 +507,8 @@
     <string name="timer_vibration_label">진동</string>
     <string name="time_minutes">분</string>
     <string name="time_hours">시간</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="other">%d분</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="other">%d시간</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="other">%d days</item>
-    </plurals>
     <string name="auto_enable_label">재생을 누를 때 자동으로 취침 타이머를 활성화</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Sync with device on Wifi</string>
-    <string name="wifi_sync_summary_unchoosen">You can connect two devices on the same wifi network to synchronize your episodes play states</string>
     <string name="synchronization_choose_title">동기화 프로바이더 선택</string>
     <string name="synchronization_summary_unchoosen">구독 및 에피소드 재생 상태를 동기화할 때 사용할 여러 프로바이더를 선택할 수 있습니다</string>
     <string name="dialog_choose_sync_service_title">동기화 프로바이더 선택</string>
@@ -568,8 +538,6 @@
     <string name="pref_synchronization_logout_toast">성공적으로 로그아웃</string>
     <string name="gpodnetsync_error_title">gpodder.net 동기화 오류</string>
     <string name="gpodnetsync_error_descr">동기화 중에 오류가 발생했습니다:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">성공</string>
-    <string name="gpodnetsync_pref_report_failed">실패</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">구독</string>
@@ -581,7 +549,6 @@
     <string name="tags_label">태그</string>
     <string name="feed_tags_summary">구독 정리에 도움이 되도록 이 팟캐스트의 태그 바꾸기</string>
 
-    <string name="auto_download_settings_label">자동 다운로드 설정</string>
     <string name="episode_filters_label">에피소드 필터</string>
     <string name="episode_inclusive_filters_label">Episode inclusive filter</string>
     <string name="episode_exclusive_filters_label">Episode exclusive filter</string>
@@ -611,24 +578,16 @@
     <string name="edit_url_menu">피드 URL 편집</string>
     <string name="edit_url_confirmation_msg">RSS 주소를 바꾸면 재생 상태와 팟캐스트 에피소드 목록을 쉽게 망가뜨립니다. RSS 주소를 바꾸지 않기를 권하고, 잘못된 경우 어떤 지원도 하지 않을 것입니다. RSS 주소를 한번 바꾸면 되돌릴 수 없습니다. 구독이 한번 망가지면 주소를 되돌린다고 해도 바로잡을 수 없습니다. 계속 하기 전에 백업을 만드시길 권장합니다.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">단일 용도 앱에서 구독 정보를 가져옵니다…</string>
 
     <string name="search_podcast_hint">팟캐스트 검색…</string>
 
     <string name="search_itunes_label">애플 팟캐스트 검색</string>
     <string name="search_podcastindex_label">팟캐스트 인덱스 검색</string>
 
-    <string name="advanced">고급</string>
-
-
-
-
-
 
     <string name="search_powered_by">%1$s 검색 결과</string>
     <string name="select_country">국가 선택</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">로컬 폴더 추가</string>
     <string name="local_folder">로컬 폴더</string>
     <string name="reconnect_local_folder">로컬 폴더 다시 연결</string>
     <string name="reconnect_local_folder_warning">권한이 거부된 경우, 이 기능을 사용해 정확히 같은 폴더에 다시 연결할 수 있습니다. 다른 폴더를 선택하지 마십시오.</string>
@@ -652,8 +611,6 @@
     <string name="has_video">Has video</string>
     <string name="has_comments">Has commented</string>
 
-    <string name="always">Always</string>
-    <string name="never">Never</string>
     <string name="auto_download">Auto download</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">재생 위치 포함</string>
@@ -665,7 +622,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">오디오 조작</string>
     <string name="playback_speed">재생 속도</string>
-    <string name="player_switch_to_audio_only">오디오 전용으로 전환</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">종류</string>
     <string name="host_label">호스트</string>
@@ -677,7 +633,6 @@
     <string name="proxy_test_failed">테스트 실패</string>
     <string name="proxy_host_empty_error">호스트가 비어 있으면 안 됩니다</string>
     <string name="proxy_host_invalid_error">호스트가 올바른 IP 주소 또는 도메인이 아닙니다</string>
-    <string name="proxy_port_invalid_error">포트가 올바르지 않습니다</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">오류</string>
@@ -685,17 +640,12 @@
     <string name="notification_channel_user_action_description">사용자 조작이 필요할 때 표시됩니다. 예를 들어 비밀번호를 입력해야 할 때 표시됩니다.</string>
     <string name="notification_channel_downloading">다운로드 중</string>
     <string name="notification_channel_downloading_description">현재 다운로드 중일 때 표시됩니다.</string>
-    <string name="notification_channel_playing">현재 재생 중</string>
-    <string name="notification_channel_playing_description">재생을 조작할 수 있습니다 .팟캐스트를 재생할 때 볼 수 있는 메인 알림입니다.</string>
     <string name="notification_channel_download_error">다운로드 실패</string>
     <string name="notification_channel_download_error_description">다운로드 또는 피드 업데이트가 실패할 때 표시.</string>
     <string name="notification_channel_sync_error">동기화 실패</string>
     <string name="notification_channel_sync_error_description">gpodder 동기화가 실패할 때 표시.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">성공적으로 설정 업데이트함.</string>
-    <string name="on_demand_config_stream_text">평소에 스트리밍을 많이 이용하는 것 같습니다. 에피소드 목록에서 스트리밍 버튼을 표시할까요\?</string>
-    <string name="on_demand_config_download_text">평소에 다운로드를 많이 이용하는 것 같습니다. 에피소드 목록에서 다운로드 버튼을 표시할까요\?</string>
 
 
     <string name="add_shortcut">바로가기 추가</string>

@@ -1,6 +1,19 @@
 package ac.mdiq.podcini.storage.specs
 
-class FeedFunding( var url: String?, var content: String?) {
+import io.github.xilinjia.krdb.types.EmbeddedRealmObject
+
+class FeedFunding: EmbeddedRealmObject {
+
+    var url: String? = null
+    var content: String? = null
+
+    constructor() {}
+
+    constructor(url: String?, content: String?) {
+        this.url = url
+        this.content = content
+    }
+
     override fun equals(other: Any?): Boolean {
         if (other == null || other.javaClass != this.javaClass) return false
         val funding = other as FeedFunding

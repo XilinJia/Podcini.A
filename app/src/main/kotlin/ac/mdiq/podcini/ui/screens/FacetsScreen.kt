@@ -134,7 +134,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 enum class QuickAccess {
-    New, Planned, Repeats, Due, Liked, Todos, Timers, Commented, Tagged, Recorded, Queued, Downloaded, History, Archived, Frozen, All, Custom, None;
+    New, Planned, Repeats, Due, Liked, Todos, Timers, Commented, Tagged, Recorded, Queued, Downloaded, Transcript, History, Archived, Frozen, All, Custom, None;
 }
 
 var facetsMode by mutableStateOf(QuickAccess.None)
@@ -267,6 +267,11 @@ class FacetsVM(modeName_: String): ViewModel() {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
                 getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_clips.name, EpisodeFilter.States.has_marks.name, andOr = "OR"), sortOrder)
+            }
+            QuickAccess.Transcript -> {
+                listIdentity += ".${sortOrder.name}"
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_transcript.name, andOr = "OR"), sortOrder)
             }
             QuickAccess.Queued -> {
                 val qstr = EpisodeFilter(EpisodeFilter.States.QUEUE.name).add(filter).queryString()

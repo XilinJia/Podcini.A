@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--Activity and fragment titles-->
-  <string name="feed_update_receiver_name">Hizivaat ar c\'houmanantoù</string>
     <string name="statistics_label">Stadegoù</string>
   <string name="add_feed_label">Ouzhpennañ ur podskignad</string>
   <string name="episodes_label">Rannoù</string>
@@ -15,7 +14,6 @@
   <string name="subscriptions_label">Koumanantoù</string>
 
   <string name="cancel_download_label">Nullañ ar pellgargañ</string>
-  <string name="playback_history_label">Roll istor lenn</string>
 
 
     <string name="notification_pref_fragment">Rebuzadurioù</string>
@@ -42,8 +40,7 @@
 
 
     <!--Bug report activity-->
-  <string name="log_file_share_exception">N\'eo ket bet kavet arloadoù keverlec\'h</string>
-  <string name="export_logs_menu_title">Ezporzhiañ ar c\'herzhlevrioù dre ar munud</string>
+    <string name="export_logs_menu_title">Ezporzhiañ ar c\'herzhlevrioù dre ar munud</string>
   <string name="confirm_export_log_dialog_message">Titouroù kizidik evel roll ho koumanantoù a c\'hell bezañ er c\'herzhlevrioù</string>
   <!--Webview actions-->
   <string name="open_in_browser_label">Digeriñ er merdeer</string>
@@ -62,7 +59,7 @@
   <string name="no">Ket</string>
   <string name="reset">Adderaouekaat</string>
 
-  <string name="support_funding_label">Skoazellañ</string>
+
   <string name="error_label">Fazi</string>
   <string name="error_msg_prefix">Degouezhet ez eus bet ur fazi:</string>
   <string name="refresh_label">Azgrenaat</string>
@@ -72,11 +69,11 @@
 
 
   <string name="episodes_suffix">\u0020rannoù</string>
-  <string name="close_label">Serriñ</string>
-  <string name="retry_label">Klask en-dro</string>
-  <string name="auto_download_label">Pellgargañ emgefreek</string>
-  <string name="feed_auto_download_always">Bepred</string>
-  <string name="feed_auto_download_never">Morse</string>
+  <string name="close">Serriñ</string>
+  <string name="retry">Klask en-dro</string>
+  <string name="include_in_auto_downloads">Pellgargañ emgefreek</string>
+  <string name="always">Bepred</string>
+  <string name="never">Morse</string>
   <string name="episode_cleanup_never">Morse</string>
   <string name="episode_cleanup_except_favorite">Pa n\'emañ ket er sinedoù</string>
   <string name="episode_cleanup_not_in_queue">Pa n\'emañ ket el lost</string>
@@ -164,11 +161,7 @@
   <!--Mediaplayer messages-->
 
 
-
-
-
-  <string name="no_media_playing_label">N\'eus netra o vezañ lennet</string>
-  <string name="unknown_media_key">Podcini - stokell vedia dianav: %1$d</string>
+    <string name="unknown_media_key">Podcini - stokell vedia dianav: %1$d</string>
   <string name="error_file_not_found">N\'eo ket bet kavet ar restr</string>
     <!--Queue operations-->
   <string name="queue_locked">Lost prennet</string>
@@ -206,10 +199,8 @@
   <!--Preferences-->
   <string name="project_pref">Raktres</string>
   <string name="synchronization_pref">Goubredañ</string>
-  <string name="synchronization_sum">Goubredañ gant binvioù all</string>
 
-  <string name="download_pref_details">Munudoù</string>
-  <string name="import_export_pref">Enporzhiadur / Ezporzhiadur</string>
+    <string name="import_export_pref">Enporzhiadur / Ezporzhiadur</string>
     <string name="appearance">Neuz</string>
   <string name="external_elements">Elfennoù diavaez</string>
   <string name="interruptions"> Diskrogoù</string>
@@ -291,9 +282,8 @@
   <string name="licenses">Lañvazioù</string>
   <string name="licenses_summary">Podcini a ra gant meziantoù all</string>
   <!--Search-->
-  <string name="search_status_no_results">N\'eus bet kavet disoc\'h ebet</string>
 
-  <string name="search_label">Klask</string>
+    <string name="search_label">Klask</string>
   <string name="no_results_for_query">N\'eus bet kavet disoc\'h ebet evit \"%1$s\"</string>
   <!--Synchronization-->
   <string name="sync_status_started">Goubredañ loc\'het</string>
@@ -310,8 +300,7 @@
   <string name="opml_export_summary">Treuzkas ho koumanantoù d\'un arload podskignad all</string>
   <string name="opml_import_summary">Enporzhiañ ho koumanantoù adalek un arload podskignad all</string>
     <string name="opml_import_label">Enporzhiañ ur restr OPML</string>
-  <string name="opml_add_podcast_label">Enporzhiañ ul listenn podskignadoù (OPML)</string>
-  <string name="opml_reader_error">Degouezhet ez eus bet ur fazi en ul lenn ar restr OPML</string>
+    <string name="opml_reader_error">Degouezhet ez eus bet ur fazi en ul lenn ar restr OPML</string>
     <string name="opml_export_label">Ezporzhiañ en ur restr OPML</string>
   <string name="html_export_label">Ezporzh HTML</string>
     <string name="import_export_error_label">Fazi ezporzhiañ</string>
@@ -331,20 +320,6 @@
   <string name="timer_vibration_label">Froumal a-raok paouez</string>
     <string name="time_minutes">munutennoù</string>
   <string name="time_hours">eurioù</string>
-  <plurals name="time_minutes_quantified">
-    <item quantity="one">%d vunutenn</item>
-    <item quantity="two">%d munutenn</item>
-    <item quantity="few">%d munutenn</item>
-    <item quantity="many">%d a vunutennoù</item>
-    <item quantity="other">%d munutenn</item>
-  </plurals>
-  <plurals name="time_hours_quantified">
-    <item quantity="one">%d eur</item>
-    <item quantity="two">%d eur</item>
-    <item quantity="few">%d eur</item>
-    <item quantity="many">%d eur</item>
-    <item quantity="other">%d eur</item>
-  </plurals>
     <!--Synchronisation-->
   <string name="synchronization_choose_title">Dibab ur pourchaser goubredañ</string>
   <string name="synchronization_summary_unchoosen">Gallout a rit dibab etre meur a bourvezer evit sikronaat ho koumanantoù ha stad lenn ho rannoù</string>
@@ -366,8 +341,6 @@
     <string name="pref_synchronization_logout_toast">Digennasket gant berzh</string>
   <string name="gpodnetsync_error_title">fazi goubredañ gpodder.net</string>
   <string name="gpodnetsync_error_descr">Degouezhet ez eus bet ur fazi en ur c\'houbredañ:\u0020</string>
-  <string name="gpodnetsync_pref_report_successful">Berzh</string>
-  <string name="gpodnetsync_pref_report_failed">C\'hwitet</string>
     <!--Directory chooser-->
     <!--Online feed view-->
   <string name="subscribe_label">Koumanantiñ</string>
@@ -396,21 +369,14 @@
 
   <string name="edit_url_menu">Kemm URL ar wazh</string>
   <!--PodciniSP-->
-  <string name="sp_apps_importing_feeds_msg">Oc\'h enporzhiañ ar c\'houmanantoù diwar arloadoù gant un arver unel…</string>
 
-  <string name="search_podcast_hint">Klask ur podskignad…</string>
-
-    <string name="advanced">Araokaet</string>
+    <string name="search_podcast_hint">Klask ur podskignad…</string>
 
 
-
-
-
-  <string name="search_powered_by">Disoc\'hioù gant %1$s</string>
+    <string name="search_powered_by">Disoc\'hioù gant %1$s</string>
   <string name="select_country">Dibab ur vro</string>
   <!--Local feeds-->
-  <string name="add_local_folder">Ouzhpennañ un teuliad lec\'hel</string>
-  <string name="local_folder">Teuliad lec\'hel</string>
+    <string name="local_folder">Teuliad lec\'hel</string>
   <string name="reconnect_local_folder">Adkennaskañ un teuliad lec\'hel</string>
   <string name="reconnect_local_folder_warning">Gallout a rit implijout an dra-se evit adkennaskañ ar memes teuliad pa vez nac\'het an aotre. Arabat dibab un teuliad all.</string>
   <string name="local_feed_description">Krouet eo bet ar podskignad galloudel-mañ en ur ouzhpennañ un teuliad da Podcini.</string>
@@ -443,8 +409,7 @@
   <string name="share_dialog_media_file_label">Restr media</string>
   <!--Audio controls-->
   <string name="audio_controls">Reoliadurioù aodio</string>
-  <string name="player_switch_to_audio_only">Tremen d\'ar son hepken</string>
-  <!--proxy settings-->
+    <!--proxy settings-->
   <string name="proxy_type_label">RIzh</string>
   <string name="host_label">Ostiz</string>
   <string name="port_label">Porzh</string>
@@ -455,8 +420,7 @@
   <string name="proxy_test_failed">C\'hwitet</string>
   <string name="proxy_host_empty_error">N\'hall ket an ostiz bezañ goullo</string>
   <string name="proxy_host_invalid_error">An ostiz n\'eo ket ur chomlec\'h IP pe un domani talvoudek </string>
-  <string name="proxy_port_invalid_error">Porzh didalvoudek</string>
-  <!--Subscriptions fragment-->
+    <!--Subscriptions fragment-->
 
   <!--Notification channels-->
   <string name="notification_group_errors">Fazioù</string>
@@ -465,18 +429,13 @@
   <string name="notification_channel_user_action_description">Skrammet e vo mard eo ret deoc\'h ober un dra bennak, enankañ ur ger-tremen da skouer.</string>
   <string name="notification_channel_downloading">O pellgargañ</string>
   <string name="notification_channel_downloading_description">Diskouezet eo pa vez o pellgargañ.</string>
-  <string name="notification_channel_playing">O lenn</string>
-  <string name="notification_channel_playing_description">Evit reoliañ al lenn. Ar rebuzadur pennañ an hini eo pa lennit ur podskignat.</string>
-  <string name="notification_channel_download_error">C\'hwitadenn en ur bellgargañ</string>
+    <string name="notification_channel_download_error">C\'hwitadenn en ur bellgargañ</string>
   <string name="notification_channel_download_error_description">Diskouezet pa vez c\'hwitet en ur bellgargañ pe en ur hizivaat.</string>
   <string name="notification_channel_sync_error">C\'hwitadenn en ur c\'houbredañ</string>
   <string name="notification_channel_sync_error_description">Diskouezet pa vez c\'hwitet en ur c\'houbredañ gant gpodder.</string>
 
   <!--Widget settings-->
     <!--On-Demand configuration-->
-  <string name="on_demand_config_setting_changed">Arventenn hizivaet</string>
-  <string name="on_demand_config_stream_text">War a-seblant e lennit e streaming kalz. Fellout a ra deoc\'h e vefe diskouezet an afelloù lenn e streaming er roll?</string>
-  <string name="on_demand_config_download_text">War a-seblant e pellgargit kalz. Fellout a ra deoc\'h e vefe diskouezet an afelloù pellgargañ er roll?</string>
 
 
 </resources>

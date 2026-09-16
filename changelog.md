@@ -1,3 +1,27 @@
+# 12.11.0
+
+* initialization is moved out of app onCreate
+* in MainActivity
+	* initialization is performed in IO dispatcher
+	* use custom startup screen in place of system splash screen, showing dynamic messaging
+* added support of more Podcasting 2.0 attributes, including chapters, medium, image, funding, guid, txt
+	* db migration is performed on first launch, may take a couple minutes with large DB
+* in feed updater, handle null feed type as normal podcast
+* not inherit feed type when importing DB from AntennaPod
+* medium (if available) is marked in FeedDetails and OnlineFeed, AI content is marked in FeedDetails, OnlineFeed and EpisodeInfo
+* podcast funding is enabled in FeedDetails
+* amended transcript popup
+	* text in full brightness if caption is not switched on
+	* selection is no longer on text, but captions can be multi-selected
+	* once selected, bottom button adds the text into comment, and the first start position onto a mark
+* added "Has transcript" in episodes filters and in Facets screen
+* in FeedSettings, when changing video mode or av qualities, ensure curMedia is reset properly
+* adjusted items in topbars in PlayerDetailed
+* fixed possibly getting rejected when loading some feed/episode images
+* disabled audio offload toasts
+* large cleanup of used and legacy resources
+* some code refactoring
+
 # 12.10.1
 
 * in Player onPostPlayback, ensure to persist status and clear external source media transcript meta data

@@ -1,6 +1,7 @@
 package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.model.Feed
@@ -57,6 +58,8 @@ class ShortcutsActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        initialize()
+
         val componentName = intent.component?.className ?: ""
         val addFeed = componentName.endsWith("FeedAlias")
         val addQueue = componentName.endsWith("QueueAlias")
@@ -138,10 +141,9 @@ class ShortcutsActivity : ComponentActivity() {
                 putExtra(MainActivity.Extras.feed_id.name, feed.id)
             }
             CoroutineScope(Dispatchers.IO).launch {
-                val request = ImageRequest.Builder(context).data(feed.imageUrl).allowHardware(false).build()
+                val request = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).allowHardware(false).build()
                 val result = (ImageLoader(context).execute(request) as? SuccessResult)
                 val bitmap = (result?.image as? BitmapDrawable)?.bitmap
-
                 val pinShortcutInfo = ShortcutInfoCompat.Builder(context, "id_${feed.id}")
                     .setShortLabel(feed.title ?: "No title")
                     .setIcon(if (bitmap != null) IconCompat.createWithBitmap(bitmap) else IconCompat.createWithResource(this@ShortcutsActivity, R.drawable.ic_subscriptions_shortcut))

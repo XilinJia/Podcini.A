@@ -4,6 +4,7 @@ import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.storage.model.Chapter
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
+import ac.mdiq.podcini.storage.model.Image
 import ac.mdiq.podcini.storage.model.TranscriptMeta
 import ac.mdiq.podcini.storage.specs.FeedFunding
 import ac.mdiq.podcini.storage.utils.getMimeType
@@ -105,10 +106,6 @@ object PodcastHandler {
                                 handler.startDocument()
                             }
                             reader.namespaceContext.forEach { (prefix, uri) -> handler.startPrefixMapping(prefix, uri) }
-//                            Logd(TAG, "START ${reader.namespaceURI} ${reader.localName}")
-//                            for (i in 0 until reader.attributeCount) {
-//                                Logd(TAG, "  ATTR ${reader.getAttributeNamespace(i)}:${reader.getAttributeLocalName(i)}=${reader.getAttributeValue(i)}")
-//                            }
                             handler.startElement(reader.namespaceURI, reader.localName, reader.localName, KmpAttributes(reader))
                         }
                         EventType.TEXT, EventType.CDSECT -> {
@@ -173,14 +170,13 @@ object PodcastHandler {
         val namespaces: MutableMap<String, Namespace> = mutableMapOf()
 
         val defaultNamespaces = ArrayDeque<Namespace>()
-        /**
-         * Buffer for saving characters.
-         */
+
         var contentBuf: StringBuilder? = null
-        /**
-         * Temporarily saved objects.
-         */
+
         val tempObjects: MutableMap<String, Any> = mutableMapOf()
+
+        var currentTxtPurpose: String? = null
+
         /**
          * Returns the SyndElement that comes after the top element of the tagstack.
          */
@@ -203,7 +199,6 @@ object PodcastHandler {
             }
     }
 
-    /** Superclass for all SAX Handlers which process Syndication formats  */
     class SyndHandler(feed: Feed, type: Type) : DefaultHandler() {
         val state: HandlerState = HandlerState(feed)
 
@@ -470,8 +465,8 @@ object PodcastHandler {
                     SUMMARY if ENTRY == second && textElement != null && state.currentItem != null -> state.currentItem!!.setDescriptionIfLonger(textElement.processedContent)
                     UPDATED if ENTRY == second && state.currentItem != null && state.currentItem!!.pubDate == 0L -> state.currentItem!!.pubDate = parseOrNullIfFuture(content)?.toEpochMilliseconds() ?: 0
                     PUBLISHED if ENTRY == second && state.currentItem != null -> state.currentItem!!.pubDate = parseOrNullIfFuture(content)?.toEpochMilliseconds() ?: 0
-                    IMAGE_LOGO if state.feed.imageUrl == null -> state.feed.imageUrl = content
-                    IMAGE_ICON -> state.feed.imageUrl = content
+                    IMAGE_LOGO if (state.feed.images.isEmpty()) -> state.feed.addImage(Image(content))
+                    IMAGE_ICON -> state.feed.addImage(Image(content))
                     AUTHOR_NAME if AUTHOR == second && state.currentItem == null -> {
                         val currentName = state.feed.author
                         if (currentName == null) state.feed.author = content
@@ -551,10 +546,10 @@ object PodcastHandler {
     class Itunes : Namespace() {
         override fun handleElementStart(localName: String, state: HandlerState, attributes: Attributes): SyndElement {
             if (IMAGE == localName) {
-                val url: String? = attributes.getValue(IMAGE_HREF)
-                if (state.currentItem != null) state.currentItem!!.imageUrl = url
-                // this is the feed image, prefer to all other images
-                else if (!url.isNullOrEmpty()) state.feed.imageUrl = url
+                attributes.getValue(IMAGE_HREF).takeIf { !it.isNullOrBlank() }?.let {
+                    if (state.currentItem != null) state.currentItem!!.addImage(Image(it))
+                    else state.feed.addImage(Image(it))
+                }
             }
             return SyndElement(localName, this)
         }
@@ -622,6 +617,7 @@ object PodcastHandler {
         }
 
         companion object {
+            private const val TAG = "Itunes"
             const val NSTAG: String = "itunes"
             const val NSURI: String = "http://www.itunes.com/dtds/podcast-1.0.dtd"
 
@@ -683,15 +679,14 @@ object PodcastHandler {
                             state.currentItem?.fillMedia(url, size, mimeType)
                             if (durationMs > 0) state.currentItem?.duration = ( durationMs)
                         }
-                        state.currentItem != null && url != null && validTypeImage -> state.currentItem!!.imageUrl = url
+                        state.currentItem != null && url != null && validTypeImage -> state.currentItem!!.addImage(Image(url))
                     }
                 }
                 IMAGE -> {
-                    val url: String? = attributes.getValue(IMAGE_URL)
-                    if (url != null) {
+                    attributes.getValue(IMAGE_URL).takeIf { !it.isNullOrBlank() }?.let {
                         when {
-                            state.currentItem != null -> state.currentItem!!.imageUrl = url
-                            else -> if (state.feed.imageUrl == null) state.feed.imageUrl = url
+                            state.currentItem != null -> state.currentItem!!.addImage(Image(it))
+                            else -> state.feed.addImage(Image(it))
                         }
                     }
                 }
@@ -739,39 +734,71 @@ object PodcastHandler {
 
     class PodcastIndex : Namespace() {
         override fun handleElementStart(localName: String, state: HandlerState, attributes: Attributes): SyndElement {
+//            Logd(TAG, "handleElementStart $localName")
             when (localName) {
                 FUNDING -> {
                     val href: String? = attributes.getValue(URL)
-                    val funding = FeedFunding(href, "")
-                    state.currentFunding = funding
-                    state.feed.addPayment(state.currentFunding!!)
+                    state.currentFunding = FeedFunding(href, "")
                 }
                 CHAPTERS -> {
                     val href: String? = attributes.getValue(URL)
-                    if (state.currentItem != null && !href.isNullOrEmpty()) state.currentItem!!.podcastIndexChapterUrl = href
+                    if (state.currentItem != null && !href.isNullOrBlank()) state.currentItem!!.podcastIndexChapterUrl = href
                 }
                 TRANSCRIPT -> {
                     val item = state.currentItem
                     val url = attributes.getValue(URL)
-                    if (item != null && !url.isNullOrEmpty()) {
-//                        Logd(TAG, "handleElementStart adding caption: $url")
-                        item.transcriptMetas.add(TranscriptMeta(url = url, type = attributes.getValue(TYPE), language = attributes.getValue(LANGUAGE), rel = attributes.getValue(REL)))
+                    if (item != null && !url.isNullOrBlank()) item.transcriptMetas.add(TranscriptMeta(url = url, type = attributes.getValue(TYPE), language = attributes.getValue(LANGUAGE), rel = attributes.getValue(REL)))
+                }
+                IMAGE -> {
+                    val href = attributes.getValue(HREF)
+                    if (!href.isNullOrBlank()) {
+                        val image = Image(href = href, alt = attributes.getValue(ALT), aspectRatio = attributes.getValue(ASPECT_RATIO), width = attributes.getValue(WIDTH)?.toIntOrNull(), height = attributes.getValue(HEIGHT)?.toIntOrNull(), type = attributes.getValue(TYPE), purpose = attributes.getValue(PURPOSE))
+                        if (state.currentItem != null) state.currentItem!!.addImage(image)
+                        else state.feed.addImage(image)
                     }
                 }
+                TXT -> state.currentTxtPurpose = attributes.getValue(PURPOSE)
             }
             return SyndElement(localName, this)
         }
 
         override fun handleElementEnd(localName: String, state: HandlerState) {
             if (state.contentBuf == null) return
-            val content = state.contentBuf.toString()
-            if (FUNDING == localName && state.currentFunding != null && content.isNotEmpty()) state.currentFunding!!.content = content
+            val content = state.contentBuf.toString().trim()
+//            Logd(TAG, "handleElementEnd $localName $content")
+            when (localName) {
+                GUID -> if (content.isNotBlank()) state.feed.identifier = content
+                FUNDING -> {
+                    state.currentFunding?.let { funding ->
+                        if (content.isNotEmpty()) funding.content = content
+                        state.feed.addPayment(funding)
+                    }
+                    state.currentFunding = null
+                }
+                MEDIUM -> if (content.isNotEmpty()) state.feed.medium = content
+                TXT -> {
+                    val content = state.contentBuf?.toString()?.trim()
+                    if (!content.isNullOrEmpty()) {
+                        when (state.currentTxtPurpose) {
+                            "ai-content" -> {
+                                val value = content.toBooleanStrictOrNull()
+                                if (state.currentItem != null) state.currentItem!!.aiContent = value
+                                else state.feed.aiContent = value
+                            }
+                        }
+                    }
+                    state.currentTxtPurpose = null
+                }
+            }
         }
 
         companion object {
+            private const val TAG = "PodcastIndex"
             const val NSTAG: String = "podcast"
             const val NSURI: String = "https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md"
             const val NSURI2: String = "https://podcastindex.org/namespace/1.0"
+
+            private const val GUID = "guid"
             private const val URL = "url"
             private const val TYPE = "type"
             private const val LANGUAGE = "language"
@@ -779,6 +806,16 @@ object PodcastHandler {
             private const val FUNDING = "funding"
             private const val CHAPTERS = "chapters"
             private const val TRANSCRIPT = "transcript"
+            private const val MEDIUM = "medium"
+            private const val TXT = "txt"
+
+            private const val IMAGE = "image"
+            private const val HREF = "href"
+            private const val ALT = "alt"
+            private const val ASPECT_RATIO = "aspect-ratio"
+            private const val WIDTH = "width"
+            private const val HEIGHT = "height"
+            private const val PURPOSE = "purpose"
         }
     }
 
@@ -842,7 +879,7 @@ object PodcastHandler {
                             }
                         }
                         PUBDATE == top && ITEM == second -> state.currentItem?.pubDate = parseOrNullIfFuture(content)?.toEpochMilliseconds() ?: 0
-                        URL == top && IMAGE == second && CHANNEL == third -> if (state.feed.imageUrl == null) state.feed.imageUrl = content
+                        URL == top && IMAGE == second && CHANNEL == third -> state.feed.addImage(Image(content))
                         DESCR == top -> {
                             when (second) {
                                 CHANNEL -> state.feed.description = content.parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT).toString()

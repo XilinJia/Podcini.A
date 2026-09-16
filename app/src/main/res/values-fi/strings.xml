@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Päivitä tilaukset</string>
     <string name="feeds">Syötteet</string>
 
     <string name="statistics_label">Tilastot</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Lokit</string>
     <string name="subscriptions_label">Tilaukset</string>
     <string name="cancel_download_label">Peruuta lataus</string>
-    <string name="playback_history_label">Toistohistoria</string>
     <string name="months_statistics_label">Kuukaudet</string>
     <string name="notification_pref_fragment">Ilmoitukset</string>
     <string name="current_episode">Nykyinen</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">Laitteella olevien jaksojen koko yhteensä</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Yhteensopivia sovelluksia ei löytynyt</string>
     <string name="export_logs_menu_title">Vie yksityiskohtaiset lokit</string>
     <string name="confirm_export_log_dialog_message">Yksityiskohtaiset lokit voivat sisältää arkaluonteista tietoa, kuten listan tilauksistasi</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">Resetoi</string>
     <string name="global_default">Globaali oletus</string>
 
-    <string name="support_funding_label">Tue</string>
-    <string name="support_podcast">Tue tätä podcastia</string>
+
+
     <string name="error_label">Virhe</string>
     <string name="error_msg_prefix">Tapahtui virhe:</string>
     <string name="refresh_label">Päivitä</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Tyhjennä uusi</string>
     <string name="reconcile_label">Reconcile</string>
     <string name="chapters_label">Kappaleet</string>
-    <string name="chapter_duration0">Kesto: </string>
     <string name="description_label">Kuvaus</string>
     <string name="episodes_suffix">\u0020jaksoa</string>
-    <string name="close_label">Sulje</string>
-    <string name="retry_label">Yritä uudelleen</string>
-    <string name="auto_download_label">Lataa automaattisesti</string>
+    <string name="close">Sulje</string>
+    <string name="retry">Yritä uudelleen</string>
+    <string name="include_in_auto_downloads">Lataa automaattisesti</string>
     <string name="auto_delete_episode">Poista jakso automaattisesti</string>
-    <string name="feed_volume_adapdation">Äänenvoimakkuuden mukauttaminen</string>
-    <string name="feed_volume_adaptation_summary">Käännä äänenvoimakkuus tämän podcastin jaksoille ylös tai alas: %1$s</string>
-    <string name="feed_volume_reduction_off">Ei mukautuksia</string>
-    <string name="feed_volume_reduction_light">Valon vaimennus</string>
-    <string name="feed_volume_reduction_heavy">Raskas vähennys</string>
-    <string name="feed_volume_boost_light">Kevyt korostus</string>
-    <string name="feed_volume_boost_medium">Keskikokoinen korostus</string>
-    <string name="feed_volume_boost_heavy">Raskas korostus</string>
-    <string name="feed_auto_download_always">Aina</string>
-    <string name="feed_auto_download_never">Ei koskaan</string>
-    <string name="video_mode_label">Videon tila</string>
+    <string name="volume_adaptation">Äänenvoimakkuuden mukauttaminen</string>
+    <string name="volume_adaptation_summary">Käännä äänenvoimakkuus tämän podcastin jaksoille ylös tai alas: %1$s</string>
+    <string name="no_adaptation">Ei mukautuksia</string>
+    <string name="light_reduction">Valon vaimennus</string>
+    <string name="heavy_reduction">Raskas vähennys</string>
+    <string name="light_boost">Kevyt korostus</string>
+    <string name="medium_boost">Keskikokoinen korostus</string>
+    <string name="heavy_boost">Raskas korostus</string>
+    <string name="always">Aina</string>
+    <string name="never">Ei koskaan</string>
+    <string name="video_mode">Videon tila</string>
 
 
     <string name="video_mode_audio_only">Vain ääni</string>
@@ -150,8 +146,6 @@
     <string name="reserve_episodes_label">Varaa jaksot</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Poista</string>
-    <string name="delete_failed_simple">Tiedostoa ei voi poistaa.</string>
-    <string name="delete_local_failed">Tiedostoa ei voi poistaa. Yritä yhdistää paikallinen kansio uudelleen podcast-info -näytöstä.</string>
     <string name="delete_episode_label">Poista jakso</string>
     <string name="no_action_label">Ei toimintoa</string>
 
@@ -240,13 +234,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">VPN-sovellus teeskentelee olevansa mobiiliverkko (mitattu yhteys). Mobiiliyhteyden lataaminen on pois päältä asetuksista. Jos haluat, että tämä ongelma korjataan, ota yhteyttä VPN-sovelluksen luojiin.</string>
     <string name="confirm_mobile_download_dialog_download_later">Lataa myöhemmin</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Lataa silti</string>
-    <string name="confirm_mobile_streaming_notification_title">Vahvista suoratoisto mobiilidatayhteydellä</string>
     <string name="confirm_mobile_streaming_notification_message">Suoratoisto mobiilidatayhteydellä on estetty asetuksissa. Napsauta suoratoistaaksesi silti.</string>
     <string name="confirm_mobile_streaming_button_always">Aina</string>
     <string name="confirm_mobile_streaming_button_once">Kerran</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Mediaa ei toisteta</string>
     <string name="unknown_media_key">Podcini - Tuntematon media-avain: %1$d</string>
     <string name="error_file_not_found">Tiedostoa ei löytynyt</string>
     <!-- Queue operations -->
@@ -288,11 +280,9 @@
     <!-- Preferences -->
     <string name="project_pref">Projekti</string>
     <string name="synchronization_pref">Synkronointi</string>
-    <string name="synchronization_sum">Synkronoi muiden laitteiden kanssa</string>
     <string name="pref_backup_on_google_title">Automaattinen OPML:n varmuuskopiointi</string>
     <string name="pref_backup_on_google_sum">Automaattinen OPML-tiedostojen varmuuskopiointi Googleen. Kun se on käytössä, kun Podcini on poistettu käytöstä ja asennettu uudelleen, tilaukset voidaan palauttaa. Vaihda tämä asetus käynnistyy uudelleen Podcini.</string>
 
-    <string name="download_pref_details">Tietoja</string>
     <string name="import_export_pref">Tuo/Vie</string>
     <string name="pref_auto_backup_title">Automaattinen varmuuskopiointi</string>
     <string name="pref_auto_backup_sum">Varmuuskopioi tietokanta ja asetukset automaattisesti määritetyllä aikavälillä valittuun kansioon.</string>
@@ -302,7 +292,6 @@
     <string name="pref_auto_backup_limit">Ylläpidettävien varmuuskopioiden määrä</string>
     <string name="appearance">Näkymä</string>
     <string name="external_elements">Ulkoiset elementit</string>
-    <string name="create_YT_syndicates">Luo YT syndikaatteja</string>
     <string name="add_to_feed">Lisää syötteeseen</string>
     <string name="interruptions">Keskeytykset</string>
     <string name="playback_control">Toistonhallinta</string>
@@ -412,12 +401,6 @@
     <string name="pref_rewind_sum">Mukauta sekunnit jonka verran hypätään takaisin kun painat taakse kelaus -painiketta.</string>
     <string name="pref_playback_video_mode">Videon toistotila</string>
     <string name="pref_playback_video_mode_sum">Valitse, miten video episodi toistetaan oletuksena</string>
-    <string name="pref_swipe_refresh_title">Pyyhkäise päivittääksesi</string>
-    <string name="pref_swipe_refresh_sum">Pyyhkäise alas päivittääksesi kaikki tilaukset</string>
-    <string name="pref_feedGridLayout_title">Tilaukset käyttävät ruudukon asettelua </string>
-    <string name="pref_feedGridLayout_sum">Kun tilaukset on asetettu, näkymä käyttää ruudukon asettelua, muuten listan asettelu</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Näytä ohitus ilmoituksessa</string>
@@ -463,7 +446,6 @@
     <string name="licenses_summary">Podcini käyttää muita hienoja ohjelmistoja</string>
     <string name="email_sum">Ilmoita ongelmista tai tee ehdotuksia suoraan kehittäjälle.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Ei löydetty tuloksia</string>
     <string name="search_label">Etsi</string>
     <string name="no_results_for_query">Ei löydetty tuloksia \"%1$s\"</string>
 
@@ -487,7 +469,6 @@
     <string name="combo_export_summary">Vie valittavasti tietokanta, asetukset, mediatiedostot.</string>
     <string name="combo_import_summary">Tuo valikoivasti tietokanta, asetukset, mediatiedostot.</string>
     <string name="opml_import_label">OPML-tuonti</string>
-    <string name="opml_add_podcast_label">Tuo podcastien lista (OPML)</string>
     <string name="opml_reader_error">Virhe lukiessa OPML dokumenttia:</string>
     <string name="progress_export_label">Jaksojen viennin edistyminen</string>
     <string name="progress_import_label">Jaksojen edistymisen tuonti</string>
@@ -528,22 +509,8 @@
     <string name="timer_vibration_label">Värise ennen loppua</string>
     <string name="time_minutes">minuuttia</string>
     <string name="time_hours">tuntia</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 minuutti</item>
-        <item quantity="other">%d minuuttia</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 tunti</item>
-        <item quantity="other">%d tuntia</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 päivä</item>
-        <item quantity="other">%d päivää</item>
-    </plurals>
     <string name="auto_enable_label">Aktivoi nukkumisajastin automaattisesti kun painat toistoa</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Synkronoi laitteen kanssa WiFissä</string>
-    <string name="wifi_sync_summary_unchoosen">Voit yhdistää kaksi samaa wifi-verkkoa olevaa laitetta synkronoidaksesi jaksot toisista tiloistasi</string>
     <string name="synchronization_choose_title">Valitse synkronointipalveluntarjoaja</string>
     <string name="synchronization_summary_unchoosen">Voit valita useista palveluntarjoajista, joiden kanssa voit synkronoida tilauksesi ja jaksojen toistotilan</string>
     <string name="dialog_choose_sync_service_title">Valitse synkronointipalveluntarjoaja</string>
@@ -573,8 +540,6 @@
     <string name="pref_synchronization_logout_toast">Uloskirjautuminen onnistui</string>
     <string name="gpodnetsync_error_title">gpodder.net synkrointivirhe</string>
     <string name="gpodnetsync_error_descr">Synkronointivirhe:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Onnistui</string>
-    <string name="gpodnetsync_pref_report_failed">Epäonnistui</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Tilaa</string>
@@ -586,7 +551,6 @@
     <string name="tags_label">Tunnisteet</string>
     <string name="feed_tags_summary">Muokkaa tämän podcastin tunnisteita tilaustesi järjestelemisen avuksi.</string>
 
-    <string name="auto_download_settings_label">Automaattisen latauksen asetukset</string>
     <string name="episode_filters_label">Jaksosuodin</string>
     <string name="episode_inclusive_filters_label">Jakso, mukaan lukien suodatin</string>
     <string name="episode_exclusive_filters_label">Jakson eksklusiivinen suodatin</string>
@@ -616,24 +580,16 @@
     <string name="edit_url_menu">Muokkaa syötteen URLia</string>
     <string name="edit_url_confirmation_msg">Syötteen osoitteen muokkaaminen voi helposti sotkea podcastin toistotilan ja jaksolistaukset. Sen muokkaamista EI suositella, EIKÄ tukea tarjota mikäli jokin menee vikaan. Tätä ei saa tekemättömäksi. Sotkeutunutta tilausta EI voi korjata yksinkertaisesti vaihtamalla osoite takaisin. Varmuuskopion ottaminen ennen jatkamista on suositeltavaa.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Tuodaan tilauksia sovelluksista</string>
 
     <string name="search_podcast_hint">Etsi podcastia…</string>
 
     <string name="search_itunes_label">Etsi Apple Podcasteja</string>
     <string name="search_podcastindex_label">Hae Podcastin Hakemistosta</string>
 
-    <string name="advanced">Edistyneet</string>
-
-
-
-
-
 
     <string name="search_powered_by">Tulosten lähde %1$s</string>
     <string name="select_country">Valitse maa</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Lisää paikallinen kansio</string>
     <string name="local_folder">Paikallinen kansio</string>
     <string name="reconnect_local_folder">Yhdistä paikallinen kansio uudelleen</string>
     <string name="reconnect_local_folder_warning">Jos lupa evätään, voit käyttää tätä yhteyden muodostamiseen uudelleen täsmälleen samaan kansioon. Älä valitse toista kansiota.</string>
@@ -657,8 +613,6 @@
     <string name="has_video">On video</string>
     <string name="has_comments">On kommentoinut</string>
 
-    <string name="always">Aina</string>
-    <string name="never">Ei Koskaan</string>
     <string name="auto_download">Automaattinen lataus</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Sisällytä toistokohta</string>
@@ -670,7 +624,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Audiokontrollit</string>
     <string name="playback_speed">Toistonopeus</string>
-    <string name="player_switch_to_audio_only">Vain ääni</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Tyyppi</string>
     <string name="host_label">Isäntä</string>
@@ -682,7 +635,6 @@
     <string name="proxy_test_failed">Testi epäonnistui</string>
     <string name="proxy_host_empty_error">Host ei voi olla tyhjä</string>
     <string name="proxy_host_invalid_error">Host ei ole oikea IP-osoite tai domain</string>
-    <string name="proxy_port_invalid_error">Portti ei ole oikein</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Virheet</string>
@@ -690,17 +642,12 @@
     <string name="notification_channel_user_action_description">Näytetään jos toiminta tarvitaan, esimerkiksi jos tarvitset uuden salasanan.</string>
     <string name="notification_channel_downloading">Ladataan</string>
     <string name="notification_channel_downloading_description">Näytetään kun ladataan.</string>
-    <string name="notification_channel_playing">Toistetaan nyt</string>
-    <string name="notification_channel_playing_description">Sallii toiston kontrollit. Tämä on pääilmoitus, jonka näet, kun podcast toistetaan.</string>
     <string name="notification_channel_download_error">Lataus epäonnistui</string>
     <string name="notification_channel_download_error_description">Näytetään, kun lataus tai syötteen päivitys epäonnistuu.</string>
     <string name="notification_channel_sync_error">Synkronointi epäonnistui</string>
     <string name="notification_channel_sync_error_description">Näytetään, kun gpodder-synkronointi epäonnistuu.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Asetuksen päivitys onnistui.</string>
-    <string name="on_demand_config_stream_text">Näyttää siltä, että suoratoistat paljon. Haluatko, että jaksoluetteloissa näytetään suoratoistopainikkeet\?</string>
-    <string name="on_demand_config_download_text">Näyttää siltä, että lataat paljon. Haluatko, että jaksoluetteloissa näytetään latauspainikkeet\?</string>
 
 
     <string name="add_shortcut">Lisää pikakuvake</string>

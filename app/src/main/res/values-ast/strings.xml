@@ -23,8 +23,7 @@
 
 
     <!--Bug report activity-->
-  <string name="log_file_share_exception">Nun s\'atoparon aplicaciones compatibles</string>
-  <string name="export_logs_menu_title">Esportar el rexistru detalláu</string>
+    <string name="export_logs_menu_title">Esportar el rexistru detalláu</string>
   <!--Webview actions-->
   <string name="share_url_label">Compartición d\'una URL</string>
   <!--Playback history-->
@@ -43,11 +42,11 @@
   <string name="description_label">Descripción</string>
 
   <string name="episodes_suffix">\u0020episodios</string>
-  <string name="close_label">Zarrar</string>
-  <string name="retry_label">Retentar</string>
-  <string name="auto_download_label">Incluyir nes descargues automátiques</string>
-  <string name="feed_auto_download_always">Siempres</string>
-  <string name="feed_auto_download_never">Enxamás</string>
+  <string name="close">Zarrar</string>
+  <string name="retry">Retentar</string>
+  <string name="include_in_auto_downloads">Incluyir nes descargues automátiques</string>
+  <string name="always">Siempres</string>
+  <string name="never">Enxamás</string>
   <string name="episode_cleanup_never">Enxamás</string>
   <string name="episode_cleanup_except_favorite">Al nun tar en Favoritos</string>
   <string name="episode_cleanup_not_in_queue">Al nun tar na cola</string>
@@ -124,8 +123,7 @@
   <string name="project_pref">Proyeutu</string>
   <string name="synchronization_pref">Sincronización</string>
 
-  <string name="download_pref_details">Detalles</string>
-  <string name="import_export_pref">Importación/Esportación</string>
+    <string name="import_export_pref">Importación/Esportación</string>
   <string name="appearance">Aspeutu</string>
   <string name="external_elements">Elementos esternos</string>
   <string name="playback_control">Control de la reproducción</string>
@@ -186,8 +184,7 @@
   <string name="licenses">Llicencies</string>
   <string name="licenses_summary">Podcini usa otros programes maraviyosos</string>
   <!--Search-->
-  <string name="search_status_no_results">Nun s\'atoparon resultaos</string>
-  <string name="search_label">Buscar</string>
+    <string name="search_label">Buscar</string>
   <string name="no_results_for_query">Nun s\'atoparon resultaos pa «%1$s»</string>
   <!--Synchronization-->
   <string name="sync_status_episodes_download">Baxando los cambeos de los episodios…</string>
@@ -198,7 +195,6 @@
     <string name="html_export_summary">Enseña les soscripciones a los collacios</string>
   <string name="opml_export_summary">Tresfier les soscripciones a otra aplicación de podcasts</string>
   <string name="opml_import_summary">Importa les soscripciones d\'otra aplicación de podcasts</string>
-    <string name="opml_add_podcast_label">Importar una llista de podcasts (OPML)</string>
     <string name="export_success_title">La esportación fízose correutamente</string>
   <string name="successful_import_label">La importación fízose correutamente</string>
   <string name="import_ok">Primi «D\'acuerdu» pa reaniciar Podcini</string>
@@ -211,15 +207,7 @@
   <string name="sleep_timer_label">Temporizador</string>
     <string name="time_minutes">minutos</string>
   <string name="time_hours">hores</string>
-  <plurals name="time_minutes_quantified">
-    <item quantity="one">1 minutu</item>
-    <item quantity="other">%d minutos</item>
-  </plurals>
-  <plurals name="time_hours_quantified">
-    <item quantity="one">1 hora</item>
-    <item quantity="other">%d hores</item>
-  </plurals>
-  <!--Synchronisation-->
+    <!--Synchronisation-->
   <string name="gpodnetauth_login_butLabel">Aniciar sesión</string>
     <string name="username_label">Nome d\'usuariu</string>
   <string name="password_label">Contraseña</string>
@@ -232,8 +220,6 @@
 
 
   <string name="gpodnetsync_error_descr">Asocedió un fallu demientres la sincronización:\u0020</string>
-  <string name="gpodnetsync_pref_report_successful">Sincronización correuta</string>
-  <string name="gpodnetsync_pref_report_failed">Sincronización fallida</string>
     <!--Directory chooser-->
     <!--Online feed view-->
   <string name="subscribe_label">Soscribise</string>
@@ -254,15 +240,10 @@
 
   <string name="search_podcast_hint">Buscar podcasts…</string>
 
-    <string name="advanced">Avanzao</string>
 
-
-
-
-  <string name="search_powered_by">Resultaos de %1$s</string>
+    <string name="search_powered_by">Resultaos de %1$s</string>
   <!--Local feeds-->
-  <string name="add_local_folder">Amestar una carpeta llocal</string>
-  <string name="local_folder">Carpeta llocal</string>
+    <string name="local_folder">Carpeta llocal</string>
   <string name="local_feed_description">Esti podcast virtual creóse por amestar una carpeta a Podcini.</string>
   <string name="unable_to_start_system_file_manager">Nun ye posible aniciar el xestor de ficheros del sistema</string>
 
@@ -292,8 +273,7 @@
   <string name="proxy_checking">Comprobando…</string>
   <string name="proxy_test_successful">La prueba fízose correutamente</string>
   <string name="proxy_test_failed">La prueba falló</string>
-  <string name="proxy_port_invalid_error">El puertu nun ye válidu</string>
-  <!--Subscriptions fragment-->
+    <!--Subscriptions fragment-->
 
   <!--Notification channels-->
   <string name="notification_group_errors">Fallos</string>
@@ -301,14 +281,10 @@
   <string name="notification_channel_user_action">Intervención manual</string>
   <string name="notification_channel_downloading">En descarga</string>
   <string name="notification_channel_downloading_description">Apaez mentanto hai descargues en cursu.</string>
-  <string name="notification_channel_playing">En reproducción</string>
-  <string name="notification_channel_playing_description">Permite controlar la reproducción. Esti ye l\'avisu principal que ves mentanto reproduces un podcast.</string>
-  <string name="notification_channel_download_error">Descargues fallíes</string>
+    <string name="notification_channel_download_error">Descargues fallíes</string>
   <string name="notification_channel_sync_error">Sincronización fallida</string>
   <string name="notification_channel_sync_error_description">Apaez cuando falla la sincronización con gpodder.</string>
 
   <!--Widget settings-->
     <!--On-Demand configuration-->
-  <string name="on_demand_config_setting_changed">L\'axuste anovóse correutamente.</string>
-  <string name="on_demand_config_download_text">Paez que baxes muncho. ¿Quies que les llistes d\'episodios amuesen los botones de descarga?</string>
 </resources>

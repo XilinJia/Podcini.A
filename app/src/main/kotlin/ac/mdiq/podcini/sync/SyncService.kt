@@ -3,6 +3,8 @@ package ac.mdiq.podcini.sync
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.CHANNEL_ID
+import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.NotificationIds
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater
 import ac.mdiq.podcini.sync.SynchronizationSettings.hosturl
@@ -63,7 +65,9 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
 
     protected val synchronizationQueueStorage = SynchronizationQueueStorage()
 
-     override suspend fun doWork(): Result {
+    override suspend fun doWork(): Result {
+        initialize()
+
         Logd(TAG, "doWork() called")
         val activeSyncProvider = getActiveSyncProvider() ?: return Result.failure()
         Logd(TAG, "doWork() got syn provider")
@@ -290,8 +294,8 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
 
     private fun clearErrorNotifications() {
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.cancel(R.id.notification_gpodnet_sync_error)
-        nm.cancel(R.id.notification_gpodnet_sync_autherror)
+        nm.cancel(NotificationIds.gpodnet_sync_error)
+        nm.cancel(NotificationIds.gpodnet_sync_autherror)
     }
 
     private fun gpodnetNotificationsEnabled(): Boolean {
@@ -325,7 +329,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify(R.id.notification_gpodnet_sync_error, notification)
+        nm.notify(NotificationIds.gpodnet_sync_error, notification)
     }
 
     private fun getActiveSyncProvider(): ISyncService? {

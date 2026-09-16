@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Update subscriptions</string>
     <string name="feeds">Feeds</string>
 
     <string name="statistics_label">Statistike</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Logs</string>
     <string name="subscriptions_label">Naročnine</string>
     <string name="cancel_download_label">Cancel download</string>
-    <string name="playback_history_label">History</string>
     <string name="months_statistics_label">Months</string>
     <string name="notification_pref_fragment">Obvestila</string>
     <string name="current_episode">Current</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">Total size of episodes on the device</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Ni bilo najdenih združljivih aplikacij</string>
     <string name="export_logs_menu_title">Izvozi podrobne dnevnike</string>
     <string name="confirm_export_log_dialog_message">POdrobni dnevniki lahko vsebujejo občutljive podatke, naprimer vaše sezname naročnin</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">Resetiraj</string>
     <string name="global_default">Global default</string>
 
-    <string name="support_funding_label">Podpora</string>
-    <string name="support_podcast">Support this podcast</string>
+
+
     <string name="error_label">Napaka</string>
     <string name="error_msg_prefix">Pojavila se je napaka:</string>
     <string name="refresh_label">Osveži</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Clear new</string>
     <string name="reconcile_label">Reconcile</string>
     <string name="chapters_label">Poglavja</string>
-    <string name="chapter_duration0">Duration: </string>
     <string name="description_label">Opis</string>
     <string name="episodes_suffix">\u0020epizode</string>
-    <string name="close_label">Zapri</string>
-    <string name="retry_label">Ponovno poizkusi</string>
-    <string name="auto_download_label">Vključi v samodejne prenose</string>
+    <string name="close">Zapri</string>
+    <string name="retry">Ponovno poizkusi</string>
+    <string name="include_in_auto_downloads">Vključi v samodejne prenose</string>
     <string name="auto_delete_episode">Auto delete episode</string>
-    <string name="feed_volume_adapdation">Volume adaptation</string>
-    <string name="feed_volume_adaptation_summary">Turn volume for episodes of this podcast up or down: %1$s</string>
-    <string name="feed_volume_reduction_off">No adaption</string>
-    <string name="feed_volume_reduction_light">Light reduction</string>
-    <string name="feed_volume_reduction_heavy">Heavy reduction</string>
-    <string name="feed_volume_boost_light">Light boost</string>
-    <string name="feed_volume_boost_medium">Medium boost</string>
-    <string name="feed_volume_boost_heavy">Heavy boost</string>
-    <string name="feed_auto_download_always">Vedno</string>
-    <string name="feed_auto_download_never">Nikoli</string>
-    <string name="video_mode_label">Video mode</string>
+    <string name="volume_adaptation">Volume adaptation</string>
+    <string name="volume_adaptation_summary">Turn volume for episodes of this podcast up or down: %1$s</string>
+    <string name="no_adaptation">No adaption</string>
+    <string name="light_reduction">Light reduction</string>
+    <string name="heavy_reduction">Heavy reduction</string>
+    <string name="light_boost">Light boost</string>
+    <string name="medium_boost">Medium boost</string>
+    <string name="heavy_boost">Heavy boost</string>
+    <string name="always">Vedno</string>
+    <string name="never">Nikoli</string>
+    <string name="video_mode">Video mode</string>
 
 
     <string name="video_mode_audio_only">Audio only</string>
@@ -152,8 +148,6 @@
     <string name="reserve_episodes_label">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Briši</string>
-    <string name="delete_failed_simple">Unable to delete file.</string>
-    <string name="delete_local_failed">Unable to delete file. Try re-connecting the local folder from the podcast info screen.</string>
     <string name="delete_episode_label">Delete episode media</string>
     <string name="no_action_label">No action</string>
 
@@ -244,13 +238,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Your VPN app pretends to be a mobile network (metered connection). Downloading over mobile data connection is disabled in the settings. If you want this problem to be fixed, contact the creators of your VPN app.</string>
     <string name="confirm_mobile_download_dialog_download_later">Download later</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Download anyway</string>
-    <string name="confirm_mobile_streaming_notification_title">Confirm mobile streaming</string>
     <string name="confirm_mobile_streaming_notification_message">Pretakanje preko mobilne podatkovne povezave je onemogočeno v nastavitvah. Tapnite za pretakanje kljub temu.</string>
     <string name="confirm_mobile_streaming_button_always">Vendo</string>
     <string name="confirm_mobile_streaming_button_once">Enkrat</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Ni medijske vsebine za predvajati</string>
     <string name="unknown_media_key">Podcini - Neznan medijski ključ: %1$d</string>
     <string name="error_file_not_found">Datoteka ni najdena</string>
     <!-- Queue operations -->
@@ -292,11 +284,9 @@
     <!-- Preferences -->
     <string name="project_pref">Projekt</string>
     <string name="synchronization_pref">Sinhronizacija</string>
-    <string name="synchronization_sum">Sinhroniziraj z drugimi napravami</string>
     <string name="pref_backup_on_google_title">Auto backup of OPML</string>
     <string name="pref_backup_on_google_sum">Auto backup OPML files to Google. Once enabled, after Podcini is uninstalled and re-installed, the subscriptions can be restored. Toggle this setting will restart Podcini.</string>
 
-    <string name="download_pref_details">Podrobnosti</string>
     <string name="import_export_pref">Uvozi/Izvozi</string>
     <string name="pref_auto_backup_title">Auto backup</string>
     <string name="pref_auto_backup_sum">Automatically back up DB and preferences at a specified interval into a selected folder.</string>
@@ -306,7 +296,6 @@
     <string name="pref_auto_backup_limit">Number of backups to keep</string>
     <string name="appearance">Videz</string>
     <string name="external_elements">Zunanji elementi</string>
-    <string name="create_YT_syndicates">Create YT syndicates</string>
     <string name="add_to_feed">Add to feed</string>
     <string name="interruptions">Prekinitve</string>
     <string name="playback_control">Predvajalne kontrole</string>
@@ -416,12 +405,6 @@
     <string name="pref_rewind_sum">Prilagodite število sekund za skok nazaj, ko kliknete gumb za previjanje nazaj</string>
     <string name="pref_playback_video_mode">Video play mode</string>
     <string name="pref_playback_video_mode_sum">Choose how video episode is played by default</string>
-    <string name="pref_swipe_refresh_title">Swipe to refresh</string>
-    <string name="pref_swipe_refresh_sum">Swipe down to refresh all subscriptions</string>
-    <string name="pref_feedGridLayout_title">Subscriptions use grid layout </string>
-    <string name="pref_feedGridLayout_sum">When set, Subscriptions view use a grid layout, otherwise list layout</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Show skip on notification</string>
@@ -467,7 +450,6 @@
     <string name="licenses_summary">Podcini uporablja drugo odlično programsko opremo</string>
     <string name="email_sum">Report issues or make suggestions directly to the developer.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Ni rezultatov</string>
     <string name="search_label">Išči</string>
     <string name="no_results_for_query">Ni rezultatov za \"%1$s\"</string>
 
@@ -491,7 +473,6 @@
     <string name="combo_export_summary">Export selectably the database, preferences, media files.</string>
     <string name="combo_import_summary">Import selectably the database, preferences, media files.</string>
     <string name="opml_import_label">OPML import</string>
-    <string name="opml_add_podcast_label">Uvozite podcast seznam (OPML)</string>
     <string name="opml_reader_error">Pri branju dokumenta OPML je prišlo do napake:</string>
     <string name="progress_export_label">Episodes progress export</string>
     <string name="progress_import_label">Episodes progress import</string>
@@ -532,28 +513,8 @@
     <string name="timer_vibration_label">Vibracije malo pred koncem</string>
     <string name="time_minutes">minute</string>
     <string name="time_hours">ure</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 minuta</item>
-        <item quantity="two">%d minute</item>
-        <item quantity="few">%dminut</item>
-        <item quantity="other">%d minut</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 ura</item>
-        <item quantity="two">%d uri</item>
-        <item quantity="few">%d ure</item>
-        <item quantity="other">%d uri</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 day</item>
-        <item quantity="two">%d days</item>
-        <item quantity="few">%d days</item>
-        <item quantity="other">%d days</item>
-    </plurals>
     <string name="auto_enable_label">Automatically activate the sleep timer when pressing play</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Sync with device on Wifi</string>
-    <string name="wifi_sync_summary_unchoosen">You can connect two devices on the same wifi network to synchronize your episodes play states</string>
     <string name="synchronization_choose_title">Izberite ponudnika preko katerga želite oprviti sinhronizacijo</string>
     <string name="synchronization_summary_unchoosen">Izbirate lahko med večimi ponudniki, da sinhronzirate vaše naročnine in epizode</string>
     <string name="dialog_choose_sync_service_title">Izberite ponudnika preko katerga želite oprviti sinhronizacijo</string>
@@ -583,8 +544,6 @@
     <string name="pref_synchronization_logout_toast">Odjava je bila uspešna</string>
     <string name="gpodnetsync_error_title">napaka pri sinhronizaciji gpodder.net</string>
     <string name="gpodnetsync_error_descr">Med sinhronizacijo je prišlo do napake:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Uspešno</string>
-    <string name="gpodnetsync_pref_report_failed">Ne uspešno</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Naročite se</string>
@@ -596,7 +555,6 @@
     <string name="tags_label">Oznake</string>
     <string name="feed_tags_summary">Change the tags of this podcast to help organize your subscriptions</string>
 
-    <string name="auto_download_settings_label">Auto download settings</string>
     <string name="episode_filters_label">Episode filter</string>
     <string name="episode_inclusive_filters_label">Episode inclusive filter</string>
     <string name="episode_exclusive_filters_label">Episode exclusive filter</string>
@@ -626,24 +584,16 @@
     <string name="edit_url_menu">Edit feed URL</string>
     <string name="edit_url_confirmation_msg">Changing the RSS address can easily break the playback state and episode listings of the podcast. We do NOT recommend changing it and will NOT provide support if anything goes wrong. This cannot be undone. The broken subscription CANNOT be repaired by simply changing the address back. We suggest creating a backup before continuing.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Uvažanje naročnin iz enonamenskih aplikacij …</string>
 
     <string name="search_podcast_hint">Išči podcast…</string>
 
     <string name="search_itunes_label">Search Apple Podcasts</string>
     <string name="search_podcastindex_label">Search Podcast Index</string>
 
-    <string name="advanced">Napredno</string>
-
-
-
-
-
 
     <string name="search_powered_by">Rezultati od %1$s</string>
     <string name="select_country">Select country</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Dodaj lokalno mapo</string>
     <string name="local_folder">Lokalna mapa</string>
     <string name="reconnect_local_folder">Ponovno povežite lokalno mapo</string>
     <string name="reconnect_local_folder_warning">V primeru zavrnitve dovoljenj lahko to uporabite za ponovno povezavo s popolnoma isto mapo. Ne izberite druge mape.</string>
@@ -667,8 +617,6 @@
     <string name="has_video">Has video</string>
     <string name="has_comments">Has commented</string>
 
-    <string name="always">Always</string>
-    <string name="never">Never</string>
     <string name="auto_download">Auto download</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Include playback position</string>
@@ -680,7 +628,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Kontrole zvoka</string>
     <string name="playback_speed">Playback speed</string>
-    <string name="player_switch_to_audio_only">Audio only</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Tip</string>
     <string name="host_label">Gostitelj</string>
@@ -692,7 +639,6 @@
     <string name="proxy_test_failed">Test ni uspel</string>
     <string name="proxy_host_empty_error">Host ne sme biti prazen</string>
     <string name="proxy_host_invalid_error">Host ni veljaven naslov IP ali domena</string>
-    <string name="proxy_port_invalid_error">Vrata niso veljavna</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Napake</string>
@@ -700,17 +646,12 @@
     <string name="notification_channel_user_action_description">Prikazano, če je vaše dejanje potrebno, na primer, če morate vnesti geslo.</string>
     <string name="notification_channel_downloading">Prenašanje</string>
     <string name="notification_channel_downloading_description">Prikazano med trenutnim prenosom.</string>
-    <string name="notification_channel_playing">Trenutno se predvaja</string>
-    <string name="notification_channel_playing_description">Omogoča nadzor predvajanja. To je glavno obvestilo, ki ga vidite med predvajanjem podcasta.</string>
     <string name="notification_channel_download_error">Prenos ne uspešen</string>
     <string name="notification_channel_download_error_description">Prikazano, ko prenos ali posodobitev vira ne uspe.</string>
     <string name="notification_channel_sync_error">Sinhronizacija ni uspela</string>
     <string name="notification_channel_sync_error_description">Prikazano, ko sinhronizacija gpodderja ne uspe.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Nastavitev je bila uspešno posodobljena.</string>
-    <string name="on_demand_config_stream_text">Videti je, da veliko pretakate. Ali želite, da so na seznamih epizod prikazani gumbi za pretočno predvajanje\?</string>
-    <string name="on_demand_config_download_text">Videti je, da veliko prenašate. Ali želite, da so na seznamih epizod prikazani gumbi za prenos\?</string>
 
 
     <string name="add_shortcut">Add shortcut</string>

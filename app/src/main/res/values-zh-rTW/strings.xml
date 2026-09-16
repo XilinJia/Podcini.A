@@ -30,8 +30,7 @@
 
 
     <!--Bug report activity-->
-  <string name="log_file_share_exception">找不到相容的 App</string>
-  <string name="export_logs_menu_title">匯出詳細記錄</string>
+    <string name="export_logs_menu_title">匯出詳細記錄</string>
   <string name="confirm_export_log_dialog_message">詳細記錄中可能包含您的隱私資訊，例如訂閱列表等等</string>
   <!--Webview actions-->
   <string name="copy_url_label">複製網址</string>
@@ -51,11 +50,11 @@
 
   <string name="description_label">描述</string>
   <string name="episodes_suffix">\u0020單集</string>
-  <string name="close_label">關閉</string>
-  <string name="retry_label">重試</string>
-  <string name="auto_download_label">加入自動下載</string>
-  <string name="feed_auto_download_always">總是</string>
-  <string name="feed_auto_download_never">不予下載</string>
+  <string name="close">關閉</string>
+  <string name="retry">重試</string>
+  <string name="include_in_auto_downloads">加入自動下載</string>
+  <string name="always">總是</string>
+  <string name="never">不予下載</string>
   <string name="episode_cleanup_never">不予刪除</string>
   <string name="episode_cleanup_except_favorite">若未標記為最愛</string>
   <string name="episode_cleanup_not_in_queue">若未列入待播清單</string>
@@ -105,10 +104,7 @@
   <!--Mediaplayer messages-->
 
 
-
-
-  <string name="no_media_playing_label">播放完畢</string>
-  <string name="unknown_media_key">Podcini - 媒體按鍵無法辨識：%1$d</string>
+    <string name="unknown_media_key">Podcini - 媒體按鍵無法辨識：%1$d</string>
   <string name="error_file_not_found">找不到檔案</string>
   <!--Queue operations-->
   <string name="queue_locked">待播清單已鎖定</string>
@@ -144,8 +140,7 @@
   <string name="project_pref">專案</string>
   <string name="synchronization_pref">同步</string>
 
-  <string name="download_pref_details">細節</string>
-  <string name="import_export_pref">匯入/匯出</string>
+    <string name="import_export_pref">匯入/匯出</string>
     <string name="appearance">外觀</string>
   <string name="external_elements">外部元素</string>
   <string name="interruptions">中斷</string>
@@ -218,8 +213,7 @@
   <string name="licenses">授權條款</string>
   <string name="licenses_summary">Podcini 中也用了其他很棒的軟體</string>
   <!--Search-->
-  <string name="search_status_no_results">搜尋無結果</string>
-  <string name="search_label">搜尋</string>
+    <string name="search_label">搜尋</string>
   <string name="no_results_for_query">找不到「%1$s」</string>
   <!--Synchronization-->
   <string name="sync_status_started">已開始同步</string>
@@ -234,8 +228,7 @@
     <string name="html_export_summary">顯示您的訂閱給朋友</string>
   <string name="opml_export_summary">將您的訂閱清單移到另一個 Podcast 軟體</string>
   <string name="opml_import_summary">從其他 Podcast 軟體匯入訂閱清單</string>
-    <string name="opml_add_podcast_label">自 OPML 匯入 Podcast 清單</string>
-  <string name="opml_reader_error">讀取 OPML 時發生錯誤：</string>
+    <string name="opml_reader_error">讀取 OPML 時發生錯誤：</string>
     <string name="opml_export_label">匯出 OPML</string>
   <string name="html_export_label">匯出 HTML</string>
     <string name="import_export_error_label">匯出錯誤</string>
@@ -255,12 +248,6 @@
   <string name="timer_vibration_label">在時間到之前短暫震動手機</string>
     <string name="time_minutes">分鐘</string>
   <string name="time_hours">小時</string>
-  <plurals name="time_minutes_quantified">
-    <item quantity="other">%d 分鐘</item>
-  </plurals>
-  <plurals name="time_hours_quantified">
-    <item quantity="other">%d 小時</item>
-  </plurals>
     <!--Synchronisation-->
   <string name="synchronization_host_label">伺服器位址</string>
   <string name="gpodnetauth_login_butLabel">登入</string>
@@ -271,8 +258,6 @@
     <string name="synchronization_logout">登出</string>
   <string name="gpodnetsync_error_title">gpodder.net 同步錯誤</string>
   <string name="gpodnetsync_error_descr">更新時發生錯誤：\u0020</string>
-  <string name="gpodnetsync_pref_report_successful">成功</string>
-  <string name="gpodnetsync_pref_report_failed">失敗</string>
     <!--Directory chooser-->
     <!--Online feed view-->
   <string name="subscribe_label">訂閱</string>
@@ -292,19 +277,13 @@
   <string name="statistics_space_used">佔用空間：</string>
 
   <!--PodciniSP-->
-  <string name="sp_apps_importing_feeds_msg">從 PodciniSP 匯入訂閱清單</string>
 
-  <string name="search_podcast_hint">搜尋 Podcast…</string>
-
-    <string name="advanced">進階</string>
+    <string name="search_podcast_hint">搜尋 Podcast…</string>
 
 
-
-
-  <string name="search_powered_by">來自 %1$s 的搜尋結果</string>
+    <string name="search_powered_by">來自 %1$s 的搜尋結果</string>
   <!--Local feeds-->
-  <string name="add_local_folder">新增本機資料夾</string>
-  <string name="local_folder">本機資料夾</string>
+    <string name="local_folder">本機資料夾</string>
   <string name="reconnect_local_folder">重新連接本機資料夾</string>
   <string name="reconnect_local_folder_warning">若因權限問題被拒絕連接，您可以用此方法重新連上同一個資料夾。此時請勿選擇其他的資料夾。</string>
   <string name="local_feed_description">此虛擬 Podcast 是在 Podcini 裡增加資料夾而產生的。</string>
@@ -343,8 +322,7 @@
   <string name="proxy_test_failed">測試失敗</string>
   <string name="proxy_host_empty_error">主機不可留白</string>
   <string name="proxy_host_invalid_error">主機並非有效的 IP 或網域名稱</string>
-  <string name="proxy_port_invalid_error">埠號無效</string>
-  <!--Subscriptions fragment-->
+    <!--Subscriptions fragment-->
 
   <!--Notification channels-->
   <string name="notification_group_errors">錯誤</string>
@@ -353,16 +331,11 @@
   <string name="notification_channel_user_action_description">需要您有進一步行動（比方說輸入密碼）時顯示。</string>
   <string name="notification_channel_downloading">下載資訊</string>
   <string name="notification_channel_downloading_description">下載時顯示</string>
-  <string name="notification_channel_playing">現正播放</string>
-  <string name="notification_channel_playing_description">允許播放控制。這是您在播放 Podcast 時會看到的主要通知。</string>
-  <string name="notification_channel_download_error">下載失敗</string>
+    <string name="notification_channel_download_error">下載失敗</string>
   <string name="notification_channel_download_error_description">當下載或更新出錯時顯示。</string>
   <string name="notification_channel_sync_error">同步失敗</string>
   <string name="notification_channel_sync_error_description">在 gpodder 同步發生錯誤時顯示</string>
 
   <!--Widget settings-->
     <!--On-Demand configuration-->
-  <string name="on_demand_config_setting_changed">設定更新成功</string>
-  <string name="on_demand_config_stream_text">看來您常常用串流方式聆聽，您希望在單集清單中顯示串流按鈕嗎？</string>
-  <string name="on_demand_config_download_text">看來您常常用下載方式聆聽，您希望在單集清單中顯示下載按鈕嗎？</string>
 </resources>

@@ -3,6 +3,7 @@ package ac.mdiq.podcini.activity
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.activity.MainActivity.Extras
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
 import ac.mdiq.podcini.sourcing.sourceClients
@@ -57,6 +58,7 @@ class ShareReceiverActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        initialize()
 
         Logd(TAG, "intent: $intent")
         when (intent.action) {
@@ -91,7 +93,7 @@ class ShareReceiverActivity : ComponentActivity() {
                             Box(modifier = Modifier.fillMaxWidth().height(400.dp).padding(bottom = 50.dp)) {
                                 EpisodeLazyColumn(existing!!, layoutMode = LayoutMode.FeedTitle.code, forceFeedImage = true, showActionButtons = false)
                             }
-                            Button(modifier = Modifier.align(Alignment.BottomEnd) , onClick = { addAsNew =  true }) { Text(stringResource(R.string.add_as_new)) }
+                            Button(modifier = Modifier.align(Alignment.BottomEnd), onClick = { addAsNew =  true }) { Text(stringResource(R.string.add_as_new)) }
                         }
                         episodeForInfo?.let { EpisodeScreen(it) }
                     }

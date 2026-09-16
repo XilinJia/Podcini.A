@@ -1,6 +1,7 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.getCache
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.forcePlaybackReset
@@ -175,11 +176,11 @@ fun FeedsSettingsScreen() {
                 autoDeletePolicy = AutoDeleteAction.GLOBAL.tag
             }
             AutoDeleteAction.ALWAYS -> {
-                autoDeleteSummaryResId = R.string.feed_auto_download_always
+                autoDeleteSummaryResId = R.string.always
                 autoDeletePolicy = AutoDeleteAction.ALWAYS.tag
             }
             AutoDeleteAction.NEVER -> {
-                autoDeleteSummaryResId = R.string.feed_auto_download_never
+                autoDeleteSummaryResId = R.string.never
                 autoDeletePolicy = AutoDeleteAction.NEVER.tag
             }
         }
@@ -386,9 +387,9 @@ fun FeedsSettingsScreen() {
             }
 
             // feed type
-            if (feedToSet.isSynthetic()) {
-                Column {
-                    var feedType by remember { mutableStateOf(FeedType.fromName(feedToSet.type)) }
+            Column {
+                var feedType by remember { mutableStateOf(FeedType.fromName(feedToSet.type)) }
+                if (feedToSet.isSynthetic()) {
                     var showDialog by remember { mutableStateOf(false) }
                     if (showDialog) CommonPopupCard(onDismiss = { showDialog = false }) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -415,8 +416,8 @@ fun FeedsSettingsScreen() {
                             showDialog = true
                         })
                     }
-                    Text(text = (feedType?.name?:"null") + " : " + stringResource(R.string.pref_feed_type_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
                 }
+                Text(text = (feedType?.name?:"null") + " : " + stringResource(R.string.pref_feed_type_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
 
             // audio type
@@ -512,12 +513,17 @@ fun FeedsSettingsScreen() {
                                         }
                                     }
                                 }
-                                if (theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) { forcePlaybackReset = true }
+                                val media = theatres[0].mPlayerFlow.value?.curMediaFlow?.value
+                                if (media?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) {
+                                    forcePlaybackReset = true
+                                    PlaybackStarter(media!!).shouldStreamThisTime(null).start()
+                                    theatres[0].mPlayerFlow.value?.playingVideoFlow?.value = mode != VideoMode.AUDIO_ONLY
+                                }
                             }
                         }
                         Icon(ImageVector.vectorResource(id = R.drawable.ic_delete), "", tint = textColor)
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = stringResource(R.string.video_mode_label), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog = true })
+                        Text(text = stringResource(R.string.video_mode), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog = true })
                         Spacer(modifier = Modifier.width(30.dp))
                         Text(text = stringResource(videoModeSummaryResId), style = MaterialTheme.typography.bodyMedium, color = textColor)
                     }
@@ -541,7 +547,11 @@ fun FeedsSettingsScreen() {
                                     }
                                 }
                             }
-                            if (theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) { forcePlaybackReset = true }
+                            val media = theatres[0].mPlayerFlow.value?.curMediaFlow?.value
+                            if (media?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) {
+                                forcePlaybackReset = true
+                                PlaybackStarter(media!!).shouldStreamThisTime(null).start()
+                            }
                         }
                     }
                     Row(Modifier.fillMaxWidth()) {
@@ -570,7 +580,11 @@ fun FeedsSettingsScreen() {
                                         if (client?.attributes?.hasMultiQualities == true && f.videoModePolicy != VideoMode.AUDIO_ONLY) findLatest(f)?.videoQuality = type.code
                                     }
                                 }
-                                if (theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) { forcePlaybackReset = true }
+                                val media = theatres[0].mPlayerFlow.value?.curMediaFlow?.value
+                                if (media?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) {
+                                    forcePlaybackReset = true
+                                    PlaybackStarter(media!!).shouldStreamThisTime(null).start()
+                                }
                             }
                         }
                         Row(Modifier.fillMaxWidth()) {
@@ -755,9 +769,9 @@ fun FeedsSettingsScreen() {
                     if (showDialog.value) VolumeAdaptionDialog(onDismiss = { showDialog.value = false })
                     Icon(ImageVector.vectorResource(id = R.drawable.ic_volume_adaption), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.feed_volume_adapdation), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                    Text(text = stringResource(R.string.volume_adaptation), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
                 }
-                Text(text = stringResource(R.string.feed_volume_adaptation_summary), style = MaterialTheme.typography.bodyMedium, color = textColor)
+                Text(text = stringResource(R.string.volume_adaptation_summary), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
 
             HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
@@ -965,7 +979,7 @@ fun FeedsSettingsScreen() {
                                                 Text(text = stringResource(R.string.replace), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
                                             }
                                     }
-                                    if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) Text(stringResource(R.string.feed_auto_dleq_filter_sort_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                                    if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) Text(stringResource(R.string.current_filter_sort_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
                                 }
                             },
                             confirmButton = {

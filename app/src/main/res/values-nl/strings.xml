@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Abonnementen bijwerken</string>
     <string name="feeds">Feeds</string>
 
     <string name="statistics_label">Statistieken</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Logboeken</string>
     <string name="subscriptions_label">Abonnementen</string>
     <string name="cancel_download_label">Download afbreken</string>
-    <string name="playback_history_label">Afspeelgeschiedenis</string>
     <string name="months_statistics_label">maanden</string>
     <string name="notification_pref_fragment">Meldingen</string>
     <string name="current_episode">Stroom</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">Totaalgrootte van lokale afleveringen</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Geen compatibele apps aangetroffen</string>
     <string name="export_logs_menu_title">Uitgebreide logboeken exporteren</string>
     <string name="confirm_export_log_dialog_message">Uitgebreide logboeken kunnen gevoelige informatie bevatten, zoals de abonnementenlijst</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">Standaardwaarden</string>
     <string name="global_default">Standaardinstelling</string>
 
-    <string name="support_funding_label">Draag bij</string>
-    <string name="support_podcast">Steun deze podcast</string>
+
+
     <string name="error_label">Fout</string>
     <string name="error_msg_prefix">Er is een fout opgetreden:</string>
     <string name="refresh_label">Verversen</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Nieuwe wissen</string>
     <string name="reconcile_label">Afstemmen</string>
     <string name="chapters_label">Hoofdstukken</string>
-    <string name="chapter_duration0">Duur: </string>
     <string name="description_label">Omschrijving</string>
     <string name="episodes_suffix">\u0020afleveringen</string>
-    <string name="close_label">Sluiten</string>
-    <string name="retry_label">Opnieuw</string>
-    <string name="auto_download_label">Meenemen bij automatisch downloaden</string>
+    <string name="close">Sluiten</string>
+    <string name="retry">Opnieuw</string>
+    <string name="include_in_auto_downloads">Meenemen bij automatisch downloaden</string>
     <string name="auto_delete_episode">Aflevering automatisch verwijderen</string>
-    <string name="feed_volume_adapdation">Volume aanpassen</string>
-    <string name="feed_volume_adaptation_summary">Zet afleveringen van deze podcast omhoog of omlaag: %1$s</string>
-    <string name="feed_volume_reduction_off">Geen aanpassing</string>
-    <string name="feed_volume_reduction_light">Lichte reductie</string>
-    <string name="feed_volume_reduction_heavy">Zware reductie</string>
-    <string name="feed_volume_boost_light">Lichte boost</string>
-    <string name="feed_volume_boost_medium">Gemiddelde boost</string>
-    <string name="feed_volume_boost_heavy">Zware boost</string>
-    <string name="feed_auto_download_always">Altijd</string>
-    <string name="feed_auto_download_never">Nooit</string>
-    <string name="video_mode_label">Video modus</string>
+    <string name="volume_adaptation">Volume aanpassen</string>
+    <string name="volume_adaptation_summary">Zet afleveringen van deze podcast omhoog of omlaag: %1$s</string>
+    <string name="no_adaptation">Geen aanpassing</string>
+    <string name="light_reduction">Lichte reductie</string>
+    <string name="heavy_reduction">Zware reductie</string>
+    <string name="light_boost">Lichte boost</string>
+    <string name="medium_boost">Gemiddelde boost</string>
+    <string name="heavy_boost">Zware boost</string>
+    <string name="always">Altijd</string>
+    <string name="never">Nooit</string>
+    <string name="video_mode">Video modus</string>
 
 
     <string name="video_mode_audio_only">Alleen audio</string>
@@ -150,8 +146,6 @@
     <string name="reserve_episodes_label">Afleveringen reserveren</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Verwijderen</string>
-    <string name="delete_failed_simple">Kan bestand niet verwijderen.</string>
-    <string name="delete_local_failed">Kan bestand niet verwijderen. Probeer de lokale map opnieuw te verbinden via het podcast info scherm.</string>
     <string name="delete_episode_label">Aflevering verwijderen</string>
     <string name="no_action_label">Geen actie</string>
 
@@ -240,13 +234,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Uw VPN-app pretendeert een mobiel netwerk (verbinding met datalimiet) te zijn. Downloaden via mobiele gegevensverbinding is uitgeschakeld in de instellingen. Als u dit probleem wilt oplossen, neem dan contact op met de makers van uw VPN-app.</string>
     <string name="confirm_mobile_download_dialog_download_later">Later downloaden</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Toch downloaden</string>
-    <string name="confirm_mobile_streaming_notification_title">Bevestig streamen via mobiel internet</string>
     <string name="confirm_mobile_streaming_notification_message">Streamen via mobiel internet is uitgeschakeld in de instellingen. Tik om tóch te streamen.</string>
     <string name="confirm_mobile_streaming_button_always">Altijd</string>
     <string name="confirm_mobile_streaming_button_once">Eenmalig</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Er wordt geen media afgespeeld</string>
     <string name="unknown_media_key">Podcini - onbekende mediasleutel: %1$d</string>
     <string name="error_file_not_found">Bestand niet aangetroffen</string>
     <!-- Queue operations -->
@@ -288,11 +280,9 @@
     <!-- Preferences -->
     <string name="project_pref">Project</string>
     <string name="synchronization_pref">Synchronisatie</string>
-    <string name="synchronization_sum">Synchroniseren met andere apparaten</string>
     <string name="pref_backup_on_google_title">Automatische back-up van OPML</string>
     <string name="pref_backup_on_google_sum">Automatisch een back-up van OPML-bestanden naar Google. Zodra ingeschakeld, nadat Podcini is verwijderd en opnieuw geïnstalleerd, kunnen de abonnementen hersteld worden. Schakel deze instelling in om Podcini te herstarten.</string>
 
-    <string name="download_pref_details">Beschrijving</string>
     <string name="import_export_pref">Importeren/Exporteren</string>
     <string name="pref_auto_backup_title">Automatische back-up</string>
     <string name="pref_auto_backup_sum">Automatisch een back-up maken van DB en voorkeuren van een specifiek interval in een geselecteerde map.</string>
@@ -302,7 +292,6 @@
     <string name="pref_auto_backup_limit">Aantal back-ups om te houden</string>
     <string name="appearance">Uiterlijk</string>
     <string name="external_elements">Externe elementen</string>
-    <string name="create_YT_syndicates">YT-syndicaten aanmaken</string>
     <string name="add_to_feed">Toevoegen aan feed</string>
     <string name="interruptions">Onderbrekingen</string>
     <string name="playback_control">Afspeelbediening</string>
@@ -412,12 +401,6 @@
     <string name="pref_rewind_sum">Stel het aantal seconden terugspoelen in per klik op de snel terug knop</string>
     <string name="pref_playback_video_mode">Video afspeel modus</string>
     <string name="pref_playback_video_mode_sum">Kies hoe videoaflevering standaard wordt afgespeeld</string>
-    <string name="pref_swipe_refresh_title">Veeg om te vernieuwen</string>
-    <string name="pref_swipe_refresh_sum">Veeg omlaag om alle abonnementen te vernieuwen</string>
-    <string name="pref_feedGridLayout_title">Abonnementen gebruiken raster-lay-out </string>
-    <string name="pref_feedGridLayout_sum">Wanneer ingeschakeld, gebruiken abonnementsweergave een rasterweergave, anders lijst lay-out</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Toon melding overslaan</string>
@@ -463,7 +446,6 @@
     <string name="licenses_summary">Podcini maakt gebruik van andere geweldige software</string>
     <string name="email_sum">Rapporteer problemen of suggesties rechtstreeks aan de ontwikkelaar.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Er zijn geen resultaten gevonden</string>
     <string name="search_label">Zoeken</string>
     <string name="no_results_for_query">Geen resultaten gevonden voor  \"%1$s\"</string>
 
@@ -487,7 +469,6 @@
     <string name="combo_export_summary">Exporteer selectief de database, voorkeuren, mediabestanden.</string>
     <string name="combo_import_summary">Importeer selectief de database, voorkeuren, mediabestanden.</string>
     <string name="opml_import_label">OPML importeren</string>
-    <string name="opml_add_podcast_label">Podcastlijst (opml) importeren</string>
     <string name="opml_reader_error">Er is iets misgegaan tijdens het lezen van het OPML-bestand:</string>
     <string name="progress_export_label">Afleveringen voortgang exporteren</string>
     <string name="progress_import_label">Afleveringen voortgang import</string>
@@ -528,22 +509,8 @@
     <string name="timer_vibration_label">Vlak voor afloop trillen</string>
     <string name="time_minutes">minuten</string>
     <string name="time_hours">uur</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 minuut</item>
-        <item quantity="other">%d minuten</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 uur</item>
-        <item quantity="other">%d uur</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 dag</item>
-        <item quantity="other">%d dagen</item>
-    </plurals>
     <string name="auto_enable_label">Automatisch de slaap timer activeren bij het indrukken van afspelen</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Synchroniseer met apparaat op Wifi</string>
-    <string name="wifi_sync_summary_unchoosen">Je kunt twee apparaten op hetzelfde wifi-netwerk verbinden om je afleveringen te synchroniseren</string>
     <string name="synchronization_choose_title">Kies een synchronisatiedienst</string>
     <string name="synchronization_summary_unchoosen">Er is keuze uit meerdere aanbieders om de abonnementen en aflevering-stand mee te synchroniseren</string>
     <string name="dialog_choose_sync_service_title">Kies een synchronisatiedienst</string>
@@ -573,8 +540,6 @@
     <string name="pref_synchronization_logout_toast">Uitloggen geslaagd</string>
     <string name="gpodnetsync_error_title">gpodder.net - synchronisatiefout</string>
     <string name="gpodnetsync_error_descr">Er is een fout opgetreden tijdens het synchroniseren:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Voltooid</string>
-    <string name="gpodnetsync_pref_report_failed">Mislukt</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Abonneren</string>
@@ -586,7 +551,6 @@
     <string name="tags_label">Labels</string>
     <string name="feed_tags_summary">Wijzig de labels van deze podcast om abonnementen te organiseren</string>
 
-    <string name="auto_download_settings_label">Automatische download instellingen</string>
     <string name="episode_filters_label">Aflevering filter</string>
     <string name="episode_inclusive_filters_label">Aflevering inclusief filter</string>
     <string name="episode_exclusive_filters_label">Aflevering exclusieve filter</string>
@@ -616,24 +580,16 @@
     <string name="edit_url_menu">Feed-url bewerken</string>
     <string name="edit_url_confirmation_msg">Let op: door het aanpassen van het rss-adres kan de afspeelstatus en afleveringenlijst worden vergeten. We raden NIET aan om dit te doen en bieden GEEN ondersteuning als er iets misgaat. Deze actie is tevens onomkeerbaar, dus het oorspronkelijke adres kan niet worden hersteld. Maak van tevoren een reservekopie.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Bezig met importeren van abonnementen uit eenmalige apps…</string>
 
     <string name="search_podcast_hint">Podcast zoeken…</string>
 
     <string name="search_itunes_label">Zoek Apple Podcast</string>
     <string name="search_podcastindex_label">Zoek Podcast Index</string>
 
-    <string name="advanced">Geavanceerd</string>
-
-
-
-
-
 
     <string name="search_powered_by">Resultaten van %1$s</string>
     <string name="select_country">Kies een land</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Lokale map toevoegen</string>
     <string name="local_folder">Lokale map</string>
     <string name="reconnect_local_folder">Lokale map opnieuw koppelen</string>
     <string name="reconnect_local_folder_warning">Als je geen rechten hebt, gebruik dan dit om de map opnieuw te koppelen. Kies geen andere map.</string>
@@ -657,8 +613,6 @@
     <string name="has_video">Heeft video</string>
     <string name="has_comments">Heeft gereageerd</string>
 
-    <string name="always">altijd</string>
-    <string name="never">Nooit</string>
     <string name="auto_download">Automatische download</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Afspeelpositie herstellen</string>
@@ -670,7 +624,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Audio-instellingen</string>
     <string name="playback_speed">Afspeel snelheid</string>
-    <string name="player_switch_to_audio_only">Overschakelen naar audio</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Type</string>
     <string name="host_label">Hostnaam</string>
@@ -682,7 +635,6 @@
     <string name="proxy_test_failed">Test mislukt</string>
     <string name="proxy_host_empty_error">Host mag niet blanco zijn</string>
     <string name="proxy_host_invalid_error">Host is geen geldig IP-adres of domeinnaam</string>
-    <string name="proxy_port_invalid_error">Ongeldig poortnummer</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Foutmeldingen</string>
@@ -690,17 +642,12 @@
     <string name="notification_channel_user_action_description">Tonen als een actie vereist is, bijvoorbeeld als je een wachtwoord moet invoeren.</string>
     <string name="notification_channel_downloading">Bezig met downloaden…</string>
     <string name="notification_channel_downloading_description">Tonen als er iets wordt gedownload.</string>
-    <string name="notification_channel_playing">Nu aan het afspelen</string>
-    <string name="notification_channel_playing_description">Hiermee kun je het afspelen bedienen. Dit is de voornaamste melding tijdens het afspelen van een podcast.</string>
     <string name="notification_channel_download_error">Downloaden mislukt</string>
     <string name="notification_channel_download_error_description">Wordt getoond als er iets misgaat, zoals het downloaden of het bijwerken van de feed.</string>
     <string name="notification_channel_sync_error">Synchronisatie mislukt</string>
     <string name="notification_channel_sync_error_description">Worden getoond als gpodder-synchronisatie mislukt.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">De instelling is aangepast.</string>
-    <string name="on_demand_config_stream_text">Het lijkt er op dat je vaak streamt. Wil je streamknoppen tonen in de lijst met afleveringen\?</string>
-    <string name="on_demand_config_download_text">Het lijkt er op dat je vaak dowloadt. Wil je downloadknoppen tonen in de lijst met afleveringen\?</string>
 
 
     <string name="add_shortcut">Snelkoppeling toevoegen</string>

@@ -1,8 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--Activity and fragment titles-->
-  <string name="feed_update_receiver_name">Atualizar assinaturas</string>
-    <string name="statistics_label">Estatísticas</string>
+  <string name="statistics_label">Estatísticas</string>
   <string name="add_feed_label">Adicionar podcast</string>
   <string name="episodes_label">Episódios</string>
 
@@ -15,10 +14,9 @@
   <string name="subscriptions_label">Assinaturas</string>
 
   <string name="cancel_download_label">Cancelar download</string>
-  <string name="playback_history_label">Histórico de reprodução</string>
 
 
-    <string name="notification_pref_fragment">Notificações</string>
+  <string name="notification_pref_fragment">Notificações</string>
 
   <!--Google Assistant-->
   <string name="app_action_not_found">\"%1$s\" não foi encontrado</string>
@@ -46,7 +44,6 @@
 
 
     <!--Bug report activity-->
-  <string name="log_file_share_exception">Nenhum aplicativo compatível encontrado</string>
   <string name="export_logs_menu_title">Exportar relatórios detalhados</string>
   <string name="confirm_export_log_dialog_message">Relatórios detalhados podem conter informação sensível, como suas listas de assinaturas</string>
   <!--Webview actions-->
@@ -67,8 +64,8 @@
   <string name="reset">Resetar</string>
   <string name="global_default">Padrão global</string>
 
-  <string name="support_funding_label">Apoio</string>
-  <string name="support_podcast">Apoie este podcast</string>
+
+
   <string name="error_label">Erro</string>
   <string name="error_msg_prefix">Ocorreu um erro:</string>
   <string name="refresh_label">Atualizar</string>
@@ -79,12 +76,12 @@
 
 
   <string name="episodes_suffix">\u0020episódios</string>
-  <string name="close_label">Fechar</string>
-  <string name="retry_label">Tentar novamente</string>
-  <string name="auto_download_label">Incluir em downloads automáticos</string>
+  <string name="close">Fechar</string>
+  <string name="retry">Tentar novamente</string>
+  <string name="include_in_auto_downloads">Incluir em downloads automáticos</string>
   <string name="auto_delete_episode">Excluir episódio automaticamente</string>
-  <string name="feed_auto_download_always">Sempre</string>
-  <string name="feed_auto_download_never">Nunca</string>
+  <string name="always">Sempre</string>
+  <string name="never">Nunca</string>
 
 
   <string name="episode_cleanup_never">Nunca</string>
@@ -187,18 +184,12 @@
   <string name="confirm_mobile_download_dialog_message">A utilização de dados móveis para o download está desabilitada nas configurações. Podcini baixará automaticamente o episódio mais tarde quando o Wi-Fi estiver disponível.</string>
   <string name="confirm_mobile_download_dialog_download_later">Baixar mais tarde</string>
   <string name="confirm_mobile_download_dialog_allow_this_time">Baixar assim mesmo</string>
-  <string name="confirm_mobile_streaming_notification_title">Confirme a transmissão via dados móveis</string>
   <string name="confirm_mobile_streaming_notification_message">O streaming pela conexão de dados móveis está desativado nas configurações. Toque para transmitir de qualquer maneira.</string>
   <string name="confirm_mobile_streaming_button_always">Sempre</string>
   <string name="confirm_mobile_streaming_button_once">Uma vez</string>
   <!--Mediaplayer messages-->
 
 
-
-
-
-
-  <string name="no_media_playing_label">Nenhuma mídia em reprodução</string>
   <string name="unknown_media_key">Podcini - Chave de mídia desconhecida: %1$d</string>
   <string name="error_file_not_found">Arquivo não encontrado</string>
     <!--Queue operations-->
@@ -242,9 +233,7 @@
   <!--Preferences-->
   <string name="project_pref">Projeto</string>
   <string name="synchronization_pref">Sincronização</string>
-  <string name="synchronization_sum">Sincronizar com outros dispositivos</string>
 
-  <string name="download_pref_details">Detalhes</string>
   <string name="import_export_pref">Importar/Exportar</string>
     <string name="appearance">Aparência</string>
   <string name="external_elements">Elementos externos</string>
@@ -369,7 +358,6 @@
   <string name="licenses">Licenças</string>
   <string name="licenses_summary">O Podcini usa outros ótimos softwares</string>
   <!--Search-->
-  <string name="search_status_no_results">Nenhum resultado encontrado</string>
 
   <string name="search_label">Pesquisar</string>
   <string name="no_results_for_query">Nenhum resultado para \"%1$s\"</string>
@@ -388,7 +376,6 @@
   <string name="opml_export_summary">Transfere suas assinaturas para outro aplicativo de podcast</string>
   <string name="opml_import_summary">Importa suas assinaturas de outro aplicativo de podcast</string>
     <string name="opml_import_label">Importação de OPML</string>
-  <string name="opml_add_podcast_label">Importar lista de podcasts (OPML)</string>
   <string name="opml_reader_error">Ocorreu um erro ao ler o documento OPML:</string>
     <string name="opml_export_label">Exportar OPML</string>
   <string name="html_export_label">Exportar HTML</string>
@@ -409,17 +396,7 @@
   <string name="timer_vibration_label">Vibrar um pouco antes do fim</string>
     <string name="time_minutes">minutos</string>
   <string name="time_hours">horas</string>
-  <plurals name="time_minutes_quantified">
-    <item quantity="one">1 minuto</item>
-    <item quantity="many">%d minutos</item>
-    <item quantity="other">%d minutos</item>
-  </plurals>
-  <plurals name="time_hours_quantified">
-    <item quantity="one">1 hora</item>
-    <item quantity="many">%d horas</item>
-    <item quantity="other">%d horas</item>
-  </plurals>
-    <!--Synchronisation-->
+  <!--Synchronisation-->
   <string name="synchronization_choose_title">Escolha o serviço de sincronização</string>
   <string name="synchronization_summary_unchoosen">Você pode escolher de vários serviços para sincronizar suas assinaturas e o estado de reprodução dos episódios com</string>
   <string name="dialog_choose_sync_service_title">Escolha o serviço de sincronização</string>
@@ -441,9 +418,7 @@
     <string name="pref_synchronization_logout_toast">Sessão terminada com sucesso</string>
   <string name="gpodnetsync_error_title">gpodder.net: erro de sincronização</string>
   <string name="gpodnetsync_error_descr">Ocorreu um erro durante a sincronização:\u0020</string>
-  <string name="gpodnetsync_pref_report_successful">Sucesso</string>
-  <string name="gpodnetsync_pref_report_failed">Falhou</string>
-    <!--Directory chooser-->
+  <!--Directory chooser-->
     <!--Online feed view-->
   <string name="subscribe_label">Assinar</string>
 
@@ -458,7 +433,6 @@
   <string name="tags_label">Etiquetas</string>
   <string name="feed_tags_summary">Altere as etiquetas desse podcast para ajudar a organizar suas assinaturas</string>
 
-  <string name="auto_download_settings_label">Configurações do download automático</string>
   <string name="episode_filters_description">Lista de termos utilizados para decidir se um episódio deve ser incluído ou excluído no download automático</string>
   <string name="exclude_terms">Excluir episódios que possuam qualquer um dos termos abaixo</string>
   <string name="include_terms">Incluir apenas os episódios que possuam qualquer um dos termos abaixo</string>
@@ -475,21 +449,14 @@
   <string name="edit_url_menu">Editar URL da fonte</string>
   <string name="edit_url_confirmation_msg">Alterar o endereço RSS pode facilmente desfazer a lista e o estado atual de reprodução do podcast. Nós NÃO recomendamos a mudança e NÃO forneceremos suporte caso algo dê errado. Este processo não pode ser desfeito. A inscrição danificada NÃO pode ser reparada com a alteração para o endereço anterior. É recomendável fazer um backup antes de prosseguir.</string>
   <!--PodciniSP-->
-  <string name="sp_apps_importing_feeds_msg">Importando assinaturas de aplicativos de finalidade única…</string>
 
   <string name="search_podcast_hint">Procurar podcast…</string>
   <string name="search_itunes_label">Pesquisar em Apple Podcasts</string>
-
-    <string name="advanced">Avançado</string>
-
-
-
 
 
   <string name="search_powered_by">Resultados por %1$s</string>
   <string name="select_country">Selecione o país</string>
   <!--Local feeds-->
-  <string name="add_local_folder">Adicionar pasta local</string>
   <string name="local_folder">Pasta local</string>
   <string name="reconnect_local_folder">Reconectar pasta local</string>
   <string name="reconnect_local_folder_warning">Em caso de negação de permissão, você pode usar isso para se reconectar exatamente à mesma pasta. Não selecione outra pasta.</string>
@@ -524,7 +491,6 @@
   <string name="share_starting_position_label">Iniciando em</string>
   <!--Audio controls-->
   <string name="audio_controls">Controles de áudio</string>
-  <string name="player_switch_to_audio_only">Trocar para apenas áudio</string>
   <!--proxy settings-->
   <string name="proxy_type_label">Tipo</string>
   <string name="host_label">Servidor</string>
@@ -536,7 +502,6 @@
   <string name="proxy_test_failed">Falha no teste</string>
   <string name="proxy_host_empty_error">O servidor não pode estar em branco</string>
   <string name="proxy_host_invalid_error">O servidor não é um endereço IP ou domínio válidos</string>
-  <string name="proxy_port_invalid_error">Porta inválida</string>
   <!--Subscriptions fragment-->
 
   <!--Notification channels-->
@@ -546,8 +511,6 @@
   <string name="notification_channel_user_action_description">Exibido caso uma ação seja necessária, por exemplo, se você tiver que digitar uma senha.</string>
   <string name="notification_channel_downloading">Baixando</string>
   <string name="notification_channel_downloading_description">Exibido enquanto estiver baixando.</string>
-  <string name="notification_channel_playing">Reproduzindo agora</string>
-  <string name="notification_channel_playing_description">Permite controlar a reprodução. Essa é a principal notificação vista ao reproduzir um podcast.</string>
   <string name="notification_channel_download_error">Não foi possível fazer o download</string>
   <string name="notification_channel_download_error_description">Exibido quando ocorrerem erros no download ou na atualização do feed.</string>
   <string name="notification_channel_sync_error">Não foi possível sincronizar</string>
@@ -556,9 +519,6 @@
 
   <!--Widget settings-->
     <!--On-Demand configuration-->
-  <string name="on_demand_config_setting_changed">Configuração atualizada com sucesso</string>
-  <string name="on_demand_config_stream_text">Parece que você faz muito stream. Quer que as listas de episódios mostrem botões de stream\?</string>
-  <string name="on_demand_config_download_text">Parece que você faz muitos downloads. Quer que as listas de episódios mostrem botões de download\?</string>
 
 
 </resources>

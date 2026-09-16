@@ -2,6 +2,7 @@ package ac.mdiq.podcini.playback.service
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.Media3Player
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.buildMetadata
@@ -308,6 +309,8 @@ class PlaybackService : MediaLibraryService() {
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate() {
         super.onCreate()
+        initialize()
+
         Logd(TAG, "onCreate Service created.")
         timeIt("$TAG onCreate Service")
 

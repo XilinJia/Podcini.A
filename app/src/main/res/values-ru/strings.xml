@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Обновить подписки</string>
     <string name="feeds">Ленты</string>
 
     <string name="statistics_label">Статистика</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Логи</string>
     <string name="subscriptions_label">Подписки</string>
     <string name="cancel_download_label">Отменить загрузку</string>
-    <string name="playback_history_label">История</string>
     <string name="months_statistics_label">Месяцев</string>
     <string name="notification_pref_fragment">Уведомления</string>
     <string name="current_episode">Текущее</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">Общий размер выпусков на устройстве</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Совместимых приложений не найдено</string>
     <string name="export_logs_menu_title">Экспортировать подробные журналы</string>
     <string name="confirm_export_log_dialog_message">Подробные журналы могут содержать личные сведения, такие как список ваших подписок</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">Сброс</string>
     <string name="global_default">как по умолчанию</string>
 
-    <string name="support_funding_label">Поддержать</string>
-    <string name="support_podcast">Поддержать этот подкаст</string>
+
+
     <string name="error_label">Ошибка</string>
     <string name="error_msg_prefix">Произошла ошибка:</string>
     <string name="refresh_label">Обновить</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Очистить новый</string>
     <string name="reconcile_label">Сверка</string>
     <string name="chapters_label">Главы</string>
-    <string name="chapter_duration0">Продолжительность: </string>
     <string name="description_label">Описание</string>
     <string name="episodes_suffix">\u0020выпуск(ов)</string>
-    <string name="close_label">Закрыть</string>
-    <string name="retry_label">Повторить</string>
-    <string name="auto_download_label">Добавить в автозагрузки</string>
+    <string name="close">Закрыть</string>
+    <string name="retry">Повторить</string>
+    <string name="include_in_auto_downloads">Добавить в автозагрузки</string>
     <string name="auto_delete_episode">Автоматическое удаление выпусков</string>
-    <string name="feed_volume_adapdation">Адаптация объема</string>
-    <string name="feed_volume_adaptation_summary">Включить громкость для эпизодов подкаста вверх или вниз: %1$s</string>
-    <string name="feed_volume_reduction_off">Нет адаптации</string>
-    <string name="feed_volume_reduction_light">Легкое сокращение</string>
-    <string name="feed_volume_reduction_heavy">Сильное сокращение</string>
-    <string name="feed_volume_boost_light">Усиление света</string>
-    <string name="feed_volume_boost_medium">Средний прирост</string>
-    <string name="feed_volume_boost_heavy">Тяжелый бонус</string>
-    <string name="feed_auto_download_always">всегда</string>
-    <string name="feed_auto_download_never">никогда</string>
-    <string name="video_mode_label">Режим видео</string>
+    <string name="volume_adaptation">Адаптация объема</string>
+    <string name="volume_adaptation_summary">Включить громкость для эпизодов подкаста вверх или вниз: %1$s</string>
+    <string name="no_adaptation">Нет адаптации</string>
+    <string name="light_reduction">Легкое сокращение</string>
+    <string name="heavy_reduction">Сильное сокращение</string>
+    <string name="light_boost">Усиление света</string>
+    <string name="medium_boost">Средний прирост</string>
+    <string name="heavy_boost">Тяжелый бонус</string>
+    <string name="always">всегда</string>
+    <string name="never">никогда</string>
+    <string name="video_mode">Режим видео</string>
 
 
     <string name="video_mode_audio_only">Только аудио</string>
@@ -152,8 +148,6 @@
     <string name="reserve_episodes_label">Зарезервировать эпизоды</string>
     <string name="null_label">Пустой</string>
     <string name="delete_label">Удалить</string>
-    <string name="delete_failed_simple">Невозможно удалить файл.</string>
-    <string name="delete_local_failed">Не удается удалить файл. Попробуйте переподключить локальную папку на экране информации подкаста.</string>
     <string name="delete_episode_label">Удалить выпуск</string>
     <string name="no_action_label">Без действий</string>
 
@@ -244,13 +238,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Ваше приложение VPN выглядит мобильной сетью (лимитированное соединение). Загрузка по мобильной сети отключена в настройках. Если вы хотите, чтобы эта проблема была исправлена, свяжитесь с создателями вашего VPN-приложения.</string>
     <string name="confirm_mobile_download_dialog_download_later">Загрузить позже</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Всё равно загрузить</string>
-    <string name="confirm_mobile_streaming_notification_title">Подтвердите трансляцию через мобильное соединение</string>
     <string name="confirm_mobile_streaming_notification_message">Трансляция через мобильное подключение отключена в настройках. Нажмите, чтобы продолжить трансляцию.</string>
     <string name="confirm_mobile_streaming_button_always">Всегда</string>
     <string name="confirm_mobile_streaming_button_once">В этот раз</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Ничего не воспроизводится</string>
     <string name="unknown_media_key">Podcini - неизвестный ключ носителя: %1$d</string>
     <string name="error_file_not_found">Файл не найден</string>
     <!-- Queue operations -->
@@ -292,11 +284,9 @@
     <!-- Preferences -->
     <string name="project_pref">Проект</string>
     <string name="synchronization_pref">Синхронизация</string>
-    <string name="synchronization_sum">Синхронизация с другими устройствами</string>
     <string name="pref_backup_on_google_title">Автоматическое резервное копирование OPML</string>
     <string name="pref_backup_on_google_sum">Автоматическое резервное копирование OPML файлов в Google. После того, как Podcini деинсталлируется и переинсталлируется, подписки могут быть восстановлены. Включите эту настройку, чтобы перезапустить Podcini.</string>
 
-    <string name="download_pref_details">Подробнее</string>
     <string name="import_export_pref">Импорт/экспорт</string>
     <string name="pref_auto_backup_title">Автоматическое резервное копирование</string>
     <string name="pref_auto_backup_sum">Автоматическое резервное копирование БД и настроек с заданным интервалом в выбранную папку.</string>
@@ -306,7 +296,6 @@
     <string name="pref_auto_backup_limit">Количество резервных копий для хранения</string>
     <string name="appearance">Внешний вид</string>
     <string name="external_elements">Внешние органы управления</string>
-    <string name="create_YT_syndicates">Создать YT синдикаты</string>
     <string name="add_to_feed">Добавить в канал</string>
     <string name="interruptions">Прерывания</string>
     <string name="playback_control">Управление воспроизведением</string>
@@ -416,12 +405,6 @@
     <string name="pref_rewind_sum">Настройте длину шага в секундах при нажатии кнопки перемотки назад</string>
     <string name="pref_playback_video_mode">Режим воспроизведения видео</string>
     <string name="pref_playback_video_mode_sum">Выберите, как видеоэпизод воспроизводится по умолчанию</string>
-    <string name="pref_swipe_refresh_title">Проведите для обновления</string>
-    <string name="pref_swipe_refresh_sum">Смахните вниз, чтобы обновить все подписки</string>
-    <string name="pref_feedGridLayout_title">Подписки используют расположение сетки </string>
-    <string name="pref_feedGridLayout_sum">Когда установлено, в виде подписок используется шаблон сетки, в противном случае раскладка списка</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Показывать пропуск при уведомлении</string>
@@ -467,7 +450,6 @@
     <string name="licenses_summary">В Podcini используется другое отличное ПО</string>
     <string name="email_sum">Сообщите о проблемах или внесите предложения непосредственно разработчику.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Ничего не найдено</string>
     <string name="search_label">Поиск</string>
     <string name="no_results_for_query">По запросу «%1$s» ничего не найдено</string>
 
@@ -491,7 +473,6 @@
     <string name="combo_export_summary">Экспортировать выбранную базу данных, настройки, медиа-файлы.</string>
     <string name="combo_import_summary">Импортируйте выбранную базу данных, настройки, медиа-файлы.</string>
     <string name="opml_import_label">Импорт OPML</string>
-    <string name="opml_add_podcast_label">Импортировать список подкастов (OPML)</string>
     <string name="opml_reader_error">При чтении OPML произошла ошибка:</string>
     <string name="progress_export_label">Экспорт эпизодов прогресса</string>
     <string name="progress_import_label">Эпизоды прогресса импорта</string>
@@ -532,28 +513,8 @@
     <string name="timer_vibration_label">Вибрировать перед окончанием</string>
     <string name="time_minutes">мин</string>
     <string name="time_hours">ч</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">%d минута</item>
-        <item quantity="few">%d минуты</item>
-        <item quantity="many">%d минут</item>
-        <item quantity="other">%d минут</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">%d час</item>
-        <item quantity="few">%d часа</item>
-        <item quantity="many">%d часов</item>
-        <item quantity="other">%d часов</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 день</item>
-        <item quantity="few">%d дней</item>
-        <item quantity="many">%d дней</item>
-        <item quantity="other">%d дней</item>
-    </plurals>
     <string name="auto_enable_label">Запускать таймер сна вместе с началом воспроизведения</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Синхронизация с устройством при WiFi</string>
-    <string name="wifi_sync_summary_unchoosen">Вы можете подключить два устройства в одной сети Wi-Fi для синхронизации состояний воспроизведения эпизодов</string>
     <string name="synchronization_choose_title">Выберите провайдера синхронизации</string>
     <string name="synchronization_summary_unchoosen">Вы можете выбрать из нескольких провайдеров для синхронизации подписок и состояния воспроизведения выпусков</string>
     <string name="dialog_choose_sync_service_title">Выберите провайдера синхронизации</string>
@@ -583,8 +544,6 @@
     <string name="pref_synchronization_logout_toast">Выход успешно выполнен</string>
     <string name="gpodnetsync_error_title">Ошибка синхронизации с gpodder.net</string>
     <string name="gpodnetsync_error_descr">Произошла ошибка во время синхронизации:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Успешно</string>
-    <string name="gpodnetsync_pref_report_failed">Неудачно</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Подписаться</string>
@@ -596,7 +555,6 @@
     <string name="tags_label">Метки</string>
     <string name="feed_tags_summary">Используйте метки, чтобы организовать ваши подписки.</string>
 
-    <string name="auto_download_settings_label">Настройки автозагрузки</string>
     <string name="episode_filters_label">Фильтр выпусков</string>
     <string name="episode_inclusive_filters_label">Включенный фильтр эпизодов</string>
     <string name="episode_exclusive_filters_label">Эксклюзивный фильтр эпизодов</string>
@@ -626,24 +584,16 @@
     <string name="edit_url_menu">Исправить ссылку на канал</string>
     <string name="edit_url_confirmation_msg">Изменение адреса ссылки может запросто испортить состояние воспроизведения и список выпусков подкаста. Мы крайне НЕ рекомендуем его менять и НЕ сможем Вам помочь, если что-то пойдёт не так. Действие необратимо. Простым возвратом старого адреса поломку HE исправить. Советуем сперва создать резервную копию. </string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Импорт подписок из моноприложений…</string>
 
     <string name="search_podcast_hint">Найти подкаст…</string>
 
     <string name="search_itunes_label">Поиск в Apple Podcasts</string>
     <string name="search_podcastindex_label">Поиск на Podcast Index</string>
 
-    <string name="advanced">Дополнительные</string>
-
-
-
-
-
 
     <string name="search_powered_by">Результаты по %1$s</string>
     <string name="select_country">Выбор страны</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Добавить локальную папку</string>
     <string name="local_folder">Локальная папка</string>
     <string name="reconnect_local_folder">Переподключить локальную папку</string>
     <string name="reconnect_local_folder_warning">В случае отказа в разрешении вы можете использовать это для переподключения к той же самой папке. Не выбирайте другую папку.</string>
@@ -667,8 +617,6 @@
     <string name="has_video">Имеет видео</string>
     <string name="has_comments">Прокомментировал</string>
 
-    <string name="always">Всегда</string>
-    <string name="never">Никогда</string>
     <string name="auto_download">Автозагрузка</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">С позицией воспроизведения</string>
@@ -680,7 +628,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Управление звучанием</string>
     <string name="playback_speed">Скорость воспроизведения</string>
-    <string name="player_switch_to_audio_only">Переключиться на аудио</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Тип</string>
     <string name="host_label">Узел</string>
@@ -692,7 +639,6 @@
     <string name="proxy_test_failed">Проверка не удалась</string>
     <string name="proxy_host_empty_error">Обязательно укажите узел</string>
     <string name="proxy_host_invalid_error">Неверный адрес или домен узла</string>
-    <string name="proxy_port_invalid_error">Неверный порт</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Ошибки</string>
@@ -700,17 +646,12 @@
     <string name="notification_channel_user_action_description">Показывается, когда от Вас требуется действие, например, ввести пароль.</string>
     <string name="notification_channel_downloading">Загружается</string>
     <string name="notification_channel_downloading_description">Показывается во время загрузки.</string>
-    <string name="notification_channel_playing">Сейчас воспроизводится</string>
-    <string name="notification_channel_playing_description">Позволяет управлять воспроизведением. Основное уведомление, показывается при воспроизведении подкаста.</string>
     <string name="notification_channel_download_error">Загрузка не удалась</string>
     <string name="notification_channel_download_error_description">Отображается, когда загрузка или обновление канала завершилось с ошибкой</string>
     <string name="notification_channel_sync_error">Синхронизация не удалась</string>
     <string name="notification_channel_sync_error_description">Отображается, если сбоит синхронизация gpodder.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Настройки успешно обновлены.</string>
-    <string name="on_demand_config_stream_text">Похоже, вы часто слушаете по сети. Хотите, чтобы в списке выпусков отображались кнопки для потокового воспроизведения\?</string>
-    <string name="on_demand_config_download_text">Похоже, вы часто слушаете загружаете выпуски. Хотите, чтобы в списке выпусков отображались кнопки для загрузки\?</string>
 
 
     <string name="add_shortcut">Добавить ярлык</string>

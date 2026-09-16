@@ -42,7 +42,7 @@
         android:label="@string/app_name"
         android:backupAgent=".config.OpmlBackupAgent"
         android:restoreAnyVersion="true"
-        android:theme="@style/Theme.Podcini.Splash"
+        android:theme="@style/Theme.Material3.DayNight.NoActionBar"
         android:supportsRtl="true"
         android:logo="@mipmap/ic_launcher"
         android:resizeableActivity="true"
@@ -131,14 +131,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
                 <action android:name="android.intent.action.MUSIC_PLAYER" />
+                <action android:name="ac.mdiq.podcini.intents.MAIN_ACTIVITY" />
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES"/>
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.APP_MUSIC" />
-                <category android:name="com.android.launcher3.DEEP_SHORTCUT" />
-
-                <action android:name="ac.mdiq.podcini.intents.MAIN_ACTIVITY" />
-                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES"/>
             </intent-filter>
             <meta-data
                 android:name="android.app.shortcuts"
@@ -148,7 +146,7 @@
         <activity
             android:name=".activity.ShareReceiverActivity"
             android:configChanges="orientation|screenSize"
-            android:theme="@style/Theme.Podcini"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
             android:label="@string/add_feed_label"
             android:exported="true"
             android:parentActivityName="ac.mdiq.podcini.activity.MainActivity">
@@ -189,19 +187,19 @@
 
         <activity
             android:name=".activity.BugReportActivity"
-            android:theme="@style/Theme.Podcini">
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar">
         </activity>
 
         <activity
             android:name=".activity.QueuePickerActivity"
-            android:theme="@style/Theme.Podcini.Dialog"
+            android:theme="@style/Theme.Material3.DayNight.Dialog"
             android:taskAffinity=""
             android:excludeFromRecents="true"
             android:exported="false" />
 
         <activity
             android:name=".activity.EpisodeInfoActivity"
-            android:theme="@style/Theme.Podcini.Dialog"
+            android:theme="@style/Theme.Material3.DayNight.Dialog"
             android:launchMode="singleInstance"
             android:taskAffinity=".episode_info"
             android:excludeFromRecents="true"
@@ -209,7 +207,7 @@
 
         <activity
             android:name=".activity.PlayerUIActivity"
-            android:theme="@style/Theme.Podcini.Dialog"
+            android:theme="@style/Theme.Material3.DayNight.Dialog"
             android:launchMode="singleInstance"
             android:taskAffinity=".player_ui"
             android:excludeFromRecents="true"
@@ -218,7 +216,7 @@
         <activity
             android:name=".activity.ShortcutsActivity"
             android:exported="false"
-            android:theme="@style/Theme.Podcini">
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar">
         </activity>
 
         <activity-alias
@@ -273,17 +271,20 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths" />
         </provider>
-
-        <meta-data
-            tools:ignore="Deprecated"
-            android:name="com.google.android.actions"
-            android:resource="@xml/actions" />
     </application>
 
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="lightning" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="bitcoin" />
         </intent>
     </queries>
 

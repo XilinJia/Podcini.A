@@ -122,12 +122,9 @@ class Episode : RealmObject {
 
     var parentURL: String? = null
 
-    /**
-     * Returns the image of this item, as specified in the feed.
-     * To load the image that can be displayed to the user, use [.getImageLocation],
-     * which also considers embedded pictures or the feed picture if no other picture is present.
-     */
-    var imageUrl: String? = null
+    var images: RealmList<Image> = realmListOf()
+
+    var aiContent: Boolean? = null
 
     var duration: Int = 0    // in milliseconds
 
@@ -271,7 +268,7 @@ class Episode : RealmObject {
 
     fun updateFromOther(other: Episode, includeState: Boolean = false, includeDuration: Boolean = true) {
 //        Logd(TAG, "updateFromOther ${other.viewCount} ${other.title} $title")
-        if (other.imageUrl != null) this.imageUrl = other.imageUrl
+        if (other.images.isNotEmpty()) this.images = other.images
         if (other.title != null) title = other.title
         if (other.description != null) description = other.description
         if (other.link != null) link = other.link
@@ -308,11 +305,11 @@ class Episode : RealmObject {
 
     fun imageLocation(forceFeed: Boolean = false): String? {
         return when {
-            forceFeed || feed?.useFeedImage() == true -> feed?.imageUrl
+            forceFeed || feed?.useFeedImage() == true -> feed?.images?.firstOrNull()?.href
             else -> {
                 when {
-                    imageUrl != null -> imageUrl
-                    feed != null -> feed!!.imageUrl
+                    images.isNotEmpty() -> images[0].href
+                    feed != null -> feed!!.images.firstOrNull()?.href
                     hasEmbeddedPicture == true -> fileUrl
                     else -> null
                 }
@@ -541,6 +538,10 @@ class Episode : RealmObject {
         return chapters.size - 1
     }
 
+    fun addImage(img: Image) {
+        if (images.none { it.href == img.href }) images.add(img)
+    }
+
     fun suitableForDownload(): Boolean = !downloadUrl.isNullOrEmpty() && !isDownloaded() && feed?.isLocal != true
 
     //    fun checkEmbeddedPicture(persist: Boolean = true) {
@@ -585,6 +586,7 @@ class Episode : RealmObject {
         if (pubDate != other.pubDate) return false
         if (trackNumber != other.trackNumber) return false
         if (feedId != other.feedId) return false
+        if (images.size != other.images.size) return false
         if (playState != other.playState) return false
         if (playStateSetTime != other.playStateSetTime) return false
         if (isAutoDownloadEnabled != other.isAutoDownloadEnabled) return false
@@ -634,6 +636,7 @@ class Episode : RealmObject {
         result = 31 * result + pubDate.hashCode()
         result = 31 * result + trackNumber.hashCode()
         result = 31 * result + (feedId?.hashCode() ?: 0)
+        result = 31 * result + images.size
         result = 31 * result + playState
         result = 31 * result + playStateSetTime.hashCode()
         result = 31 * result + isAutoDownloadEnabled.hashCode()
@@ -746,7 +749,7 @@ fun Episode.toDTO() = EpisodeDTO(
     description = this.description,
     link = this.link,
     pubDate = this.pubDate,
-    imageUrl = this.imageUrl,
+    imageUrl = this.images.firstOrNull()?.href,
     duration = this.duration,
     position = this.position,
 
@@ -781,7 +784,7 @@ fun Episode.toBasicDTO() = EpisodeDTO(
     description = this.description,
     link = this.link,
     pubDate = this.pubDate,
-    imageUrl = this.imageUrl,
+    imageUrl = this.images.firstOrNull()?.href,
     duration = this.duration,
     viewCount = this.viewCount,
 
@@ -810,7 +813,7 @@ fun EpisodeDTO.toEpisode(): Episode = Episode().apply {
         if (it.description == null) it.description = dto.description
         if (it.link == null) it.link = dto.link
         if (it.pubDate == 0L) it.pubDate = dto.pubDate
-        if (it.imageUrl == null) it.imageUrl = dto.imageUrl
+        if (it.images.isEmpty() && !dto.imageUrl.isNullOrBlank()) it.addImage(Image(dto.imageUrl))
         if (it.duration == 0) it.duration = dto.duration
 
         it.position = dto.position
@@ -843,7 +846,7 @@ fun EpisodeIPC.toEpisode(): Episode {
     episode.link = this.link
     episode.downloadUrl = this.downloadUrl
     episode.description = this.description
-    episode.imageUrl = this.imageUrl
+    if (!this.imageUrl.isNullOrBlank()) episode.addImage(Image(this.imageUrl!!))
     episode.pubDate = this.pubDate
     episode.size = this.size
     episode.pubDate = this.pubDate
@@ -862,7 +865,7 @@ fun Episode.toIPC(): EpisodeIPC {
     episode.link = this.link
     episode.downloadUrl = this.downloadUrl
     episode.description = this.description
-    episode.imageUrl = this.imageUrl
+    episode.imageUrl = this.images.firstOrNull()?.href
     episode.pubDate = this.pubDate
     episode.size = this.size
     episode.pubDate = this.pubDate

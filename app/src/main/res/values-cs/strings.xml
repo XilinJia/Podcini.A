@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Aktualizovat odběry</string>
     <string name="feeds">Zdroje</string>
 
     <string name="statistics_label">Statistiky</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Logy</string>
     <string name="subscriptions_label">Odběry</string>
     <string name="cancel_download_label">Zrušit stahování</string>
-    <string name="playback_history_label">Historie přehrávání</string>
     <string name="months_statistics_label">Měsíce</string>
     <string name="notification_pref_fragment">Upozornění</string>
     <string name="current_episode">Aktuální</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">Celková velikost epizod na zařízení</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Nenalezena kompatibilní aplikace</string>
     <string name="export_logs_menu_title">Exportovat detailní záznamy</string>
     <string name="confirm_export_log_dialog_message">Detailní záznamy mohou obsahovat citlivé informace jako seznam odběrů</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">Reset</string>
     <string name="global_default">Globální výchozí nastavení</string>
 
-    <string name="support_funding_label">Podpořit</string>
-    <string name="support_podcast">Podpořit tento podcast</string>
+
+
     <string name="error_label">Chyba</string>
     <string name="error_msg_prefix">Došlo k chybě:</string>
     <string name="refresh_label">Obnovit</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Vyčistit nový</string>
     <string name="reconcile_label">Vyrovnat</string>
     <string name="chapters_label">Kapitoly</string>
-    <string name="chapter_duration0">Doba trvání: </string>
     <string name="description_label">Popis</string>
     <string name="episodes_suffix">\u0020epizod</string>
-    <string name="close_label">Zavřít</string>
-    <string name="retry_label">Zkusit znovu</string>
-    <string name="auto_download_label">Zahrnout do automaticky stahovaných</string>
+    <string name="close">Zavřít</string>
+    <string name="retry">Zkusit znovu</string>
+    <string name="include_in_auto_downloads">Zahrnout do automaticky stahovaných</string>
     <string name="auto_delete_episode">Automatické mazání epizod</string>
-    <string name="feed_volume_adapdation">Přizpůsobení hlasitosti</string>
-    <string name="feed_volume_adaptation_summary">Zvyšte nebo snižte hlasitost epizod tohoto podcastu: %1$s</string>
-    <string name="feed_volume_reduction_off">Bez přizpůsobení</string>
-    <string name="feed_volume_reduction_light">Malé snížení</string>
-    <string name="feed_volume_reduction_heavy">Velké snížení</string>
-    <string name="feed_volume_boost_light">Malé zvýšení</string>
-    <string name="feed_volume_boost_medium">Střední zvýšení</string>
-    <string name="feed_volume_boost_heavy">Velké zvýšení</string>
-    <string name="feed_auto_download_always">Vždy</string>
-    <string name="feed_auto_download_never">Nikdy</string>
-    <string name="video_mode_label">Režim videa</string>
+    <string name="volume_adaptation">Přizpůsobení hlasitosti</string>
+    <string name="volume_adaptation_summary">Zvyšte nebo snižte hlasitost epizod tohoto podcastu: %1$s</string>
+    <string name="no_adaptation">Bez přizpůsobení</string>
+    <string name="light_reduction">Malé snížení</string>
+    <string name="heavy_reduction">Velké snížení</string>
+    <string name="light_boost">Malé zvýšení</string>
+    <string name="medium_boost">Střední zvýšení</string>
+    <string name="heavy_boost">Velké zvýšení</string>
+    <string name="always">Vždy</string>
+    <string name="never">Nikdy</string>
+    <string name="video_mode">Režim videa</string>
 
 
     <string name="video_mode_audio_only">Pouze zvuk</string>
@@ -152,8 +148,6 @@
     <string name="reserve_episodes_label">Rezervovat epizody</string>
     <string name="null_label">Nulový</string>
     <string name="delete_label">Smazat</string>
-    <string name="delete_failed_simple">Soubor nelze odstranit.</string>
-    <string name="delete_local_failed">Nelze odstranit soubor. Zkuste znovu připojit místní složku z obrazovky s informacemi o podcastu.</string>
     <string name="delete_episode_label">Smazat epizodu</string>
     <string name="no_action_label">Žádná akce</string>
 
@@ -244,13 +238,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Aplikace VPN předstírá, že je mobilní sítí (měřeným připojením). Stahování podcastů přes mobilní datové připojení je v nastavení zakázáno. Pokud chcete tento problém odstranit, obraťte se na tvůrce aplikace VPN.</string>
     <string name="confirm_mobile_download_dialog_download_later">Stáhnout později</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">I přesto stáhnout</string>
-    <string name="confirm_mobile_streaming_notification_title">Potvrďte streamování přes mobilní data</string>
     <string name="confirm_mobile_streaming_notification_message">Streamování přes mobilní data je zakázáno v nastavení. Streamování můžete spustit dotykem, pokud i přesto chcete streamovat přes mobilní data.</string>
     <string name="confirm_mobile_streaming_button_always">Vždy</string>
     <string name="confirm_mobile_streaming_button_once">Jednou</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Žádné probíhající přehrávání</string>
     <string name="unknown_media_key">Podcini - Neznámý klíč médií: %1$d</string>
     <string name="error_file_not_found">Soubor nebyl nalezen</string>
     <!-- Queue operations -->
@@ -292,11 +284,9 @@
     <!-- Preferences -->
     <string name="project_pref">Projekt</string>
     <string name="synchronization_pref">Synchronizace</string>
-    <string name="synchronization_sum">Synchronizovat s jinými zařízeními</string>
     <string name="pref_backup_on_google_title">Automatické zálohování OPML</string>
     <string name="pref_backup_on_google_sum">Automatické zálohování OPML souborů na Google. Jakmile je povoleno po odinstalování a přeinstalování Podcini, předplatné lze obnovit. Přepnutím tohoto nastavení se restartuje Podcini.</string>
 
-    <string name="download_pref_details">Detaily</string>
     <string name="import_export_pref">Importovat/Exportovat</string>
     <string name="pref_auto_backup_title">Automatické zálohování</string>
     <string name="pref_auto_backup_sum">Automaticky zálohovat DB a předvolby v zadaném intervalu do vybrané složky.</string>
@@ -306,7 +296,6 @@
     <string name="pref_auto_backup_limit">Počet záloh k zachování</string>
     <string name="appearance">Vzhled</string>
     <string name="external_elements">Externí elementy</string>
-    <string name="create_YT_syndicates">Vytvořit YT syndikáty</string>
     <string name="add_to_feed">Přidat do kanálu</string>
     <string name="interruptions">Přerušení</string>
     <string name="playback_control">Ovládání přehrávání</string>
@@ -416,12 +405,6 @@
     <string name="pref_rewind_sum">Upravit o kolik sekund se přeskočí zpět při stisku tlačítka přetočit zpět (RW).</string>
     <string name="pref_playback_video_mode">Režim přehrávání videa</string>
     <string name="pref_playback_video_mode_sum">Zvolte, jak se má video epizoda přehrávat ve výchozím nastavení</string>
-    <string name="pref_swipe_refresh_title">Přejetím prstem obnovit</string>
-    <string name="pref_swipe_refresh_sum">Přejetím dolů obnovíte všechny odběry</string>
-    <string name="pref_feedGridLayout_title">Předplatné používají rozložení mřížky </string>
-    <string name="pref_feedGridLayout_sum">Při nastavení, zobrazení předplatného používá rozložení mřížky, jinak rozvržení seznamu</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Zobrazit přeskočení při oznámení</string>
@@ -467,7 +450,6 @@
     <string name="licenses_summary">Podcini používá další skvělý software</string>
     <string name="email_sum">Nahlásit problémy nebo předkládat návrhy přímo vývojáři.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Žádné výsledky</string>
     <string name="search_label">Vyhledat</string>
     <string name="no_results_for_query">Nebyly nalezeny žádné výsledky pro \"%1$s\"</string>
 
@@ -491,7 +473,6 @@
     <string name="combo_export_summary">Exportovat vybrané databáze, předvolby, mediální soubory.</string>
     <string name="combo_import_summary">Importovat vybrané databáze, předvolby, mediální soubory.</string>
     <string name="opml_import_label">Import OPML</string>
-    <string name="opml_add_podcast_label">Importovat podcasty (OPML)</string>
     <string name="opml_reader_error">Došlo k chybě při čtení OPML dokumentu:</string>
     <string name="progress_export_label">Probíhá export epizod</string>
     <string name="progress_import_label">Probíhá import epizod</string>
@@ -532,28 +513,8 @@
     <string name="timer_vibration_label">Krátce zavibrovat před koncem</string>
     <string name="time_minutes">minut</string>
     <string name="time_hours">hodin</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 minuta</item>
-        <item quantity="few">%d minuty</item>
-        <item quantity="many">%d minut</item>
-        <item quantity="other">%d minut</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 hodina</item>
-        <item quantity="few">%d hodiny</item>
-        <item quantity="many">%d hodin</item>
-        <item quantity="other">%d hodin</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 den</item>
-        <item quantity="few">%d dní</item>
-        <item quantity="many">%d dní</item>
-        <item quantity="other">%d dní</item>
-    </plurals>
     <string name="auto_enable_label">Automatická aktivace časovače spánku při stisknutí tlačítka přehrávání</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Synchronizovat se zařízením na Wifi</string>
-    <string name="wifi_sync_summary_unchoosen">Pro synchronizaci stavů přehrávání epizod můžete připojit dvě zařízení na stejné wifi síti</string>
     <string name="synchronization_choose_title">Vyberte poskytovatele synchronizace</string>
     <string name="synchronization_summary_unchoosen">K synchronizaci odběrů a stavu přehrávání epizod si můžete vybrat z více poskytovatelů</string>
     <string name="dialog_choose_sync_service_title">Vyberte poskytovatele synchronizace</string>
@@ -583,8 +544,6 @@
     <string name="pref_synchronization_logout_toast">Úspěšně odhlášeno</string>
     <string name="gpodnetsync_error_title">gpodder.net synchronizace selhala</string>
     <string name="gpodnetsync_error_descr">V průběhu synchronizace nastala chyba:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Úspěšné</string>
-    <string name="gpodnetsync_pref_report_failed">Selhalo</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Odebírat</string>
@@ -596,7 +555,6 @@
     <string name="tags_label">Klíčová slova</string>
     <string name="feed_tags_summary">Pro lepší organizaci vašich odběrů můžete upravit klíčová slova tohoto podcastu.</string>
 
-    <string name="auto_download_settings_label">Nastavení automatického stahování</string>
     <string name="episode_filters_label">Filtr epizod</string>
     <string name="episode_inclusive_filters_label">Epizoda včetně filtru</string>
     <string name="episode_exclusive_filters_label">Epizoda exkluzivní filtr</string>
@@ -626,24 +584,16 @@
     <string name="edit_url_menu">Upravit adresu URL kanálu</string>
     <string name="edit_url_confirmation_msg">Změna adresy RSS může snadno narušit stav přehrávání a výpis epizod podcastu. Její změnu NEDOPORUČUJEME a v případě, že se něco pokazí, NEBUDE poskytnuta podpora. Tuto změnu nelze vrátit zpět. Poškozený odběr NELZE opravit pouhou změnou adresy zpět. Před pokračováním doporučujeme vytvořit zálohu.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Importuji odběry z jednoúčelových aplikací…</string>
 
     <string name="search_podcast_hint">Vyhledat podcast…</string>
 
     <string name="search_itunes_label">Vyhledávání v Apple Podcastech</string>
     <string name="search_podcastindex_label">Vyhledávání v Podcast Indexu</string>
 
-    <string name="advanced">Pokročilé</string>
-
-
-
-
-
 
     <string name="search_powered_by">Výsledky dle %1$s</string>
     <string name="select_country">Vybrat zemi</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Přidat místní adresář</string>
     <string name="local_folder">Místní adresář</string>
     <string name="reconnect_local_folder">Znovu připojit místní adresář</string>
     <string name="reconnect_local_folder_warning">V případě zamítnutých oprávnění může být tato možnost použita pro připojení ke stejnému adresáři. Nevybírejte ale jiný adresář.</string>
@@ -667,8 +617,6 @@
     <string name="has_video">Má video</string>
     <string name="has_comments">Má komentář</string>
 
-    <string name="always">Vždy</string>
-    <string name="never">Nikdy</string>
     <string name="auto_download">Automatické stahování</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Zahrnout pozici přehrávání</string>
@@ -680,7 +628,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Audio ovládání</string>
     <string name="playback_speed">Rychlost přehrávání</string>
-    <string name="player_switch_to_audio_only">Přepnout pouze na zvuk</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Typ</string>
     <string name="host_label">Hostitel</string>
@@ -692,7 +639,6 @@
     <string name="proxy_test_failed">Test selhal</string>
     <string name="proxy_host_empty_error">Host nesmí být prázdný</string>
     <string name="proxy_host_invalid_error">Host není platná IP nebo doména</string>
-    <string name="proxy_port_invalid_error">Neplatný port</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Chyby</string>
@@ -700,17 +646,12 @@
     <string name="notification_channel_user_action_description">Zobrazuje se, pokud je požadována činnost z vaší strany. Například je-li potřeba zadat heslo.</string>
     <string name="notification_channel_downloading">Stahuji</string>
     <string name="notification_channel_downloading_description">Zobrazuje se v průběhu stahování.</string>
-    <string name="notification_channel_playing">Přehrává se</string>
-    <string name="notification_channel_playing_description">Umožňuje ovládat přehrávání. Toto je to hlavní oznámení, které uvidité při přehrávání podcastu.</string>
     <string name="notification_channel_download_error">Stahování selhalo</string>
     <string name="notification_channel_download_error_description">Zobrazeno pokud selže stahování či aktualizace odebíraného kanálu.</string>
     <string name="notification_channel_sync_error">Synchronizace selhala</string>
     <string name="notification_channel_sync_error_description">Zobrazovat chybu synchronizace s gpodder.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Nastavení úspěšně aktualizováno</string>
-    <string name="on_demand_config_stream_text"> Vypadá to, že častěji streamujete než stahujete. Chcete zobrazovat tlačítko streamovat v seznamu epizod\? </string>
-    <string name="on_demand_config_download_text">Vypadá to, že častěji stahujete než streamujete. Chcete zobrazovat tlačítko stáhnout v seznamu epizod\?</string>
 
 
     <string name="add_shortcut">Přidat zkratku</string>

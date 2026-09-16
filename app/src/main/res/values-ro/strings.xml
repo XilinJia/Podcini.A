@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Actualizare abonamente</string>
     <string name="feeds">Fluxuri</string>
 
     <string name="statistics_label">Statistici</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Jurnale</string>
     <string name="subscriptions_label">Abonamente</string>
     <string name="cancel_download_label">Anulează descărcarea</string>
-    <string name="playback_history_label">Istoricul de ascultare</string>
     <string name="months_statistics_label">Luni</string>
     <string name="notification_pref_fragment">Notificări</string>
     <string name="current_episode">Actuală</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">Mărimea totală a episoadelor de pe acest dispozitiv</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Nicio aplicație compatibilă nu a fost găsită</string>
     <string name="export_logs_menu_title">Exportă log-uri detaliate</string>
     <string name="confirm_export_log_dialog_message">Log-urile detaliate pot conține informații sensibile, precum lista dumneavoastră de abonamente</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">Resetează</string>
     <string name="global_default">Prestabilit Global</string>
 
-    <string name="support_funding_label">Suport</string>
-    <string name="support_podcast">Susține acest Podcast</string>
+
+
     <string name="error_label">Eroare</string>
     <string name="error_msg_prefix">A avut loc o eroare:</string>
     <string name="refresh_label">Reîncarcă</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Curăță nou</string>
     <string name="reconcile_label">Reconciliere</string>
     <string name="chapters_label">Capitole</string>
-    <string name="chapter_duration0">Durată: </string>
     <string name="description_label">Descriere</string>
     <string name="episodes_suffix">\u0020episoade</string>
-    <string name="close_label">închide</string>
-    <string name="retry_label">Reîncearcă</string>
-    <string name="auto_download_label">Include în descărcările automate</string>
+    <string name="close">închide</string>
+    <string name="retry">Reîncearcă</string>
+    <string name="include_in_auto_downloads">Include în descărcările automate</string>
     <string name="auto_delete_episode">Șterge epidosul automat</string>
-    <string name="feed_volume_adapdation">Adaptarea volumului</string>
-    <string name="feed_volume_adaptation_summary">Modifică volumul acestui podcast: %1$s</string>
-    <string name="feed_volume_reduction_off">Nu există adaptări ale volumului</string>
-    <string name="feed_volume_reduction_light">Reducerea luminozității</string>
-    <string name="feed_volume_reduction_heavy">Reducere puternică</string>
-    <string name="feed_volume_boost_light">Mărire ușoară</string>
-    <string name="feed_volume_boost_medium">Mărire medie</string>
-    <string name="feed_volume_boost_heavy">Mărire puternică</string>
-    <string name="feed_auto_download_always">Întotdeauna</string>
-    <string name="feed_auto_download_never">Niciodată</string>
-    <string name="video_mode_label">Mod video</string>
+    <string name="volume_adaptation">Adaptarea volumului</string>
+    <string name="volume_adaptation_summary">Modifică volumul acestui podcast: %1$s</string>
+    <string name="no_adaptation">Nu există adaptări ale volumului</string>
+    <string name="light_reduction">Reducerea luminozității</string>
+    <string name="heavy_reduction">Reducere puternică</string>
+    <string name="light_boost">Mărire ușoară</string>
+    <string name="medium_boost">Mărire medie</string>
+    <string name="heavy_boost">Mărire puternică</string>
+    <string name="always">Întotdeauna</string>
+    <string name="never">Niciodată</string>
+    <string name="video_mode">Mod video</string>
 
 
     <string name="video_mode_audio_only">Doar audio</string>
@@ -151,8 +147,6 @@
     <string name="reserve_episodes_label">Episoade de rezervă</string>
     <string name="null_label">Nul</string>
     <string name="delete_label">Șterge</string>
-    <string name="delete_failed_simple">Imposibil de șters fișierul.</string>
-    <string name="delete_local_failed">Nu s-a putut șterge fisierul. Incearcă să reconectezi dosarul local din ecranul cu informații a podcastului.</string>
     <string name="delete_episode_label">Șterge episod</string>
     <string name="no_action_label">Nicio acțiune</string>
 
@@ -242,13 +236,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Aplicația ta VPN pretinde a fi o rețea de date mobilă(rețea contorizată). Reîmprospătarea podcasturilor folosind o conexiune de date mobile este dezactivată în setări. Dacă dorești să rezolvi această problemă re rugăm să contactezi dezvoltatorii aplicației tale VPN.</string>
     <string name="confirm_mobile_download_dialog_download_later">Descarcă mai târziu</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Descarcă oricum</string>
-    <string name="confirm_mobile_streaming_notification_title">Confirmă streamingul folosind datele mobile</string>
     <string name="confirm_mobile_streaming_notification_message">Streamingul folosind datele mobile este dezactivat din setări. Vă rugam atingeți pentru a porni streamingul.</string>
     <string name="confirm_mobile_streaming_button_always">Mereu</string>
     <string name="confirm_mobile_streaming_button_once">O dată</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Nu se ascultă nimic</string>
     <string name="unknown_media_key">Podcini - tastă media necunoscută: %1$d</string>
     <string name="error_file_not_found">Fișierul nu a fost găsit</string>
     <!-- Queue operations -->
@@ -290,11 +282,9 @@
     <!-- Preferences -->
     <string name="project_pref">Proiect</string>
     <string name="synchronization_pref">Sincronizare</string>
-    <string name="synchronization_sum">Sincronizare cu alte dispozitive</string>
     <string name="pref_backup_on_google_title">Copie de rezervă automată OPML</string>
     <string name="pref_backup_on_google_sum">Copie de rezervă automată a fişierelor OPML pe Google. Odată activată, după ce Podcini este dezinstalat şi reinstalat, abonamentele pot fi restaurate. Comutați această setare va reporni Podcini.</string>
 
-    <string name="download_pref_details">Detalii</string>
     <string name="import_export_pref">Importă/Exportă</string>
     <string name="pref_auto_backup_title">Backup automat</string>
     <string name="pref_auto_backup_sum">Salvează automat DB și preferințele la un interval specificat într-un dosar selectat.</string>
@@ -304,7 +294,6 @@
     <string name="pref_auto_backup_limit">Numărul de copii de rezervă de păstrat</string>
     <string name="appearance">Înfățișare</string>
     <string name="external_elements">Elemente externe</string>
-    <string name="create_YT_syndicates">Creează sindicate YT</string>
     <string name="add_to_feed">Adaugă la feed</string>
     <string name="interruptions">Intreruperi</string>
     <string name="playback_control">Controlul redării</string>
@@ -414,12 +403,6 @@
     <string name="pref_rewind_sum">Personalizați numarul de secunde de sărit înapoi când butonul derulare inapoi este folosit</string>
     <string name="pref_playback_video_mode">Mod redare video</string>
     <string name="pref_playback_video_mode_sum">Alegeți modul în care este redat implicit episodul video</string>
-    <string name="pref_swipe_refresh_title">Glisați pentru a reîmprospăta</string>
-    <string name="pref_swipe_refresh_sum">Glisați în jos pentru a reîmprospăta toate abonamentele</string>
-    <string name="pref_feedGridLayout_title">Abonamentele folosesc aspectul grilei </string>
-    <string name="pref_feedGridLayout_sum">Când este setată, vizualizarea abonamentelor utilizează un layout de grilă, altfel listează aspectul</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Arată omiterea la notificare</string>
@@ -465,7 +448,6 @@
     <string name="licenses_summary">Podcini folosește alte softwareuri excelente</string>
     <string name="email_sum">Raportează probleme sau face sugestii direct dezvoltatorului.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Nu s-a găsit nici un rezultat</string>
     <string name="search_label">Caută</string>
     <string name="no_results_for_query">Nu au fost găsite rezultate pentru \"%1$s\"</string>
 
@@ -489,7 +471,6 @@
     <string name="combo_export_summary">Exportă în mod selectat baza de date, preferințe, fișiere media.</string>
     <string name="combo_import_summary">Importați selectat baza de date, preferințe, fișiere media.</string>
     <string name="opml_import_label">Importul fișierelor OPML</string>
-    <string name="opml_add_podcast_label">Importă lista de podcasturi (OPML)</string>
     <string name="opml_reader_error">A apărut o eroare în timpul citirii fișierului OPML:</string>
     <string name="progress_export_label">Episoade export progres</string>
     <string name="progress_import_label">Episoade de importare progres</string>
@@ -530,25 +511,8 @@
     <string name="timer_vibration_label">Vibrează scurt înainte de final</string>
     <string name="time_minutes">minute</string>
     <string name="time_hours">ore</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 minut</item>
-        <item quantity="few">%d minute</item>
-        <item quantity="other">%d de minute</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 oră</item>
-        <item quantity="few">%d ore</item>
-        <item quantity="other">%d de ore</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 zi</item>
-        <item quantity="few">%d zile</item>
-        <item quantity="other">%d zile</item>
-    </plurals>
     <string name="auto_enable_label">Activează automat cronometrul de somn în momenul redării</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Sincronizare cu dispozitivul pe WiFi</string>
-    <string name="wifi_sync_summary_unchoosen">Puteți conecta două dispozitive pe aceeași rețea wifi pentru a sincroniza stările de joc</string>
     <string name="synchronization_choose_title">Alege furnizorul de sincronizare</string>
     <string name="synchronization_summary_unchoosen">Puteți alege dintre furnizori multipli pentru a vă sincroniza abonamentele dumneavoastră și starea episoadelor</string>
     <string name="dialog_choose_sync_service_title">Alege furnizorul de sincronizare</string>
@@ -578,8 +542,6 @@
     <string name="pref_synchronization_logout_toast">Deconectarea a reușit</string>
     <string name="gpodnetsync_error_title">eroare de sincronizare gpodder.net</string>
     <string name="gpodnetsync_error_descr">A apărut o eroare în timpul sincronizării:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Succes</string>
-    <string name="gpodnetsync_pref_report_failed">Eșuat</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Abonează-te</string>
@@ -591,7 +553,6 @@
     <string name="tags_label">Etichete</string>
     <string name="feed_tags_summary">Schimbă etichetele acestui podcast pentru a putea organiza abonamentele dumneavoastră</string>
 
-    <string name="auto_download_settings_label">Descarcă automat setările</string>
     <string name="episode_filters_label">Filtru setări</string>
     <string name="episode_inclusive_filters_label">Filtru inclusiv episod</string>
     <string name="episode_exclusive_filters_label">Episod filtru exclusiv</string>
@@ -621,24 +582,16 @@
     <string name="edit_url_menu">Editează fluxurile URL</string>
     <string name="edit_url_confirmation_msg">Schimbarea adresei RSS poate distruge cu ușurință starea de redare și listele de episoade ale podcastului. NU recomandăm schimbarea acestuia și NU vă vom oferi asistență dacă ceva nu merge bine. Acest lucru nu poate fi anulat. Abonamentul defect NU POATE fi reparat prin simpla schimbare a adresei înapoi. Vă sugerăm să creați o copie de rezervă înainte de a continua.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Importare abonamente din aplicații cu un singur scop…</string>
 
     <string name="search_podcast_hint">Caută podcast…</string>
 
     <string name="search_itunes_label">Caută în Apple Podcasts</string>
     <string name="search_podcastindex_label">Caută în Podcast Index</string>
 
-    <string name="advanced">Avansat</string>
-
-
-
-
-
 
     <string name="search_powered_by">Rezultatele %1$s</string>
     <string name="select_country">Selectează țara</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Adaugă director local</string>
     <string name="local_folder">Director local</string>
     <string name="reconnect_local_folder">Reconectează directorul local</string>
     <string name="reconnect_local_folder_warning">În cazul în care permisiunile sunt refuzate, poți sa folosești această opțiune pentru a te reconecta la exact același director. Nu selecta alt director.</string>
@@ -662,8 +615,6 @@
     <string name="has_video">Are videoclip</string>
     <string name="has_comments">A comentat</string>
 
-    <string name="always">Întotdeauna</string>
-    <string name="never">Niciodată</string>
     <string name="auto_download">Descărcare automată</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Include poziția de redare</string>
@@ -675,7 +626,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Control audio</string>
     <string name="playback_speed">Viteza de redare</string>
-    <string name="player_switch_to_audio_only">Schimbă pe modul numai de audio</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Tip</string>
     <string name="host_label">Server Gazdă</string>
@@ -687,7 +637,6 @@
     <string name="proxy_test_failed">Testul a eșuat</string>
     <string name="proxy_host_empty_error">Numele serverului gazdă nu poate fi gol</string>
     <string name="proxy_host_invalid_error">Numele serverului gazdă nu este o adresă IP sau domeniu valabile</string>
-    <string name="proxy_port_invalid_error">Portul nu este valid</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Erori</string>
@@ -695,17 +644,12 @@
     <string name="notification_channel_user_action_description">Se indică daca este necesară o acțiune din partea ta, de exemplu dacă ai nevoie să introduci o parolă.</string>
     <string name="notification_channel_downloading">Se descarcă</string>
     <string name="notification_channel_downloading_description">Se arată în timpul descărcării.</string>
-    <string name="notification_channel_playing">Se redă acum</string>
-    <string name="notification_channel_playing_description">Permite controlul redării. Aceasta este notificarea principală afișată în timpul redării unui podcast.</string>
     <string name="notification_channel_download_error">Descărcarea a eșuat</string>
     <string name="notification_channel_download_error_description">Afișate când descărcarea sau reîmprospătarea fluxului de date a eșuat. </string>
     <string name="notification_channel_sync_error">Sincronizarea a eșuat</string>
     <string name="notification_channel_sync_error_description">Indicată când sincronizarea cu gpodder eșuează</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Setarea a fost actualizată cu succes</string>
-    <string name="on_demand_config_stream_text">Se pare că faci streaming foarte mult. Dorești ca lista de episoade să arate butonul de stream \?</string>
-    <string name="on_demand_config_download_text">Se pare că descarci foarte mult. Dorești ca lista de episoade să arate butonul de descărcare \?</string>
 
 
     <string name="add_shortcut">Adaugă scurtătură</string>

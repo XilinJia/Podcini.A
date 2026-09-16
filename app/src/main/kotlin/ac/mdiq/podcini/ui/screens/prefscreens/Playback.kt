@@ -27,6 +27,7 @@ import android.app.Activity
 import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
+import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,11 +72,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-enum class PrefHardwareForwardButton(val res: Int, val res1: Int) {
-    FF(R.string.button_action_fast_forward, R.string.keycode_media_fast_forward),
-    RW(R.string.button_action_rewind, R.string.keycode_media_rewind),
-    SKIP(R.string.button_action_skip_episode, R.string.keycode_media_next),
-    START(R.string.button_action_restart_episode, R.string.keycode_media_previous);
+enum class PrefHardwareButton(val res: Int, val res1: Int) {
+    FF(R.string.button_action_fast_forward, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD),
+    RW(R.string.button_action_rewind, KeyEvent.KEYCODE_MEDIA_REWIND),
+    SKIP(R.string.button_action_skip_episode, KeyEvent.KEYCODE_MEDIA_NEXT),
+    START(R.string.button_action_restart_episode, KeyEvent.KEYCODE_MEDIA_PREVIOUS);
 }
 
 private const val TAG = "PlaybackScreen"
@@ -236,14 +237,14 @@ fun PlaybackScreen() {
         HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 5.dp))
         Text(stringResource(R.string.reassign_hardware_buttons), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 15.dp))
         var showHardwareForwardButtonOptions by remember { mutableStateOf(false) }
-        var tempFFSelectedOption by remember { mutableIntStateOf(R.string.keycode_media_fast_forward) }
+        var tempFFSelectedOption by remember { mutableIntStateOf(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) }
         TitleSummaryActionColumn(R.string.pref_hardware_forward_button_title, R.string.pref_hardware_forward_button_summary) { showHardwareForwardButtonOptions = true }
         if (showHardwareForwardButtonOptions) {
             AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { showHardwareForwardButtonOptions = false },
                 title = { Text(stringResource(R.string.pref_hardware_forward_button_title), style = CustomTextStyles.titleCustom) },
                 text = {
                     Column(modifier = Modifier) {
-                        PrefHardwareForwardButton.entries.forEach { option ->
+                        PrefHardwareButton.entries.forEach { option ->
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(2.dp).clickable { tempFFSelectedOption = option.res1 }) {
                                 Checkbox(checked = tempFFSelectedOption == option.res1, onCheckedChange = { tempFFSelectedOption = option.res1 })
                                 Text(stringResource(option.res), modifier = Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyMedium)
@@ -261,14 +262,14 @@ fun PlaybackScreen() {
             )
         }
         var showHardwarePreviousButtonOptions by remember { mutableStateOf(false) }
-        var tempPRSelectedOption by remember { mutableIntStateOf(R.string.keycode_media_rewind) }
+        var tempPRSelectedOption by remember { mutableIntStateOf(KeyEvent.KEYCODE_MEDIA_REWIND) }
         TitleSummaryActionColumn(R.string.pref_hardware_previous_button_title, R.string.pref_hardware_previous_button_summary) { showHardwarePreviousButtonOptions = true }
         if (showHardwarePreviousButtonOptions) {
             AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { showHardwarePreviousButtonOptions = false },
                 title = { Text(stringResource(R.string.pref_hardware_previous_button_title), style = CustomTextStyles.titleCustom) },
                 text = {
                     Column(modifier = Modifier) {
-                        PrefHardwareForwardButton.entries.forEach { option ->
+                        PrefHardwareButton.entries.forEach { option ->
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(2.dp).clickable { tempPRSelectedOption = option.res1 }) {
                                 Checkbox(checked = tempPRSelectedOption == option.res1, onCheckedChange = { tempPRSelectedOption = option.res1 })
                                 Text(stringResource(option.res), modifier = Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyMedium)

@@ -20,6 +20,7 @@ import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.Logs
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.format
 import ac.mdiq.podcini.utils.formatMMDDYY
 import ac.mdiq.podcini.utils.formatShortFileSize
@@ -284,7 +285,7 @@ fun StatisticsScreen() {
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(statisticsData.feedStats, key = { _, item -> item.feed.id }) { index, feedStats ->
                 Row(Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth()) {
-                    AsyncImage(model = ImageRequest.Builder(context).data(feedStats.feed.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentScale = ContentScale.FillBounds,
+                    AsyncImage(model = ImageRequest.Builder(context).data(feedStats.feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentScale = ContentScale.FillBounds,
                         modifier = Modifier.width(40.dp).height(90.dp).padding(end = 5.dp).clickable { navTo(FeedDetails(feedId=feedStats.feed.id, modeName=FeedScreenMode.Info.name)) })
                     Column(modifier = Modifier.clickable {
                         feedId = feedStats.feed.id

@@ -28,8 +28,7 @@
 
 
     <!--Bug report activity-->
-  <string name="log_file_share_exception">Nerasta suderinamų programėlių</string>
-  <string name="export_logs_menu_title">Eksportuoti išsamų žurnalą</string>
+    <string name="export_logs_menu_title">Eksportuoti išsamų žurnalą</string>
   <string name="confirm_export_log_dialog_message">Išsamiajame žurnale gali būti jautrios informacijos, pavyzdžiui, prenumeratų sąrašas</string>
   <!--Webview actions-->
   <string name="copy_url_label">Kopijuoti URL</string>
@@ -42,7 +41,7 @@
   <string name="no">Ne</string>
   <string name="reset">Nustatyti iš naujo</string>
 
-  <string name="support_funding_label">Parama</string>
+
   <string name="error_label">Klaida</string>
   <string name="error_msg_prefix">Įvyko klaida:</string>
   <string name="refresh_label">Atnaujinti</string>
@@ -52,11 +51,11 @@
 
 
   <string name="episodes_suffix">\u0020epizodai</string>
-  <string name="close_label">Užverti</string>
-  <string name="retry_label">Bandyti vėl</string>
-  <string name="auto_download_label">Įtraukti į automatinius atsiuntimus</string>
-  <string name="feed_auto_download_always">Visada</string>
-  <string name="feed_auto_download_never">Niekada</string>
+  <string name="close">Užverti</string>
+  <string name="retry">Bandyti vėl</string>
+  <string name="include_in_auto_downloads">Įtraukti į automatinius atsiuntimus</string>
+  <string name="always">Visada</string>
+  <string name="never">Niekada</string>
   <string name="episode_cleanup_never">Niekada</string>
   <string name="episode_cleanup_except_favorite">Kai nėra mėgstamas</string>
   <string name="episode_cleanup_not_in_queue">Jei nėra eilėje</string>
@@ -128,10 +127,7 @@
   <!--Mediaplayer messages-->
 
 
-
-
-  <string name="no_media_playing_label">Atkūrimas nevyksta</string>
-  <string name="unknown_media_key">„Podcini“ – nežinomas medijos klavišas: %1$d</string>
+    <string name="unknown_media_key">„Podcini“ – nežinomas medijos klavišas: %1$d</string>
   <string name="error_file_not_found">Failas nerastas</string>
     <!--Queue operations-->
   <string name="queue_locked">Eilė užrakinta</string>
@@ -166,10 +162,8 @@
   <!--Preferences-->
   <string name="project_pref">Projektas</string>
   <string name="synchronization_pref">Sinchronizavimas</string>
-  <string name="synchronization_sum">Sinchronizuoti su kitais įrenginiais</string>
 
-  <string name="download_pref_details">Išsamiau</string>
-  <string name="import_export_pref">Importas/Eksportas</string>
+    <string name="import_export_pref">Importas/Eksportas</string>
     <string name="appearance">Išvaizda</string>
   <string name="external_elements">Išoriniai elementai</string>
   <string name="interruptions">Pertraukimai</string>
@@ -249,9 +243,8 @@
   <string name="licenses">Licencijos</string>
   <string name="licenses_summary">„Podcini“ naudojama kita puiki programinė įranga</string>
   <!--Search-->
-  <string name="search_status_no_results">Nieko nerasta</string>
 
-  <string name="search_label">Paieška</string>
+    <string name="search_label">Paieška</string>
   <string name="no_results_for_query">Rezultatų paieškai \"%1$s\" nėra.</string>
   <!--Synchronization-->
   <string name="sync_status_started">Sinchronizavimas pradėtas</string>
@@ -268,8 +261,7 @@
   <string name="opml_export_summary">Perkelti prenumeratas į kitą tinklalaidžių programėlę</string>
   <string name="opml_import_summary">Importuoti prenumeratas iš kitos tinklalaidžių programėlės</string>
     <string name="opml_import_label">OPML importas</string>
-  <string name="opml_add_podcast_label">Importuoti tinklalaidžių sąrašą (OPML)</string>
-  <string name="opml_reader_error">Skaitant OPML failą įvyko klaida:</string>
+    <string name="opml_reader_error">Skaitant OPML failą įvyko klaida:</string>
     <string name="opml_export_label">OPML eksportas</string>
   <string name="html_export_label">HTML eksportas</string>
     <string name="import_export_error_label">Eksporto klaida</string>
@@ -289,18 +281,6 @@
   <string name="timer_vibration_label">Vibruoti prieš pat pabaigą</string>
     <string name="time_minutes">minutės</string>
   <string name="time_hours">valandos</string>
-  <plurals name="time_minutes_quantified">
-    <item quantity="one">1 minutė</item>
-    <item quantity="few">%d minutės</item>
-    <item quantity="many">%d minučių</item>
-    <item quantity="other">%d minučių</item>
-  </plurals>
-  <plurals name="time_hours_quantified">
-    <item quantity="one">1 valanda</item>
-    <item quantity="few">%d valandos</item>
-    <item quantity="many">%d valandų</item>
-    <item quantity="other">%d valandų</item>
-  </plurals>
     <!--Synchronisation-->
   <string name="synchronization_choose_title">Pasirinkite sinchronizavimo teikėją</string>
   <string name="synchronization_summary_unchoosen">Galite pasirinkti iš keleto teikėjų prenumeratų ir epizodų atkūrimo būsenai sinchronizuoti</string>
@@ -326,8 +306,6 @@
     <string name="pref_synchronization_logout_toast">Sėkmingai atsijungta</string>
   <string name="gpodnetsync_error_title">„gpodder.net“ sinchronizavimo klaida</string>
   <string name="gpodnetsync_error_descr">Sinchronizavimo metu įvyko klaida:\u0020</string>
-  <string name="gpodnetsync_pref_report_successful">Pavyko</string>
-  <string name="gpodnetsync_pref_report_failed">Nepavyko</string>
     <!--Directory chooser-->
     <!--Online feed view-->
   <string name="subscribe_label">Prenumeruoti</string>
@@ -353,19 +331,13 @@
   <string name="statistics_episodes_started_total">Pradėti epizodai/iš viso:</string>
 
   <!--PodciniSP-->
-  <string name="sp_apps_importing_feeds_msg">Įkeliamos prenumeratos iš specializuotų programėlių…</string>
 
-  <string name="search_podcast_hint">Ieškoti tinklalaidės…</string>
-
-    <string name="advanced">Išplėstinis</string>
+    <string name="search_podcast_hint">Ieškoti tinklalaidės…</string>
 
 
-
-
-  <string name="search_powered_by">Rezultatus pateikė „%1$s“</string>
+    <string name="search_powered_by">Rezultatus pateikė „%1$s“</string>
   <!--Local feeds-->
-  <string name="add_local_folder">Pridėti vietinį aplanką</string>
-  <string name="local_folder">Vietinis aplankas</string>
+    <string name="local_folder">Vietinis aplankas</string>
   <string name="reconnect_local_folder">Prijungti vietinį aplanką iš naujo</string>
   <string name="reconnect_local_folder_warning">Atmetus leidimą, galite naudoti tai prijungti tam pačiam aplankui. Nenustatykite kito aplanko.</string>
   <string name="local_feed_description">Ši virtuali tinklalaidė sukurta į „Podcini“ pridėjus aplanką.</string>
@@ -385,8 +357,7 @@
   <string name="share_starting_position_label">Pradedant nuo</string>
   <!--Audio controls-->
   <string name="audio_controls">Garso valdikliai</string>
-  <string name="player_switch_to_audio_only">Perjungti tik į garso režimą</string>
-  <!--proxy settings-->
+    <!--proxy settings-->
   <string name="proxy_type_label">Tipas</string>
   <string name="host_label">Serveris</string>
   <string name="port_label">Prievadas</string>
@@ -397,8 +368,7 @@
   <string name="proxy_test_failed">Bandymas nesėkmingas</string>
   <string name="proxy_host_empty_error">Serverio laukelis negali būti tuščias</string>
   <string name="proxy_host_invalid_error">Serverio laukelyje nurodytas netaisyklingas IP adresas ar sritis</string>
-  <string name="proxy_port_invalid_error">Netinkamas prievadas</string>
-  <!--Subscriptions fragment-->
+    <!--Subscriptions fragment-->
 
   <!--Notification channels-->
   <string name="notification_group_errors">Klaidos</string>
@@ -407,18 +377,13 @@
   <string name="notification_channel_user_action_description">Rodomas, jei reikalingas jūsų veiksmas, pavyzdžiui, reikia įvesti slaptažodį.</string>
   <string name="notification_channel_downloading">Atsiunčiama</string>
   <string name="notification_channel_downloading_description">Rodomas atsiuntimo metu.</string>
-  <string name="notification_channel_playing">Šiuo metu atkuriama</string>
-  <string name="notification_channel_playing_description">Leidžia valdyti atkūrimą. Tai pagrindinis pranešimas matomas tinklalaidės atkūrimo metu.</string>
-  <string name="notification_channel_download_error">Nepavykęs atsiuntimas</string>
+    <string name="notification_channel_download_error">Nepavykęs atsiuntimas</string>
   <string name="notification_channel_download_error_description">Rodomas, kai atsiuntimas ar sklaidos kanalo atnaujinimas nepavyksta.</string>
   <string name="notification_channel_sync_error">Nepavykęs sinchronizavimas</string>
   <string name="notification_channel_sync_error_description">Rodomas nepavykus sinchronizavimui su „gpodder“.</string>
 
   <!--Widget settings-->
     <!--On-Demand configuration-->
-  <string name="on_demand_config_setting_changed">Nustatymas sėkmingai atnaujintas.</string>
-  <string name="on_demand_config_stream_text">Panašu, jog dažnai klausotės tiesiogiai. Ar norite, jog epizodų sąraše būtų rodomi tiesioginio klausymosi mygtukai\?</string>
-  <string name="on_demand_config_download_text">Panašu, jog dažnai atsisiunčiate epizodus. Ar norite, jog epizodų sąraše būtų rodomi atsiuntimo mygtukai\?</string>
 
 
 </resources>

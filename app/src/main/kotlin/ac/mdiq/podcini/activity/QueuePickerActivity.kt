@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.activity
 
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.receiver.PodciniWidget
 import ac.mdiq.podcini.storage.database.queuesLive
@@ -42,10 +43,12 @@ import kotlinx.serialization.json.Json
 
 class QueuePickerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-//        installSplashScreen()
         super.onCreate(savedInstanceState)
-        val spinnerTexts = queuesLive.map { "${if (it.id == actQueueFlow.value.id) "> " else ""}${it.name} : ${it.size()}" }
+        window.setBackgroundDrawableResource(android.R.color.transparent)
 
+        initialize()
+
+        val spinnerTexts = queuesLive.map { "${if (it.id == actQueueFlow.value.id) "> " else ""}${it.name} : ${it.size()}" }
         setContent {
             PodciniTheme(AppThemes.BLACK) {
                 Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp, modifier = Modifier.fillMaxWidth().padding(16.dp)) {

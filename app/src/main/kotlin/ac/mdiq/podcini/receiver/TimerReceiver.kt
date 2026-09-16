@@ -2,6 +2,7 @@ package ac.mdiq.podcini.receiver
 
 import ac.mdiq.podcini.automation.ALARM_TYPE
 import ac.mdiq.podcini.automation.AlarmTypes
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -22,6 +23,8 @@ class TimerReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null) return
+        initialize()
+
         val message = intent?.getStringExtra(ALARM_TYPE) ?: "Timer Fired!"
 
         Logd(TAG, "onReceive: message $message")

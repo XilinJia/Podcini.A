@@ -2,12 +2,12 @@ package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.autoEnableFrom
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.autoEnableTo
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.lastTimerValue
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
+import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -536,7 +536,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.close_label)) } }
+        confirmButton = { TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.close)) } }
     )
 }
 

@@ -4,6 +4,7 @@ import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
+import ac.mdiq.podcini.storage.model.Image
 import ac.mdiq.podcini.storage.model.PAFeed
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.Rating
@@ -86,7 +87,7 @@ suspend fun importPA(uri: Uri, importDb: Boolean, importDirectory: Boolean, onDi
                         "size" -> episode.size = cursor.getLong(i)
                         "thumbnail_id" -> {
                             val id = cursor.getInt(i)
-                            if (id >= 0) episode.imageUrl = idImageMap[id]
+                            if (id >= 0 && !idImageMap[id].isNullOrBlank()) episode.addImage(Image(idImageMap[id]!!))
                         }
                         "donation_url" -> episode.paymentLink = cursor.getStringOrNull(i)
 
@@ -203,7 +204,7 @@ suspend fun importPA(uri: Uri, importDb: Boolean, importDirectory: Boolean, onDi
                         "subscribers" -> feed.subscriberCount = cursor.getInt(i)
                         "thumbnail_id" -> {
                             val id = cursor.getInt(i)
-                            if (id >= 0) feed.imageUrl = idImageMap[id]
+                            if (id >= 0 && !idImageMap[id].isNullOrBlank()) feed.addImage(Image(idImageMap[id]!!))
                         }
                     }
                 }

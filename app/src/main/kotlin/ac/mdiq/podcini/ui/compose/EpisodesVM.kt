@@ -40,6 +40,7 @@ import ac.mdiq.podcini.ui.screens.navTo
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatLargeInteger
 import ac.mdiq.podcini.utils.formatShortFileSize
@@ -161,7 +162,6 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                       actionButtonType: ButtonTypes? = null, actionButtonCB: ((Episode, ButtonTypes)->Unit)? = null) {
 
     var selectMode by remember { mutableStateOf(false) }
-    var selectedSize by remember { mutableIntStateOf(0) }
     val selected = remember { mutableStateListOf<Episode>() }
     val scope = rememberCoroutineScope()
     var longPressIndex by remember { mutableIntStateOf(-1) }
@@ -308,8 +308,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                     else -> ActionButton(episode)
                 }) }
                 var showAltActionsDialog by remember(episode.id) { mutableStateOf(false) }
-                var isSelected by remember(episode.id, selectMode, selectedSize) { mutableStateOf( selectMode && episode in selected ) }
-
+                var isSelected by remember(episode.id, selectMode, selected.size) { mutableStateOf( selectMode && episode in selected ) }
                 fun toggleSelected(e: Episode) {
                     isSelected = !isSelected
                     if (isSelected) selected.add(e)
@@ -363,10 +362,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                         selected.add(episode)
                                         val index = episodes.indexOfFirst { it.id == episode.id }
                                         longPressIndex = index
-                                    } else {
-                                        selectedSize = 0
-                                        longPressIndex = -1
-                                    }
+                                    } else longPressIndex = -1
                                     Logd(TAG, "long clicked: ${episode.title}")
                                 })) {
                                 Text(episode.title ?: "", color = textColor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = titleMaxLines, overflow = TextOverflow.Ellipsis)
@@ -493,7 +489,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                         else -> episodeForInfo = episode
                                     }
                                 }) {
-                                    AsyncImage(model = ImageRequest.Builder(context).data(episode.imageLocation(forceFeedImage)).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.fillMaxSize())
+                                    AsyncImage(model = ImageRequest.Builder(context).data(episode.imageLocation(forceFeedImage)).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.fillMaxSize())
                                     if (episode.feed != null && episode.feed!!.useFeedImage() && episode.feed!!.rating != Rating.UNRATED.code)
                                         Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(episode.feed!!.rating).res), tint = buttonColor, contentDescription = "rating", modifier = Modifier.width(imageWidth/4).height(imageHeight/4).align(Alignment.BottomStart).background(MaterialTheme.colorScheme.tertiaryContainer) )
                                 }
@@ -573,7 +569,6 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         val eList = multiSelectCB(longPressIndex, -1)
                         if (eList.isEmpty()) for (i in 0..longPressIndex) selected.add(episodes[i])
                         else selected.addAll(eList)
-                        selectedSize = selected.size
                         Logd(TAG, "selectedIds: ${selected.size}")
                     })
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_downward_24), tint = buttonColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp)
@@ -582,13 +577,12 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         val eList = multiSelectCB(longPressIndex, 1)
                         if (eList.isEmpty()) for (i in longPressIndex..<episodes.size) selected.add(episodes[i])
                         else selected.addAll(eList)
-                        selectedSize = selected.size
                         Logd(TAG, "selectedIds: ${selected.size}")
                     })
                 var selectAllRes by remember { mutableIntStateOf(R.drawable.ic_select_all) }
                 Icon(imageVector = ImageVector.vectorResource(selectAllRes), tint = buttonColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp)
                     .clickable {
-                        if (selectedSize != episodes.size) {
+                        if (selected.size != episodes.size) {
                             selected.clear()
                             val eList = multiSelectCB(longPressIndex, 0)
                             if (eList.isEmpty()) for (e in episodes) selected.add(e)
@@ -599,7 +593,6 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             longPressIndex = -1
                             selectAllRes = R.drawable.ic_select_all
                         }
-                        selectedSize = selected.size
                         Logd(TAG, "selectedIds: ${selected.size}")
                     })
 //                data class MenuOption(

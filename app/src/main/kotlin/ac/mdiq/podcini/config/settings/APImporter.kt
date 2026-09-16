@@ -4,7 +4,9 @@ import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.Feed.Companion.TAG_SEPARATOR
+import ac.mdiq.podcini.storage.model.Image
 import ac.mdiq.podcini.storage.specs.EpisodeState
+import ac.mdiq.podcini.storage.specs.FeedFunding
 import ac.mdiq.podcini.storage.specs.Rating
 import ac.mdiq.podcini.storage.utils.div
 import ac.mdiq.podcini.storage.utils.internalDir
@@ -56,7 +58,7 @@ fun importAP(uri: Uri, onDismiss: ()->Unit) {
 //                                "media" -> episode.link = cursorItem.getString(i)
 //                                "has_simple_chapter" -> episode.chapters
                         "item_identifier" -> episode.identifier = cursor.getString(i)
-                        "image_url" -> episode.imageUrl = cursor.getStringOrNull(i)
+                        "image_url" -> cursor.getStringOrNull(i).takeIf { !it.isNullOrBlank() }?.let { episode.addImage(Image(it)) }
                         "auto_download" -> episode.isAutoDownloadEnabled = cursor.getInt(i) == 1
                         "duration" -> episode.duration = cursor.getInt(i)
                         "file_url" -> episode.fileUrl = cursor.getStringOrNull(i)
@@ -100,15 +102,15 @@ fun importAP(uri: Uri, onDismiss: ()->Unit) {
 //                        "downloaded" -> feed.
                         "link" -> feed.link = cursor.getStringOrNull(i)
                         "description" -> feed.description = cursor.getStringOrNull(i)
-                        "payment_link" -> feed.payment_link = cursor.getStringOrNull(i)
+                        "payment_link" -> feed.addPayment(FeedFunding(cursor.getStringOrNull(i), ""))
                         "last_update" -> feed.lastUpdate = cursor.getStringOrNull(i)
                         "language" -> {
                             val l = cursor.getStringOrNull(i)
                             if (!l.isNullOrEmpty()) feed.langSet.add(l)
                         }
                         "author" -> feed.author = cursor.getStringOrNull(i)
-                        "image_url" -> feed.imageUrl = cursor.getStringOrNull(i)
-                        "type" -> feed.type = cursor.getStringOrNull(i)
+                        "image_url" -> cursor.getStringOrNull(i).takeIf { !it.isNullOrBlank() }?.let { feed.addImage(Image(it)) }
+//                        "type" -> feed.type = cursor.getStringOrNull(i)
                         "feed_identifier" -> feed.identifier = cursor.getStringOrNull(i)
                         "auto_download" -> feed.autoDownload = cursor.getInt(i) == 1
                         "username" -> feed.username = cursor.getStringOrNull(i)

@@ -16,6 +16,7 @@ import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
+import ac.mdiq.podcini.storage.model.Image
 import ac.mdiq.podcini.storage.model.Volume
 import ac.mdiq.podcini.storage.model.allVolumes
 import ac.mdiq.podcini.storage.parser.Id3MetadataReader
@@ -286,7 +287,7 @@ suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) 
         }
     }
     Logd(TAG, "updateLocalFeed newItems 1: ${newItems.size}")
-    feed.imageUrl = getImageUrl(allFiles, folderUri)
+    feed.addImage(Image(getImageUrl(allFiles, folderUri)))
     feed.episodes.addAll(newItems)
     updateFeedFull(feed, removeUnlistedItems = true)
 

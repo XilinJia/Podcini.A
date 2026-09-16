@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--Activity and fragment titles-->
-  <string name="feed_update_receiver_name">Actualitza les subscripcions</string>
     <string name="statistics_label">Estadístiques</string>
   <string name="add_feed_label">Afegeix pòdcast</string>
   <string name="episodes_label">Episodis</string>
@@ -15,7 +14,6 @@
   <string name="subscriptions_label">Subscripcions</string>
 
   <string name="cancel_download_label">Cancel·la la baixada</string>
-  <string name="playback_history_label">Historial de reproducció</string>
 
 
     <string name="notification_pref_fragment">Notificacions</string>
@@ -42,8 +40,7 @@
 
 
     <!--Bug report activity-->
-  <string name="log_file_share_exception">No s\'han trobat aplicacions compatibles</string>
-  <string name="export_logs_menu_title">Exporta registres detallats</string>
+    <string name="export_logs_menu_title">Exporta registres detallats</string>
   <string name="confirm_export_log_dialog_message">Els registres detallats poden contenir informació confidencial, com ara la llista de subscripcions</string>
   <!--Webview actions-->
   <string name="open_in_browser_label">Obre al navegador</string>
@@ -63,8 +60,8 @@
   <string name="reset">Reiniciar</string>
   <string name="global_default">Global per defecte</string>
 
-  <string name="support_funding_label">Suport</string>
-  <string name="support_podcast">Dona suport a aquest pòdcast</string>
+
+
   <string name="error_label">Error</string>
   <string name="error_msg_prefix">S\'ha produït un error:</string>
   <string name="refresh_label">Actualitza</string>
@@ -75,12 +72,12 @@
 
 
   <string name="episodes_suffix">\u0020episodis</string>
-  <string name="close_label">Tanca</string>
-  <string name="retry_label">Reintenta</string>
-  <string name="auto_download_label">Inclou a baixades automàtiques</string>
+  <string name="close">Tanca</string>
+  <string name="retry">Reintenta</string>
+  <string name="include_in_auto_downloads">Inclou a baixades automàtiques</string>
   <string name="auto_delete_episode">Elimina l\'episodi automàticament</string>
-  <string name="feed_auto_download_always">Sempre</string>
-  <string name="feed_auto_download_never">Mai</string>
+  <string name="always">Sempre</string>
+  <string name="never">Mai</string>
 
 
   <string name="episode_cleanup_never">Mai</string>
@@ -182,19 +179,13 @@
   <string name="confirm_mobile_download_dialog_message">S\'han desactivat les descàrregues per xarxa mòbil a la configuració. Podcini podrà descarregar l\'episodi automàticament quan hi hagi conexió Wi-Fi.</string>
   <string name="confirm_mobile_download_dialog_download_later">Baixa més tard</string>
   <string name="confirm_mobile_download_dialog_allow_this_time">Baixa igualment</string>
-  <string name="confirm_mobile_streaming_notification_title">Confirmar reproducció per xarxa mòbil</string>
-  <string name="confirm_mobile_streaming_notification_message">Streaming per xarxa mòbil està deshabilitat als ajustos. Toca la pantalla per a fer-ho de totes maners.</string>
+    <string name="confirm_mobile_streaming_notification_message">Streaming per xarxa mòbil està deshabilitat als ajustos. Toca la pantalla per a fer-ho de totes maners.</string>
   <string name="confirm_mobile_streaming_button_always">Sempre</string>
   <string name="confirm_mobile_streaming_button_once">Una vegada</string>
   <!--Mediaplayer messages-->
 
 
-
-
-
-
-  <string name="no_media_playing_label">No s\'està reproduint res</string>
-  <string name="unknown_media_key">Podcini - Control desconegut: %1$d</string>
+    <string name="unknown_media_key">Podcini - Control desconegut: %1$d</string>
   <string name="error_file_not_found">Arxiu no trobat</string>
     <!--Queue operations-->
   <string name="lock_queue">Bloquejar cua</string>
@@ -238,10 +229,8 @@
   <!--Preferences-->
   <string name="project_pref">Projecte</string>
   <string name="synchronization_pref">Sincronització</string>
-  <string name="synchronization_sum">Sincronitza amb altres dispositius</string>
 
-  <string name="download_pref_details">Detalls</string>
-  <string name="import_export_pref">Importa/Exporta</string>
+    <string name="import_export_pref">Importa/Exporta</string>
     <string name="appearance">Aparença</string>
   <string name="external_elements">Elements externs</string>
   <string name="interruptions">Interrupcions</string>
@@ -377,9 +366,8 @@
   <string name="licenses">Llicències</string>
   <string name="licenses_summary">Podcini usa altre programari genial</string>
   <!--Search-->
-  <string name="search_status_no_results">No s\'ha trobat cap resultat</string>
 
-  <string name="search_label">Cerca</string>
+    <string name="search_label">Cerca</string>
   <string name="no_results_for_query">No s\'han trobat resultats per «%1$s»</string>
 
   <!--Synchronization-->
@@ -397,8 +385,7 @@
   <string name="opml_export_summary">Transfereix les teues subscripcions a un altra aplicació de podcast</string>
   <string name="opml_import_summary">Importa les teues subscripcions des d\'un altra aplicació de podcast</string>
     <string name="opml_import_label">Importació d\'OPML</string>
-  <string name="opml_add_podcast_label">Importa llista de podcasts (OPML)</string>
-  <string name="opml_reader_error">S\'ha produït un error en llegir el document OPML: </string>
+    <string name="opml_reader_error">S\'ha produït un error en llegir el document OPML: </string>
     <string name="opml_export_label">Exportació OPML</string>
   <string name="html_export_label">Exporta HTML</string>
     <string name="import_export_error_label">Error d\'exportació</string>
@@ -418,15 +405,7 @@
   <string name="timer_vibration_label">Vibra un poc abans del final</string>
     <string name="time_minutes">minuts</string>
   <string name="time_hours">hores</string>
-  <plurals name="time_minutes_quantified">
-    <item quantity="one">1 minut</item>
-    <item quantity="other">%d minuts</item>
-  </plurals>
-  <plurals name="time_hours_quantified">
-    <item quantity="one">1 hora</item>
-    <item quantity="other">%d hores</item>
-  </plurals>
-  <string name="auto_enable_label">Activar el temporitzador de son automàticament en reproduïr</string>
+    <string name="auto_enable_label">Activar el temporitzador de son automàticament en reproduïr</string>
     <!--Synchronisation-->
   <string name="synchronization_choose_title">Escolleix el vostre proveïdor de sincronització</string>
   <string name="synchronization_summary_unchoosen">Podeu escollir entre múltiples proveïdors per sincronitzar-hi les vostres subscripcions i l\'estat de reproducció dels episodis</string>
@@ -449,8 +428,6 @@
     <string name="pref_synchronization_logout_toast">Us heu desconnectat correctament.</string>
   <string name="gpodnetsync_error_title">Error de sincronització a gpodder.net</string>
   <string name="gpodnetsync_error_descr">S\'ha produït un error durant la sincronització:\u0020</string>
-  <string name="gpodnetsync_pref_report_successful">Correcte</string>
-  <string name="gpodnetsync_pref_report_failed">Ha fallat</string>
     <!--Directory chooser-->
     <!--Online feed view-->
   <string name="subscribe_label">Subscriu</string>
@@ -466,8 +443,7 @@
   <string name="tags_label">Etiquetes</string>
   <string name="feed_tags_summary">Canvia les etiquetes d\'aquest podcast per ajudar-vos a organitzar les subscripcions</string>
 
-  <string name="auto_download_settings_label">Descarregar les confguracions automàticament</string>
-  <string name="episode_filters_label">Filtra els termes</string>
+    <string name="episode_filters_label">Filtra els termes</string>
   <string name="episode_filters_description">Llistat de termes usats per decidir si un episodi s\'ha d\'incloure o excloure en descarregar automàticament</string>
 
   <string name="exclude_terms">Exclou només episodis que contenen els termes següents</string>
@@ -485,24 +461,16 @@
   <string name="edit_url_menu">Edita l\'enllaç del canal</string>
   <string name="edit_url_confirmation_msg">Canviar l\'adreça RSS pot trencar fàcilment l\'estat de reproducció i les llistes d\'episodis del podcast. NO recomanem canviar-lo i NO oferirem suport si alguna cosa va malament. Això no es pot desfer. La subscripció trencada NO es pot reparar simplement canviant l\'adreça. Us suggerim que creeu una còpia de seguretat abans de continuar.</string>
   <!--PodciniSP-->
-  <string name="sp_apps_importing_feeds_msg">S\'estan important les subscripcions des de les apps de propòsit únic…</string>
 
-  <string name="search_podcast_hint">Cerca podcast…</string>
+    <string name="search_podcast_hint">Cerca podcast…</string>
   <string name="search_itunes_label">Cerca a Apple Podcasts</string>
   <string name="search_podcastindex_label">Cerca a Podcast Index</string>
 
-    <string name="advanced">Avançat</string>
 
-
-
-
-
-
-  <string name="search_powered_by">Resultats per %1$s</string>
+    <string name="search_powered_by">Resultats per %1$s</string>
   <string name="select_country">Selecciona país</string>
   <!--Local feeds-->
-  <string name="add_local_folder">Afegir carpeta local</string>
-  <string name="local_folder">Carpeta local</string>
+    <string name="local_folder">Carpeta local</string>
   <string name="reconnect_local_folder">Torna a connectar la carpeta local</string>
   <string name="reconnect_local_folder_warning">En cas de denegació de permisos, pots utilitzar-ho per tornar a connectar a la mateixa carpeta. No seleccionis cap altra carpeta.</string>
   <string name="local_feed_description">Aquest podcast virtual es va crear afegint una carpeta a Podcini.</string>
@@ -540,8 +508,7 @@
   <string name="audio_controls">Controls d\'audio</string>
   <string name="playback_speed">Velocitat de reproducció</string>
 
-  <string name="player_switch_to_audio_only">Canvia a només àudio</string>
-  <!--proxy settings-->
+    <!--proxy settings-->
   <string name="proxy_type_label">Tipus</string>
   <string name="host_label">Host</string>
   <string name="port_label">Port</string>
@@ -552,8 +519,7 @@
   <string name="proxy_test_failed">Test fallit</string>
   <string name="proxy_host_empty_error">El host no pot estar buit</string>
   <string name="proxy_host_invalid_error">El host no és una adreça IP o domini vàlid</string>
-  <string name="proxy_port_invalid_error">El port no és vàlid</string>
-  <!--Subscriptions fragment-->
+    <!--Subscriptions fragment-->
 
   <!--Notification channels-->
   <string name="notification_group_errors">Errors</string>
@@ -562,9 +528,7 @@
   <string name="notification_channel_user_action_description">Mostrar si es requereix la vostra acció, per exemple si heu d\'entrar una contrasenya.</string>
   <string name="notification_channel_downloading">S\'està baixant</string>
   <string name="notification_channel_downloading_description">Mostrar durant baixades.</string>
-  <string name="notification_channel_playing">Reproducció actual</string>
-  <string name="notification_channel_playing_description">Permet controlar la reproducció. Aquesta és la notificació principal que veureu durant la reproducció d\'un podcast.</string>
-  <string name="notification_channel_download_error">Descàrrega fallida</string>
+    <string name="notification_channel_download_error">Descàrrega fallida</string>
   <string name="notification_channel_download_error_description">Mostrat quan falla la descàrrega o l\'actualització del feed.</string>
   <string name="notification_channel_sync_error">Sincronització fallida</string>
   <string name="notification_channel_sync_error_description">Mostrat quan falla la sincronització de gpodder.</string>
@@ -572,10 +536,7 @@
 
   <!--Widget settings-->
     <!--On-Demand configuration-->
-  <string name="on_demand_config_setting_changed">Ajust actualitzar exitosament</string>
-  <string name="on_demand_config_stream_text">Pareix que escoltes en línia molt a sovint. Vols que les llistes d\'episodis mostren botons per a escoltar en línia\?</string>
-  <string name="on_demand_config_download_text">Pareix que baixes molt a sovint. Vols que les llistes d\'episodis mostren botons per a baixar episodis\?</string>
 
 
-  <string name="add_shortcut">Afegeix drecera</string>
+    <string name="add_shortcut">Afegeix drecera</string>
 </resources>

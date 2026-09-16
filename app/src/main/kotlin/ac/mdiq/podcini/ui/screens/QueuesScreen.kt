@@ -56,6 +56,7 @@ import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import android.content.ComponentName
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -433,7 +434,7 @@ fun QueuesScreen(id: Long = -1L) {
     fun TopBar() {
         var expanded by remember { mutableStateOf(false) }
         Box(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
-            if (curQueue.id == actQueue.id) AsyncImage(model = curMedia0?.imageUrl?: curMedia0?.feed?.imageUrl?:"", contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 5.dp, radiusY = 5.dp))
+            if (curQueue.id == actQueue.id) AsyncImage(model = (curMedia0?.images?.firstOrNull() ?: curMedia0?.feed?.images?.firstOrNull())?.href, imageLoader = imageLoader, contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 5.dp, radiusY = 5.dp))
             Box(modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)))
             Column {
                 Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -720,7 +721,7 @@ fun QueuesScreen(id: Long = -1L) {
                                                 yOffset = 0f
                                             }))
                                         Box(modifier = Modifier.width(imageWidth).height(imageHeight)) {
-                                            AsyncImage(model = ImageRequest.Builder(context).data(episode.imageLocation(false)).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.fillMaxSize())
+                                            AsyncImage(model = ImageRequest.Builder(context).data(episode.imageLocation(false)).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.fillMaxSize())
                                         }
                                         Text(episode.title ?: "No title")
                                     }

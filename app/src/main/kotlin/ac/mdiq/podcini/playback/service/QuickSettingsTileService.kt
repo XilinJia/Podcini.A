@@ -1,6 +1,7 @@
 package ac.mdiq.podcini.playback.service
 
 
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.PlayerStatusSimple
 import ac.mdiq.podcini.receiver.MediaButtonReceiver
@@ -29,6 +30,7 @@ class QuickSettingsTileService : TileService() {
     // Update the tile status when TileService.requestListeningState() is called elsewhere
     override fun onStartListening() {
         super.onStartListening()
+        initialize()
         updateTile()
     }
 
@@ -38,7 +40,6 @@ class QuickSettingsTileService : TileService() {
         return super.onBind(intent)
     }
 
-    
     private fun updateTile() {
         val qsTile = qsTile
         if (qsTile == null) Logd(TAG, "Ignored call to update QS tile: getQsTile() returned null.")

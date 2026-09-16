@@ -24,6 +24,7 @@ import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
 import androidx.core.view.size
@@ -109,15 +110,15 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
         if (selectedUrl == null) return false
         val itemId = item.itemId
         when (itemId) {
-            R.id.open_in_browser_item -> openInSystemDefault(selectedUrl!!)
-            R.id.share_url_item -> context.shareText(selectedUrl!!, R.string.share_url_label)
-            R.id.copy_url_item -> {
+            ContextAction.OPEN_IN_BROWSER.id -> openInSystemDefault(selectedUrl!!)
+            ContextAction.SHARE_URL.id -> context.shareText(selectedUrl!!, R.string.share_url_label)
+            ContextAction.COPY_URL.id -> {
                 val clipData: ClipData = ClipData.newPlainText(selectedUrl, selectedUrl)
                 val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(clipData)
                 Logt(TAG, context.getString(R.string.copied_to_clipboard))
             }
-            R.id.go_to_position_item -> {
+            ContextAction.GOTO.id -> {
                 if ((ShownotesCleaner.isTimecodeLink(selectedUrl) || ShownotesCleaner.isHTTPTimecodeLink(selectedUrl)) && timecodeSelectedListener != null)
                     timecodeSelectedListener!!(ShownotesCleaner.getTimecodeLinkTime(selectedUrl))
                 else Loge(TAG, "Selected go_to_position_item, but URL was not timecode link: $selectedUrl")
@@ -135,14 +136,14 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
         super.onCreateContextMenu(menu)
         if (selectedUrl == null) return
         if (ShownotesCleaner.isTimecodeLink(selectedUrl) || ShownotesCleaner.isHTTPTimecodeLink(selectedUrl)) {
-            menu.add(Menu.NONE, R.id.go_to_position_item, Menu.NONE, R.string.go_to_position_label)
+            menu.add(Menu.NONE, ContextAction.GOTO.id, Menu.NONE, ContextAction.GOTO.titleRes)
             menu.setHeaderTitle(durationStringFull(ShownotesCleaner.getTimecodeLinkTime(selectedUrl)))
         } else {
             val uri = selectedUrl!!.toSafeUri()
             val intent = Intent(Intent.ACTION_VIEW, uri)
-            if (isCallable(intent)) menu.add(Menu.NONE, R.id.open_in_browser_item, Menu.NONE, R.string.open_in_browser_label)
-            menu.add(Menu.NONE, R.id.copy_url_item, Menu.NONE, R.string.copy_url_label)
-            menu.add(Menu.NONE, R.id.share_url_item, Menu.NONE, R.string.share_url_label)
+            if (isCallable(intent)) menu.add(Menu.NONE, ContextAction.OPEN_IN_BROWSER.id, Menu.NONE, ContextAction.OPEN_IN_BROWSER.titleRes)
+            menu.add(Menu.NONE, ContextAction.COPY_URL.id, Menu.NONE, ContextAction.COPY_URL.titleRes)
+            menu.add(Menu.NONE, ContextAction.SHARE_URL.id, Menu.NONE, ContextAction.SHARE_URL.titleRes)
             menu.setHeaderTitle(selectedUrl)
         }
         setOnClickListeners(menu) { item: MenuItem -> this.onContextItemSelected(item) }
@@ -180,5 +181,17 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
 
     companion object {
         private val TAG: String = ShownotesWebView::class.simpleName ?: "Anonymous"
+
+        enum class ContextAction(@StringRes val titleRes: Int) {
+            GOTO(R.string.go_to_position_label),
+            OPEN_IN_BROWSER(R.string.open_in_browser_label),
+            COPY_URL(R.string.copy_url_label),
+            SHARE_URL(R.string.share_url_label);
+            val id: Int get() = ordinal
+
+            companion object {
+                fun fromId(id: Int): ContextAction? = entries.firstOrNull { it.id == id }
+            }
+        }
     }
 }

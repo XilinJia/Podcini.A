@@ -25,41 +25,56 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 
 object ClientConfig {
-    private var initialized = false
+
+    val isInitialized =  MutableStateFlow(false)
+    private var initializing = false
+
     var nmJob: Job? = null
+
+    private val initLock = Any()
 
     @Synchronized
     fun initialize() {
-        if (initialized) {
-            if (appPrefsFlow?.value?.loadExternalApp == true && sourceClients.isEmpty())
-                AppGatewayRegistry.initialize(appPrefsFlow!!.value.loadExternalApp, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
-            return
+        synchronized(initLock) {
+            if (isInitialized.value || initializing) return
+            initializing = true
         }
-        getRealmInstance()
-        initAppPrefs()
-        AppGatewayRegistry.initialize(appPrefsFlow!!.value.loadExternalApp, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
 
-        if (nmJob == null) nmJob = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch { networkMonitor.networkFlow.collect { isConnected -> networkChangedDetected(isConnected) } }
+//        if (isInitialized.value) {
+//            if (appPrefsFlow?.value?.loadExternalApp == true && sourceClients.isEmpty())
+//                AppGatewayRegistry.initialize(appPrefsFlow!!.value.loadExternalApp, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
+//            return
+//        }
+        try {
+            getRealmInstance()
+            initAppPrefs()
+            AppGatewayRegistry.initialize(appPrefsFlow!!.value.loadExternalApp, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
 
-        initStorage()
+            if (nmJob == null) nmJob = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch { networkMonitor.networkFlow.collect { isConnected -> networkChangedDetected(isConnected) } }
 
-        Logd("ClientConfigurator", "initialize")
-        timeIt("ClientConfigurator Init started ")
+            initStorage()
 
-        monitorFeeds()
-        monitorVolumes()
-        initQueues()
+            Logd("ClientConfigurator", "initialize")
+            timeIt("ClientConfigurator Init started ")
 
-        SslProviderInstaller.install()
-        configProxy(proxyConfig)
-        createNotificationChannels()
+            monitorFeeds()
+            monitorVolumes()
+            initQueues()
 
-        timeIt("ClientConfigurator Init ends ")
-        initialized = true
+            SslProviderInstaller.install()
+            configProxy(proxyConfig)
+            createNotificationChannels()
+
+            timeIt("ClientConfigurator Init ends ")
+
+            isInitialized.value = true
+        } finally { synchronized(initLock) { initializing = false } }
     }
 
     fun destroy() {

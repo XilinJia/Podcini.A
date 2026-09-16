@@ -68,6 +68,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatWithGrouping
 import ac.mdiq.podcini.utils.timeIt
@@ -1524,7 +1525,7 @@ fun LibraryScreen() {
                                     onFilterChanged(setOf(""))
                                 }) { Text(stringResource(R.string.reset)) }
                                 Spacer(Modifier.weight(0.4f))
-                                Button(onClick = { onDismiss() }) { Text(stringResource(R.string.close_label)) }
+                                Button(onClick = { onDismiss() }) { Text(stringResource(R.string.close)) }
                                 Spacer(Modifier.weight(0.3f))
                             }
                         }
@@ -1896,7 +1897,7 @@ fun LibraryScreen() {
                             })) {
                             ConstraintLayout(Modifier.fillMaxSize()) {
                                 val (coverImage, episodeCount, rating, error) = createRefs()
-                                AsyncImage(model = ImageRequest.Builder(context).data(feed.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "coverImage",
+                                AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), imageLoader = imageLoader, contentDescription = "coverImage",
                                     colorFilter = if (!feed.inNormalVolume) ColorFilter.tint(color = Color.Gray.copy(alpha = 0.5f), blendMode = BlendMode.SrcAtop) else null,
                                     modifier = Modifier.fillMaxWidth().aspectRatio(1f).constrainAs(coverImage) {
                                         top.linkTo(parent.top)
@@ -1966,7 +1967,7 @@ fun LibraryScreen() {
                         val imageSize = 60
                         Row(Modifier.height(imageSize.dp).background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface)) {
                             Box(modifier = Modifier.size(imageSize.dp)) {
-                                AsyncImage(model = ImageRequest.Builder(context).data(feed.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover",
+                                AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover",
                                     colorFilter = if (!feed.inNormalVolume) ColorFilter.tint(color = Color.Gray.copy(alpha = 0.5f), blendMode = BlendMode.SrcAtop) else null,
                                     modifier = Modifier.fillMaxSize().clickable {
                                         Logd(TAG, "icon clicked!")

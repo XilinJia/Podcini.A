@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--Activity and fragment titles-->
-  <string name="feed_update_receiver_name">Actualizar subscricións</string>
     <string name="statistics_label">Estatísticas</string>
   <string name="add_feed_label">Engadir podcast</string>
   <string name="episodes_label">Episodios</string>
@@ -15,7 +14,6 @@
   <string name="subscriptions_label">Subscricións</string>
 
   <string name="cancel_download_label">Cancelar descarga</string>
-  <string name="playback_history_label">Historial de reprodución</string>
 
 
     <string name="notification_pref_fragment">Notificacións</string>
@@ -43,8 +41,7 @@
 
 
     <!--Bug report activity-->
-  <string name="log_file_share_exception">Non se atopan apps compatibles</string>
-  <string name="export_logs_menu_title">Exportar rexistro detallado</string>
+    <string name="export_logs_menu_title">Exportar rexistro detallado</string>
   <string name="confirm_export_log_dialog_message">O rexistro detallado podería conter información sensible, como a túa lista de subscricións</string>
   <!--Webview actions-->
   <string name="open_in_browser_label">Abrir no navegador</string>
@@ -64,8 +61,8 @@
   <string name="reset">Restablecer</string>
   <string name="global_default">Valor por defecto xeral</string>
 
-  <string name="support_funding_label">Axuda</string>
-  <string name="support_podcast">Axuda a este podcast</string>
+
+
   <string name="error_label">Fallo</string>
   <string name="error_msg_prefix">Produciuse un fallo:</string>
   <string name="refresh_label">Actualizar</string>
@@ -76,20 +73,20 @@
 
 
   <string name="episodes_suffix">\u0020episodios</string>
-  <string name="close_label">Pechar</string>
-  <string name="retry_label">Reintentar</string>
-  <string name="auto_download_label">Incluír en descargas automáticas</string>
+  <string name="close">Pechar</string>
+  <string name="retry">Reintentar</string>
+  <string name="include_in_auto_downloads">Incluír en descargas automáticas</string>
   <string name="auto_delete_episode">Borrado automático do episodio</string>
-  <string name="feed_volume_adapdation">Volume adaptable</string>
-  <string name="feed_volume_adaptation_summary">Subir ou baixar o volume para os episodios deste podcast: %1$s</string>
-  <string name="feed_volume_reduction_off">Sen modificación</string>
-  <string name="feed_volume_reduction_light">Lixeira reducción</string>
-  <string name="feed_volume_reduction_heavy">Reducción importante</string>
-  <string name="feed_volume_boost_light">Lixeiro incremento</string>
-  <string name="feed_volume_boost_medium">Incremento medio</string>
-  <string name="feed_volume_boost_heavy">Incremento importante</string>
-  <string name="feed_auto_download_always">Sempre</string>
-  <string name="feed_auto_download_never">Nunca</string>
+  <string name="volume_adaptation">Volume adaptable</string>
+  <string name="volume_adaptation_summary">Subir ou baixar o volume para os episodios deste podcast: %1$s</string>
+  <string name="no_adaptation">Sen modificación</string>
+  <string name="light_reduction">Lixeira reducción</string>
+  <string name="heavy_reduction">Reducción importante</string>
+  <string name="light_boost">Lixeiro incremento</string>
+  <string name="medium_boost">Incremento medio</string>
+  <string name="heavy_boost">Incremento importante</string>
+  <string name="always">Sempre</string>
+  <string name="never">Nunca</string>
 
 
   <string name="episode_cleanup_never">Nunca</string>
@@ -135,8 +132,7 @@
   <string name="stream_label">Difundir</string>
   <string name="delete_label">Borrar</string>
 
-  <string name="delete_local_failed">Non se puido borrar o ficheiro. Intenta reconectar co cartafol local desde a pantalla de información do podcast.</string>
-  <string name="delete_episode_label">Eliminar episodio</string>
+    <string name="delete_episode_label">Eliminar episodio</string>
 
 
     <string name="add_to_active_queue">Engadir á cola</string>
@@ -195,19 +191,13 @@
   <string name="confirm_mobile_download_dialog_message_vpn">A túa app VPN compórtase como unha rede móbil (conexión medida). As descargas sobre datos móbiles están desactivadas nos axustes. Se queres solucionar o problema contacta coas desenvolvedoras da app VPN.</string>
   <string name="confirm_mobile_download_dialog_download_later">Descargar máis tarde</string>
   <string name="confirm_mobile_download_dialog_allow_this_time">Descargar igualmente</string>
-  <string name="confirm_mobile_streaming_notification_title">Confirma retransmisión móbil</string>
-  <string name="confirm_mobile_streaming_notification_message">Desactivouse nos axustes Retransmitir mediante a Conexión de datos. Elixe aquí a opción que desexas.</string>
+    <string name="confirm_mobile_streaming_notification_message">Desactivouse nos axustes Retransmitir mediante a Conexión de datos. Elixe aquí a opción que desexas.</string>
   <string name="confirm_mobile_streaming_button_always">Sempre</string>
   <string name="confirm_mobile_streaming_button_once">Unha vez</string>
   <!--Mediaplayer messages-->
 
 
-
-
-
-
-  <string name="no_media_playing_label">Sen reprodución</string>
-  <string name="unknown_media_key">Podcini - chave de medios descoñecida: %1$d</string>
+    <string name="unknown_media_key">Podcini - chave de medios descoñecida: %1$d</string>
   <string name="error_file_not_found">Non se atopa o ficheiro</string>
     <!--Queue operations-->
   <string name="lock_queue">Bloquear a cola</string>
@@ -251,10 +241,8 @@
   <!--Preferences-->
   <string name="project_pref">Proxecto</string>
   <string name="synchronization_pref">Sincronización</string>
-  <string name="synchronization_sum">Sincronizar con outros dispositivos</string>
 
-  <string name="download_pref_details">Detalles</string>
-  <string name="import_export_pref">Importar/Exportar</string>
+    <string name="import_export_pref">Importar/Exportar</string>
     <string name="appearance">Aspecto</string>
   <string name="external_elements">Elementos externos</string>
   <string name="interruptions">Interrupcións</string>
@@ -400,9 +388,8 @@
   <string name="licenses">Licenzas</string>
   <string name="licenses_summary">Podcini toma como fonte outro software</string>
   <!--Search-->
-  <string name="search_status_no_results">Non se atoparon resultados</string>
 
-  <string name="search_label">Buscar</string>
+    <string name="search_label">Buscar</string>
   <string name="no_results_for_query">Non hai resultados para \"%1$s\"</string>
 
   <!--Synchronization-->
@@ -420,8 +407,7 @@
   <string name="opml_export_summary">Mover as túas subscricións a outra app de podcast</string>
   <string name="opml_import_summary">Importar as túas subscricións desde outra app de podcast</string>
     <string name="opml_import_label">Importar OPML</string>
-  <string name="opml_add_podcast_label">Importar lista de podcast (OPML)</string>
-  <string name="opml_reader_error">Houbo un fallo ao ler o documento OPML:</string>
+    <string name="opml_reader_error">Houbo un fallo ao ler o documento OPML:</string>
     <string name="opml_export_label">Exportar OPML</string>
   <string name="html_export_label">Exportar HTML</string>
     <string name="import_export_error_label">Fallo ao exportar</string>
@@ -441,19 +427,7 @@
   <string name="timer_vibration_label">Vibra brevemente antes do remate</string>
     <string name="time_minutes">minutos</string>
   <string name="time_hours">horas</string>
-  <plurals name="time_minutes_quantified">
-    <item quantity="one">1 minuto</item>
-    <item quantity="other">%d minutos</item>
-  </plurals>
-  <plurals name="time_hours_quantified">
-    <item quantity="one">1 hora</item>
-    <item quantity="other">%d horas</item>
-  </plurals>
-  <plurals name="time_days_quantified">
-    <item quantity="one">1 día</item>
-    <item quantity="other">%d días</item>
-  </plurals>
-  <string name="auto_enable_label">Activar automáticamente o temporizador ao iniciar a reprodución</string>
+    <string name="auto_enable_label">Activar automáticamente o temporizador ao iniciar a reprodución</string>
     <!--Synchronisation-->
   <string name="synchronization_choose_title">Elixe o provedor de sincronización</string>
   <string name="synchronization_summary_unchoosen">Podes elexir entre múltiples provedores para sincronizar as túas subscricións e estado de reprodución dos episodios</string>
@@ -476,8 +450,6 @@
     <string name="pref_synchronization_logout_toast">Desconexión correcta</string>
   <string name="gpodnetsync_error_title">fallo na sincronización con gpodder.net</string>
   <string name="gpodnetsync_error_descr">Houbo un fallo durante a sincronización:\u0020</string>
-  <string name="gpodnetsync_pref_report_successful">Con éxito</string>
-  <string name="gpodnetsync_pref_report_failed">Fallou</string>
     <!--Directory chooser-->
     <!--Online feed view-->
   <string name="subscribe_label">Subscribir</string>
@@ -493,8 +465,7 @@
   <string name="tags_label">Etiquetas</string>
   <string name="feed_tags_summary">Cambia as etiquetas deste podcast para axudarche a organizar as subscricións</string>
 
-  <string name="auto_download_settings_label">Axustes da descarga automática</string>
-  <string name="episode_filters_label">Filtro para episodios</string>
+    <string name="episode_filters_label">Filtro para episodios</string>
   <string name="episode_filters_description">Lista dos termos utilizados para decidir se un episodio debe ser incluído ou excluído das descargas automáticas</string>
 
   <string name="exclude_terms">Excluír episodios que conteñen algún destes termos</string>
@@ -512,24 +483,16 @@
   <string name="edit_url_menu">Editar URL da fonte</string>
   <string name="edit_url_confirmation_msg">Ao mudar o enderezo RSS podes quebrar o estado da reprodución e as listas de episodios do podcast. Non recomendamos cambialo e NON proporcionamos axuda se algo vai mal. Non ten volta atrás. Unha subscrición mal configurada NON PODE ser reparada simplemente volvendo ao enderezo anterior. Suxerimos crear unha copia de apoio antes de continuar.</string>
   <!--PodciniSP-->
-  <string name="sp_apps_importing_feeds_msg">Importando as subscricións desde aplicacións de propósito único…</string>
 
-  <string name="search_podcast_hint">Buscar podcast…</string>
+    <string name="search_podcast_hint">Buscar podcast…</string>
   <string name="search_itunes_label">Buscar en Apple Podcasts</string>
   <string name="search_podcastindex_label">Buscar en Podcast Index</string>
 
-    <string name="advanced">Avanzado</string>
 
-
-
-
-
-
-  <string name="search_powered_by">Resultados por %1$s</string>
+    <string name="search_powered_by">Resultados por %1$s</string>
   <string name="select_country">Seleccionar país</string>
   <!--Local feeds-->
-  <string name="add_local_folder">Engadir cartafol local</string>
-  <string name="local_folder">Cartafol local</string>
+    <string name="local_folder">Cartafol local</string>
   <string name="reconnect_local_folder">Reconectar cartafol local</string>
   <string name="reconnect_local_folder_warning">En caso de faltar permisos, podes usar esto para reconectar o exactamente o mesmo cartafol. Non elixas outro cartafol.</string>
   <string name="local_feed_description">O podcast virtual foi creado ó engadir un cartafol a Podcini.</string>
@@ -567,8 +530,7 @@
   <string name="audio_controls">Controis de audio</string>
   <string name="playback_speed">Velocidade de reprodución</string>
 
-  <string name="player_switch_to_audio_only">Cambiar a só audio</string>
-  <!--proxy settings-->
+    <!--proxy settings-->
   <string name="proxy_type_label">Tipo</string>
   <string name="host_label">Servidor</string>
   <string name="port_label">Porto</string>
@@ -579,8 +541,7 @@
   <string name="proxy_test_failed">Fallo na proba</string>
   <string name="proxy_host_empty_error">Servidor non pode quedar baleiro</string>
   <string name="proxy_host_invalid_error">O servidor indicado non é un dominio ou IP válidos</string>
-  <string name="proxy_port_invalid_error">Porto non válido</string>
-  <!--Subscriptions fragment-->
+    <!--Subscriptions fragment-->
 
   <!--Notification channels-->
   <string name="notification_group_errors">Erros</string>
@@ -589,9 +550,7 @@
   <string name="notification_channel_user_action_description">Mostrado si a súa acción é requerida, por exemplo si precisa introducir o contrasinal.</string>
   <string name="notification_channel_downloading">Descargando</string>
   <string name="notification_channel_downloading_description">Mostrado durante a descarga actual.</string>
-  <string name="notification_channel_playing">Soando agora</string>
-  <string name="notification_channel_playing_description">Permite controlar a reprodución. Esta é a notificación principal que verás mentras escoitas un podcast.</string>
-  <string name="notification_channel_download_error">Fallou a descarga</string>
+    <string name="notification_channel_download_error">Fallou a descarga</string>
   <string name="notification_channel_download_error_description">Mostrado cando a descarga ou actualización da fonte fallou.</string>
   <string name="notification_channel_sync_error">Fallou a sincronización</string>
   <string name="notification_channel_sync_error_description">Mostrado cando falla a sincronización con gpodder.</string>
@@ -599,10 +558,7 @@
 
   <!--Widget settings-->
     <!--On-Demand configuration-->
-  <string name="on_demand_config_setting_changed">Actualizouse o axuste.</string>
-  <string name="on_demand_config_stream_text">Semella que prefires a Difusión. Queres que a lista de episodios mostre botóns de Difusión?</string>
-  <string name="on_demand_config_download_text">Semella que prefires as Descargas. Queres que a lista de episodios mostre botóns de Descarga?</string>
 
 
-  <string name="add_shortcut">Engadir atallo</string>
+    <string name="add_shortcut">Engadir atallo</string>
 </resources>

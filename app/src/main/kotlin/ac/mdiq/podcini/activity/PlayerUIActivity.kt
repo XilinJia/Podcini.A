@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.activity
 
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.ui.compose.AppThemes
 import ac.mdiq.podcini.ui.compose.PodciniTheme
@@ -35,8 +36,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 private const val TAG = "PlayerUIActivity"
 class PlayerUIActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-//        installSplashScreen()
         super.onCreate(savedInstanceState)
+        window.setBackgroundDrawableResource(android.R.color.transparent)
+
+        initialize()
+
         Logd(TAG, "in onCreate")
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {

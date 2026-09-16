@@ -2,6 +2,7 @@ package ac.mdiq.podcini.storage.database
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.config.NotificationIds
 import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
 import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
 import ac.mdiq.podcini.sync.model.EpisodeAction
@@ -217,7 +218,7 @@ suspend fun deleteMedia(episode: Episode): Episode {
         if (episode.id == theatres[i].mPlayerFlow.value?.curState?.curMediaId) {
             theatres[i].mPlayerFlow.value?.saveCurState()
             val nm = NotificationManagerCompat.from(context)
-            nm.cancel(R.id.notification_playing)
+            nm.cancel(NotificationIds.playing)
         }
     }
     if (isSyncProviderConnected) {

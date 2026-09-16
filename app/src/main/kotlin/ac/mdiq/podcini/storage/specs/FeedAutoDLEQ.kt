@@ -72,7 +72,7 @@ enum class AutoDLEQPolicy(val code: Int, val resId: Int, var replace: Boolean) {
     ONLY_NEW(0, R.string.feed_auto_dleq_new, false),
     NEWER(1, R.string.feed_auto_dleq_newer, false),
     OLDER(2, R.string.feed_auto_dleq_older, false),
-    FILTER_SORT(4, R.string.feed_auto_dleq_filter_sort, false);
+    FILTER_SORT(4, R.string.current_filter_sort, false);
 
     companion object {
         fun fromCode(code: Int): AutoDLEQPolicy = AutoDLEQPolicy.entries.firstOrNull { it.code == code } ?: ONLY_NEW

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Update subscriptions</string>
     <string name="feeds">Feeds</string>
 
     <string name="statistics_label">Statistik</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Logs</string>
     <string name="subscriptions_label">Langganan</string>
     <string name="cancel_download_label">Cancel download</string>
-    <string name="playback_history_label">Riwayat Putar</string>
     <string name="months_statistics_label">Months</string>
     <string name="notification_pref_fragment">Notifikasi</string>
     <string name="current_episode">Current</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">Besar ukuran episode yang tersimpan di perangkat ini</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Tidak ada aplikasi kompatibel yang ditemukan</string>
     <string name="export_logs_menu_title">Ekspor log rinci</string>
     <string name="confirm_export_log_dialog_message">Log rinci mungkin berisi informasi sensitif, seperti daftar langganan Anda</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">Atur ulang</string>
     <string name="global_default">Global default</string>
 
-    <string name="support_funding_label">Dukung</string>
-    <string name="support_podcast">Support this podcast</string>
+
+
     <string name="error_label">Kesalahan</string>
     <string name="error_msg_prefix">Sebuah kesalahan terjadi</string>
     <string name="refresh_label">Segarkan</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Clear new</string>
     <string name="reconcile_label">Reconcile</string>
     <string name="chapters_label">Bab</string>
-    <string name="chapter_duration0">Duration: </string>
     <string name="description_label">Keterangan</string>
     <string name="episodes_suffix">\u0020episode</string>
-    <string name="close_label">Tutup</string>
-    <string name="retry_label">Coba lagi</string>
-    <string name="auto_download_label">Sertakan di unduh otomatis</string>
+    <string name="close">Tutup</string>
+    <string name="retry">Coba lagi</string>
+    <string name="include_in_auto_downloads">Sertakan di unduh otomatis</string>
     <string name="auto_delete_episode">Auto delete episode</string>
-    <string name="feed_volume_adapdation">Volume adaptation</string>
-    <string name="feed_volume_adaptation_summary">Turn volume for episodes of this podcast up or down: %1$s</string>
-    <string name="feed_volume_reduction_off">No adaption</string>
-    <string name="feed_volume_reduction_light">Light reduction</string>
-    <string name="feed_volume_reduction_heavy">Heavy reduction</string>
-    <string name="feed_volume_boost_light">Light boost</string>
-    <string name="feed_volume_boost_medium">Medium boost</string>
-    <string name="feed_volume_boost_heavy">Heavy boost</string>
-    <string name="feed_auto_download_always">Selalu</string>
-    <string name="feed_auto_download_never">Tidak pernah</string>
-    <string name="video_mode_label">Video mode</string>
+    <string name="volume_adaptation">Volume adaptation</string>
+    <string name="volume_adaptation_summary">Turn volume for episodes of this podcast up or down: %1$s</string>
+    <string name="no_adaptation">No adaption</string>
+    <string name="light_reduction">Light reduction</string>
+    <string name="heavy_reduction">Heavy reduction</string>
+    <string name="light_boost">Light boost</string>
+    <string name="medium_boost">Medium boost</string>
+    <string name="heavy_boost">Heavy boost</string>
+    <string name="always">Selalu</string>
+    <string name="never">Tidak pernah</string>
+    <string name="video_mode">Video mode</string>
 
 
     <string name="video_mode_audio_only">Audio only</string>
@@ -149,8 +145,6 @@
     <string name="reserve_episodes_label">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Hapus</string>
-    <string name="delete_failed_simple">Unable to delete file.</string>
-    <string name="delete_local_failed">Unable to delete file. Try re-connecting the local folder from the podcast info screen.</string>
     <string name="delete_episode_label">Delete episode media</string>
     <string name="no_action_label">No action</string>
 
@@ -238,13 +232,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Aplikasi VPN Anda dianggap jaringan data seluler (koneksi terukur). Penyegaran podcast dengan jaringan data seluler dinonaktifkan di pengaturan. Jika ingin menyelesaikan masalah ini, hubungi pembuat aplikasi VPN Anda.</string>
     <string name="confirm_mobile_download_dialog_download_later">Download later</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Download anyway</string>
-    <string name="confirm_mobile_streaming_notification_title">Konfirmasi streaming dengan data seluler</string>
     <string name="confirm_mobile_streaming_notification_message">Streaming lewat jaringan data seluler dimatikan di pengaturan. Ketuk jika tetap ingin streaming.</string>
     <string name="confirm_mobile_streaming_button_always">Selalu</string>
     <string name="confirm_mobile_streaming_button_once">Sekali</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Tidak ada media yang dimainkan</string>
     <string name="unknown_media_key">Podcini - Kunci media tidak diketahui: %1$d</string>
     <string name="error_file_not_found">Berkas tidak ditemukan</string>
     <!-- Queue operations -->
@@ -286,11 +278,9 @@
     <!-- Preferences -->
     <string name="project_pref">Projek</string>
     <string name="synchronization_pref">Sinkronisasi</string>
-    <string name="synchronization_sum">Sinkronisasikan dengan perangkat lain</string>
     <string name="pref_backup_on_google_title">Auto backup of OPML</string>
     <string name="pref_backup_on_google_sum">Auto backup OPML files to Google. Once enabled, after Podcini is uninstalled and re-installed, the subscriptions can be restored. Toggle this setting will restart Podcini.</string>
 
-    <string name="download_pref_details">Detail</string>
     <string name="import_export_pref">Impor/Ekspor</string>
     <string name="pref_auto_backup_title">Auto backup</string>
     <string name="pref_auto_backup_sum">Automatically back up DB and preferences at a specified interval into a selected folder.</string>
@@ -300,7 +290,6 @@
     <string name="pref_auto_backup_limit">Number of backups to keep</string>
     <string name="appearance">Tampilan</string>
     <string name="external_elements">Elemen eksternal</string>
-    <string name="create_YT_syndicates">Create YT syndicates</string>
     <string name="add_to_feed">Add to feed</string>
     <string name="interruptions">Gangguan</string>
     <string name="playback_control">Kontrol pemutaran</string>
@@ -410,12 +399,6 @@
     <string name="pref_rewind_sum">Sesuaikan jumlah detik untuk loncat ke belakang ketika tombol putar ulang diklik</string>
     <string name="pref_playback_video_mode">Video play mode</string>
     <string name="pref_playback_video_mode_sum">Choose how video episode is played by default</string>
-    <string name="pref_swipe_refresh_title">Swipe to refresh</string>
-    <string name="pref_swipe_refresh_sum">Swipe down to refresh all subscriptions</string>
-    <string name="pref_feedGridLayout_title">Subscriptions use grid layout </string>
-    <string name="pref_feedGridLayout_sum">When set, Subscriptions view use a grid layout, otherwise list layout</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Show skip on notification</string>
@@ -461,7 +444,6 @@
     <string name="licenses_summary">Podcini menggunakan perangkat lunak hebat lainnya</string>
     <string name="email_sum">Report issues or make suggestions directly to the developer.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Tidak ada hasil yang ditemukan</string>
     <string name="search_label">Telusuri</string>
     <string name="no_results_for_query">Tidak ada hasil yang ditemukan untuk \"%1$s\"`</string>
 
@@ -485,7 +467,6 @@
     <string name="combo_export_summary">Export selectably the database, preferences, media files.</string>
     <string name="combo_import_summary">Import selectably the database, preferences, media files.</string>
     <string name="opml_import_label">Impor OPML</string>
-    <string name="opml_add_podcast_label">Impor daftar podcast (OPML)</string>
     <string name="opml_reader_error">Sebuah kesalahan terjadi ketika membaca dokumen OPML:</string>
     <string name="progress_export_label">Episodes progress export</string>
     <string name="progress_import_label">Episodes progress import</string>
@@ -526,19 +507,8 @@
     <string name="timer_vibration_label">Getar sesaat sebelum berakhir</string>
     <string name="time_minutes">menit</string>
     <string name="time_hours">jam</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="other">%d menit</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="other">%d jam</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="other">%d days</item>
-    </plurals>
     <string name="auto_enable_label">Aktifkan timer tidur secara otomatis saat menekan \'putar\'</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Sync with device on Wifi</string>
-    <string name="wifi_sync_summary_unchoosen">You can connect two devices on the same wifi network to synchronize your episodes play states</string>
     <string name="synchronization_choose_title">Pilih layanan penyedia sinkronisasi</string>
     <string name="synchronization_summary_unchoosen">Anda dapat memilih dari berbagai layanan penyedia  untuk menyinkronisasikan langganan dan status memutar episode Anda dengan</string>
     <string name="dialog_choose_sync_service_title">Pilih layanan penyedia sinkronisasi</string>
@@ -568,8 +538,6 @@
     <string name="pref_synchronization_logout_toast">Sudah keluar</string>
     <string name="gpodnetsync_error_title">Kesalahan sinkronisasi gpodder.net</string>
     <string name="gpodnetsync_error_descr">Sebuah kesalahan terjadi selama sinkronisasi:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Berhasil</string>
-    <string name="gpodnetsync_pref_report_failed">Gagal</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Langganan</string>
@@ -581,7 +549,6 @@
     <string name="tags_label">Label</string>
     <string name="feed_tags_summary">Ganti label podcast ini untuk membantu mengelola langganan Anda</string>
 
-    <string name="auto_download_settings_label">Auto download settings</string>
     <string name="episode_filters_label">Episode filter</string>
     <string name="episode_inclusive_filters_label">Episode inclusive filter</string>
     <string name="episode_exclusive_filters_label">Episode exclusive filter</string>
@@ -611,24 +578,16 @@
     <string name="edit_url_menu">Sunting URL umpan</string>
     <string name="edit_url_confirmation_msg">Mengganti alamat RSS dapat merusak status pemutaran dan daftar episode podcast. Kami menyarankan untuk TIDAK mengubahnya dan kami tidak dapat memberikan bantuan jika ada yang salah. Aksi ini tidak dapat dikembalikan. Langganan yang rusak tidak dapat diperbaiki hanya dengan mengganti alamatnya kembali. Sebaiknya buat cadangan jika tetap ingin melanjutkan.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Impor langganan dari aplikasi bertujuan tunggal…</string>
 
     <string name="search_podcast_hint">Cari podcast…</string>
 
     <string name="search_itunes_label">Search Apple Podcasts</string>
     <string name="search_podcastindex_label">Search Podcast Index</string>
 
-    <string name="advanced">Lanjutan</string>
-
-
-
-
-
 
     <string name="search_powered_by">Hasil dari %1$s</string>
     <string name="select_country">Pilih negara</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Tambahkan folder lokal</string>
     <string name="local_folder">Folder lokal</string>
     <string name="reconnect_local_folder">Hubungkan kembali folder lokal</string>
     <string name="reconnect_local_folder_warning">Jika terjadi penolakan izin, Anda dapat menggunakan ini untuk menghubungkan kembali ke folder yang sama. Jangan memilih folder yang berbeda.</string>
@@ -652,8 +611,6 @@
     <string name="has_video">Has video</string>
     <string name="has_comments">Has commented</string>
 
-    <string name="always">Always</string>
-    <string name="never">Never</string>
     <string name="auto_download">Auto download</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Juga masukkan posisi pemutaran</string>
@@ -665,7 +622,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Kontrol audio</string>
     <string name="playback_speed">Kecepatan putar</string>
-    <string name="player_switch_to_audio_only">Ganti ke audio saja</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Tipe</string>
     <string name="host_label">Host</string>
@@ -677,7 +633,6 @@
     <string name="proxy_test_failed">Tes gagal</string>
     <string name="proxy_host_empty_error">Host tidak bisa kosong</string>
     <string name="proxy_host_invalid_error">Host bukan IP adress atau domain yang valid</string>
-    <string name="proxy_port_invalid_error">Port tidak valid</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Kesalahan</string>
@@ -685,17 +640,12 @@
     <string name="notification_channel_user_action_description">Ditampilkan jika tindakan Anda diperlukan, contohnya jika Anda perlu memasukkan kata sandi.</string>
     <string name="notification_channel_downloading">Mengunduh</string>
     <string name="notification_channel_downloading_description">Ditampilkan saat sedang mengunduh.</string>
-    <string name="notification_channel_playing">Sedang diputar</string>
-    <string name="notification_channel_playing_description">Izinkan untuk kontrol pemutaran. Ini adalah notifikasi utama yang Anda lihat ketika memutar sebuah podcast.</string>
     <string name="notification_channel_download_error">Unduh gagal</string>
     <string name="notification_channel_download_error_description">Ditampilkan saat pembaruan unduhan atau umpan gagal.</string>
     <string name="notification_channel_sync_error">Sinkronisasi gagal</string>
     <string name="notification_channel_sync_error_description">Ditampilkan saat sinkronisasi GPodder.net gagal.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Setelan diperbaharui.</string>
-    <string name="on_demand_config_stream_text">Tampaknya Anda sering streaming. Apakah Anda ingin untuk daftar episode menunjukkan tombol streaming?</string>
-    <string name="on_demand_config_download_text">Kelihatannya Anda sering mengunduh episode. Apakah Anda ingin untuk daftar episode menunjukkan tombol unduh?</string>
 
 
     <string name="add_shortcut">Add shortcut</string>

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Abonnements aktualisieren</string>
     <string name="feeds">Feeds</string>
 
     <string name="statistics_label">Statistiken</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Logs</string>
     <string name="subscriptions_label">Abonnements</string>
     <string name="cancel_download_label">Download abbrechen</string>
-    <string name="playback_history_label">Zuletzt abgespielt</string>
     <string name="months_statistics_label">Monate</string>
     <string name="notification_pref_fragment">Benachrichtigungen</string>
     <string name="current_episode">Aktuell</string>
@@ -49,7 +47,6 @@
     <string name="total_size_downloaded_podcasts">Gesamtgröße der Episoden auf dem Gerät</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Keine kompatiblen Apps gefunden</string>
     <string name="export_logs_menu_title">Detaillierte Logs exportieren</string>
     <string name="confirm_export_log_dialog_message">Detaillierte Logs können persönliche Informationen enthalten, wie zum Beispiel die Liste deiner Abonnements</string>
     <!-- Webview actions -->
@@ -70,8 +67,8 @@
     <string name="reset">Reset</string>
     <string name="global_default">Globaler Standard</string>
 
-    <string name="support_funding_label">Unterstützen</string>
-    <string name="support_podcast">Diesen Podcast unterstützen</string>
+
+
     <string name="error_label">Fehler</string>
     <string name="error_msg_prefix">Ein Fehler ist aufgetreten:</string>
     <string name="refresh_label">Aktualisieren</string>
@@ -81,24 +78,23 @@
     <string name="clear_new_label">Neu löschen</string>
     <string name="reconcile_label">Abgleichen</string>
     <string name="chapters_label">Kapitel</string>
-    <string name="chapter_duration0">Dauer: </string>
     <string name="description_label">Beschreibung</string>
     <string name="episodes_suffix">\u0020Episoden</string>
-    <string name="close_label">Schließen</string>
-    <string name="retry_label">Erneut versuchen</string>
-    <string name="auto_download_label">Automatisch herunterladen</string>
+    <string name="close">Schließen</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="include_in_auto_downloads">Automatisch herunterladen</string>
     <string name="auto_delete_episode">Episode automatisch löschen</string>
-    <string name="feed_volume_adapdation">Lautstärkeanpassung</string>
-    <string name="feed_volume_adaptation_summary">Lautstärke für Episoden dieses Podcasts lauter oder leiser stellen: %1$s</string>
-    <string name="feed_volume_reduction_off">Keine Anpassung</string>
-    <string name="feed_volume_reduction_light">Leichte Reduzierung</string>
-    <string name="feed_volume_reduction_heavy">Starke Reduzierung</string>
-    <string name="feed_volume_boost_light">Leichte Erhöhung</string>
-    <string name="feed_volume_boost_medium">Mittlere Erhöhung</string>
-    <string name="feed_volume_boost_heavy">Starke Erhöhung</string>
-    <string name="feed_auto_download_always">Immer</string>
-    <string name="feed_auto_download_never">Nie</string>
-    <string name="video_mode_label">Video-Modus</string>
+    <string name="volume_adaptation">Lautstärkeanpassung</string>
+    <string name="volume_adaptation_summary">Lautstärke für Episoden dieses Podcasts lauter oder leiser stellen: %1$s</string>
+    <string name="no_adaptation">Keine Anpassung</string>
+    <string name="light_reduction">Leichte Reduzierung</string>
+    <string name="heavy_reduction">Starke Reduzierung</string>
+    <string name="light_boost">Leichte Erhöhung</string>
+    <string name="medium_boost">Mittlere Erhöhung</string>
+    <string name="heavy_boost">Starke Erhöhung</string>
+    <string name="always">Immer</string>
+    <string name="never">Nie</string>
+    <string name="video_mode">Video-Modus</string>
 
 
     <string name="video_mode_audio_only">Nur Audio</string>
@@ -153,8 +149,6 @@
     <string name="reserve_episodes_label">Episoden reservieren</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Löschen</string>
-    <string name="delete_failed_simple">Datei kann nicht gelöscht werden.</string>
-    <string name="delete_local_failed">Die Datei kann nicht gelöscht werden. Versuche, den lokalen Ordner über den Podcast-Infobildschirm erneut zu verbinden.</string>
     <string name="delete_episode_label">Episode löschen</string>
     <string name="no_action_label">Keine Aktion</string>
 
@@ -243,13 +237,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Deine VPN-App gibt vor, ein mobiles Netzwerk zu sein (gebührenpflichtige Verbindung). Das Herunterladen über eine mobile Datenverbindung ist in den Einstellungen deaktiviert. Wenn du möchtest, dass dieses Problem behoben wird, wende dich an die Entwickler der VPN-App.</string>
     <string name="confirm_mobile_download_dialog_download_later">Später herunterladen</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Trotzdem herunterladen</string>
-    <string name="confirm_mobile_streaming_notification_title">Mobiles Streaming bestätigen</string>
     <string name="confirm_mobile_streaming_notification_message">Streamen über mobile Datenverbindung ist in den Einstellungen deaktiviert. Tippen, um trotzdem zu streamen.</string>
     <string name="confirm_mobile_streaming_button_always">Immer</string>
     <string name="confirm_mobile_streaming_button_once">Einmalig</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Keine Medienwiedergabe</string>
     <string name="unknown_media_key">Podcini - Unbekannte Medientaste: %1$d</string>
     <string name="error_file_not_found">Datei nicht gefunden</string>
     <!-- Queue operations -->
@@ -291,11 +283,9 @@
     <!-- Preferences -->
     <string name="project_pref">Projekt</string>
     <string name="synchronization_pref">Synchronisation</string>
-    <string name="synchronization_sum">Mit anderen Geräten synchronisieren</string>
     <string name="pref_backup_on_google_title">Automatische Sicherung von OPML</string>
     <string name="pref_backup_on_google_sum">OPML-Dateien automatisch in Google sichern. Einmal aktiviert, nachdem Podcini deinstalliert und neu installiert wurde, können die Abonnements wiederhergestellt werden. Aktivieren Sie diese Einstellung um Podcini neu zu starten.</string>
 
-    <string name="download_pref_details">Details</string>
     <string name="import_export_pref">Import/Export</string>
     <string name="pref_auto_backup_title">Auto-Sicherung</string>
     <string name="pref_auto_backup_sum">Sichern Sie DB und Einstellungen in einem bestimmten Intervall automatisch in einen ausgewählten Ordner.</string>
@@ -305,7 +295,6 @@
     <string name="pref_auto_backup_limit">Anzahl der Backups</string>
     <string name="appearance">Erscheinungsbild</string>
     <string name="external_elements">Externe Elemente</string>
-    <string name="create_YT_syndicates">YT-Syndikate erstellen</string>
     <string name="add_to_feed">Zu Feed hinzufügen</string>
     <string name="interruptions">Unterbrechungen</string>
     <string name="playback_control">Wiedergabesteuerung</string>
@@ -415,12 +404,6 @@
     <string name="pref_rewind_sum">Wie viele Sekunden zurückgespult wird, wenn die entsprechende Hardwaretaste gedrückt wird</string>
     <string name="pref_playback_video_mode">Video-Wiedergabemodus</string>
     <string name="pref_playback_video_mode_sum">Wählen Sie, wie Video-Episode standardmäßig abgespielt wird</string>
-    <string name="pref_swipe_refresh_title">Zum Aktualisieren wischen</string>
-    <string name="pref_swipe_refresh_sum">Nach unten wischen, um alle Abonnements zu aktualisieren</string>
-    <string name="pref_feedGridLayout_title">Abonnements verwenden Rasterlayout </string>
-    <string name="pref_feedGridLayout_sum">Wenn aktiviert, verwendet die Abonnementansicht ein Rasterlayout, sonst Listenlayout</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Benachrichtigung überspringen</string>
@@ -466,7 +449,6 @@
     <string name="licenses_summary">Podcini verwendet nützliche andere Software</string>
     <string name="email_sum">Melden Sie Probleme oder machen Sie Vorschläge direkt an den Entwickler.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Keine Ergebnisse gefunden</string>
     <string name="search_label">Suchen</string>
     <string name="no_results_for_query">Es wurden keine Ergebnisse für \"%1$s\" gefunden</string>
 
@@ -490,7 +472,6 @@
     <string name="combo_export_summary">Exportieren Sie selektiv die Datenbank, Einstellungen, Mediendateien.</string>
     <string name="combo_import_summary">Importieren Sie selektiv die Datenbank, Einstellungen, Mediendateien.</string>
     <string name="opml_import_label">OPML importieren</string>
-    <string name="opml_add_podcast_label">Podcast-Liste importieren (OPML)</string>
     <string name="opml_reader_error">Beim Einlesen der OPML-Datei ist ein Fehler aufgetreten:</string>
     <string name="progress_export_label">Episoden Fortschritts-Export</string>
     <string name="progress_import_label">Fortschritt Import der Episoden</string>
@@ -531,22 +512,8 @@
     <string name="timer_vibration_label">Kurz vor dem Ende vibrieren</string>
     <string name="time_minutes">Minuten</string>
     <string name="time_hours">Stunden</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 Minute</item>
-        <item quantity="other">%d Minuten</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 Stunde</item>
-        <item quantity="other">%d Stunden</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 Tag</item>
-        <item quantity="other">%d Tage</item>
-    </plurals>
     <string name="auto_enable_label">Schlummerfunktion automatisch aktivieren, wenn auf Play gedrückt wird</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Mit Gerät auf Wifi synchronisieren</string>
-    <string name="wifi_sync_summary_unchoosen">Sie können zwei Geräte im gleichen Wifi-Netzwerk verbinden, um Ihre Episoden Wiedergabezustand zu synchronisieren</string>
     <string name="synchronization_choose_title">Anbieter für Synchronisierung auswählen</string>
     <string name="synchronization_summary_unchoosen">Du kannst zwischen mehreren Anbietern wählen, um deine Abonnement- und Episodenzustände zu synchronisieren.</string>
     <string name="dialog_choose_sync_service_title">Anbieter für Synchronisierung auswählen</string>
@@ -576,8 +543,6 @@
     <string name="pref_synchronization_logout_toast">Abmeldung war erfolgreich</string>
     <string name="gpodnetsync_error_title">gpodder.net Synchronisierungsfehler</string>
     <string name="gpodnetsync_error_descr">Ein Fehler ist beim Synchronisieren aufgetreten:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Erfolgreich</string>
-    <string name="gpodnetsync_pref_report_failed">Fehlgeschlagen</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Abonnieren</string>
@@ -589,7 +554,6 @@
     <string name="tags_label">Tags</string>
     <string name="feed_tags_summary">Ändere die Schlagworte (Tags) dieses Podcasts, um deine Abonnements zu organisieren</string>
 
-    <string name="auto_download_settings_label">Einstellungen für Automatischen Download</string>
     <string name="episode_filters_label">Episoden-Filter</string>
     <string name="episode_inclusive_filters_label">Episode inklusive Filter</string>
     <string name="episode_exclusive_filters_label">Exklusive Episode Filter</string>
@@ -619,24 +583,16 @@
     <string name="edit_url_menu">Feed-URL bearbeiten</string>
     <string name="edit_url_confirmation_msg">Das Ändern der RSS-Adresse kann leicht den Abgespielt-Zustand und die Episoden des Podcasts beeinträchtigen. Wir empfehlen NICHT, die Adresse zu ändern und bieten KEINEN Support an, wenn etwas schief geht. Dies kann nicht rückgängig gemacht werden. Das defekte Abonnement kann NICHT repariert werden, indem die Adresse einfach wieder geändert wird. Wir empfehlen, eine Sicherungskopie zu erstellen, bevor du fortfährst.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Importiere Abonnements aus Single-Purpose Apps</string>
 
     <string name="search_podcast_hint">Podcast suchen…</string>
 
     <string name="search_itunes_label">Apple Podcasts durchsuchen</string>
     <string name="search_podcastindex_label">Podcast Index durchsuchen</string>
 
-    <string name="advanced">Fortgeschritten</string>
-
-
-
-
-
 
     <string name="search_powered_by">Ergebnisse von %1$s</string>
     <string name="select_country">Land auswählen</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Lokalen Ordner hinzufügen</string>
     <string name="local_folder">Lokaler Ordner</string>
     <string name="reconnect_local_folder">Lokalen Ordner erneut verbinden</string>
     <string name="reconnect_local_folder_warning">Im Falle von Berechtigungsverweigerungen kannst du hiermit eine erneute Verbindung zu genau demselben Ordner herstellen. Wähle keinen anderen Ordner aus.</string>
@@ -660,8 +616,6 @@
     <string name="has_video">Hat Video</string>
     <string name="has_comments">Hat kommentiert</string>
 
-    <string name="always">Immer</string>
-    <string name="never">Nie</string>
     <string name="auto_download">Automatischer Download</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Wiedergabeposition einbeziehen</string>
@@ -673,7 +627,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Audioregler</string>
     <string name="playback_speed">Abspielgeschwindigkeit</string>
-    <string name="player_switch_to_audio_only">Auf nur Audio umschalten</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Typ</string>
     <string name="host_label">Host</string>
@@ -685,7 +638,6 @@
     <string name="proxy_test_failed">Test fehlgeschlagen</string>
     <string name="proxy_host_empty_error">Host darf nicht leer sein</string>
     <string name="proxy_host_invalid_error">Host ist keine gültige IP oder Domain</string>
-    <string name="proxy_port_invalid_error">Port ungültig</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Fehler</string>
@@ -693,17 +645,12 @@
     <string name="notification_channel_user_action_description">Wird gezeigt, wenn deine Handlung notwendig ist, zum Beispiel wenn du ein Passwort eingeben musst.</string>
     <string name="notification_channel_downloading">Herunterladen</string>
     <string name="notification_channel_downloading_description">Wird beim Herunterladen angezeigt.</string>
-    <string name="notification_channel_playing">Jetzt spielt</string>
-    <string name="notification_channel_playing_description">Ermöglicht es, die Wiedergabe zu steuern. Dies ist die Hauptbenachrichtigung, die du siehst, während ein Podcast abgespielt wird.</string>
     <string name="notification_channel_download_error">Download fehlgeschlagen</string>
     <string name="notification_channel_download_error_description">Wird angezeigt, wenn der Download oder die Feed-Aktualisierung fehlschlägt.</string>
     <string name="notification_channel_sync_error">Synchronisation fehlgeschlagen</string>
     <string name="notification_channel_sync_error_description">Wird angezeigt, wenn die gpodder-Synchronisierung fehlschlägt.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Einstellung erfolgreich aktualisiert.</string>
-    <string name="on_demand_config_stream_text">Es sieht so aus, als würdest du viel streamen. Möchtest du in Listen den Streamen-Button anzeigen\?</string>
-    <string name="on_demand_config_download_text">Es sieht so aus, als würdest du viel herunterladen. Möchtest du in Listen den Download-Button anzeigen\?</string>
 
 
     <string name="add_shortcut">Verknüpfung hinzufügen</string>

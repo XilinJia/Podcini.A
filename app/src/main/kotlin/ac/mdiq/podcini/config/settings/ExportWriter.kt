@@ -99,7 +99,7 @@ class FavoritesWriter : ExportWriter {
                 sink.writeString("<li><div>\n", Charsets.UTF_8)
                 val feed = favorites[0].feed!!
                 val feedInfo = feedTemplate
-                    .replace("{FEED_IMG}", feed.imageUrl?:"")
+                    .replace("{FEED_IMG}", feed.images.firstOrNull()?.href?:"")
                     .replace("{FEED_TITLE}", feed.title?:" No title")
                     .replace("{FEED_LINK}", feed.link?: "")
                     .replace("{FEED_WEBSITE}", feed.downloadUrl?:"")
@@ -147,7 +147,7 @@ class HtmlWriter : ExportWriter {
             sink.writeString(templateParts[0], Charsets.UTF_8)
             for (feed in feeds) {
                 sink.writeString("<li><div><img src=\"", Charsets.UTF_8)
-                sink.writeString(feed.imageUrl?:"", Charsets.UTF_8)
+                sink.writeString(feed.images.firstOrNull()?.href?:"", Charsets.UTF_8)
                 sink.writeString("\" /><p>", Charsets.UTF_8)
                 sink.writeString(feed.title?:"", Charsets.UTF_8)
                 sink.writeString(" <span><a href=\"", Charsets.UTF_8)

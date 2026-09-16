@@ -3,6 +3,7 @@ package ac.mdiq.podcini.receiver
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.config.ClientConfig
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -16,8 +17,9 @@ import androidx.core.content.ContextCompat
  * Receives media button events.
  */
 class MediaButtonReceiver : BroadcastReceiver() {
-    
     override fun onReceive(context: Context, intent: Intent) {
+        initialize()
+
         Logd(TAG, "onReceive Received intent: $intent Action: ${intent.action}")
         val extras = intent.extras
         Logd(TAG, "onReceive Extras: $extras")

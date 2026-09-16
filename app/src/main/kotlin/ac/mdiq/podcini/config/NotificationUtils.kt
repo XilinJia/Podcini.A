@@ -25,6 +25,16 @@ enum class GROUP_ID {
     group_news
 }
 
+object NotificationIds {
+    const val downloading = 201
+    const val updating_feeds = 202
+    const val download_report = 203
+    const val playing = 204
+
+    const val gpodnet_sync_error = 501
+    const val gpodnet_sync_autherror = 502
+}
+
 fun createNotificationChannels() {
     val c = getAppContext()
     val mNotificationManager = NotificationManagerCompat.from(c)

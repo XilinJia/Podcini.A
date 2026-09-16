@@ -53,6 +53,7 @@ import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.utils.HtmlToPlainText
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
+import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.formatAbbrev
 import ac.mdiq.podcini.utils.timeIt
 import androidx.activity.compose.BackHandler
@@ -581,7 +582,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
             } else Column(modifier = Modifier.padding(innerPadding).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 10.dp, end = 10.dp).background(MaterialTheme.colorScheme.surface)) {
                 ConstraintLayout(modifier = Modifier.fillMaxWidth().height(110.dp).background(MaterialTheme.colorScheme.surface)) {
                     val (coverImage, taColumn, buttons) = createRefs()
-                    AsyncImage(model = vm.feed?.imageUrl ?: "", contentDescription = "coverImage", error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(80.dp).height(80.dp).constrainAs(coverImage) {
+                    AsyncImage(model = vm.feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, contentDescription = "coverImage", error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(80.dp).height(80.dp).constrainAs(coverImage) {
                         centerVerticallyTo(parent)
                         start.linkTo(parent.start)
                     })
@@ -650,7 +651,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                     val isAudoDL = remember(vm.feed) { vm.feed?.type in listOf(FeedType.RSS.name, FeedType.ATOM.name) }
                     if (appPrefs.enableAutoDl && isAudoDL) Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = vm.autoDownloadChecked, onCheckedChange = { vm.autoDownloadChecked = it })
-                        Text(text = stringResource(R.string.auto_download_label), style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 16.dp))
+                        Text(text = stringResource(R.string.include_in_auto_downloads), style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 16.dp))
                     }
                 }
                 SelectionContainer {
@@ -670,6 +671,8 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                                 Text(stringResource(R.string.removed_on) + ": " + cancelDate, color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 15.dp, bottom = 10.dp))
                             }
                         }
+                        if (!vm.feed?.medium.isNullOrBlank()) Text(stringResource(R.string.medium) + ": " + vm.feed!!.medium!!, color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                        if (vm.feed?.aiContent == true) Text(stringResource(R.string.is_ai_content), color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                         Text("${vm.numEpisodes} episodes", color = textColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 5.dp, bottom = 10.dp))
                         Text(stringResource(R.string.description_label), color = textColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp, bottom = 4.dp))
                         Text(HtmlToPlainText.getPlainText(vm.feed?.description ?: ""), color = textColor, style = MaterialTheme.typography.bodyMedium)
@@ -683,7 +686,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                         })
                         LazyRow(state = rememberLazyListState(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             items(vm.relatedResults) { result ->
-                                AsyncImage(model = ImageRequest.Builder(context).data(result.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(100.dp).height(100.dp).clickable {
+                                AsyncImage(model = ImageRequest.Builder(context).data(result.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(100.dp).height(100.dp).clickable {
                                     navTo(OnlineFeed(url = result.feedUrl ?: "", source = result.source))
                                 })
                             }

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Activity and fragment titles -->
-    <string name="feed_update_receiver_name">Ενημέρωση συνδρομών</string>
     <string name="feeds">Ροές</string>
 
     <string name="statistics_label">Στατιστικά</string>
@@ -14,7 +13,6 @@
     <string name="logs_label">Καταγραφή</string>
     <string name="subscriptions_label">Συνδρομές</string>
     <string name="cancel_download_label">Ακύρωση λήψης</string>
-    <string name="playback_history_label">Ιστορικό</string>
     <string name="months_statistics_label">Μήνες</string>
     <string name="notification_pref_fragment">Ειδοποιήσεις</string>
     <string name="current_episode">Τρέχων</string>
@@ -46,7 +44,6 @@
     <string name="total_size_downloaded_podcasts">Συνολικό μέγεθος επεισοδίων στη συσκευή</string>
     <!-- Main activity -->
     <!-- Bug report activity -->
-    <string name="log_file_share_exception">Δεν βρέθηκαν συμβατές εφαρμογές</string>
     <string name="export_logs_menu_title">Εξαγωγή λεπτομερών αρχείων καταγραφής</string>
     <string name="confirm_export_log_dialog_message">Λεπτομερή αρχεία καταγραφής μπορεί να περιέχουν ευαίσθητες πληροφορίες, όπως η λίστα συνδρομών σας</string>
     <!-- Webview actions -->
@@ -67,8 +64,8 @@
     <string name="reset">Reset</string>
     <string name="global_default">Καθολική προεπιλογή</string>
 
-    <string name="support_funding_label">Υποστήριξη</string>
-    <string name="support_podcast">Υποστηρίξτε αυτό το podcast</string>
+
+
     <string name="error_label">Σφάλμα</string>
     <string name="error_msg_prefix">Παρουσιάστηκε σφάλμα:</string>
     <string name="refresh_label">Ανανέωση</string>
@@ -78,24 +75,23 @@
     <string name="clear_new_label">Εκκαθάριση νέου</string>
     <string name="reconcile_label">Επανασύνδεση</string>
     <string name="chapters_label">Κεφάλαια</string>
-    <string name="chapter_duration0">Διάρκεια: </string>
     <string name="description_label">Περιγραφή</string>
     <string name="episodes_suffix">\u0020episodes</string>
-    <string name="close_label">Κλείσιμο</string>
-    <string name="retry_label">Επανάληψη</string>
-    <string name="auto_download_label">Συμπερίληψη στις αυτόματες λήψεις</string>
+    <string name="close">Κλείσιμο</string>
+    <string name="retry">Επανάληψη</string>
+    <string name="include_in_auto_downloads">Συμπερίληψη στις αυτόματες λήψεις</string>
     <string name="auto_delete_episode">Αυτόματη διαγραφή επεισοδίου</string>
-    <string name="feed_volume_adapdation">Προσαρμογή όγκου</string>
-    <string name="feed_volume_adaptation_summary">Γυρίστε την ένταση για επεισόδια αυτού του podcast επάνω ή κάτω: %1$s</string>
-    <string name="feed_volume_reduction_off">Καμία προσαρμογή</string>
-    <string name="feed_volume_reduction_light">Μείωση φωτός</string>
-    <string name="feed_volume_reduction_heavy">Βαριά μείωση</string>
-    <string name="feed_volume_boost_light">Ενίσχυση φωτός</string>
-    <string name="feed_volume_boost_medium">Μεσαία ενίσχυση</string>
-    <string name="feed_volume_boost_heavy">Έντονη ενίσχυση</string>
-    <string name="feed_auto_download_always">Πάντα</string>
-    <string name="feed_auto_download_never">Ποτέ</string>
-    <string name="video_mode_label">Λειτουργία βίντεο</string>
+    <string name="volume_adaptation">Προσαρμογή όγκου</string>
+    <string name="volume_adaptation_summary">Γυρίστε την ένταση για επεισόδια αυτού του podcast επάνω ή κάτω: %1$s</string>
+    <string name="no_adaptation">Καμία προσαρμογή</string>
+    <string name="light_reduction">Μείωση φωτός</string>
+    <string name="heavy_reduction">Βαριά μείωση</string>
+    <string name="light_boost">Ενίσχυση φωτός</string>
+    <string name="medium_boost">Μεσαία ενίσχυση</string>
+    <string name="heavy_boost">Έντονη ενίσχυση</string>
+    <string name="always">Πάντα</string>
+    <string name="never">Ποτέ</string>
+    <string name="video_mode">Λειτουργία βίντεο</string>
 
 
     <string name="video_mode_audio_only">Μόνο ήχος</string>
@@ -150,8 +146,6 @@
     <string name="reserve_episodes_label">Απόθεμα επεισοδίων</string>
     <string name="null_label">Κενό</string>
     <string name="delete_label">Διαγραφή</string>
-    <string name="delete_failed_simple">Αδυναμία διαγραφής αρχείου.</string>
-    <string name="delete_local_failed">Δεν είναι δυνατή η διαγραφή αρχείου. Προσπαθήστε να επανασυνδέσετε τον τοπικό φάκελο από την οθόνη πληροφοριών podcast</string>
     <string name="delete_episode_label">Διαγραφή επεισοδίων πολυμέσων</string>
     <string name="no_action_label">Καμία ενέργεια</string>
 
@@ -240,13 +234,11 @@
     <string name="confirm_mobile_download_dialog_message_vpn">Η εφαρμογή VPN σας προσποιείται ότι είναι ένα δίκτυο κινητής τηλεφωνίας (σύνδεση μετρητή). Η λήψη μέσω σύνδεσης δεδομένων κινητής τηλεφωνίας είναι απενεργοποιημένη στις ρυθμίσεις. Αν θέλετε να διορθωθεί αυτό το πρόβλημα, επικοινωνήστε με τους δημιουργούς της εφαρμογής VPN σας.</string>
     <string name="confirm_mobile_download_dialog_download_later">Λήψη αργότερα</string>
     <string name="confirm_mobile_download_dialog_allow_this_time">Λήψη ούτως ή άλλως</string>
-    <string name="confirm_mobile_streaming_notification_title">Επιβεβαίωση μετάδοσης κινητού</string>
     <string name="confirm_mobile_streaming_notification_message">Η μετάδοση μέσω σύνδεσης δεδομένων κινητής τηλεφωνίας είναι απενεργοποιημένη στις ρυθμίσεις. Πατήστε για ροή ούτως ή άλλως.</string>
     <string name="confirm_mobile_streaming_button_always">Πάντα</string>
     <string name="confirm_mobile_streaming_button_once">Μία</string>
     <!-- Mediaplayer messages -->
 
-    <string name="no_media_playing_label">Δεν υπάρχει αναπαραγωγή πολυμέσων</string>
     <string name="unknown_media_key">Podcini - Άγνωστο κλειδί πολυμέσων: %1$d</string>
     <string name="error_file_not_found">Το αρχείο δεν βρέθηκε</string>
     <!-- Queue operations -->
@@ -288,11 +280,9 @@
     <!-- Preferences -->
     <string name="project_pref">Έργο</string>
     <string name="synchronization_pref">Συγχρονισμός</string>
-    <string name="synchronization_sum">Συγχρονισμός με άλλες συσκευές</string>
     <string name="pref_backup_on_google_title">Αυτόματα αντίγραφα ασφαλείας του OPML</string>
     <string name="pref_backup_on_google_sum">Αυτόματα αντίγραφα ασφαλείας αρχείων OPML στην Google. Μόλις ενεργοποιηθεί, μετά την απεγκατάσταση του Podcini και την επανεγκατάσταση, οι συνδρομές μπορούν να αποκατασταθούν. Εναλλαγή αυτής της ρύθμισης θα επανεκκινήσουν το Podcini.</string>
 
-    <string name="download_pref_details">Λεπτομέρειες</string>
     <string name="import_export_pref">Εισαγωγή/Εξαγωγή</string>
     <string name="pref_auto_backup_title">Αυτόματο αντίγραφο ασφαλείας</string>
     <string name="pref_auto_backup_sum">Αυτόματη δημιουργία αντιγράφων ασφαλείας της Βάσης Δεδομένων και προτιμήσεις σε ένα καθορισμένο χρονικό διάστημα σε έναν επιλεγμένο φάκελο.</string>
@@ -302,7 +292,6 @@
     <string name="pref_auto_backup_limit">Αριθμός αντιγράφων ασφαλείας για διατήρηση</string>
     <string name="appearance">Εμφάνιση</string>
     <string name="external_elements">Εξωτερικά στοιχεία</string>
-    <string name="create_YT_syndicates">Δημιουργία Συνδικάτων YT</string>
     <string name="add_to_feed">Προσθήκη στη ροή</string>
     <string name="interruptions">Διακοπές</string>
     <string name="playback_control">Έλεγχος αναπαραγωγής</string>
@@ -412,12 +401,6 @@
     <string name="pref_rewind_sum">Προσαρμόστε τον αριθμό των δευτερολέπτων για να πηδήξετε προς τα πίσω όταν πατηθεί το κουμπί rewind</string>
     <string name="pref_playback_video_mode">Λειτουργία αναπαραγωγής βίντεο</string>
     <string name="pref_playback_video_mode_sum">Επιλέξτε τον τρόπο αναπαραγωγής του επεισοδίου βίντεο από προεπιλογή</string>
-    <string name="pref_swipe_refresh_title">Σύρετε για ανανέωση</string>
-    <string name="pref_swipe_refresh_sum">Σύρετε προς τα κάτω για ανανέωση όλων των συνδρομών</string>
-    <string name="pref_feedGridLayout_title">Οι συνδρομές χρησιμοποιούν διάταξη πλέγματος </string>
-    <string name="pref_feedGridLayout_sum">Όταν ορίζεται, οι συνδρομές χρησιμοποιούν διάταξη πλέγματος, αλλιώς διάταξη λίστας</string>
-
-
 
 
     <string name="pref_show_notification_skip_title">Εμφάνιση παράλειψης κατά την ειδοποίηση</string>
@@ -463,7 +446,6 @@
     <string name="licenses_summary">Το Podcini χρησιμοποιεί άλλο μεγάλο λογισμικό</string>
     <string name="email_sum">Αναφέρετε ζητήματα ή κάντε προτάσεις απευθείας στον προγραμματιστή.</string>
     <!-- Search -->
-    <string name="search_status_no_results">Δεν βρέθηκαν αποτελέσματα</string>
     <string name="search_label">Αναζήτηση</string>
     <string name="no_results_for_query">Δεν βρέθηκαν αποτελέσματα για \"%1$s\"</string>
 
@@ -487,7 +469,6 @@
     <string name="combo_export_summary">Εξαγωγή επιλεκτικά της βάσης δεδομένων, προτιμήσεις, αρχεία πολυμέσων.</string>
     <string name="combo_import_summary">Εισαγωγή επιλεκτικά της βάσης δεδομένων, προτιμήσεις, αρχεία πολυμέσων.</string>
     <string name="opml_import_label">Εισαγωγή OPML</string>
-    <string name="opml_add_podcast_label">Εισαγωγή λίστας podcast (OPML)</string>
     <string name="opml_reader_error">Παρουσιάστηκε σφάλμα κατά την ανάγνωση του αρχείου. Βεβαιωθείτε ότι έχετε επιλέξει ένα αρχείο OPML και ότι το αρχείο είναι έγκυρο.</string>
     <string name="progress_export_label">Εξαγωγές προόδου επεισοδίων</string>
     <string name="progress_import_label">Επεισόδια εισαγωγής προόδου</string>
@@ -528,22 +509,8 @@
     <string name="timer_vibration_label">Δόνηση λίγο πριν το τέλος</string>
     <string name="time_minutes">λεπτά</string>
     <string name="time_hours">ώρες</string>
-    <plurals name="time_minutes_quantified">
-        <item quantity="one">1 λεπτό</item>
-        <item quantity="other">%d λεπτά</item>
-    </plurals>
-    <plurals name="time_hours_quantified">
-        <item quantity="one">1 ώρα</item>
-        <item quantity="other">%d ώρες</item>
-    </plurals>
-    <plurals name="time_days_quantified">
-        <item quantity="one">1 ημέρα</item>
-        <item quantity="other">%d ημέρες</item>
-    </plurals>
     <string name="auto_enable_label">Αυτόματη ενεργοποίηση του χρονοδιακόπτη ύπνου κατά το πάτημα αναπαραγωγής</string>
     <!-- Synchronisation -->
-    <string name="wifi_sync">Συγχρονισμός με συσκευή στο Wifi</string>
-    <string name="wifi_sync_summary_unchoosen">Μπορείτε να συνδέσετε δύο συσκευές στο ίδιο δίκτυο wifi για να συγχρονίσετε τις καταστάσεις παιχνιδιού επεισοδίων</string>
     <string name="synchronization_choose_title">Επιλέξτε πάροχο συγχρονισμού</string>
     <string name="synchronization_summary_unchoosen">Μπορείτε να επιλέξετε από πολλούς παρόχους για να συγχρονίσετε τις συνδρομές σας και την κατάσταση παιχνιδιού επεισοδίων με</string>
     <string name="dialog_choose_sync_service_title">Επιλέξτε πάροχο συγχρονισμού</string>
@@ -573,8 +540,6 @@
     <string name="pref_synchronization_logout_toast">Η αποσύνδεση ήταν επιτυχής</string>
     <string name="gpodnetsync_error_title">σφάλμα συγχρονισμού gpodder.net</string>
     <string name="gpodnetsync_error_descr">Παρουσιάστηκε σφάλμα κατά τον συγχρονισμό:\u0020</string>
-    <string name="gpodnetsync_pref_report_successful">Επιτυχής</string>
-    <string name="gpodnetsync_pref_report_failed">Απέτυχε</string>
     <!-- Directory chooser -->
     <!-- Online feed view -->
     <string name="subscribe_label">Εγγραφή</string>
@@ -586,7 +551,6 @@
     <string name="tags_label">Ετικέτες</string>
     <string name="feed_tags_summary">Αλλάξτε τις ετικέτες αυτού του podcast για να οργανώσετε τις συνδρομές σας</string>
 
-    <string name="auto_download_settings_label">Ρυθμίσεις αυτόματης λήψης</string>
     <string name="episode_filters_label">Φίλτρο επεισοδίων</string>
     <string name="episode_inclusive_filters_label">Episode inclusive φίλτρο</string>
     <string name="episode_exclusive_filters_label">Αποκλειστικό φίλτρο επεισοδίου</string>
@@ -616,24 +580,16 @@
     <string name="edit_url_menu">Επεξεργασία URL ροής</string>
     <string name="edit_url_confirmation_msg">Η αλλαγή της διεύθυνσης RSS μπορεί εύκολα να σπάσει την κατάσταση αναπαραγωγής και τις καταχωρήσεις επεισοδίων του podcast. ΔΕΝ προτείνουμε την αλλαγή του και ΔΕΝ θα παράσχουμε υποστήριξη αν κάτι πάει στραβά. Αυτό δεν μπορεί να αναιρεθεί. Η σπασμένη συνδρομή ΔΕΝ μπορεί να επισκευαστεί αλλάζοντας απλά τη διεύθυνση πίσω. Σας συνιστούμε να δημιουργήσετε ένα αντίγραφο ασφαλείας πριν συνεχίσετε.</string>
     <!-- PodciniSP -->
-    <string name="sp_apps_importing_feeds_msg">Εισαγωγή συνδρομών από εφαρμογές μιας χρήσης&#8230;</string>
 
     <string name="search_podcast_hint">Αναζήτηση podcast…</string>
 
     <string name="search_itunes_label">Αναζήτηση Στο Apple Podcast</string>
     <string name="search_podcastindex_label">Αναζήτηση Ευρετηρίου Εκπομπής Pod</string>
 
-    <string name="advanced">Προχωρημένα</string>
-
-
-
-
-
 
     <string name="search_powered_by">Αποτελέσματα από %1$s</string>
     <string name="select_country">Επιλέξτε χώρα</string>
     <!-- Local feeds -->
-    <string name="add_local_folder">Προσθήκη τοπικού φακέλου</string>
     <string name="local_folder">Τοπικός φάκελος</string>
     <string name="reconnect_local_folder">Επανασύνδεση τοπικού φακέλου</string>
     <string name="reconnect_local_folder_warning">Σε περίπτωση άρνησης άδειας, μπορείτε να χρησιμοποιήσετε αυτό για να επανασυνδεθείτε στον ίδιο ακριβώς φάκελο. Μην επιλέξετε άλλο φάκελο.</string>
@@ -657,8 +613,6 @@
     <string name="has_video">Έχει βίντεο</string>
     <string name="has_comments">Έχει σχολιάσει</string>
 
-    <string name="always">Πάντα</string>
-    <string name="never">Ποτέ</string>
     <string name="auto_download">Αυτόματη λήψη</string>
     <!-- Share episode dialog -->
     <string name="share_playback_position_dialog_label">Συμπερίληψη θέσης αναπαραγωγής</string>
@@ -670,7 +624,6 @@
     <!-- Audio controls -->
     <string name="audio_controls">Στοιχεία ελέγχου ήχου</string>
     <string name="playback_speed">Ταχύτητα αναπαραγωγής</string>
-    <string name="player_switch_to_audio_only">Μόνο ήχος</string>
     <!-- proxy settings -->
     <string name="proxy_type_label">Τύπος</string>
     <string name="host_label">Διακομιστής</string>
@@ -682,7 +635,6 @@
     <string name="proxy_test_failed">Η δοκιμή απέτυχε</string>
     <string name="proxy_host_empty_error">Ο υπολογιστής δεν μπορεί να είναι κενός</string>
     <string name="proxy_host_invalid_error">Ο υπολογιστής δεν είναι έγκυρη διεύθυνση IP ή τομέας</string>
-    <string name="proxy_port_invalid_error">Μη έγκυρη θύρα</string>
     <!-- Subscriptions fragment -->
     <!-- Notification channels -->
     <string name="notification_group_errors">Σφάλματα</string>
@@ -690,17 +642,12 @@
     <string name="notification_channel_user_action_description">Εμφανίζεται αν απαιτείται η ενέργειά σας, για παράδειγμα αν πρέπει να εισάγετε έναν κωδικό πρόσβασης.</string>
     <string name="notification_channel_downloading">Λήψη</string>
     <string name="notification_channel_downloading_description">Εμφανίζεται κατά την τρέχουσα λήψη.</string>
-    <string name="notification_channel_playing">Τρέχουσα αναπαραγωγή</string>
-    <string name="notification_channel_playing_description">Επιτρέπει τον έλεγχο της αναπαραγωγής. Αυτή είναι η κύρια ειδοποίηση που βλέπετε κατά την αναπαραγωγή ενός podcast.</string>
     <string name="notification_channel_download_error">Αποτυχία λήψης</string>
     <string name="notification_channel_download_error_description">Εμφανίζεται όταν αποτύχει η λήψη ή η ροή ενημέρωσης.</string>
     <string name="notification_channel_sync_error">Ο συγχρονισμός απέτυχε</string>
     <string name="notification_channel_sync_error_description">Εμφανίζεται όταν ο συγχρονισμός gpodder αποτυγχάνει.</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="on_demand_config_setting_changed">Η ρύθμιση ενημερώθηκε επιτυχώς.</string>
-    <string name="on_demand_config_stream_text">Φαίνεται ότι μπορείτε να κάνετε stream πολλά. Θέλετε οι λίστες επεισοδίων να εμφανίζουν τα κουμπιά ροής\?</string>
-    <string name="on_demand_config_download_text">Φαίνεται ότι έχετε κατεβάσει πολλά. Θέλετε να εμφανίζονται τα κουμπιά λήψης\?</string>
 
 
     <string name="add_shortcut">Προσθήκη συντόμευσης</string>

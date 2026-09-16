@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.activity
 
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.ui.compose.CommonConfirmDialog
 import ac.mdiq.podcini.ui.compose.CommonToast
 import ac.mdiq.podcini.ui.compose.LargePoster
@@ -30,9 +31,10 @@ class EpisodeInfoActivity : ComponentActivity() {
     private val currentEpisodeId = MutableStateFlow<Long?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-//        installSplashScreen()
         super.onCreate(savedInstanceState)
-        Logd(TAG, "in onCreate")
+        window.setBackgroundDrawableResource(android.R.color.transparent)
+
+        initialize()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -42,8 +44,6 @@ class EpisodeInfoActivity : ComponentActivity() {
 
         setContent {
             PodciniTheme {
-//                val navController = rememberNavController()
-//                val navigator = remember { MyNavigator(navController) { route -> Logd(TAG, "Navigated to: $route") } }
                 val episodeId by currentEpisodeId.collectAsStateWithLifecycle()
                 Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp, modifier = Modifier.fillMaxWidth()) {
                     CommonToast(onDismiss = { })

@@ -3,6 +3,8 @@ package ac.mdiq.podcini.sourcing.download
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.CHANNEL_ID
+import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.NotificationIds
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager.Companion.WORK_DATA_PROGRESS
 import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
@@ -141,10 +143,10 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
         get() = runAttemptCount >= 2
 
     override suspend fun doWork(): Result = coroutineScope {
+        initialize()
         getForegroundInfo()
 
         Logd(TAG, "starting doWork")
-//        ClientConfig.initialize()
         val ids = appAttribsFlow!!.value.episodeIdsToDownload
         if (ids.isEmpty()) return@coroutineScope Result.Success()
 
@@ -162,7 +164,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
                         synchronized(notificationProgress) { notificationProgress.put(media.getEpisodeTitle(), request.progressPercent) }
                         withTimeoutOrNull(5000.milliseconds) {
                             setProgressAsync(Data.Builder().putInt(WORK_DATA_PROGRESS, request.progressPercent).build()).get()
-                            nm.notify(R.id.notification_downloading, generateProgressNotification())
+                            nm.notify(NotificationIds.downloading, generateProgressNotification())
                         }
                         delay(1000.milliseconds)
                     } catch (e: CancellationException) { return@launch
@@ -189,7 +191,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
                 notificationProgress.remove(media.getEpisodeTitle())
                 if (notificationProgress.isEmpty()) {
                     val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    nm.cancel(R.id.notification_downloading)
+                    nm.cancel(NotificationIds.downloading)
                 }
             }
             upsert(appAttribsFlow!!.value) { it.episodeIdsToDownload.remove(media.id) }
@@ -199,7 +201,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        return withContext(Dispatchers.Main) { ForegroundInfo(R.id.notification_downloading, generateProgressNotification()) }
+        return withContext(Dispatchers.Main) { ForegroundInfo(NotificationIds.downloading, generateProgressNotification()) }
     }
 
     private suspend fun performTasks(request: DownloadRequest): Result {
@@ -227,7 +229,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
                 .setAutoCancel(true)
             builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            nm.notify(R.id.notification_download_report, builder.build())
+            nm.notify(NotificationIds.download_report, builder.build())
         }
         fun retry3times(): Result {
             if (isLastRunAttempt) {

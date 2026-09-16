@@ -5,6 +5,7 @@ import ac.mdiq.podcini.activity.EpisodeInfoActivity
 import ac.mdiq.podcini.activity.MainActivity
 import ac.mdiq.podcini.activity.PlayerUIActivity
 import ac.mdiq.podcini.activity.QueuePickerActivity
+import ac.mdiq.podcini.config.ClientConfig.initialize
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.ensureAController
 import ac.mdiq.podcini.playback.base.theatres
@@ -95,7 +96,9 @@ class PodciniWidget : GlanceAppWidget() {
     val buttonColorProvider = ColorProvider(day = Color(0xDDFFD700), night = Color(0xDDFFD700))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-//        Logd(TAG, "provideGlance id: $id actQueue ${actQueue.name}")
+        initialize()
+
+        //        Logd(TAG, "provideGlance id: $id actQueue ${actQueue.name}")
 
         var episodes: List<WidgetEpisode> = listOf()
 

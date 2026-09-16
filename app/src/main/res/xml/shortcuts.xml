@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <shortcut
+        android:shortcutId="QUEUES"
         android:enabled="true"
         android:icon="@drawable/ic_playlist_shortcut"
-        android:shortcutId="Queues"
         android:shortcutShortLabel="@string/queue_label">
+
         <intent
-            android:action="android.intent.action.MAIN"
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ac.mdiq.podcini"
             android:targetClass="ac.mdiq.podcini.activity.MainActivity">
-            <extra android:name="shortcut_route" android:value="Queues" />
+            <url-template android:value="https://podcini.org/deeplink/main?page=QUEUES" />
         </intent>
-        <categories android:name="android.shortcut.conversation"/>
+
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="QUEUES" />
+        </capability-binding>
     </shortcut>
 
     <shortcut
@@ -26,27 +35,45 @@
     </shortcut>
 
     <shortcut
+        android:shortcutId="FACETS"
         android:enabled="true"
         android:icon="@drawable/baseline_view_in_ar_24"
-        android:shortcutId="Facets"
         android:shortcutShortLabel="@string/facets">
+
         <intent
             android:action="android.intent.action.VIEW"
+            android:targetPackage="ac.mdiq.podcini"
             android:targetClass="ac.mdiq.podcini.activity.MainActivity">
-            <extra android:name="shortcut_route" android:value="Facets" />
+            <extra
+                android:name="shortcut_route"
+                android:value="FACETS" />
         </intent>
+
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="FACETS" />
+        </capability-binding>
     </shortcut>
 
     <shortcut
+        android:shortcutId="LIBRARY"
         android:enabled="true"
         android:icon="@drawable/ic_subscriptions_shortcut"
-        android:shortcutId="Library"
         android:shortcutShortLabel="@string/library">
+
         <intent
             android:action="android.intent.action.VIEW"
+            android:targetPackage="ac.mdiq.podcini"
             android:targetClass="ac.mdiq.podcini.activity.MainActivity">
-            <extra android:name="shortcut_route" android:value="Library" />
+            <url-template android:value="https://podcini.org/deeplink/main?page=LIBRARY" />
         </intent>
+
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="LIBRARY" />
+        </capability-binding>
     </shortcut>
 
     <shortcut
@@ -61,5 +88,76 @@
                 android:name="refresh_on_start"
                 android:value="true" />
         </intent>
+    </shortcut>
+
+    <!-- Open App Feature Capability -->
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ac.mdiq.podcini"
+            android:targetClass="ac.mdiq.podcini.activity.MainActivity">
+            <url-template android:value="https://podcini.org/deeplink/main{?page}" />
+            <parameter
+                android:name="feature"
+                android:key="page" />
+        </intent>
+    </capability>
+
+    <!-- Search Capability -->
+    <capability android:name="actions.intent.GET_THING">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ac.mdiq.podcini"
+            android:targetClass="ac.mdiq.podcini.activity.MainActivity">
+            <url-template android:value="https://podcini.org/deeplink/search{?query}" />
+            <parameter
+                android:name="thing.name"
+                android:key="query" />
+        </intent>
+    </capability>
+
+    <!-- Entity Mappings for OPEN_APP_FEATURE -->
+<!--    <shortcut-->
+<!--        android:shortcutId="QUEUES"-->
+<!--        android:enabled="true"-->
+<!--        android:shortcutShortLabel="@string/queue_label">-->
+<!--        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">-->
+<!--            <parameter-binding-->
+<!--                android:key="feature"-->
+<!--                android:value="QUEUES" />-->
+<!--        </capability-binding>-->
+<!--    </shortcut>-->
+
+<!--    <shortcut-->
+<!--        android:shortcutId="FACETS"-->
+<!--        android:enabled="true"-->
+<!--        android:shortcutShortLabel="@string/facets">-->
+<!--        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">-->
+<!--            <parameter-binding-->
+<!--                android:key="feature"-->
+<!--                android:value="FACETS" />-->
+<!--        </capability-binding>-->
+<!--    </shortcut>-->
+
+<!--    <shortcut-->
+<!--        android:shortcutId="LIBRARY"-->
+<!--        android:enabled="true"-->
+<!--        android:shortcutShortLabel="@string/library">-->
+<!--        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">-->
+<!--            <parameter-binding-->
+<!--                android:key="feature"-->
+<!--                android:value="LIBRARY" />-->
+<!--        </capability-binding>-->
+<!--    </shortcut>-->
+
+    <shortcut
+        android:shortcutId="STATISTICS"
+        android:enabled="true"
+        android:shortcutShortLabel="@string/statistics_label">
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="STATISTICS" />
+        </capability-binding>
     </shortcut>
 </shortcuts>
