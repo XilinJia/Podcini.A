@@ -3,7 +3,6 @@ package ac.mdiq.podcini.playback.base
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.playback.SegmentSavingDataSource
 import ac.mdiq.podcini.playback.SegmentSavingDataSourceFactory
-import ac.mdiq.podcini.playback.base.OKHTTP.getOKHttpClient
 import ac.mdiq.podcini.playback.cast.CastMediaPlayer.buildCastPlayer
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
@@ -11,6 +10,7 @@ import ac.mdiq.podcini.receiver.PodciniWidget
 import ac.mdiq.podcini.shared.PodciniHttpClient.proxyConfig
 import ac.mdiq.podcini.shared.ProxyConfig
 import ac.mdiq.podcini.shared.USER_AGENT
+import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
@@ -43,6 +43,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.media.RingtoneManager
 import android.media.audiofx.LoudnessEnhancer
+import android.net.Uri
 import android.net.http.HttpEngine
 import android.os.Build
 import android.os.ext.SdkExtensions
@@ -88,7 +89,6 @@ import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.cronet.CronetDataSource
-import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -317,7 +317,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                         castPlayer?.clearMediaItems()
                         handlePlayerStatus(PlayerStatus.STOPPED, curMediaFlow.value)
                     }
-                    Loge(TAG, error, "exoplayerListener onPlayerError")
+                    Loge(TAG, error, "exoplayerListener onPlayerError: error code: ${error.errorCode}")
                     when (error.errorCode) {
                         PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED -> {
                             curMediaFlow.value?.let { getCache().removeResource(it.id.toString()) }
@@ -328,11 +328,13 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                         PlaybackException.ERROR_CODE_TIMEOUT -> {
                             LogtFor(TAG, curMediaFlow.value?.id, "player error: ${error.localizedMessage}, retrying...")
                             val lastPosition = exoPlayer?.currentPosition ?: 0L
+                            forcePlaybackReset = true
                             exoPlayer?.prepare()
                             if (lastPosition > 0) exoPlayer?.seekTo(lastPosition)
                             exoPlayer?.play()
                         }
                         PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW -> {
+                            forcePlaybackReset = true
                             castPlayer?.prepare()
                             castPlayer?.play()
                         }
@@ -374,6 +376,10 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                         PlaybackException.ERROR_CODE_DECODING_FAILED,
                         PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED -> {
                             handleTerminalError("This device cannot play this file format.")
+                        }
+                        PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED-> {
+                            forcePlaybackReset = true
+                            Logt(TAG, "Player error: if media is served by an external app, try play again, or try toggling 'Use external apps' in Settings, and play again.")
                         }
                         else -> {
                             // Terminal errors (404, Media Unsupported)
@@ -450,10 +456,10 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             }
             exoplayerOffloadListener = object: ExoPlayer.AudioOffloadListener {
                 override fun onOffloadedPlayback(offloadSchedulingEnabled: Boolean) {
-//                    LogtFor(TAG, curMediaFlow.value?.id,  "AudioOffloadListener Offload scheduling enabled: $offloadSchedulingEnabled")
+                    Logd(TAG, "AudioOffloadListener Offload scheduling enabled: $offloadSchedulingEnabled")
                 }
                 override fun onSleepingForOffloadChanged(isSleepingForOffload: Boolean) {
-//                    LogtFor(TAG, curMediaFlow.value?.id, "AudioOffloadListener CPU is sleeping for offload: $isSleepingForOffload")
+                    Logd(TAG, "AudioOffloadListener CPU is sleeping for offload: $isSleepingForOffload")
                 }
             }
             createNativePlayer()
@@ -484,7 +490,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             return
         }
         offloadEnabled = enabled
-//        Logt(TAG, "switchOffload set audio offload $offloadEnabled")
+        Logd(TAG, "switchOffload set audio offload $offloadEnabled")
 
         val wasPlaying = castPlayer!!.isPlaying
         castPlayer!!.pause()
@@ -697,9 +703,9 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         fun setMuxedVideo() {
             if (!sameMedia || muxedSpecs.isEmpty()) muxedSpecs = curClient?.withProviderBlocking { it.getVideoSpecs(media.toIPC()) } ?: listOf()
             if (muxedSpecs.isNotEmpty()) {
-                val videoSpec = setVideoSpec(muxedSpecs, media)
-                if (!videoSpec.url.isNullOrBlank()) {
-                    val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(videoSpec.url!!.toSafeUri()).build())
+                curMuxedSpec = chooseVideoSpec(muxedSpecs, media)
+                if (!curMuxedSpec?.url.isNullOrBlank()) {
+                    val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(curMuxedSpec!!.url!!.toSafeUri()).build())
                     mSource = MergingMediaSource(true, vSource)
                     playingVideoFlow.value = true
                     playingMuxedVideo = true
@@ -709,7 +715,18 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         }
 
         Logd(TAG, "mediaSourceFromClient setting for source needVideo: $needVideo media: ${media.title}")
-        if (!sameMedia) {
+        var force = false
+        if (sameMedia) {
+            val url = curAudioSpec?.url ?: curMuxedSpec?.url
+            if (!url.isNullOrBlank()) {
+                val expireTime = Uri.parse(url).getQueryParameter("expire")?.toLongOrNull()
+                force = (expireTime != null && expireTime < nowInMillis())
+            }
+        }
+        if (!sameMedia || force) {
+            curAudioSpec = null
+            curVideoSpec = null
+            curMuxedSpec = null
             audioSpecs = listOf()
             videoSpecs = listOf()
             muxedSpecs = listOf()
@@ -719,7 +736,8 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             var aSource: ProgressiveMediaSource? = null
             if (audioSpecs.isNotEmpty()) {
                 Logd(TAG, "mediaSourceFromClient audioSpecs ${audioSpecs.size}")
-                setAudioSpec(audioSpecs, media)?.let {
+                chooseAudioSpec(audioSpecs, media)?.let {
+                    curAudioSpec = it
                     if (!it.url.isNullOrBlank()) {
                         aSource = ProgressiveMediaSource.Factory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(it.url!!.toSafeUri()).setCustomCacheKey(media.id.toString()).build())
                         Logd(TAG, "mediaSourceFromClient aSource set to: ${it.url}")
@@ -733,14 +751,14 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     if (!sameMedia || videoSpecs.isEmpty()) videoSpecs = curClient?.withProviderBlocking { it.getVideoOnlySpecs(media.toIPC()) } ?: listOf()
                     Logd(TAG, "mediaSourceFromClient videoSpecs ${videoSpecs.size}")
                     if (videoSpecs.isNotEmpty()) {
-                        val videoSpec = setVideoSpec(videoSpecs, media)
-                        if (!videoSpec.url.isNullOrBlank()) {
-                            val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(videoSpec.url!!.toSafeUri()).build())
+                        curVideoSpec = chooseVideoSpec(videoSpecs, media)
+                        if (!curVideoSpec?.url.isNullOrBlank()) {
+                            val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(curVideoSpec!!.url!!.toSafeUri()).build())
                             val mediaSources: MutableList<MediaSource> = mutableListOf()
                             mediaSources.add(vSource)
                             mediaSources.add(aSource)
                             mSource = MergingMediaSource(true, *mediaSources.toTypedArray<MediaSource>())
-                            Logd(TAG, "mediaSourceFromClient vSource set to: ${videoSpec.url}")
+                            Logd(TAG, "mediaSourceFromClient vSource set to: ${curVideoSpec?.url}")
                         } else Loge(TAG, "videoStream or url is null or blank")
                     } else Logt(TAG, "Client provided no video stream")
                 }

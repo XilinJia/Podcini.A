@@ -8,6 +8,7 @@ import ac.mdiq.podcini.playback.base.Media3Player.Companion.getCache
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.simpleCache
 import ac.mdiq.podcini.playback.base.MediaPlayerBase.Companion.isStreamingCapable
 import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
+import ac.mdiq.podcini.playback.base.forcePlaybackReset
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.storage.database.checkAndMarkDuplicates
 import ac.mdiq.podcini.storage.database.isMediaDownloadable
@@ -21,15 +22,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.seconds
-
-var forcePlaybackReset: Boolean = false
-    set(value) {
-        field = value
-        if (value) {
-            theatres[0].mPlayerFlow.value?.pause(false)
-            theatres[1].mPlayerFlow.value?.pause(false)
-        }
-    }
 
 class PlaybackStarter(private val media: Episode) {
     private val TAG = "PlaybackStarter"

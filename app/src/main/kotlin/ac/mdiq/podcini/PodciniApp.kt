@@ -1,7 +1,7 @@
 package ac.mdiq.podcini
 
 import ac.mdiq.podcini.activity.MainActivity
-import ac.mdiq.podcini.config.ClientConfig
+import ac.mdiq.podcini.config.AppConfig
 import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.utils.CrashReportWriter
@@ -32,7 +32,7 @@ class PodciniApp : Application() {
     }
 
     override fun onTerminate() {
-        ClientConfig.destroy()
+        AppConfig.destroy()
         runBlocking(Dispatchers.IO) { sourceClients.forEach { it.disconnect() } }
         super.onTerminate()
     }
@@ -51,7 +51,7 @@ class PodciniApp : Application() {
         fun forceRestart() {
             val intent = Intent(podciniApp, MainActivity::class.java)
             val mainIntent = Intent.makeRestartActivityTask(intent.component)
-            ClientConfig.destroy()
+            AppConfig.destroy()
             realm.close()
             podciniApp.startActivity(mainIntent)
             Runtime.getRuntime().exit(0)

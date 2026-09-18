@@ -6,7 +6,7 @@ import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.Image
 import ac.mdiq.podcini.storage.model.TranscriptMeta
-import ac.mdiq.podcini.storage.specs.FeedFunding
+import ac.mdiq.podcini.storage.model.FeedFunding
 import ac.mdiq.podcini.storage.utils.getMimeType
 import ac.mdiq.podcini.storage.utils.isImageFile
 import ac.mdiq.podcini.storage.utils.isMediaFile

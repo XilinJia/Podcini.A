@@ -103,7 +103,7 @@ val freeSpaceAvailable: Long
 
 val cacheDir: UnifiedFile = internalDir / "cache"
 
-fun initStorage() {
+fun setupStorage() {
     CoroutineScope(Dispatchers.IO).launch {
         if (!cacheDir.exists()) internalDir.createDirectory("cache")
         // Create a .nomedia file to prevent scanning by the media scanner.

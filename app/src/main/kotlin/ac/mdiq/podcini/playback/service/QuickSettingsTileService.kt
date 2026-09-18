@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.playback.service
 
 
-import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.base.PlayerStatusSimple
 import ac.mdiq.podcini.receiver.MediaButtonReceiver

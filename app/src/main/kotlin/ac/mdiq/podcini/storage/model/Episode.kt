@@ -525,6 +525,26 @@ class Episode : RealmObject {
         }
     }
 
+    fun captionIndexAt(positionMs: Long, actIndex: Int): Int {
+        val cues = captionCues
+        fun indexAt(positionMs: Long): Int {
+            var low = 0
+            var high = cues.lastIndex
+            while (low <= high) {
+                val mid = (low + high) ushr 1
+                if (cues[mid].startMs <= positionMs) low = mid + 1
+                else high = mid - 1
+            }
+            return high
+        }
+        if (cues.isEmpty()) return -1
+        if (actIndex < 0 || positionMs < cues[actIndex].startMs) return indexAt(positionMs)
+        else {
+            while (actIndex + 1 < cues.size && positionMs >= cues[actIndex + 1].startMs) { return actIndex+1 }
+        }
+        return actIndex
+    }
+
     fun setChapters(chapters_: List<Chapter>) {
         for (c in chapters_) Logd(TAG, "chapter: ${c.title}")
         chapters.clear()

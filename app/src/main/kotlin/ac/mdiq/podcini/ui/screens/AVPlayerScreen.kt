@@ -10,10 +10,10 @@ import ac.mdiq.podcini.playback.base.SleepManager.Companion.isSleepTimerActive
 import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.playback.base.activeTheatresCount
 import ac.mdiq.podcini.playback.base.ensureAController
-import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
+import ac.mdiq.podcini.playback.base.forcePlaybackReset
+import ac.mdiq.podcini.playback.base.isPlaying
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.playback.cast.BaseActivity
-import ac.mdiq.podcini.playback.forcePlaybackReset
 import ac.mdiq.podcini.playback.isRecordingFlow
 import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.shared.AudioSpec
@@ -306,7 +306,7 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
             theatres[playerId].mPlayerFlow.flatMapLatest { player -> if (player == null) flowOf(null) else combine(player.statusSimpleFlow, player.curMediaFlow) { status, media -> Triple(player, status, media) } }
                 .distinctUntilChanged().collect { value ->
                     val (_, status, media) = value ?: Triple(null, null, null)
-                    showPlayButton = status != PlayerStatusSimple.PLAYING && isCurrentlyPlaying(media, playerId) != true
+                    showPlayButton = status != PlayerStatusSimple.PLAYING && isPlaying(media, playerId) != true
                     Logd(TAG, "playerId: $playerId status=$status showPlayButton=$showPlayButton")
                 }
         }
@@ -740,6 +740,16 @@ fun AVPlayerScreen() {
     var showTransDialog by remember { mutableStateOf(false) }
     if (showTransDialog && curMedia != null) TranscriptDialog(curMedia, player = player, cueIndex = cueIndex) { showTransDialog = false }
 
+    var showCaption by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showCaption, player?.status, showTransDialog, curMedia?.id) {
+        while (isActive && (showCaption || showTransDialog) && player?.isPlaying == true && curMedia != null) {
+            val pos = player.getPosition() - curMedia.transcriptStartPos
+            cueIndex = curMedia.captionIndexAt(pos.toLong()+500, cueIndex)
+            delay(500.milliseconds)
+        }
+    }
+
     @Composable
     fun PlayerUI(vm: AVPlayerVM, modifier: Modifier) {
         val player by theatres[vm.playerId].mPlayerFlow.collectAsStateWithLifecycle()
@@ -899,6 +909,7 @@ fun AVPlayerScreen() {
 
     @Composable
     fun DetailUI(vm: AVPlayerVM, modifier: Modifier) {
+        val lifecycleOwner = LocalLifecycleOwner.current
         val comboAction = remember { Combo() }
         comboAction.ActionOptions()
         val player_ by theatres[vm.playerId].mPlayerFlow.collectAsStateWithLifecycle()
@@ -907,22 +918,42 @@ fun AVPlayerScreen() {
         val episode = episode_ ?: return
         val client = remember(episode.id) { clientByEpisode(episode) }
 
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                Logd(TAG, "DisposableEffect Lifecycle.Event: $event")
+                when (event) {
+                    Lifecycle.Event.ON_CREATE -> { }
+                    Lifecycle.Event.ON_START -> {}
+                    Lifecycle.Event.ON_RESUME -> {}
+                    Lifecycle.Event.ON_STOP -> {}
+                    Lifecycle.Event.ON_DESTROY -> {}
+                    else -> {}
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose {
+                showCaption = false
+                showTransDialog = false
+                lifecycleOwner.lifecycle.removeObserver(observer)
+            }
+        }
+
         @Composable
         fun StreamChanger(onDismiss: () -> Unit) {
             if (player == null) return
             var reset by remember { mutableStateOf(false) }
             var locales by remember { mutableStateOf<List<String>>(listOf()) }
-            var locale by remember { mutableStateOf(player.useLocale) }
+            var locale by remember(episode.id) { mutableStateOf(player.useLocale) }
             var codecs by remember { mutableStateOf<List<String>>(listOf()) }
-            var codec by remember { mutableStateOf(player.useCodex) }
+            var codec by remember(episode.id) { mutableStateOf(player.useCodex) }
             var bitRates by remember { mutableStateOf<List<Int>>(listOf()) }
-            var bitrate by remember { mutableIntStateOf(player.useABPS) }
+            var bitrate by remember(episode.id) { mutableIntStateOf(player.useABPS) }
             var vcodecs by remember { mutableStateOf<List<String>>(listOf()) }
-            var vcodec by remember { mutableStateOf(player.useVCodex) }
+            var vcodec by remember(episode.id) { mutableStateOf(player.useVCodex) }
             var protocols by remember { mutableStateOf<List<String>>(listOf()) }
-            var protocol by remember { mutableStateOf(player.useVCodex) }
+            var protocol by remember(episode.id) { mutableStateOf(player.useVCodex) }
             var resolutions by remember { mutableStateOf<List<String>>(listOf()) }
-            var resolution by remember { mutableStateOf(player.useResolution) }
+            var resolution by remember(episode.id) { mutableStateOf(player.useResolution) }
             fun buildResoSet(s: VideoSpec, rSet: MutableSet<String>) {
                 s.resolution?.let {
                     when {
@@ -954,8 +985,8 @@ fun AVPlayerScreen() {
                 bitRates = bSet.toList()
                 codecs = cSet.toList()
                 if (locale == null && locales.isNotEmpty()) locale = locales.firstOrNull { it in player.useLocales }
-                if (codecs.isNotEmpty()) codec = codecs[0]
-                if (bitRates.isNotEmpty()) bitrate = bitRates[0]
+                codec = player.useCodex
+                bitrate = player.useABPS
                 val rSet = mutableSetOf<String>()
                 val vcSet = mutableSetOf<String>()
                 val vpSet = mutableSetOf<String>()
@@ -1142,7 +1173,6 @@ fun AVPlayerScreen() {
             )
         }.offset { IntOffset(offsetX.value.roundToInt(), 0) }) {
             SelectionContainer { Text(episode.title ?: "No title", textAlign = TextAlign.Center, color = textColor, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 5.dp)) }
-            var showCaption by remember { mutableStateOf(false) }
             Row(modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Spacer(modifier = Modifier.weight(0.1f))
                 if (episode.captionCues.isNotEmpty()) Icon(imageVector = if (showCaption) Icons.Default.CheckCircle else ImageVector.vectorResource(androidx.media3.session.R.drawable.media3_icon_closed_captions),
@@ -1172,31 +1202,6 @@ fun AVPlayerScreen() {
                 val captionPrev = remember(cueIndex) { if (cueIndex>0) episode.captionCues[cueIndex-1] else null }
                 val captionNow = remember(cueIndex) { if (cueIndex>=0) episode.captionCues[cueIndex] else null }
                 val captionNext = remember(cueIndex) { if (cueIndex>=0 && cueIndex<episode.captionCues.size-1) episode.captionCues[cueIndex+1] else null }
-                LaunchedEffect(key1 = showCaption) {
-                    val cues = episode.captionCues
-                    fun findCueIndex(positionMs: Long): Int {
-                        var low = 0
-                        var high = cues.lastIndex
-                        while (low <= high) {
-                            val mid = (low + high) ushr 1
-                            if (cues[mid].startMs <= positionMs) low = mid + 1
-                            else high = mid - 1
-                        }
-                        return high
-                    }
-                    fun cueAt(positionMs: Long, isSeek: Boolean = false) {
-                        if (cues.isEmpty()) return
-                        if (isSeek || cueIndex < 0 || positionMs < cues[cueIndex].startMs) cueIndex = findCueIndex(positionMs)
-                        else {
-                            while (cueIndex + 1 < cues.size && positionMs >= cues[cueIndex + 1].startMs) cueIndex++
-                        }
-                    }
-                    while (isActive && showCaption) {
-                        val pos = (player?.getPosition() ?: 0 ) - episode.transcriptStartPos
-                        cueAt(pos.toLong()+500)
-                        delay(500.milliseconds)
-                    }
-                }
                 if (showCaption) {
                     if (captionPrev != null) Text(captionPrev.speaker + ": " + captionPrev.text, color = textColor.copy(alpha = 0.6f), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.fillMaxWidth().clickable {
                         player?.seekTo(captionPrev.startMs.toInt())

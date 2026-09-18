@@ -6,7 +6,6 @@ import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.playback.base.releaseAController
 import ac.mdiq.podcini.shared.PodciniHttpClient.configProxy
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
-import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.cancelAppPrefs
 import ac.mdiq.podcini.storage.database.cancelMonitorFeeds
@@ -18,19 +17,17 @@ import ac.mdiq.podcini.storage.database.monitorFeeds
 import ac.mdiq.podcini.storage.database.proxyConfig
 import ac.mdiq.podcini.storage.model.cancelMonitorVolumes
 import ac.mdiq.podcini.storage.model.monitorVolumes
-import ac.mdiq.podcini.storage.utils.initStorage
-import ac.mdiq.podcini.utils.Logd
+import ac.mdiq.podcini.storage.utils.setupStorage
 import ac.mdiq.podcini.utils.timeIt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 
-object ClientConfig {
+object AppConfig {
 
     val isInitialized =  MutableStateFlow(false)
     private var initializing = false
@@ -58,9 +55,8 @@ object ClientConfig {
 
             if (nmJob == null) nmJob = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch { networkMonitor.networkFlow.collect { isConnected -> networkChangedDetected(isConnected) } }
 
-            initStorage()
+            setupStorage()
 
-            Logd("ClientConfigurator", "initialize")
             timeIt("ClientConfigurator Init started ")
 
             monitorFeeds()

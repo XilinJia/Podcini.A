@@ -4,7 +4,8 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.Media3Player.Companion.getCache
 import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.forcePlaybackReset
+import ac.mdiq.podcini.playback.base.forcePlaybackReset
+import ac.mdiq.podcini.playback.base.isPlaying
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
 import ac.mdiq.podcini.sourcing.clientByFeed
 import ac.mdiq.podcini.sourcing.clientsHaveMultiQ
@@ -514,9 +515,10 @@ fun FeedsSettingsScreen() {
                                     }
                                 }
                                 val media = theatres[0].mPlayerFlow.value?.curMediaFlow?.value
+                                val isPlaying = theatres[0].mPlayerFlow.value?.isPlaying
                                 if (media?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) {
                                     forcePlaybackReset = true
-                                    PlaybackStarter(media!!).shouldStreamThisTime(null).start()
+                                    if (isPlaying == true) PlaybackStarter(media!!).shouldStreamThisTime(null).start()
                                     theatres[0].mPlayerFlow.value?.playingVideoFlow?.value = mode != VideoMode.AUDIO_ONLY
                                 }
                             }
@@ -548,9 +550,10 @@ fun FeedsSettingsScreen() {
                                 }
                             }
                             val media = theatres[0].mPlayerFlow.value?.curMediaFlow?.value
+                            val isPlaying = theatres[0].mPlayerFlow.value?.isPlaying
                             if (media?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) {
                                 forcePlaybackReset = true
-                                PlaybackStarter(media!!).shouldStreamThisTime(null).start()
+                                if (isPlaying == true) PlaybackStarter(media!!).shouldStreamThisTime(null).start()
                             }
                         }
                     }
@@ -581,9 +584,10 @@ fun FeedsSettingsScreen() {
                                     }
                                 }
                                 val media = theatres[0].mPlayerFlow.value?.curMediaFlow?.value
+                                val isPlaying = theatres[0].mPlayerFlow.value?.isPlaying
                                 if (media?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) {
                                     forcePlaybackReset = true
-                                    PlaybackStarter(media!!).shouldStreamThisTime(null).start()
+                                    if (isPlaying == true) PlaybackStarter(media!!).shouldStreamThisTime(null).start()
                                 }
                             }
                         }

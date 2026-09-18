@@ -1,4 +1,4 @@
-package ac.mdiq.podcini.storage.specs
+package ac.mdiq.podcini.storage.model
 
 import io.github.xilinjia.krdb.types.EmbeddedRealmObject
 

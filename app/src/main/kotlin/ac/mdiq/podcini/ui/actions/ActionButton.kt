@@ -22,7 +22,7 @@ import ac.mdiq.podcini.playback.base.TTSEngine.tts
 import ac.mdiq.podcini.playback.base.TTSEngine.ttsJob
 import ac.mdiq.podcini.playback.base.TTSEngine.ttsTmpFiles
 import ac.mdiq.podcini.playback.base.isCurMedia
-import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
+import ac.mdiq.podcini.playback.base.isPlaying
 import ac.mdiq.podcini.playback.service.PlaybackService
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -244,7 +244,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 update(item)
             }
             ButtonTypes.PAUSE -> {
-                if (isCurrentlyPlaying(item, playerId)) {
+                if (isPlaying(item, playerId)) {
                     theatres[playerId].mPlayerFlow.value?.pause(false)
                     update(item)
 //                    for (i in 0..1) {
@@ -371,12 +371,12 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
         }
         when (type) {
             ButtonTypes.WEBSITE -> {}
-            ButtonTypes.PLAY_LOCAL -> if (isCurrentlyPlaying(item, playerId)) type = ButtonTypes.PAUSE
+            ButtonTypes.PLAY_LOCAL -> if (isPlaying(item, playerId)) type = ButtonTypes.PAUSE
             ButtonTypes.PLAY, ButtonTypes.PLAY_ONE, ButtonTypes.PLAY_REPEAT -> {
                 if (!item.downloaded) type = undownloadedType()
-                else if (isCurrentlyPlaying(item, playerId)) type = ButtonTypes.PAUSE
+                else if (isPlaying(item, playerId)) type = ButtonTypes.PAUSE
             }
-            ButtonTypes.STREAM, ButtonTypes.STREAM_ONE, ButtonTypes.STREAM_REPEAT -> if (isCurrentlyPlaying(item, playerId)) type = ButtonTypes.PAUSE
+            ButtonTypes.STREAM, ButtonTypes.STREAM_ONE, ButtonTypes.STREAM_REPEAT -> if (isPlaying(item, playerId)) type = ButtonTypes.PAUSE
             ButtonTypes.PAUSE -> {
                 type = when {
                     item.feed?.isLocal == true -> ButtonTypes.PLAY_LOCAL
@@ -391,7 +391,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 //        val media = item.media ?: return TTSActionButton(item)
                 //        Logd("ItemActionButton", "forItem: local feed: ${item.feed?.isLocal} downloaded: ${item.downloaded} playing: ${isCurrentlyPlaying(item)}  ${item.title} ")
                 type = when {
-                    isCurrentlyPlaying(item, playerId) -> ButtonTypes.PAUSE
+                    isPlaying(item, playerId) -> ButtonTypes.PAUSE
                     item.feed?.isLocal == true -> ButtonTypes.PLAY_LOCAL
                     item.downloaded -> typeOfDownloaded()
                     else -> undownloadedType()

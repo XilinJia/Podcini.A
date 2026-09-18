@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 123
-        versionName = "12.11.0"
+        versionCode = 124
+        versionName = "12.11.1"
 
         ndkVersion = "29.0.14206865"
 
@@ -236,7 +236,6 @@ dependencies {
     implementation("androidx.annotation:annotation:1.10.0")
     implementation("androidx.core:core-ktx:1.19.0")
     implementation("androidx.documentfile:documentfile:1.1.0")
-//    implementation("androidx.core:core-splashscreen:1.2.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     implementation("androidx.webkit:webkit:1.17.0")
     implementation("androidx.work:work-runtime:2.11.2")

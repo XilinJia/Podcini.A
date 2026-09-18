@@ -1,0 +1,6 @@
+* amended transcript popup, expandable, enabled auto scroll
+* on topbar of EpisodeInfo, added item to fetch transcript (only applicable for external media)
+* in MediaPlayer
+	* when error on playing external media, toast about playing again or reset clients connection
+	* when playing curMedia after stream url expire time, ensure to refetch stream url
+* transcript meta data of external source media are cleared on expire in PlayerDetailed and EpisodeInfo

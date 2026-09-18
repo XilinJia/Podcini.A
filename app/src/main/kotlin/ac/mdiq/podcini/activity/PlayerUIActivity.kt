@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.activity
 
-import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.playback.base.theatres
 import ac.mdiq.podcini.ui.compose.AppThemes
 import ac.mdiq.podcini.ui.compose.PodciniTheme

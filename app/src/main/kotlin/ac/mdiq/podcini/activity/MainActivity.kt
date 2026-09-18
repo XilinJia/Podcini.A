@@ -2,8 +2,8 @@ package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.config.ClientConfig.initialize
-import ac.mdiq.podcini.config.ClientConfig.isInitialized
+import ac.mdiq.podcini.config.AppConfig.initialize
+import ac.mdiq.podcini.config.AppConfig.isInitialized
 import ac.mdiq.podcini.playback.base.TTSEngine.closeTTS
 import ac.mdiq.podcini.playback.cast.BaseActivity
 import ac.mdiq.podcini.shared.nowInMillis

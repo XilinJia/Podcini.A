@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.activity
 
-import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.ui.compose.CommonConfirmDialog
 import ac.mdiq.podcini.ui.compose.CommonToast
 import ac.mdiq.podcini.ui.compose.LargePoster

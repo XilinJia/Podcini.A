@@ -473,6 +473,7 @@
 
     <string name="start">Start</string>
     <string name="save">Save</string>
+    <string name="scroll">Scroll</string>
 
     <string name="completed_date">Completed date</string>
     <string name="duration">Duration</string>
@@ -1025,6 +1026,7 @@
     <string name="has_clips">Has clips</string>
     <string name="has_marks">Has marks</string>
     <string name="has_transcripts">Has transcripts</string>
+    <string name="has_captionss">Has captions</string>
 
     <string name="always">Always</string>
     <string name="never">Never</string>

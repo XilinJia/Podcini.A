@@ -17,7 +17,6 @@ import ac.mdiq.podcini.shared.VideoSpec
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
 import ac.mdiq.podcini.sourcing.clientByEpisode
-import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.allowForAutoDelete
 import ac.mdiq.podcini.storage.database.appAttribsFlow
@@ -64,7 +63,6 @@ import android.media.MediaCodecList
 import android.os.Build
 import android.service.quicksettings.TileService
 import androidx.media3.common.Player
-import io.github.xilinjia.krdb.ext.realmListOf
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -144,6 +142,11 @@ abstract class MediaPlayerBase {
     var videoSpecs: List<VideoSpec> = listOf()
     var muxedSpecs: List<VideoSpec> = listOf()
 
+    var curAudioSpec: AudioSpec? = null
+    var curVideoSpec: VideoSpec? = null
+    var curMuxedSpec: VideoSpec? = null
+
+
     private var prevPosition: Int = -1
     private var samePositionCount: Int = 0
 
@@ -186,7 +189,6 @@ abstract class MediaPlayerBase {
     var useLocale: String? = null
     var useCodex: String = "Any"
     var useABPS: Int = 0
-
     var useVCodex: String? = null
     var useResolution: String? = null
 
@@ -799,11 +801,6 @@ abstract class MediaPlayerBase {
         }
         runOnIOScope {
             item = upsert(item) {
-                if (isExtFeed(it.feed)) {
-                    Logd(TAG, "onPostPlayback reseting transcriptMetas")
-                    it.transcriptMetas = realmListOf()
-                    it.transcriptIndex = -1
-                }
                 if (it.playState == EpisodeState.FOREVER.code) it.repeatTime = it.repeatInterval + nowInMillis()
                 upsertDB(it, item.position)
                 it.startTime = 0
@@ -874,7 +871,7 @@ abstract class MediaPlayerBase {
         useABPS = aveBitrate
     }
 
-    internal fun setAudioSpec(audioSpecs: List<AudioSpec>, media: Episode): AudioSpec? {
+    internal fun chooseAudioSpec(audioSpecs: List<AudioSpec>, media: Episode): AudioSpec? {
         val asl = mutableListOf<AudioSpec>()
 //        Logd(TAG, "useLocale: $useLocale useCodex: $useCodex useABPS: $useABPS audioIndex: $audioIndex")
         Logd(TAG, "setAudioSpec media.feed?.preferredLnaguages: [${media.feed?.preferredLnaguages?.joinToString()}]")
@@ -944,7 +941,7 @@ abstract class MediaPlayerBase {
         return audioSpec
     }
 
-    fun setVideoSpec(videoSpecs: List<VideoSpec>, media: Episode): VideoSpec {
+    internal fun chooseVideoSpec(videoSpecs: List<VideoSpec>, media: Episode): VideoSpec {
         if (useResolution != null || useVCodex != null) {
             val videoSpec = when {
                 useVCodex == null ->  videoSpecs.firstOrNull { it.resolution == useResolution }

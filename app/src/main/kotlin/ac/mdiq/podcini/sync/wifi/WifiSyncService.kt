@@ -2,7 +2,7 @@ package ac.mdiq.podcini.sync.wifi
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.sync.LockingAsyncExecutor
 import ac.mdiq.podcini.sync.SyncService
 import ac.mdiq.podcini.sync.SynchronizationSettings

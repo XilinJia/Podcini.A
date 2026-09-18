@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.activity
 
-import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.playback.base.actQueueFlow
 import ac.mdiq.podcini.receiver.PodciniWidget
 import ac.mdiq.podcini.storage.database.queuesLive

@@ -1,15 +1,11 @@
 package ac.mdiq.podcini.ui.compose
 
-//import io.github.kdroidfilter.webview.jsbridge.rememberWebViewJsBridge
-//import io.github.kdroidfilter.webview.util.KLogSeverity
-//import io.github.kdroidfilter.webview.web.WebView
-//import io.github.kdroidfilter.webview.web.rememberWebViewNavigator
-//import io.github.kdroidfilter.webview.web.rememberWebViewState
-
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.base.PlayerStatusSimple
-import ac.mdiq.podcini.playback.base.isCurrentlyPlaying
+import ac.mdiq.podcini.playback.base.playerOf
+import ac.mdiq.podcini.playback.base.isPlaying
 import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.DownloadStatus
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.sourcing.isExtFeed
@@ -19,6 +15,8 @@ import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Timer
+import ac.mdiq.podcini.storage.model.toIPC
+import ac.mdiq.podcini.storage.model.toTranscriptMeta
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.Rating
 import ac.mdiq.podcini.storage.utils.div
@@ -120,13 +118,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import io.github.xilinjia.krdb.ext.toRealmList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import net.dankito.readability4j.extended.Readability4JExtended
 import java.util.Locale
+import kotlin.collections.map
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG: String = "EpisodeScreen"
 
@@ -188,11 +191,22 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
     var onTimer by remember { mutableStateOf(Timer()) }
     var showEditTimerDialog by remember { mutableStateOf(false) }
     var showTransDialog by remember { mutableStateOf(false) }
+    var showTransMetaDialog by remember { mutableStateOf(false) }
 
     val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
 
     val timers = remember(episode.id, appAttribs ) { appAttribs.timetable.filter { it.episodeId == episode.id } }
     timers.forEach { Logd(TAG, "timer: ${it.triggerTime}") }
+
+    val player = playerOf(episode)
+    var cueIndex by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(player?.status, showTransDialog, episode.id) {
+        while (isActive && showTransDialog && player?.isPlaying == true) {
+            val pos = player.getPosition() - episode.transcriptStartPos
+            cueIndex = episode.captionIndexAt(pos.toLong()+500, cueIndex)
+            delay(500.milliseconds)
+        }
+    }
 
     @Composable
     fun OpenDialogs() {
@@ -208,7 +222,24 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
             showEditTimerDialog = true
         }
 
-        if (showTransDialog) TranscriptDialog(episode) { showTransDialog = false }
+        if (showTransDialog) TranscriptDialog(episode, player, cueIndex) { showTransDialog = false }
+        if (showTransMetaDialog) CommonPopupCard(onDismiss = { showTransMetaDialog = false }) {
+            val client = remember(episode.id) { clientByEpisode(episode) }
+            if (client == null) {
+                Logt(TAG, "can not find service app for episode")
+                return@CommonPopupCard
+            }
+            LaunchedEffect(Unit) {
+                runOnIOScope {
+                    val captions = client.withProvider { it.getCaptionSpecs(episode.toIPC()) }
+                    if (!captions.isNullOrEmpty()) {
+                        val tm = captions.map { it.toTranscriptMeta() }.toRealmList()
+                        upsert(episode) { it.transcriptMetas = tm }
+                    }
+                }
+            }
+            TranscriptMeta(episode)
+        }
     }
 
     OpenDialogs()
@@ -223,7 +254,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
     LaunchedEffect(key1 = status0, status1, episode) {
         actionButton = ActionButton(episode)
         actionButton?.type = when {
-            isCurrentlyPlaying(episode) -> ButtonTypes.PAUSE
+            isPlaying(episode) -> ButtonTypes.PAUSE
             episodeFeed != null && episodeFeed.isLocal -> ButtonTypes.PLAY_LOCAL
             episode.downloaded -> ButtonTypes.PLAY
             !episode.downloadUrl.isNullOrBlank() -> ButtonTypes.STREAM
@@ -242,15 +273,30 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                 Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (showClose) Icon(Icons.Filled.Close, contentDescription = "close", modifier = Modifier.padding(7.dp).clickable { episodeForInfo = null })
                     Spacer(Modifier.weight(1f))
-                    if (episode.captionCues.isNotEmpty()) IconButton(onClick = { showTransDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_description_24), contentDescription = "transcript") }
-                    if (allowOpenFeed && episodeFeed != null) IconButton(onClick = {
-                        navTo(FeedDetails(feedId = episodeFeed.id))
-                        episodeForInfo = null
-                        psState = PSState.PartiallyExpanded
-                    }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_feed), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "Open podcast", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer)) }
+                    if (episode.captionCues.isNotEmpty()) {
+                        IconButton(onClick = { showTransDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_description_24), contentDescription = "transcript") }
+                        Spacer(Modifier.weight(1f))
+                    }
+                    if (episode.transcriptMetas.isEmpty() && isExtFeed(episode.feed)) {
+                        IconButton(onClick = { showTransMetaDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_closed_caption_add_24), contentDescription = "fetch transcript") }
+                        Spacer(Modifier.weight(1f))
+                    }
+                    if (allowOpenFeed && episodeFeed != null) {
+                        IconButton(onClick = {
+                            navTo(FeedDetails(feedId = episodeFeed.id))
+                            episodeForInfo = null
+                            psState = PSState.PartiallyExpanded
+                        }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_feed), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "Open podcast", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer)) }
+                        Spacer(Modifier.weight(1f))
+                    }
                     IconButton(onClick = { comboAction.performAction(episode) }) { Icon(imageVector = ImageVector.vectorResource(comboAction.iconRes), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "Combo", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer)) }
-                    if (!isExtFeed(episode.feed) && !episode.link.isNullOrEmpty()) IconButton(onClick = { showHomeScreen = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_article_shortcut_24), contentDescription = "home") }
+                    Spacer(Modifier.weight(1f))
+                    if (!isExtFeed(episode.feed) && !episode.link.isNullOrEmpty()) {
+                        IconButton(onClick = { showHomeScreen = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_article_shortcut_24), contentDescription = "home") }
+                        Spacer(Modifier.weight(1f))
+                    }
                     IconButton(onClick = { episode.linkOrFeedlink?.let { openInSystemDefault(it) } }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_web), contentDescription = "web") }
+                    Spacer(Modifier.weight(1f))
                     Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                         IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                         DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {

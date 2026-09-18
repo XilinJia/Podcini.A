@@ -18,6 +18,7 @@ import ac.mdiq.podcini.sourcing.clientByFeed
 import ac.mdiq.podcini.sourcing.clientsHaveLikeCounts
 import ac.mdiq.podcini.sourcing.clientsHaveViewCounts
 import ac.mdiq.podcini.sourcing.download.RequestType
+import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.sourcing.listenForUDPBroadcasts
 import ac.mdiq.podcini.sourcing.sendEpisodes
 import ac.mdiq.podcini.storage.database.addToAssQueue
@@ -82,6 +83,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.ContextWrapper
+import android.net.Uri
 import android.view.Gravity
 import androidx.collection.LruCache
 import androidx.compose.foundation.BorderStroke
@@ -90,12 +92,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -108,6 +113,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -115,6 +121,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -174,6 +181,7 @@ import androidx.core.text.parseAsHtml
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
+import io.github.xilinjia.krdb.ext.realmListOf
 import io.github.xilinjia.krdb.query.Sort
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -315,12 +323,31 @@ fun Context.findActivity(): Activity? = when (this) {
 
 @Composable
 fun TranscriptDialog(episode: Episode, player:  MediaPlayerBase? = null, cueIndex: Int = -1, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(4.dp), border = BorderStroke(1.dp, borderColor)) {
+    Dialog(properties = DialogProperties(usePlatformDefaultWidth = false), onDismissRequest = onDismiss) {
+        var isExpanded by remember { mutableStateOf(false) }
+        val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
+        dialogWindowProvider?.window?.setGravity(if (isExpanded) Gravity.TOP else Gravity.CENTER)
+        Surface(shape = RoundedCornerShape(4.dp), border = BorderStroke(1.dp, borderColor), modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).then(
+            if (isExpanded) Modifier.fillMaxHeight(0.80f) else { Modifier.height(300.dp) }
+        )) {
             var selectMode by remember { mutableStateOf(false) }
             val selected = remember { mutableStateSetOf<CaptionCue>() }
-            Column(Modifier.fillMaxWidth().height(300.dp)) {
-                LazyColumn(modifier = Modifier.weight(1f)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 5.dp)) {
+                var letScroll by remember { mutableStateOf(player != null) }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (player != null) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_center_focus_strong_24), tint = if (letScroll) Color.Green else Color.Red, contentDescription = "center", modifier = Modifier.padding(start = 10.dp).clickable { letScroll = !letScroll })
+                    Spacer(Modifier.weight(1f))
+                    Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_expansion_panels_24), tint = textColor, contentDescription = "expand", modifier = Modifier.padding(end = 10.dp).clickable { isExpanded = !isExpanded })
+                }
+                val listState = rememberLazyListState()
+                LaunchedEffect(cueIndex, letScroll) {
+                    if (cueIndex < 0 || !letScroll) return@LaunchedEffect
+                    val viewportHeight = listState.layoutInfo.viewportSize.height
+                    if (viewportHeight == 0) return@LaunchedEffect
+                    listState.animateScrollToItem(index = cueIndex, scrollOffset = 2 * (-viewportHeight) / 5)
+                }
+                LaunchedEffect(listState) { listState.interactionSource.interactions.collect { interaction -> when (interaction) {is DragInteraction.Start -> letScroll = false } } }
+                LazyColumn(state = listState, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     itemsIndexed(episode.captionCues) { i, c ->
                         val color = if (cueIndex == -1 || i == cueIndex) textColor else textColor.copy(alpha = 0.75f)
                         var isSelected by remember(i,  selectMode, selected.size) { mutableStateOf( selectMode && c in selected ) }
@@ -332,6 +359,7 @@ fun TranscriptDialog(episode: Episode, player:  MediaPlayerBase? = null, cueInde
                                 } else player?.seekTo(c.startMs.toInt())
                             },
                             onLongClick = {
+                                letScroll = false
                                 selectMode = !selectMode
                                 if (selectMode) selected.add(c)
                                 else selected.clear()
@@ -364,6 +392,34 @@ fun TranscriptDialog(episode: Episode, player:  MediaPlayerBase? = null, cueInde
                     }) { Text(text = stringResource(R.string.save)) }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun TranscriptMeta(episode: Episode) {
+    val context by rememberUpdatedState(LocalContext.current)
+    var transIndex by remember { mutableIntStateOf(if (episode.captionCues.isNotEmpty()) episode.transcriptIndex else -1) }
+    for (i in episode.transcriptMetas.indices) {
+        val t = episode.transcriptMetas[i]
+        Column(modifier = Modifier.padding(start = 20.dp).fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = transIndex == i, onCheckedChange = {
+                    transIndex = if (transIndex != i) i else -1
+                    if (transIndex >= 0 && (transIndex != episode.transcriptIndex || episode.captionCues.isEmpty())) runOnIOScope { episode.fetchCaption(transIndex) }
+                    Logt(TAG, context.getString(R.string.transcript_fetched))
+                })
+                Spacer(Modifier.width(20.dp))
+                Text(text = t.language ?: "Unknown language", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.width(20.dp))
+                Text(text = t.type ?: "Unknown type", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.width(20.dp))
+                Text(text = t.rel ?: "", style = MaterialTheme.typography.bodyMedium)
+            }
+            Text(text = t.url ?: "No url", style = MaterialTheme.typography.bodySmall, maxLines = 1, modifier = Modifier.clickable {
+                ContextCompat.getSystemService(context, ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Podcini", t.url ?: "No url"))
+                Logt(TAG, "url copied to clipboard")
+            })
         }
     }
 }
@@ -439,6 +495,20 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
         }
     }
 
+    LaunchedEffect(Unit) {
+        if (episode.transcriptMetas.isNotEmpty() && isExtFeed(episode.feed)) {
+            Logd(TAG, "resetting transcriptMetas")
+            val url = episode.transcriptMetas[0].url
+            val expireTime = Uri.parse(url).getQueryParameter("expire")?.toLongOrNull()
+            if (expireTime != null && expireTime < nowInMillis()) {
+                upsert(episode) {
+                    it.transcriptMetas = realmListOf()
+                    it.transcriptIndex = -1
+                }
+            }
+        }
+    }
+
     Column {
         if (episode.lastPlayedTime > 0L) {
             val playTimeText = remember(episode.lastPlayedTime) { formatDateTimeFlex(episode.lastPlayedTime) }
@@ -452,29 +522,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 Spacer(Modifier.width(20.dp))
                 Checkbox(checked = showTransOptions, onCheckedChange = { showTransOptions = it })
             }
-            if (showTransOptions) {
-                var transIndex by remember { mutableIntStateOf(if (episode.captionCues.isNotEmpty()) episode.transcriptIndex else -1) }
-                for (i in episode.transcriptMetas.indices) {
-                    val t = episode.transcriptMetas[i]
-                    Column(modifier = Modifier.padding(start = 20.dp).fillMaxWidth()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = transIndex == i, onCheckedChange = {
-                                transIndex = if (transIndex != i) i else -1
-                                if (transIndex >= 0 && (transIndex != episode.transcriptIndex || episode.captionCues.isEmpty())) runOnIOScope { episode.fetchCaption(transIndex) }
-                                Logt(TAG, context.getString(R.string.transcript_fetched))
-                            })
-                            Spacer(Modifier.width(20.dp))
-                            Text(text = t.language ?: "Unknown language", style = MaterialTheme.typography.bodyMedium)
-                            Spacer(Modifier.width(20.dp))
-                            Text(text = t.type ?: "Unknown type", style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Text(text = t.url ?: "No url", style = MaterialTheme.typography.bodySmall, maxLines = 1, modifier = Modifier.clickable {
-                            ContextCompat.getSystemService(context, ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Podcini", t.url ?: "No url"))
-                            Logt(TAG, "url copied to clipboard")
-                        })
-                    }
-                }
-            }
+            if (showTransOptions) TranscriptMeta(episode)
         }
 
         if (episode.todos.isNotEmpty()) {
@@ -1217,8 +1265,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                             }
                             Text(stringResource(item.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge , color = textColor, modifier = Modifier.padding(end = 10.dp))
                             Spacer(Modifier.width(30.dp))
-                            OutlinedButton(
-                                modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (selectedIndex != 0) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (selectedIndex != 0) borderColor else buttonAltColor),
                                 onClick = {
                                     if (selectedIndex != 0) {
                                         selectNone = false
@@ -1229,7 +1276,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                         selectedIndex = -1
                                         filter.remove(item.properties[0].filterId)
                                     }
-                                    Logd("EpisodesFilterDialog", "filterValues = [${filter.propertySet}]")
+                                    Logd("EpisodesFilterDialog", "selectedIndex: $selectedIndex filterValues = [${filter.propertySet}]")
                                     onFilterChanged(filter)
                                 },
                             ) { Text(text = stringResource(item.properties[0].displayName), color = textColor) }

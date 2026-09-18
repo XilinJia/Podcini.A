@@ -138,6 +138,10 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         }
 
         when {
+            propertySet.contains(States.has_captions.name) -> statements.add("captionCues.@count > 0 ")
+            propertySet.contains(States.no_captions.name) -> statements.add("captionCues.@count == 0 ")
+        }
+        when {
             propertySet.contains(States.has_transcript.name) -> statements.add("transcriptMetas.@count > 0 ")
             propertySet.contains(States.no_transcript.name) -> statements.add("transcriptMetas.@count == 0 ")
         }
@@ -274,6 +278,9 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         auto_downloadable,
         not_auto_downloadable,
 
+        has_captions,
+        no_captions,
+
         has_transcript,
         no_transcript,
 
@@ -350,7 +357,8 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         CLIPPED(R.string.has_clips, FilterProperties(R.string.yes, States.has_clips.name), FilterProperties(R.string.no, States.no_clips.name),exclusive = true),
 
         MARKED(R.string.has_marks, FilterProperties(R.string.yes, States.has_marks.name), FilterProperties(R.string.no, States.no_marks.name), exclusive = true),
-        TRANSCRIPT(R.string.has_transcripts, FilterProperties(R.string.yes, States.has_transcript.name), FilterProperties(R.string.no, States.has_transcript.name), exclusive = true),
+        CAPTIONS(R.string.has_captionss, FilterProperties(R.string.yes, States.has_captions.name), FilterProperties(R.string.no, States.no_captions.name), exclusive = true),
+        TRANSCRIPT(R.string.has_transcripts, FilterProperties(R.string.yes, States.has_transcript.name), FilterProperties(R.string.no, States.no_transcript.name), exclusive = true),
 
         //        MEDIA(R.string.has_media, ItemProperties(R.string.yes, States.has_media.name), ItemProperties(R.string.no, States.no_media.name)),
         DOWNLOADED(R.string.downloaded_label, FilterProperties(R.string.yes, States.downloaded.name), FilterProperties(R.string.no, States.not_downloaded.name), exclusive = true),

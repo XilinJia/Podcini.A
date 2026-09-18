@@ -134,7 +134,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 enum class QuickAccess {
-    New, Planned, Repeats, Due, Liked, Todos, Timers, Commented, Tagged, Recorded, Queued, Downloaded, Transcript, History, Archived, Frozen, All, Custom, None;
+    New, Planned, Repeats, Due, Liked, Todos, Timers, Commented, Tagged, Recorded, Queued, Downloaded, Captions, Transcript, History, Archived, Frozen, All, Custom, None;
 }
 
 var facetsMode by mutableStateOf(QuickAccess.None)
@@ -268,10 +268,15 @@ class FacetsVM(modeName_: String): ViewModel() {
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
                 getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_clips.name, EpisodeFilter.States.has_marks.name, andOr = "OR"), sortOrder)
             }
+            QuickAccess.Captions -> {
+                listIdentity += ".${sortOrder.name}"
+                incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_captions.name), sortOrder)
+            }
             QuickAccess.Transcript -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_transcript.name, andOr = "OR"), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_transcript.name), sortOrder)
             }
             QuickAccess.Queued -> {
                 val qstr = EpisodeFilter(EpisodeFilter.States.QUEUE.name).add(filter).queryString()
@@ -545,7 +550,7 @@ fun FacetsScreen(modeName: String = "") {
             val feedsIconRes = remember(vm.showFeeds) { if (vm.showFeeds) R.drawable.baseline_list_alt_24 else R.drawable.baseline_dynamic_feed_24 }
             IconButton(onClick = { vm.showFeeds = !vm.showFeeds }) { Icon(imageVector = ImageVector.vectorResource(feedsIconRes), contentDescription = "feeds") }
             if (facetsMode != QuickAccess.History) IconButton(onClick = { showSortDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.arrows_sort), contentDescription = "sort") }
-            if (facetsMode !in listOf(QuickAccess.Recorded, QuickAccess.Due, QuickAccess.Timers, QuickAccess.Recorded, QuickAccess.Archived, QuickAccess.Frozen)) IconButton(onClick = { showFilterDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_filter), tint = if (vm.filterButtonColor.value == Color.White) textColor else vm.filterButtonColor.value, contentDescription = "filter") }
+            if (facetsMode !in listOf(QuickAccess.Recorded, QuickAccess.Due, QuickAccess.Timers, QuickAccess.Archived, QuickAccess.Frozen)) IconButton(onClick = { showFilterDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_filter), tint = if (vm.filterButtonColor.value == Color.White) textColor else vm.filterButtonColor.value, contentDescription = "filter") }
             if (vm.showFeeds) IconButton(onClick = {
                 feedIdsToUse = feedsAssociated.map { it.id }
                 navTo(Library)

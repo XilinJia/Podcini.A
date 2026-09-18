@@ -5,7 +5,7 @@ import ac.mdiq.podcini.activity.EpisodeInfoActivity
 import ac.mdiq.podcini.activity.MainActivity
 import ac.mdiq.podcini.activity.PlayerUIActivity
 import ac.mdiq.podcini.activity.QueuePickerActivity
-import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.base.ensureAController
 import ac.mdiq.podcini.playback.base.theatres

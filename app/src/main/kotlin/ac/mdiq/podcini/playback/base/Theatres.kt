@@ -34,6 +34,15 @@ val activeTheatresCount = MutableStateFlow(1)
 
 val theatres: List<Theatre> = listOf(Theatre(0), Theatre(1))
 
+var forcePlaybackReset: Boolean = false
+    set(value) {
+        field = value
+        if (value) {
+            theatres[0].mPlayerFlow.value?.pause(false)
+            theatres[1].mPlayerFlow.value?.pause(false)
+        }
+    }
+
 class Theatre(val id: Int) {
     val mPlayerFlow = MutableStateFlow<MediaPlayerBase?>(null)
 
@@ -77,12 +86,20 @@ fun releaseAController() {
     }
 }
 
+fun playerOf(media: Episode?): MediaPlayerBase? {
+    return when {
+        media == null -> null
+        theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id == media.id -> theatres[0].mPlayerFlow.value
+        theatres[1].mPlayerFlow.value?.curMediaFlow?.value?.id == media.id -> theatres[1].mPlayerFlow.value
+        else -> null
+    }
+}
 
-fun isCurrentlyPlaying(media: Episode?): Boolean {
+fun isPlaying(media: Episode?): Boolean {
     return theatres[0].mPlayerFlow.value?.isCurrentlyPlaying(media) == true || theatres[1].mPlayerFlow.value?.isCurrentlyPlaying(media) == true
 }
 
-fun isCurrentlyPlaying(media: Episode?, playerId: Int): Boolean {
+fun isPlaying(media: Episode?, playerId: Int): Boolean {
     return playerId in listOf(0,1) && theatres[playerId].mPlayerFlow.value?.isCurrentlyPlaying(media) == true
 }
 

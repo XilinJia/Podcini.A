@@ -1,3 +1,24 @@
+# 12.11.1
+
+* amended transcript popup 
+	* can be enlarged or shrunk with icon on top right
+	* scrolls to curIndex (if available) on open
+	* auto scroll if playing (independent from Caption On)
+	* auto scroll is turned off on manual scroll or multi-select
+	* auto-scroll can be toggled with the icon on the top left
+* on topbar of EpisodeInfo
+	* added item to fetch transcript (only applicable for external media)
+	* evened out items spacing
+* in MediaPlayer
+	* when error on playing external media, toast about playing again or reset clients connection
+	* when playing curMedia after stream url expire time, ensure to refetch stream url
+	* in onPostPlayback, no longer clear external source media transcript meta data
+* fixed "Has transcript" in episodes filters.
+* added "Has captions" in episodes filters and in Facets screen
+* transcript meta data of external source media are cleared on expire in PlayerDetailed and EpisodeInfo
+* added time stamp in toasts of client connects/disconnects
+* some code refactoring
+
 # 12.11.0
 
 * initialization is moved out of app onCreate
@@ -19,7 +40,7 @@
 * adjusted items in topbars in PlayerDetailed
 * fixed possibly getting rejected when loading some feed/episode images
 * disabled audio offload toasts
-* large cleanup of used and legacy resources
+* large cleanup of unused and legacy resources
 * some code refactoring
 
 # 12.10.1

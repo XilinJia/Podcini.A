@@ -2,14 +2,15 @@ package ac.mdiq.podcini.sourcing
 
 import ac.mdiq.podcini.PodciniApp
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.playback.base.forcePlaybackReset
 import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry
-import ac.mdiq.podcini.playback.forcePlaybackReset
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.FeedSearcher
 import ac.mdiq.podcini.shared.MediaSearcher
 import ac.mdiq.podcini.shared.PROVIDER_API_VERSION
 import ac.mdiq.podcini.shared.ProviderAttrs
+import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sources.IFeedSearchProvider
 import ac.mdiq.podcini.sources.IMediaSearchProvider
 import ac.mdiq.podcini.sources.IPodciniGateway
@@ -22,6 +23,7 @@ import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.formatDateTimeFlex
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -217,7 +219,7 @@ object AppGatewayRegistry {
                             val aidlMediaSearcher = client.gateway?.mediaSearcher
                             if (aidlMediaSearcher != null) client.mediaSearcher = GatewayMediaSearcherAdapter(aidlMediaSearcher)
                             typeClientMap[attr.feedType] = client
-                            Logt(TAG, "External service ${attr.name} connected")
+                            Logt(TAG, "${formatDateTimeFlex(nowInMillis())}: External service ${attr.name} connected")
                             if (continuation.isActive) continuation.resumeWith(Result.success(client))
                         } else {
                             if (recognized) Loge(TAG, "External service ${attr.name} is not a compatible version, rejected.")
@@ -232,7 +234,7 @@ object AppGatewayRegistry {
                     }
                 }
                 override fun onServiceDisconnected(name: ComponentName?) {
-                    Logt(TAG, "Service ${client.attributes?.name} disconnected")
+                    Logt(TAG, "${formatDateTimeFlex(nowInMillis())}: Service ${client.attributes?.name} disconnected")
                     removeClient(client)
                     reconnectClient(explicitIntent)
                 }
@@ -244,7 +246,7 @@ object AppGatewayRegistry {
                     reconnectClient(explicitIntent)
                 }
                 override fun onNullBinding(name: ComponentName?) {
-                    Logt(TAG, "Service ${client.attributes?.name} not bond: null binding, trying to rebind")
+                    Logt(TAG, "${formatDateTimeFlex(nowInMillis())}: Service ${client.attributes?.name} not bond: null binding, trying to rebind")
                     removeClient(client)
                     if (continuation.isActive) continuation.resumeWith(Result.success(null))
                 }

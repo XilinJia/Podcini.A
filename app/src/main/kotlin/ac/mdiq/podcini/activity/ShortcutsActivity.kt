@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.model.Feed

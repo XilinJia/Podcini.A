@@ -2,7 +2,7 @@ package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.config.ClientConfig.initialize
+import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.config.settings.developerEmail
 import ac.mdiq.podcini.config.settings.githubAddress
 import ac.mdiq.podcini.storage.database.runOnIOScope
