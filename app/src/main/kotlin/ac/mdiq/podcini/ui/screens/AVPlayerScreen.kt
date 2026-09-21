@@ -5,6 +5,7 @@ import ac.mdiq.podcini.activity.MainActivity.Companion.findActivity
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.Media3Player.Companion.getCache
 import ac.mdiq.podcini.playback.Media3Player.Companion.nuclearCacheWipe
+import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
 import ac.mdiq.podcini.playback.PlayerStatusSimple
 import ac.mdiq.podcini.playback.SleepManager.Companion.isSleepTimerActive
 import ac.mdiq.podcini.playback.actQueueFlow
@@ -865,7 +866,7 @@ fun AVPlayerScreen() {
                     vm.forceVideo = true
                     forcePlaybackReset = true
                     PlaybackStarter(media).shouldStreamThisTime(null).start()
-                    player?.playingVideoFlow?.value = true
+                    if (!isAutoController) player?.playingVideoFlow?.value = true
                 })
             if (client?.attributes?.hasMultiQualities == true) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_stream_24), contentDescription = "change stream", modifier = Modifier.clickable { showAVChooser = true })
 

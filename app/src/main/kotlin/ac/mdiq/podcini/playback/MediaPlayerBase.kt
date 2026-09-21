@@ -3,6 +3,7 @@ package ac.mdiq.podcini.playback
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
 import ac.mdiq.podcini.playback.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.shared.AudioSpec
@@ -233,7 +234,7 @@ abstract class MediaPlayerBase {
                 setAudioStream()
                 useVCodex = null
                 useResolution = null
-                playingVideoFlow.value = (episode_.forceVideo || (episode_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && episode_.mediaType == MediaType.VIDEO))
+                playingVideoFlow.value = !isAutoController && (episode_.forceVideo || (episode_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && episode_.mediaType == MediaType.VIDEO))
                 skipSilence = null
                 shouldRepeatFlow.value = false
                 curSpeed = SPEED_USE_GLOBAL
@@ -470,7 +471,7 @@ abstract class MediaPlayerBase {
         prefSpeedPitchOf(curMediaFlow.value!!).let { (sp, pi)-> setPlaybackParams(sp, pi) }
         setRepeat(shouldRepeatFlow.value)
         setSkipSilence()
-        dataSourceJob = CoroutineScope(Dispatchers.Main).launch {
+        dataSourceJob = CoroutineScope(Dispatchers.IO).launch {
             try {
                 when {
                     streaming -> {

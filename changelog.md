@@ -1,3 +1,9 @@
+# 12.12.1
+
+* fixed UI hiccup when start playing a new media
+* fixed treating expire timestamp in urls as in milliseconds
+* further ensure video stream is not assembled when plugged in to Auto
+
 # 12.12.0
 
 * reworked Android Auto routines

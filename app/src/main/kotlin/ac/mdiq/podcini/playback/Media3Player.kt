@@ -1,15 +1,14 @@
 package ac.mdiq.podcini.playback
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
-import ac.mdiq.podcini.playback.cast.CastMediaPlayer.buildCastPlayer
 import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
 import ac.mdiq.podcini.playback.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
+import ac.mdiq.podcini.playback.cast.CastMediaPlayer.buildCastPlayer
 import ac.mdiq.podcini.receiver.PodciniWidget
 import ac.mdiq.podcini.shared.PodciniHttpClient.proxyConfig
 import ac.mdiq.podcini.shared.ProxyConfig
 import ac.mdiq.podcini.shared.USER_AGENT
-import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
@@ -37,6 +36,7 @@ import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.LogsFor
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.LogtFor
+import ac.mdiq.podcini.utils.nowInSeconds
 import ac.mdiq.podcini.utils.timeIt
 import android.annotation.SuppressLint
 import android.content.Context
@@ -714,7 +714,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             val url = curAudioSpec?.url ?: curMuxedSpec?.url
             if (!url.isNullOrBlank()) {
                 val expireTime = url.toUri().getQueryParameter("expire")?.toLongOrNull()
-                force = (expireTime != null && expireTime < nowInMillis())
+                force = (expireTime != null && expireTime < nowInSeconds())
             }
         }
         if (!sameMedia || force) {
@@ -791,7 +791,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         bitrateFlow.value = 0
         resolutionFlow.value = ""
         try {
-            mediaSource = mediaSourceFromClient(!audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY), sameMedia = sameMedia)
+            mediaSource = mediaSourceFromClient(!isAutoController && !audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY), sameMedia = sameMedia)
             if (mediaSource != null) {
                 Logd(TAG) { "prepareDataSource setting with mediaSource" }
                 mediaItem = mediaSource!!.mediaItem

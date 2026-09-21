@@ -74,6 +74,7 @@ import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.fullDateTimeString
+import ac.mdiq.podcini.utils.nowInSeconds
 import ac.mdiq.podcini.utils.sessionLogsFlow
 import ac.mdiq.podcini.utils.shareFile
 import ac.mdiq.podcini.utils.shareText
@@ -83,7 +84,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.ContextWrapper
-import android.net.Uri
 import android.view.Gravity
 import androidx.collection.LruCache
 import androidx.compose.foundation.BorderStroke
@@ -174,6 +174,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.core.text.HtmlCompat
 import androidx.core.text.parseAsHtml
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -495,10 +496,11 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
 
     LaunchedEffect(Unit) {
         if (episode.transcriptMetas.isNotEmpty() && isExtFeed(episode.feed)) {
-            Logd(TAG) { "resetting transcriptMetas" }
             val url = episode.transcriptMetas[0].url
-            val expireTime = Uri.parse(url).getQueryParameter("expire")?.toLongOrNull()
-            if (expireTime != null && expireTime < nowInMillis()) {
+//            Logd(TAG) { "resetting transcriptMetas url: $url" }
+            val expireTime = url?.toUri()?.getQueryParameter("expire")?.toLongOrNull()
+//            Logd(TAG) { "resetting transcriptMetas expireTime: $expireTime ${nowInSeconds()}" }
+            if (expireTime != null && expireTime < nowInSeconds()) {
                 upsert(episode) {
                     it.transcriptMetas = realmListOf()
                     it.transcriptIndex = -1

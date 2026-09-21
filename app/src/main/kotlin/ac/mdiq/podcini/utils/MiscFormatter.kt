@@ -16,6 +16,8 @@ import kotlin.math.roundToInt
 import kotlin.time.Clock
 import kotlin.time.Instant
 
+fun nowInSeconds(): Long = Clock.System.now().epochSeconds
+
 private val FULL_DATETIME_FORMAT = LocalDateTime.Format {
     year();char('-'); monthNumber(); char('-'); day()
     char(' '); hour(); char(':'); minute(); char(':'); second()

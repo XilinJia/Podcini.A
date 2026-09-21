@@ -24,6 +24,7 @@ import ac.mdiq.podcini.playback.TTSEngine.ttsTmpFiles
 import ac.mdiq.podcini.playback.isCurMedia
 import ac.mdiq.podcini.playback.isPlaying
 import ac.mdiq.podcini.playback.PlaybackService
+import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
@@ -461,7 +462,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
         fun playVideoIfNeeded(item: Episode) {
             for (i in 0..1) {
                 if (item.id != theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) continue
-                if (item.forceVideo || (item.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && item.mediaType == MediaType.VIDEO)) {
+                if (!isAutoController && (item.forceVideo || (item.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && item.mediaType == MediaType.VIDEO))) {
                     theatres[i].mPlayerFlow.value?.playingVideoFlow?.value = true
                     psState = PSState.Expanded
                 } else theatres[i].mPlayerFlow.value?.playingVideoFlow?.value = false
