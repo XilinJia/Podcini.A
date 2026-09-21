@@ -34,8 +34,8 @@ class AppPrefs: RealmObject {
     var defaultPage: String = DefaultPages.Library.name
 
     var backButtonOpensDrawer: Boolean = false
-    var showErrorToasts: Boolean = true
-    var printDebugLogs: Boolean = false
+
+    var showLogLevel: Int = 0
 
     var dont_ask_again_unrestricted_background: Boolean = false
 
@@ -147,8 +147,7 @@ class AppPrefs: RealmObject {
         if (showSkip != other.showSkip) return false
         if (showDownloadReport != other.showDownloadReport) return false
         if (backButtonOpensDrawer != other.backButtonOpensDrawer) return false
-        if (showErrorToasts != other.showErrorToasts) return false
-        if (printDebugLogs != other.printDebugLogs) return false
+        if (showLogLevel != other.showLogLevel) return false
         if (dont_ask_again_unrestricted_background != other.dont_ask_again_unrestricted_background) return false
         if (pauseOnHeadsetDisconnect != other.pauseOnHeadsetDisconnect) return false
         if (unpauseOnHeadsetReconnect != other.unpauseOnHeadsetReconnect) return false
@@ -228,8 +227,7 @@ class AppPrefs: RealmObject {
         result = 31 * result + showSkip.hashCode()
         result = 31 * result + showDownloadReport.hashCode()
         result = 31 * result + backButtonOpensDrawer.hashCode()
-        result = 31 * result + showErrorToasts.hashCode()
-        result = 31 * result + printDebugLogs.hashCode()
+        result = 31 * result + showLogLevel
         result = 31 * result + dont_ask_again_unrestricted_background.hashCode()
         result = 31 * result + pauseOnHeadsetDisconnect.hashCode()
         result = 31 * result + unpauseOnHeadsetReconnect.hashCode()

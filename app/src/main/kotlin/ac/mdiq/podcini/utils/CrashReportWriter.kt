@@ -18,7 +18,7 @@ class CrashReportWriter : Thread.UncaughtExceptionHandler {
     }
 
     private fun writeCrashToFile(ex: Throwable) {
-        Logd(TAG, "writeCrashToFile ${ex.message}")
+        Logd(TAG) { "writeCrashToFile ${ex.message}" }
         fun Int.pad() = this.toString().padStart(2, '0')
         crashLogFile.sink().buffer().use { sink ->
             sink.writeString("## Crash info\n", Charsets.UTF_8)

@@ -1,4 +1,4 @@
-package ac.mdiq.podcini.playback.base
+package ac.mdiq.podcini.playback
 
 enum class PlayerStatus(private val statusValue: Int) {
     ERROR(-1),

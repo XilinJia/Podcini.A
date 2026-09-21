@@ -27,7 +27,7 @@ open class MediaFilesTransporter(val filesDirName: String) {
 
     suspend fun fromMediaDirToUF(uf: UnifiedFile, move: Boolean = false, useSubDir: Boolean = true) {
         try {
-            Logd(TAG, "exportToUri uri: ${uf.absPath}")
+            Logd(TAG) { "exportToUri uri: ${uf.absPath}" }
             if (!uf.exists()) throw IOException("Destination directory does not exist")
             val exportSubDir = if (useSubDir) {
                 var subDir = uf / filesDirName
@@ -43,19 +43,19 @@ open class MediaFilesTransporter(val filesDirName: String) {
     }
 
     private suspend fun copyMediaFile(srcFile: UnifiedFile, destRootDir: UnifiedFile, move: Boolean, onlyUpdateDB: Boolean) {
-        Logd(TAG, "copyMediaFile srcFile.name: ${srcFile.name}")
+        Logd(TAG) { "copyMediaFile srcFile.name: ${srcFile.name}" }
         val nameParts = srcFile.name.split(".")
         if (nameParts.size < 3) return
         val ext = nameParts[nameParts.size-1]
         val title = nameParts.dropLast(2).joinToString(".")
-        Logd(TAG, "copyRecursiveFD file title: $title")
+        Logd(TAG) { "copyRecursiveFD file title: $title" }
         val eid = nameEpisodeMap[title] ?: return
         val episode = realm.query(Episode::class).query("id == $eid").first().find() ?: return
-        Logd(TAG, "copyRecursiveFD found episode: ${episode.title}")
+        Logd(TAG) { "copyRecursiveFD found episode: ${episode.title}" }
         val destName = "$title.${episode.id}.$ext"
         var destFile = destRootDir / destName
         if (!destFile.exists()) {
-            Logd(TAG, "copyRecursiveDF copying file to: ${destFile.absPath}")
+            Logd(TAG) { "copyRecursiveDF copying file to: ${destFile.absPath}" }
             if (!onlyUpdateDB) {
                 destFile = destRootDir.createFile(episode.mimeType?:"", destName)
                 srcFile.copyTo(destFile)
@@ -63,22 +63,22 @@ open class MediaFilesTransporter(val filesDirName: String) {
             }
             upsert(episode) {
                 it.fileUrl = destFile.absPath
-                Logd(TAG, "copyRecursiveDF fileUrl: ${it.fileUrl}")
+                Logd(TAG) { "copyRecursiveDF fileUrl: ${it.fileUrl}" }
                 it.downloaded = true
             }
         }
     }
 
     protected open suspend fun copyRecursive(srcFile: UnifiedFile, destRootDir: UnifiedFile, move: Boolean, onlyUpdateDB: Boolean = false) {
-        Logd(TAG, "copyRecursive srcFile: ${srcFile.absPath}")
+        Logd(TAG) { "copyRecursive srcFile: ${srcFile.absPath}" }
         val relativePath = srcFile.name
         if (srcFile.isDirectory()) {
             feed = nameFeedMap[relativePath] ?: return
-            Logd(TAG, "copyRecursiveFD found feed: ${feed?.title}")
+            Logd(TAG) { "copyRecursiveFD found feed: ${feed?.title}" }
             nameEpisodeMap.clear()
             val episodes = getEpisodes(EpisodeFilter("feedId == ${feed!!.id}"), null, copy = false)   // TODO: can run out of memory?
             episodes.forEach { e -> if (!e.title.isNullOrEmpty()) nameEpisodeMap[generateFileName(e.title!!)] = e.id }
-//            nameEpisodeMap.keys.forEach { Logd(TAG, "key: $it") }
+//            nameEpisodeMap.keys.forEach { Logd(TAG) { "key: $it" } }
             var destdir = destRootDir / relativePath
             if (!destdir.exists()) destdir = destRootDir.createDirectory(relativePath)
             val files = srcFile.listChildren()
@@ -90,7 +90,7 @@ open class MediaFilesTransporter(val filesDirName: String) {
     suspend fun fromUFToMediaDir(uf: UnifiedFile, move: Boolean = false, verify : Boolean = true) {
         try {
             if (!uf.exists()) throw IOException("Backup directory is not valid")
-            Logd(TAG, "fromUFToMediaDir uf: ${uf.name} filesDirName: $filesDirName")
+            Logd(TAG) { "fromUFToMediaDir uf: ${uf.name} filesDirName: $filesDirName" }
             if (verify && !uf.name.contains(filesDirName)) return
             val fileList = uf.listChildren()
             if (fileList.isNotEmpty()) {
@@ -127,7 +127,7 @@ class ClipsTransporter(val filesDirName: String) {
 
     suspend fun fromMediaDirToUF(uf: UnifiedFile, move: Boolean = false, useSubDir: Boolean = true) {
         try {
-            Logd(TAG, "fromMediaDirToUF uf: ${uf.absPath}")
+            Logd(TAG) { "fromMediaDirToUF uf: ${uf.absPath}" }
             if (!uf.exists()) throw IOException("Destination directory does not exist")
             val exportSubDir = if (useSubDir) {
                 var subDir = uf / filesDirName
@@ -142,23 +142,23 @@ class ClipsTransporter(val filesDirName: String) {
     }
 
     suspend fun copyRecursive(srcFile: UnifiedFile, destRootDir: UnifiedFile, move: Boolean) {
-        Logd(TAG, "copyRecursive srcFile: ${srcFile.absPath}")
+        Logd(TAG) { "copyRecursive srcFile: ${srcFile.absPath}" }
         if (srcFile.isDirectory()) Loge(TAG, "srcFile should not be a directory: ${srcFile.absPath}")
         else {
             val destName = srcFile.name
-            Logd(TAG, "copyMediaFile srcFile.name: $destName")
+            Logd(TAG) { "copyMediaFile srcFile.name: $destName" }
             val nameParts = destName.split(".")
             if (nameParts.size != 2) return
             val mainPart = nameParts[0]
-            Logd(TAG, "copyRecursive mainPart: $mainPart")
+            Logd(TAG) { "copyRecursive mainPart: $mainPart" }
             val parts = mainPart.split("_")
             if (parts.size < 3) return
             val eid = parts[1].toLong()
             val episode = realm.query(Episode::class).query("id == $eid").first().find() ?: return
-            Logd(TAG, "copyRecursiveFD found episode: ${episode.title}")
+            Logd(TAG) { "copyRecursiveFD found episode: ${episode.title}" }
             var destFile = destRootDir / destName
             if (!destFile.exists()) {
-                Logd(TAG, "copyRecursiveDF copying file to: ${destFile.absPath}")
+                Logd(TAG) { "copyRecursiveDF copying file to: ${destFile.absPath}" }
                 destFile = destRootDir.createFile(episode.mimeType?:"", destName)
                 srcFile.copyTo(destFile)
                 if (move) srcFile.delete()
@@ -169,7 +169,7 @@ class ClipsTransporter(val filesDirName: String) {
     suspend fun fromUFToMediaDir(uf: UnifiedFile, move: Boolean = false, verify : Boolean = true) {
         try {
             if (!uf.exists()) throw IOException("Backup directory is not valid")
-            Logd(TAG, "fromUFToMediaDir uf: ${uf.name} filesDirName: $filesDirName")
+            Logd(TAG) { "fromUFToMediaDir uf: ${uf.name} filesDirName: $filesDirName" }
             if (verify && !uf.name.contains(filesDirName)) return
             val fileList = uf.listChildren()
             if (fileList.isNotEmpty()) fileList.forEach { file -> copyRecursive(file, clipsDir, move) }
@@ -186,7 +186,7 @@ class DatabaseTransporter {
     suspend fun exportToUri(uri: UnifiedFile) {
         try {
             val realmPath = realm.configuration.path
-            Logd(TAG, "exportToStream realmPath: $realmPath")
+            Logd(TAG) { "exportToStream realmPath: $realmPath" }
             val currentDB = realmPath.toUF()
             if (currentDB.exists()) currentDB.copyTo(uri)
             else throw IOException("Can not access current database")

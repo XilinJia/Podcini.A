@@ -78,7 +78,7 @@ val config: RealmConfiguration by lazy {
         FacetsPrefs::class,
         SleepPrefs::class,
         SyncPrefs::class,
-    )).name("Podcini.realm").schemaVersion(165)
+    )).name("Podcini.realm").schemaVersion(166)
         .migration({ mContext ->
             val oldRealm = mContext.oldRealm // old realm using the previous schema
             val newRealm = mContext.newRealm // new realm using the new schema
@@ -180,7 +180,7 @@ fun <T : TypedRealmObject> unmanaged(entity: T) : T {
     if (BuildConfig.DEBUG) {
         val stackTrace = Thread.currentThread().stackTrace
         val caller = if (stackTrace.size > 3) stackTrace[3] else null
-        Logd(TAG, "${caller?.className}.${caller?.methodName} unmanaged: ${entity.javaClass.simpleName}")
+        Logd(TAG) { "${caller?.className}.${caller?.methodName} unmanaged: ${entity.javaClass.simpleName}" }
     }
     return if (entity.isManaged()) realm.copyFromRealm(entity) else entity
 }
@@ -223,7 +223,7 @@ fun <T : RealmObject> upsertBlk(entity: T, block: MutableRealm.(T) -> Unit) : T 
 //    if (BuildConfig.DEBUG) {
 //        val stackTrace = Thread.currentThread().stackTrace
 //        val caller = if (stackTrace.size > 3) stackTrace[3] else null
-//        Logd(TAG, "${caller?.className}.${caller?.methodName} upsertBlk: ${entity.javaClass.simpleName}")
+//        Logd(TAG) { "${caller?.className}.${caller?.methodName} upsertBlk: ${entity.javaClass.simpleName}" }
 //    }
 //    stackTraceShort()
     return realm.writeBlocking {

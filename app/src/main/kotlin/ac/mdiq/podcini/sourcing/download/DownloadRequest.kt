@@ -91,12 +91,12 @@ class DownloadRequest private constructor(
 
     suspend fun ensureMediaFileExists() {
         val destinationPath = destination
-        Logd(TAG, "ensureMediaFileExists destinationUri: $destinationPath ")
+        Logd(TAG) { "ensureMediaFileExists destinationUri: $destinationPath " }
         var file = destinationPath.toUF()
         if (!file.exists()) file = file.createFile()
         if (!file.exists()) Loge(TAG, "ensureMediaFileExists no: ${file.absPath}")
-        Logd(TAG, "ensureMediaFileExists request.destination: $destination")
-        Logd(TAG, "ensureMediaFileExists file.absPath: ${file.absPath}")
+        Logd(TAG) { "ensureMediaFileExists request.destination: $destination" }
+        Logd(TAG) { "ensureMediaFileExists file.absPath: ${file.absPath}" }
         destination = file.absPath
     }
 
@@ -156,19 +156,19 @@ class DownloadRequest private constructor(
         suspend fun requestFor(feed: Feed): Builder {
             val dest = cacheDir / feed.getFeedfileName()
             if (dest.exists()) runOnIOScope { dest.delete() }
-            Logd(TAG, "requestFor download feed from url " + feed.downloadUrl)
+            Logd(TAG) { "requestFor download feed from url " + feed.downloadUrl }
             val username = feed.username
             val password = feed.password
             return Builder(dest.absPath, feed).withAuthentication(username, password).lastModified(feed.lastUpdate)
         }
 
         suspend fun requestFor(media: Episode): Builder {
-            Logd(TAG, "requestFor: ${media.fileUrl} ${media.title}")
+            Logd(TAG) { "requestFor: ${media.fileUrl} ${media.title}" }
             val destUriString = try { media.getMediaFileUriString() } catch (e: Throwable ) {
                 Logs(TAG, e, "destUriString is invalid")
                 ""
             }
-            Logd(TAG, "requestFor destUriString: $destUriString")
+            Logd(TAG) { "requestFor destUriString: $destUriString" }
             if (destUriString.isBlank()) Loge(TAG, "destUriString is empty")
             val feed = media.feed
             val username = feed?.username

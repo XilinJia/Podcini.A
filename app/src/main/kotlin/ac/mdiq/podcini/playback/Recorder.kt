@@ -47,8 +47,8 @@ class SegmentSavingDataSource(private val cacheDataSource: CacheDataSource) : Da
             throw e
         }
         val t1 = SystemClock.elapsedRealtime()
-//        Logd(TAG, "open requested=${dataSpec.uri} resolved=${cacheDataSource.uri}")
-        Logd(TAG, "open ${t1 - t0}ms requested=${dataSpec.uri} resolved=${cacheDataSource.uri}")
+//        Logd(TAG) { "open requested=${dataSpec.uri} resolved=${cacheDataSource.uri}" }
+        Logd(TAG) { "open ${t1 - t0}ms requested=${dataSpec.uri} resolved=${cacheDataSource.uri}" }
         return byteToRead
     }
 
@@ -59,9 +59,9 @@ class SegmentSavingDataSource(private val cacheDataSource: CacheDataSource) : Da
         val bytesRead = cacheDataSource.read(buffer, offset, length)
         readCalls++
         if (bytesRead > 0) totalBytesRead += bytesRead
-        if (readCalls % 1000 == 0L) Logd(TAG, "read readCalls=$readCalls totalBytes=$totalBytesRead")
+        if (readCalls % 1000 == 0L) Logd(TAG) { "read readCalls=$readCalls totalBytes=$totalBytesRead" }
         if (isRecordingFlow.value) {
-//            if (readCalls % 100 == 0L) Logd(TAG, "read isRecording readCalls=$readCalls totalBytes=$totalBytesRead")
+//            if (readCalls % 100 == 0L) Logd(TAG) { "read isRecording readCalls=$readCalls totalBytes=$totalBytesRead" }
             if (bytesRead > 0) {
                 clipTempFos?.write(buffer, offset, bytesRead)
                 clipBytesWritten += bytesRead
@@ -87,18 +87,18 @@ class SegmentSavingDataSource(private val cacheDataSource: CacheDataSource) : Da
             clipTempFos = clipTempFile!!.sink().buffer()
             clipStartByte = (startPositionMs * bitrate / 8 / 1000)
             clipBytesWritten = 0L
-            Logd(TAG, "Started recording at byte offset $clipStartByte")
+            Logd(TAG) { "Started recording at byte offset $clipStartByte" }
         } else LogeFor(TAG, mediaId.toLongOrNull(), "Cannot start recording: tempDir not set or already recording")
     }
 
     fun stopRecording(endPositionMs: Long): UnifiedFile? {
-        Logd(TAG, "stopRecording isRecording: ${isRecordingFlow.value}")
+        Logd(TAG) { "stopRecording isRecording: ${isRecordingFlow.value}" }
         if (isRecordingFlow.value) {
             isRecordingFlow.value = false
             clipTempFos?.flush()
             clipTempFos?.close()
             val endByte = (endPositionMs * bitrate / 8 / 1000)
-            Logd(TAG, "stopRecording at byte offset $endByte, written: $clipBytesWritten")
+            Logd(TAG) { "stopRecording at byte offset $endByte, written: $clipBytesWritten" }
             return clipTempFile?.takeIf { runBlocking { it.exists() } && clipBytesWritten > 0 }
         }
         return null

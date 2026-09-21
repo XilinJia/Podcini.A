@@ -91,7 +91,7 @@ class FeedFilter(vararg properties_: String) {
                 query.append(r)
             }
             query.append(") ")
-            Logd("FeedFilter", "audoDeleteQueues: $query")
+            Logd("FeedFilter") { "audoDeleteQueues: $query" }
             statements.add(query.toString())
         }
         when {
@@ -110,7 +110,7 @@ class FeedFilter(vararg properties_: String) {
             query.append(r)
         }
         query.append(") ")
-        Logd("queryString", "$query")
+        Logd("queryString") { "$query" }
         return query.toString()
     }
 

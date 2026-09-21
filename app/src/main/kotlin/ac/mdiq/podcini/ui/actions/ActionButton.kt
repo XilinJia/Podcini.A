@@ -10,20 +10,20 @@ import ac.mdiq.podcini.utils.NetworkUtils
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.activeTheatresCount
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.base.MediaPlayerBase.Companion.handleAudioFocus
-import ac.mdiq.podcini.playback.base.TTSEngine
-import ac.mdiq.podcini.playback.base.TTSEngine.doTTS
-import ac.mdiq.podcini.playback.base.TTSEngine.doTTSNow
-import ac.mdiq.podcini.playback.base.TTSEngine.ensureTTS
-import ac.mdiq.podcini.playback.base.TTSEngine.tts
-import ac.mdiq.podcini.playback.base.TTSEngine.ttsJob
-import ac.mdiq.podcini.playback.base.TTSEngine.ttsTmpFiles
-import ac.mdiq.podcini.playback.base.isCurMedia
-import ac.mdiq.podcini.playback.base.isPlaying
-import ac.mdiq.podcini.playback.service.PlaybackService
+import ac.mdiq.podcini.playback.actQueueFlow
+import ac.mdiq.podcini.playback.activeTheatresCount
+import ac.mdiq.podcini.playback.theatres
+import ac.mdiq.podcini.playback.MediaPlayerBase.Companion.handleAudioFocus
+import ac.mdiq.podcini.playback.TTSEngine
+import ac.mdiq.podcini.playback.TTSEngine.doTTS
+import ac.mdiq.podcini.playback.TTSEngine.doTTSNow
+import ac.mdiq.podcini.playback.TTSEngine.ensureTTS
+import ac.mdiq.podcini.playback.TTSEngine.tts
+import ac.mdiq.podcini.playback.TTSEngine.ttsJob
+import ac.mdiq.podcini.playback.TTSEngine.ttsTmpFiles
+import ac.mdiq.podcini.playback.isCurMedia
+import ac.mdiq.podcini.playback.isPlaying
+import ac.mdiq.podcini.playback.PlaybackService
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
@@ -73,7 +73,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.runBlocking
 
 class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: Boolean = false, typeInit: ButtonTypes = ButtonTypes.NULL) {
-    private val TAG = this::class.simpleName ?: "ItemActionButton"
+    private val TAG = this::class.simpleName ?: "ActionButton"
 
     private var playerId = 0
 
@@ -81,7 +81,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
     var type: ButtonTypes
         get() = _type.value
         set(value) {
-//            Logd(TAG, "set ButtonTypes to $value")
+//            Logd(TAG) { "set ButtonTypes to $value" }
             _type.value = value
             label = value.labelRes
             drawable = value.drawable
@@ -149,7 +149,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 }))
             return
         }
-        Logd(TAG, "onClick type: $type")
+        Logd(TAG) { "onClick type: $type" }
         when (type) {
             ButtonTypes.WEBSITE -> if (!item.link.isNullOrEmpty()) openInSystemDefault(item.link!!)
             ButtonTypes.CANCEL -> {
@@ -208,7 +208,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 Loge(TAG, "failed setting player to repeat the media")
             }
             ButtonTypes.STREAM -> {
-                //        Logd("StreamActionButton", "item.feed: ${item.feedId}")
+                //        Logd("StreamActionButton") { "item.feed: ${item.feedId}" }
                 askToStream {
                     if (activeTheatresCount.value == 1) {
                         PlaybackStarter(item).shouldStreamThisTime(true).start(0)
@@ -217,7 +217,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 }
             }
             ButtonTypes.STREAM_REPEAT -> {
-                //        Logd("StreamActionButton", "item.feed: ${item.feedId}")
+                //        Logd("StreamActionButton") { "item.feed: ${item.feedId}" }
                 askToStream {
                     if (activeTheatresCount.value == 1) {
                         PlaybackStarter(item).shouldStreamThisTime(true).setToRepeat(true).start(0)
@@ -276,7 +276,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 if (shouldNotDownload()) return
                 if (mobileAllowEpisodeDownload || !networkMonitor.isNetworkRestricted) {
                     downloadNow()
-                    Logd(TAG, "downloading ${item.title}")
+                    Logd(TAG) { "downloading ${item.title}" }
                     typeToCancel = ButtonTypes.DOWNLOAD
                     type = ButtonTypes.CANCEL
                     return
@@ -291,7 +291,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     onNeutral = { downloadNow() }))
             }
             ButtonTypes.TTS_NOW -> {
-                Logd("JUSTTTSButton", "onClick called")
+                Logd("JUSTTTSButton") { "onClick called" }
                 type = ButtonTypes.PAUSE
                 ensureTTS()
                 commonConfirms.add(CommonConfirmAttrib(
@@ -304,7 +304,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     onNeutral = { doTTSNow(item, 2) { speaking.value = it}  }))
             }
             ButtonTypes.TTS -> {
-                Logd("TTSActionButton", "onClick called")
+                Logd("TTSActionButton") { "onClick called" }
 //                if (item.link.isNullOrEmpty()) {
 //                    Loge(TAG, context.getString(R.string.episode_has_no_content))
 //                    type = ButtonTypes.NULL
@@ -350,7 +350,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
     }
 
     fun update(item_: Episode) {
-//        Logd(TAG, "update type: $type ${item.title}")
+//        Logd(TAG) { "update type: $type ${item.title}" }
         item = item_
         fun undownloadedType(): ButtonTypes {
             return when {
@@ -389,7 +389,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             else -> {
                 // TODO: ensure TTS
                 //        val media = item.media ?: return TTSActionButton(item)
-                //        Logd("ItemActionButton", "forItem: local feed: ${item.feed?.isLocal} downloaded: ${item.downloaded} playing: ${isCurrentlyPlaying(item)}  ${item.title} ")
+                //        Logd("ItemActionButton") { "forItem: local feed: ${item.feed?.isLocal} downloaded: ${item.downloaded} playing: ${isCurrentlyPlaying(item)}  ${item.title} " }
                 type = when {
                     isPlaying(item, playerId) -> ButtonTypes.PAUSE
                     item.feed?.isLocal == true -> ButtonTypes.PLAY_LOCAL
@@ -398,7 +398,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 }
             }
         }
-//        Logd(TAG, "update type: $type")
+//        Logd(TAG) { "update type: $type" }
     }
 
     
@@ -418,7 +418,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 }
             }
             Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(15.dp)) {
-                Logd(TAG, "button label: $type")
+                Logd(TAG) { "button label: $type" }
                 if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.TTS)) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
                         type = ButtonTypes.TTS

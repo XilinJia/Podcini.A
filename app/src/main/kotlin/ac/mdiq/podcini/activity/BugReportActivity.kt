@@ -118,7 +118,7 @@ class BugReportActivity : ComponentActivity() {
                     val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                     val clip = ClipData.newPlainText(getString(R.string.bug_report_title), crashDetailsTextView)
                     clipboard.setPrimaryClip(clip)
-                    Logd(TAG, "Build.VERSION.SDK_INT: ${Build.VERSION.SDK_INT}")
+                    Logd(TAG) { "Build.VERSION.SDK_INT: ${Build.VERSION.SDK_INT}" }
                     Logt(TAG, getString(R.string.copied_to_clipboard))
                 }) { Text(stringResource(R.string.copy_to_clipboard)) }
                 Button(modifier = Modifier.fillMaxWidth(), onClick = { sendEmail() }) { Text(stringResource(R.string.email_developer)) }

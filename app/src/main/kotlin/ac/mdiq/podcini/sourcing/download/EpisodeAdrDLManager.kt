@@ -9,7 +9,7 @@ import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager.Companion.WORK_DATA_PROGRESS
 import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
-import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -67,7 +67,7 @@ class EpisodeAdrDLManager: EpisodeDLManager() {
             .setRequiredNetworkType(if (mobileAllowEpisodeDownload) NetworkType.CONNECTED else NetworkType.UNMETERED).build()
 
     override fun downloadNow(episodes: List<Episode>, ignoreConstraints: Boolean) {
-        Logd(TAG, "starting downloadNow")
+        Logd(TAG) { "starting downloadNow" }
         val workRequest: OneTimeWorkRequest.Builder = requestBuilderFor(episodes)
         workRequest.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
         if (ignoreConstraints) workRequest.setConstraints(Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
@@ -77,14 +77,14 @@ class EpisodeAdrDLManager: EpisodeDLManager() {
 
     override fun download(episodes: List<Episode>) {
         if (episodes.isEmpty()) return
-        Logd(TAG, "starting download")
+        Logd(TAG) { "starting download" }
         val workRequest: OneTimeWorkRequest.Builder = requestBuilderFor(episodes)
         workRequest.setConstraints(constraints)
         WorkManager.getInstance(getAppContext()).enqueueUniqueWork("DownloadEpisodes", ExistingWorkPolicy.APPEND_OR_REPLACE, workRequest.build())
     }
 
     override suspend fun cancel(media: Episode) {
-        Logd(TAG, "starting cancel")
+        Logd(TAG) { "starting cancel" }
         // This needs to be done here, not in the worker. Reason: The worker might or might not be running.
         // Remove partially downloaded file
         val episode_ = deleteMedia(media)
@@ -102,7 +102,7 @@ class EpisodeAdrDLManager: EpisodeDLManager() {
     }
 
     private fun requestBuilderFor(episodes: List<Episode>): OneTimeWorkRequest.Builder {
-        Logd(TAG, "starting getRequest")
+        Logd(TAG) { "starting getRequest" }
         val workRequest: OneTimeWorkRequest.Builder = OneTimeWorkRequest.Builder(EpisodesDownloadWorker::class.java)
             .setInitialDelay(0L, TimeUnit.MILLISECONDS)
             .addTag(EpisodesDownload)
@@ -146,7 +146,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
         initialize()
         getForegroundInfo()
 
-        Logd(TAG, "starting doWork")
+        Logd(TAG) { "starting doWork" }
         val ids = appAttribsFlow!!.value.episodeIdsToDownload
         if (ids.isEmpty()) return@coroutineScope Result.Success()
 
@@ -195,7 +195,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
                 }
             }
             upsert(appAttribsFlow!!.value) { it.episodeIdsToDownload.remove(media.id) }
-            Logd(TAG, "Worker for " + media.downloadUrl + " returned.")
+            Logd(TAG) { "Worker for " + media.downloadUrl + " returned." }
         }
         return@coroutineScope Result.Success()
     }
@@ -205,13 +205,13 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
     }
 
     private suspend fun performTasks(request: DownloadRequest): Result {
-        Logd(TAG, "starting performDownload: ${request.destination}")
+        Logd(TAG) { "starting performDownload: ${request.destination}" }
         if (request.destination.isBlank()) {
             Loge(TAG, "performDownload request.destination is null or blank")
             return Result.failure()
         }
 
-        Logd(TAG, "request.destination: ${request.destination}")
+        Logd(TAG) { "request.destination: ${request.destination}" }
         request.ensureMediaFileExists()
         downloader = Downloader.downloaderFor(request)
         if (downloader == null) {
@@ -251,7 +251,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
                 } },
                 applicationContext.getString(R.string.download_error_details)))
         }
-        Logd(TAG, "starting downloader")
+        Logd(TAG) { "starting downloader" }
         try { downloader!!.download()
         } catch (e: Exception) {
             Logs(TAG, e, "failed performDownload exception on downloader!!.call()")
@@ -269,8 +269,8 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
             return Result.success()
         }
         if (status.reason == DownloadError.ERROR_HTTP_DATA_ERROR && status.reasonDetailed.toInt() == 416) {
-            Logd(TAG, "Requested invalid range, restarting download from the beginning")
-            Logd(TAG, "${downloader?.request?.destination}")
+            Logd(TAG) { "Requested invalid range, restarting download from the beginning" }
+            Logd(TAG) { "${downloader?.request?.destination}" }
             if (downloader?.request?.destination != null) quietlyDeleteFile(downloader!!.request.destination.toSafeUri())
             sendMessage(request.title?:"", false)
             return retry3times()

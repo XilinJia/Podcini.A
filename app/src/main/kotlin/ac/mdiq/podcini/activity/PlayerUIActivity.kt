@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.config.AppConfig.initialize
-import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.ui.compose.AppThemes
 import ac.mdiq.podcini.ui.compose.PodciniTheme
 import ac.mdiq.podcini.ui.compose.textColor
@@ -41,7 +41,7 @@ class PlayerUIActivity : ComponentActivity() {
 
         initialize()
 
-        Logd(TAG, "in onCreate")
+        Logd(TAG) { "in onCreate" }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -77,6 +77,6 @@ class PlayerUIActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Logd(TAG, "onDestroy called")
+        Logd(TAG) { "onDestroy called" }
     }
 }

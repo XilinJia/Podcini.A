@@ -21,7 +21,7 @@ fun isCallable(intent: Intent?): Boolean {
 }
 
 fun openInSystemDefault(url: String) {
-    Logd(TAG, "url: $url")
+    Logd(TAG) { "url: $url" }
     val context = getAppContext()
     try {
         val myIntent = Intent(Intent.ACTION_VIEW, url.toSafeUri())

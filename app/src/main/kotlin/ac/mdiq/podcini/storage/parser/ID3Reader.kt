@@ -69,9 +69,9 @@ open class ID3Reader(private val source: CountingSource) {
         val tagContentStartPosition = position
         while (position < tagContentStartPosition + tagHeader!!.size) {
             val frameHeader = readFrameHeader() ?: break
-//            Logd(TAG, "readSource frameHeader.id: ${frameHeader.id}")
+//            Logd(TAG) { "readSource frameHeader.id: ${frameHeader.id}" }
             if (!isValidFrameId(frameHeader.id)) {
-                Logd(TAG, "Invalid frame id: ${frameHeader.id}, skipping 1 byte to resync")
+                Logd(TAG) { "Invalid frame id: ${frameHeader.id}, skipping 1 byte to resync" }
                 skipBytes(1)
                 continue
             }
@@ -89,20 +89,20 @@ open class ID3Reader(private val source: CountingSource) {
     }
 
     protected open fun readFrame(frameHeader: FrameHeader) {
-        Logd(TAG, "readFrame Skipping frame: " + frameHeader.id + ", size: " + frameHeader.size)
+        Logd(TAG) { "readFrame Skipping frame: " + frameHeader.id + ", size: " + frameHeader.size }
         skipBytes(frameHeader.size)
     }
 
     @Throws(ID3ReaderException::class)
     protected fun skipBytes(number: Int) {
         if (number < 0) throw ID3ReaderException("Trying to skip a negative number of bytes: $number")
-        try { buffer.skip(number.toLong()) } catch (e: Exception) { Logd(TAG, "skipBytes skip exception: ${e.message}")}
+        try { buffer.skip(number.toLong()) } catch (e: Exception) { Logd(TAG) { "skipBytes skip exception: ${e.message}" }}
     }
 
     protected fun readTagHeader(): TagHeader? {
         val headerBytes = buffer.readByteArray(3)
         if (headerBytes.decodeToString() != "ID3") {
-            Logd(TAG, "Not an ID3 file")
+            Logd(TAG) { "Not an ID3 file" }
             return null
         }
         val versionMajor = buffer.readByte().toShort()

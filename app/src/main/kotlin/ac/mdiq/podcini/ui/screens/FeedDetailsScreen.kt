@@ -2,7 +2,7 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.download.RequestType
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
@@ -171,6 +171,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
 
 
 enum class FeedScreenMode {
@@ -194,7 +195,7 @@ class FeedDetailsVM(feedId: Long = 0L, modeName: String = FeedScreenMode.List.na
 
     val episodesFlow: StateFlow<List<Episode>> = combine(feedFlow.filterNotNull(), screenModeFlow, snapshotFlow { enableFilter })
         { feed, mode, enableFilter -> Triple(feed, mode, enableFilter) }.distinctUntilChanged().flatMapLatest { (feed, mode, enableFilter) ->
-            Logd(TAG, "episodesFlow rebuilding flow")
+            Logd(TAG) { "episodesFlow rebuilding flow" }
             listIdentity = "FeedDetails.${feed.id}"
             when {
                 mode == FeedScreenMode.Info -> emptyFlow()
@@ -238,7 +239,7 @@ class FeedDetailsVM(feedId: Long = 0L, modeName: String = FeedScreenMode.List.na
     val logs: List<DownloadResult>
 
     init {
-        Logd(TAG, "FeedDetailsVM init feedId: $feedId")
+        Logd(TAG) { "FeedDetailsVM init feedId: $feedId" }
         timeIt("$TAG start of init")
         feedEpisodesSize = realm.query(Episode::class).query("feedId == $feedId").count().find().toInt()
         logs = realm.query(DownloadResult::class).query("feedfileId == $feedId AND feedfileType == ${RequestType.FEED.code}").sort("completionTime",  Sort.DESCENDING).find()
@@ -246,7 +247,7 @@ class FeedDetailsVM(feedId: Long = 0L, modeName: String = FeedScreenMode.List.na
     }
 
     override fun onCleared() {
-        Logd(TAG, "FeedDetailsVM onCleared")
+        Logd(TAG) { "FeedDetailsVM onCleared" }
     }
 }
 
@@ -263,8 +264,8 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     val feed by vm.feedFlow.collectAsStateWithLifecycle()
     val screenMode by vm.screenModeFlow.collectAsStateWithLifecycle()
 
-    Logd(TAG, "FeedDetailsScreen guid: ${feed?.identifier} medium: ${feed?.medium} aiContent: ${feed?.aiContent} images: ${feed?.images?.size}")
-    feed?.images?.forEach { Logd(TAG, "FeedDetailsScreen image: ${it.type} ${it.purpose} ${it.aspectRatio} ${it.width} ${it.height} ${it.href}") }
+    Logd(TAG) { "FeedDetailsScreen guid: ${feed?.identifier} medium: ${feed?.medium} aiContent: ${feed?.aiContent} images: ${feed?.images?.size}" }
+    feed?.images?.forEach { Logd(TAG) { "FeedDetailsScreen image: ${it.type} ${it.purpose} ${it.aspectRatio} ${it.width} ${it.height} ${it.href}" } }
     val deletionLogs = remember { mutableStateSetOf<SubscriptionLog>() }
     LaunchedEffect(feed?.id) {
         deletionLogs.clear()
@@ -300,15 +301,15 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     }
 
     DisposableEffect(lifecycleOwner) {
-        Logd(TAG, "in DisposableEffect")
+        Logd(TAG) { "in DisposableEffect" }
         val observer = LifecycleEventObserver { _, event ->
-            Logd(TAG, "DisposableEffect LifecycleEventObserver: $event")
+            Logd(TAG) { "DisposableEffect LifecycleEventObserver: $event" }
             when (event) {
                 Lifecycle.Event.ON_CREATE -> {
-                    Logd(TAG, "ON_CREATE feedId: $feedId")
+                    Logd(TAG) { "ON_CREATE feedId: $feedId" }
                     //                    val testNum = 1
                     //                    val eList = realm.query(Episode::class).query("feedId == ${vm.feedID} AND playState == ${PlayState.SOON.code} SORT(pubDate DESC) LIMIT($testNum)").find()
-                    //                    Logd(TAG, "test eList: ${eList.size}")
+                    //                    Logd(TAG) { "test eList: ${eList.size}" }
                 }
                 Lifecycle.Event.ON_START -> {}
                 Lifecycle.Event.ON_RESUME -> {}
@@ -319,7 +320,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
-            Logd(TAG, "DisposableEffect onDispose")
+            Logd(TAG) { "DisposableEffect onDispose" }
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -334,7 +335,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
 
     val episodes by vm.episodesFlow.collectAsStateWithLifecycle()
     LaunchedEffect(episodes.size, feed?.id) {
-        Logd(TAG, "LaunchedEffect(episodes.size)")
+        Logd(TAG) { "LaunchedEffect(episodes.size)" }
         vm.listInfoText = buildListInfo(episodes, vm.feedEpisodesSize, feed)
     }
 
@@ -360,7 +361,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                 vm.showHeader = true
                 showFilterDialog = false
             }) { filter ->
-                Logd(TAG, "persist Episode Filter(): feedId = [${feed?.id}], andOr = ${filter.andOr}, ${filter.propertySet.size} filterValues = ${filter.propertySet}")
+                Logd(TAG) { "persist Episode Filter(): feedId = [${feed?.id}], andOr = ${filter.andOr}, ${filter.propertySet.size} filterValues = ${filter.propertySet}" }
                 runOnIOScope { upsert(feed!!) { it.episodeFilter = filter } }
             }
         }
@@ -371,7 +372,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                 vm.showHeader = true
                 showSortDialog = false
             }) { order ->
-                Logd(TAG, "persist Episode SortOrder_")
+                Logd(TAG) { "persist Episode SortOrder_" }
                 runOnIOScope { upsert(feed!!) { it.episodeSortOrder = order ?: EpisodeSortOrder.DATE_DESC } }
             }
         }
@@ -657,8 +658,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                     for (fund in feed!!.fundings) {
                         val url = fund.url.takeIf { !it.isNullOrBlank() } ?: continue
                         Text("${fund.content?:""} $url", color = textColor, modifier = Modifier.clickable {
-                            val uri = Uri.parse(url)
-                            val intent = Intent(Intent.ACTION_VIEW, uri).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                            val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                             try { context.startActivity(intent) } catch (e: ActivityNotFoundException) { Loge(TAG, e,"No app found to handle this link") }
                         })
                     }
@@ -668,14 +668,14 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     }
 
     DisposableEffect(screenMode, vm.enableFilter, episodeForInfo) {
-        Logd(TAG, "DisposableEffect feedScreenMode: $screenMode")
+        Logd(TAG) { "DisposableEffect feedScreenMode: $screenMode" }
         if (screenMode !in listOf(FeedScreenMode.Info, FeedScreenMode.List) || !vm.enableFilter || episodeForInfo != null) handleBackSubScreens.add(TAG)
         else handleBackSubScreens.remove(TAG)
         onDispose { handleBackSubScreens.remove(TAG) }
     }
 
     BackHandler(enabled = handleBackSubScreens.contains(TAG)) {
-        Logd(TAG, "BackHandler")
+        Logd(TAG) { "BackHandler" }
         when {
             episodeForInfo != null -> episodeForInfo = null
             !vm.enableFilter -> vm.enableFilter = true
@@ -700,7 +700,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                             curMedia1?.feedId == feedId -> episodes.indexOfFirst { it.id == curMedia1?.id }
                             else -> -1
                         }
-                    } //                Logd(TAG, "feed?.prefActionType: ${feed?.prefActionType}")
+                    } //                Logd(TAG) { "feed?.prefActionType: ${feed?.prefActionType}" }
                     val actionButtonName = remember(feed?.prefActionType, feed?.downloadUrl) {
                         when {
                             feed == null -> null
@@ -737,7 +737,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                         preferSingleAction = screenMode == FeedScreenMode.History,
                         actionButtonType = if (screenMode == FeedScreenMode.List && actionButtonName != null) ButtonTypes.valueOf(actionButtonName) else null,
                         actionButtonCB = { e, type ->
-                            Logd(TAG, "actionButtonCB type: $type ${e.feed?.id} ${feed?.id}")
+                            Logd(TAG) { "actionButtonCB type: $type ${e.feed?.id} ${feed?.id}" }
                             if (e.feed?.id == feed?.id) {
                                 if (type in streamActions + playActions + listOf(ButtonTypes.PLAY_LOCAL)) runOnIOScope { upsert(feed!!) { it.lastPlayed = nowInMillis() } }
                                 if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) runOnIOScope { queueToVirtual(e, episodes, vm.listIdentity, feed!!.episodeSortOrder, true) }

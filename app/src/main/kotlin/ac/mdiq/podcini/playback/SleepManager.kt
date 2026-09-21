@@ -1,9 +1,9 @@
-package ac.mdiq.podcini.playback.base
+package ac.mdiq.podcini.playback
 
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
-import ac.mdiq.podcini.storage.database.sleepPrefs
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.storage.database.sleepPrefs
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
@@ -22,13 +22,11 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.sqrt
+import kotlin.time.Duration.Companion.milliseconds
 
 class SleepManager {
     private var timer: SleepTimer? = null
@@ -78,20 +76,20 @@ class SleepManager {
                 val now = nowInMillis()
                 timeLeft -= now - lastTick
                 lastTick = now
-                Logd(TAG, "timeLeft: $timeLeft")
+                Logd(TAG) { "timeLeft: $timeLeft" }
                 EventFlow.postEvent(FlowEvent.SleepTimerUpdatedEvent.updated(timeLeft))
             }
             EventFlow.postEvent(FlowEvent.SleepTimerUpdatedEvent.updated(timeLeft))
             return appMainScope.launch {
                 try {
                     while (timeLeft > SLEEP_TIMER_ENDING_THRESHOLD) {
-                        delay(SLEEP_TIMER_UPDATE_INTERVAL)
+                        delay(SLEEP_TIMER_UPDATE_INTERVAL.milliseconds)
                         postTimeLeft()
                     }
                     while (timeLeft > 0) {
-                        delay(1000L)
+                        delay(1000L.milliseconds)
                         postTimeLeft()
-                        Logd(TAG, "Sleep timer is about to expire")
+                        Logd(TAG) { "Sleep timer is about to expire" }
                         if (sleepPrefs.Vibrate && !hasVibrated) {
                             val vibrator = if (Build.VERSION.SDK_INT >= VERSION_CODES.S) (getAppContext().getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
                             else {
@@ -103,13 +101,13 @@ class SleepManager {
                         }
                         if (shakeListener == null && sleepPrefs.ShakeToReset) shakeListener = ShakeListener(this@SleepTimer)
                         if (timeLeft <= 0) {
-                            Logd(TAG, "Sleep timer expired")
+                            Logd(TAG) { "Sleep timer expired" }
                             shakeListener?.pause()
                             shakeListener = null
                             hasVibrated = false
                         }
                     }
-                    Logd(TAG, "Sleep timer expired")
+                    Logd(TAG) { "Sleep timer expired" }
                     shakeListener?.pause()
                     shakeListener = null
                     hasVibrated = false
@@ -161,7 +159,7 @@ class SleepManager {
             val gZ = event.values[2] / SensorManager.GRAVITY_EARTH
             val gForce = sqrt((gX * gX + gY * gY + gZ * gZ).toDouble())
             if (gForce > 2.25) {
-                Logd(TAG, "Detected shake $gForce")
+                Logd(TAG) { "Detected shake $gForce" }
                 mSleepTimer.restart()
             }
         }

@@ -1,10 +1,10 @@
 package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.PlayerStatusSimple
-import ac.mdiq.podcini.playback.base.playerOf
-import ac.mdiq.podcini.playback.base.isPlaying
-import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.playback.PlayerStatusSimple
+import ac.mdiq.podcini.playback.playerOf
+import ac.mdiq.podcini.playback.isPlaying
+import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.DownloadStatus
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
@@ -159,9 +159,9 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_CREATE -> {
-                    Logd(TAG, "ON_CREATE episode downloaded: ${episode.downloaded}")
-                    Logd(TAG, "ON_CREATE episode downloadurl: ${episode.downloadUrl}")
-                    Logd(TAG, "ON_CREATE episode fileurl: ${episode.fileUrl}")
+                    Logd(TAG) { "ON_CREATE episode downloaded: ${episode.downloaded}" }
+                    Logd(TAG) { "ON_CREATE episode downloadurl: ${episode.downloadUrl}" }
+                    Logd(TAG) { "ON_CREATE episode fileurl: ${episode.fileUrl}" }
                 }
                 Lifecycle.Event.ON_START -> {}
                 Lifecycle.Event.ON_RESUME -> {}
@@ -196,7 +196,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
     val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
 
     val timers = remember(episode.id, appAttribs ) { appAttribs.timetable.filter { it.episodeId == episode.id } }
-    timers.forEach { Logd(TAG, "timer: ${it.triggerTime}") }
+    timers.forEach { Logd(TAG) { "timer: ${it.triggerTime}" } }
 
     val player = playerOf(episode)
     var cueIndex by remember { mutableIntStateOf(-1) }
@@ -318,7 +318,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                         val txtvDuration = remember(episode.id) { if (episode.duration > 0) durationStringFull(episode.duration) else "" }
                         var txtvSize by remember(episode.id) { mutableStateOf("") }
                         LaunchedEffect(episode.id) {
-                            Logd(TAG, "LaunchedEffect(episode.id)")
+                            Logd(TAG) { "LaunchedEffect(episode.id)" }
                             when {
                                 episode.size > 0 -> txtvSize = formatShortFileSize(episode.size)
                                 isImageDownloadAllowed && canCheckMediaSize(episode) && !episode.isSizeSetUnknown() ->
@@ -328,7 +328,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                                     }
                                 else -> txtvSize = ""
                             }
-                            Logd(TAG, "LaunchedEffect(episode.id) ended")
+                            Logd(TAG) { "LaunchedEffect(episode.id) ended" }
                         }
                         Text("$pubTimeText · $txtvDuration · $txtvSize", color = textColor, style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.weight(1f))
@@ -511,7 +511,7 @@ fun EpisodeWebView(episode: Episode) {
             val homeIconRes = if (readMode) R.drawable.baseline_home_24 else R.drawable.outline_home_24
             IconButton(onClick = {
                 readMode = !readMode
-                Logd(TAG, "readMode: $readMode")
+                Logd(TAG) { "readMode: $readMode" }
                 jsEnabled = false
                 prepareContent()
             }) { Icon(imageVector = ImageVector.vectorResource(homeIconRes), contentDescription = "switch home") }
@@ -556,7 +556,7 @@ fun EpisodeWebView(episode: Episode) {
                                 }
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     val isEmpty = view?.title.isNullOrEmpty() && view?.contentDescription.isNullOrEmpty()
-                                    if (isEmpty) Logd(TAG, "content is empty")
+                                    if (isEmpty) Logd(TAG) { "content is empty" }
                                     view?.evaluateJavascript("document.querySelectorAll('[hidden]').forEach(el => el.removeAttribute('hidden'));", null)
                                 }
                                 override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
@@ -607,7 +607,7 @@ fun EpisodeWebView(episode: Episode) {
                             webViewClient = object : WebViewClient() {
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     val isEmpty = view?.title.isNullOrEmpty() && view?.contentDescription.isNullOrEmpty()
-                                    if (isEmpty) Logd(TAG, "content is empty")
+                                    if (isEmpty) Logd(TAG) { "content is empty" }
                                 }
                                 override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
                                     view?.let { v->

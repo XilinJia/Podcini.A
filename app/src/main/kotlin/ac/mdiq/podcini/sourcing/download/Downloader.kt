@@ -89,11 +89,11 @@ abstract class Downloader(val request: DownloadRequest) {
         val originalUrl = response.request.url.toString()
         when {
             response.status == HttpStatusCode.MovedPermanently -> { // 301
-                Logd(TAG, "Detected permanent redirect from $originalUrl to $location")
+                Logd(TAG) { "Detected permanent redirect from $originalUrl to $location" }
                 permanentRedirectUrl = location
             }
             location == originalUrl.replace("http://", "https://") -> {
-                Logd(TAG, "Treating http->https redirect as permanent: $originalUrl")
+                Logd(TAG) { "Treating http->https redirect as permanent: $originalUrl" }
                 permanentRedirectUrl = location
             }
         }
@@ -107,7 +107,7 @@ abstract class Downloader(val request: DownloadRequest) {
     }
 
     protected fun onCancelled() {
-        Logd(TAG, "Download was cancelled")
+        Logd(TAG) { "Download was cancelled" }
         result.isSuccessful = false
         result.reason = DownloadError.ERROR_DOWNLOAD_CANCELLED
         cancelled = true
@@ -132,12 +132,12 @@ abstract class Downloader(val request: DownloadRequest) {
 
 class FeedDownloader(request: DownloadRequest): Downloader(request) {
     override suspend fun download(cb: suspend (Source)->Unit) {
-        Logd(TAG, "starting downloadFeed() source: ${request.source} dest: ${request.destination}")
+        Logd(TAG) { "starting downloadFeed() source: ${request.source} dest: ${request.destination}" }
         if (request.source == null) return
 
         val destFile = request.destination.toUF()
         val fileExists = destFile.exists()
-        Logd(TAG, "destination: ${request.destination} fileExists: $fileExists")
+        Logd(TAG) { "destination: ${request.destination} fileExists: $fileExists" }
 
         try {
             val uri = getURIFromRequestUrl(request.source)
@@ -145,7 +145,7 @@ class FeedDownloader(request: DownloadRequest): Downloader(request) {
                 attributes.put(CredentialsKey, request)
                 header(HttpHeaders.CacheControl, "no-store")
                 if (uri.scheme == "http") header("Upgrade-Insecure-Requests", "1")
-                Logd(TAG, "starting download: ${request.feedfileType} ${uri.scheme}")
+                Logd(TAG) { "starting download: ${request.feedfileType} ${uri.scheme}" }
 
                 if (!request.lastModified.isNullOrEmpty()) {
                     val lastModified = request.lastModified
@@ -153,11 +153,11 @@ class FeedDownloader(request: DownloadRequest): Downloader(request) {
                     if (lastModifiedDate != null) {
                         val threeDaysAgo = nowInMillis() - 1000 * 60 * 60 * 24 * 3
                         if (lastModifiedDate.toEpochMilliseconds() > threeDaysAgo) {
-                            Logd(TAG, "addHeader(\"If-Modified-Since\", \"$lastModified\")")
+                            Logd(TAG) { "addHeader(\"If-Modified-Since\", \"$lastModified\")" }
                             header(HttpHeaders.IfModifiedSince, lastModified)
                         }
                     } else {
-                        Logd(TAG, "addHeader(\"If-None-Match\", \"$lastModified\")")
+                        Logd(TAG) { "addHeader(\"If-None-Match\", \"$lastModified\")" }
                         header(HttpHeaders.IfNoneMatch, lastModified?:"")
                     }
                 }
@@ -165,16 +165,16 @@ class FeedDownloader(request: DownloadRequest): Downloader(request) {
                 if (fileExists && size > 0) {
                     request.soFar = size
                     header(HttpHeaders.Range, "bytes=${request.soFar}-")
-                    Logd(TAG, "Adding range header: " + request.soFar)
+                    Logd(TAG) { "Adding range header: " + request.soFar }
                 }
                 header(HttpHeaders.AcceptEncoding, "identity")
             }.execute { response ->
                 val contentEncodingHeader = response.headers[HttpHeaders.ContentEncoding]
-                Logd(TAG, "response.status: ${response.status}")
+                Logd(TAG) { "response.status: ${response.status}" }
 
                 when {
                     response.status == HttpStatusCode.NotModified -> {
-                        Logd(TAG, "Feed '" + request.source + "' not modified since last update, Download canceled")
+                        Logd(TAG) { "Feed '" + request.source + "' not modified since last update, Download canceled" }
                         onCancelled()
                         return@execute
                     }
@@ -194,7 +194,7 @@ class FeedDownloader(request: DownloadRequest): Downloader(request) {
                             if (start != request.soFar) {
                                 Logt(TAG, "Unexpected resume offset $start, restarting download")
                                 destFile.delete()
-                            } else Logd(TAG, "Resuming download at $start")
+                            } else Logd(TAG) { "Resuming download at $start" }
                             val remaining = response.contentLength()
                             request.size = if (remaining != null) remaining + request.soFar else DownloadResult.SIZE_UNKNOWN.toLong()
                         }
@@ -217,10 +217,10 @@ class FeedDownloader(request: DownloadRequest): Downloader(request) {
                 checkIfRedirect(response)
 
                 request.statusMsg = (R.string.download_running)
-                Logd(TAG, "Getting size of download")
+                Logd(TAG) { "Getting size of download" }
                 val contentLength = response.contentLength()
                 request.size = if (contentLength != null)  contentLength + request.soFar else -1L
-                Logd(TAG, "downloadRequest size is " + request.size)
+                Logd(TAG) { "downloadRequest size is " + request.size }
                 if (request.size < 0) request.size = DownloadResult.SIZE_UNKNOWN.toLong()
 
                 response.bodyAsChannel().asSource().buffered().use { source -> cb(source) }
@@ -261,7 +261,7 @@ class FeedDownloader(request: DownloadRequest): Downloader(request) {
 class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
     override suspend fun download() {
         withContext(downloadDispatcher) {
-            Logd(TAG, "starting downloadEpisode(): destination: ${request.destination}")
+            Logd(TAG) { "starting downloadEpisode(): destination: ${request.destination}" }
             if (request.source == null) return@withContext
             startTiming()
             downloadStatesFlow.update { it + (request.source to DownloadStatus(DownloadStatus.State.QUEUED.code, 5)) }
@@ -274,7 +274,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                 //            timeIt("$TAG got uri")
 
                 suspend fun writeBody(response: HttpResponse) {
-                    Logd(TAG, "writeBody")
+                    Logd(TAG) { "writeBody" }
                     val buffer = ByteArray(BUFFER_SIZE)
                     try {
                         destFile.sink(startPosition>0).buffer().use { out ->
@@ -293,7 +293,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                                         downloadStatesFlow.update { it + (request.source to DownloadStatus(if (request.progressPercent < 100) DownloadStatus.State.RUNNING.code else DownloadStatus.State.COMPLETED.code, request.progressPercent)) }
                                     }
                                 }
-                                //                                Logd(TAG, "writeBody request.soFar: ${request.soFar} progressPercent: $progressPercent")
+                                //                                Logd(TAG) { "writeBody request.soFar: ${request.soFar} progressPercent: $progressPercent" }
                             }
                         }
                     } catch (e: IOException) { Logs(TAG, e, "writeBody error") }
@@ -303,9 +303,9 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                     var contentLength = -1
                     val contentLen = response.headers[HttpHeaders.ContentLength]
                     if (contentLen != null) try { contentLength = contentLen.toInt() } catch (e: NumberFormatException) { Logs(TAG, e) }
-                    Logd(TAG, "content length: $contentLength")
+                    Logd(TAG) { "content length: $contentLength" }
                     val contentType = response.headers[HttpHeaders.ContentType]
-                    Logd(TAG, "content type: $contentType")
+                    Logd(TAG) { "content type: $contentType" }
                     return contentType != null && contentType.startsWith("text/") && contentLength < 100 * 1024
                 }
 
@@ -331,7 +331,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                     if (existingFileSize > 0) {
                         request.soFar = existingFileSize
                         header(HttpHeaders.Range, "bytes=${request.soFar}-")
-                        Logd(TAG, "Adding range header: " + request.soFar)
+                        Logd(TAG) { "Adding range header: " + request.soFar}
                     }
                 }.execute { response ->
                     timeIt("$TAG got response")
@@ -341,12 +341,12 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                     if (!contentEncodingHeader.isNullOrEmpty()) isGzip = (contentEncodingHeader.lowercase() == "gzip")
                     timeIt("$TAG after isGzip")
 
-                    Logd(TAG, "Response status is " + response.status) // check if size specified in the response header is the same as the size of the
+                    Logd(TAG) { "Response status is " + response.status} // check if size specified in the response header is the same as the size of the
                     // written file. This check cannot be made if compression was used
-                    //                    Logd(TAG,"buffer: $buffer")
+                    //                    Logd(TAG) { "buffer: $buffer" }
                     when {
                         response.status == HttpStatusCode.NotModified -> {
-                            Logd(TAG, "Feed '${request.source}' not modified")
+                            Logd(TAG) { "Feed '${request.source}' not modified" }
                             onCancelled()
                             return@execute
                         }
@@ -367,7 +367,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                                     Logt(TAG, "Unexpected resume offset $start, restarting download")
                                     destFile.delete()
                                 } else {
-                                    Logd(TAG, "Resuming download at $start")
+                                    Logd(TAG) { "Resuming download at $start" }
                                     startPosition = start
                                 }
                                 val remaining = response.contentLength()
@@ -405,7 +405,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
 
                     if (appPrefsFlow!!.value.checkAvailableSpace) {
                         val freeSpace = freeSpaceAvailable
-                        Logd(TAG, "Free space is $freeSpace > ${request.size}")
+                        Logd(TAG) { "Free space is $freeSpace > ${request.size}" }
                         timeIt("$TAG after freeSpace")
                         if (request.size != DownloadResult.SIZE_UNKNOWN.toLong() && request.size > freeSpace) {
                             onFail(DownloadError.ERROR_NOT_ENOUGH_SPACE, null)

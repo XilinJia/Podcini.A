@@ -146,7 +146,7 @@ class OpmlTransporter {
             return try {
                 val xml = XML { defaultPolicy { ignoreUnknownChildren() } }
                 val xmlString = reader.source().buffer().use { it.readString(Charsets.UTF_8) }
-                Logd(TAG, "readDocument xmlString: $xmlString")
+                Logd(TAG) { "readDocument xmlString: $xmlString" }
                 val opmlData = xml.decodeFromString(Opml.serializer(), xmlString)
                 val elements = opmlData.body?.outlines.orEmpty().map { outline ->
                     OpmlElement().apply {
@@ -157,7 +157,7 @@ class OpmlTransporter {
                     }
                 }
 
-                Logd(TAG, "readDocument elements: ${elements.size}")
+                Logd(TAG) { "readDocument elements: ${elements.size}" }
                 elements
             } catch (e: Exception) {
                 Logs(TAG, e, "Failed to parse OPML")

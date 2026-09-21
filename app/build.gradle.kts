@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 124
-        versionName = "12.11.1"
+        versionCode = 125
+        versionName = "12.12.0"
 
         ndkVersion = "29.0.14206865"
 
@@ -221,7 +221,6 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.foundation:foundation-layout")
-    implementation("androidx.media3:media3-datasource-okhttp:1.11.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-tooling-preview")
 
@@ -239,9 +238,13 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     implementation("androidx.webkit:webkit:1.17.0")
     implementation("androidx.work:work-runtime:2.11.2")
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.3.0")
+
+    implementation("androidx.car.app:app:1.7.0")
 
     implementation("androidx.glance:glance-appwidget:1.2.0")
 
+    implementation("androidx.media3:media3-datasource-okhttp:1.11.1")
     implementation("androidx.media3:media3-exoplayer:1.11.1")
     implementation("androidx.media3:media3-ui:1.11.1")
     implementation("androidx.media3:media3-ui-compose:1.11.1")
@@ -266,13 +269,13 @@ dependencies {
     implementation("com.github.XilinJia:PodciniLib:1.1.4")
     implementation("io.github.xilinjia.krdb:library-base:${project.property("krdb_version")}")
 
-    implementation("io.coil-kt.coil3:coil-compose:3.6.2")
-    implementation("io.coil-kt.coil3:coil-network-ktor3:3.6.2")
+    implementation("io.coil-kt.coil3:coil-compose:3.6.3")
+    implementation("io.coil-kt.coil3:coil-network-ktor3:3.6.3")
 
-    implementation("io.ktor:ktor-http:3.5.2")
-    implementation("io.ktor:ktor-client-core:3.5.2")
-    implementation("io.ktor:ktor-client-okhttp:3.5.2")
-    implementation("io.ktor:ktor-utils:3.5.2")
+    implementation("io.ktor:ktor-http:3.6.0")
+    implementation("io.ktor:ktor-client-core:3.6.0")
+    implementation("io.ktor:ktor-client-okhttp:3.6.0")
+    implementation("io.ktor:ktor-utils:3.6.0")
 
     implementation("com.fleeksoft.ksoup:ksoup:0.2.6")
     implementation("com.fleeksoft.ksoup:ksoup-network:0.2.6")

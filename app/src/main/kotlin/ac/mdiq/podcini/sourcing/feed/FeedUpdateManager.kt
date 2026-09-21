@@ -82,11 +82,11 @@ object FeedUpdateManager {
 
     fun scheduleUpdateTaskOnce(replace: Boolean, force: Boolean = false) {
         val context = getAppContext()
-        Logd(TAG, "scheduleUpdateTaskOnce intervalInMillis: $intervalInMillis")
+        Logd(TAG) { "scheduleUpdateTaskOnce intervalInMillis: $intervalInMillis" }
         var doItNow = true
         if (BuildConfig.DEBUG) {
             val workInfos = WorkManager.getInstance(context).getWorkInfosForUniqueWork(feedUpdateOnceWorkId).get()
-            for (wi in workInfos) Logd(TAG, "workInfos: ${wi.id} ${wi.initialDelayMillis} ${wi.runAttemptCount} ${wi.state}")
+            for (wi in workInfos) Logd(TAG) { "workInfos: ${wi.id} ${wi.initialDelayMillis} ${wi.runAttemptCount} ${wi.state}" }
         }
         if (!force && intervalInMillis == 0L) {
             WorkManager.getInstance(context).cancelUniqueWork(feedUpdateOnceWorkId)
@@ -102,7 +102,7 @@ object FeedUpdateManager {
             doItNow = false
         }
         val initialDelay = if (doItNow) 0L else intervalInMillis
-        Logd(TAG, "initialDelay: $initialDelay")
+        Logd(TAG) { "initialDelay: $initialDelay" }
         val oneTimeRequest = oneRequest(initialDelay)
         WorkManager.getInstance(context).enqueueUniqueWork(feedUpdateOnceWorkId, policy, oneTimeRequest)
     }
@@ -136,7 +136,7 @@ object FeedUpdateManager {
     }
 
     fun runOnce(feeds: List<Feed> = listOf(), nextPage: Boolean = false, fullUpdate: Boolean = false, doItWanyway: Boolean = false, removeUnlisted: Boolean = false) {
-        Logd(TAG, "runOnce feeds: ${feeds.size}")
+        Logd(TAG) { "runOnce feeds: ${feeds.size}" }
         val workRequest: OneTimeWorkRequest.Builder = OneTimeWorkRequest.Builder(FeedUpdateWorker::class.java)
             .setInitialDelay(0L, TimeUnit.MILLISECONDS)
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
@@ -158,7 +158,7 @@ object FeedUpdateManager {
 
     fun runOnceOrAsk(feeds: List<Feed> = listOf(), fullUpdate: Boolean = false,  doItWanyway: Boolean = false, removeUnlisted: Boolean = false) {
         val context = getAppContext()
-        Logd(TAG, "Run auto update immediately in background.")
+        Logd(TAG) { "Run auto update immediately in background." }
         when {
 //            feeds.isNotEmpty() && feed.isLocal -> runOnce(context, feeds, fullUpdate = fullUpdate)    // TODO
             !networkMonitor.isConnected -> EventFlow.postEvent(FlowEvent.MessageEvent(context.getString(R.string.download_error_no_connection)))
@@ -195,15 +195,15 @@ object FeedUpdateManager {
 
             fun rescheduleUpdateTaskOnce() {
                 val context = getAppContext()
-                Logd(FeedUpdateManager.TAG, "rescheduleUpdateTaskOnce intervalInMillis: $intervalInMillis")
+                Logd(FeedUpdateManager.TAG) { "rescheduleUpdateTaskOnce intervalInMillis: $intervalInMillis" }
                 if (BuildConfig.DEBUG) {
                     val workInfos = WorkManager.getInstance(context).getWorkInfosForUniqueWork(feedUpdateOnceWorkId).get()
-                    for (wi in workInfos) Logd(FeedUpdateManager.TAG, "workInfos: ${wi.id} ${wi.initialDelayMillis} ${wi.runAttemptCount} ${wi.state}")
+                    for (wi in workInfos) Logd(FeedUpdateManager.TAG) { "workInfos: ${wi.id} ${wi.initialDelayMillis} ${wi.runAttemptCount} ${wi.state}" }
                 }
                 if (intervalInMillis == 0L) WorkManager.getInstance(context).cancelUniqueWork(feedUpdateOnceWorkId)
                 else {
                     val initialDelay = intervalInMillis
-                    Logd(FeedUpdateManager.TAG, "initialDelay: $initialDelay")
+                    Logd(FeedUpdateManager.TAG) { "initialDelay: $initialDelay" }
                     val oneTimeRequest = oneRequest(initialDelay)
                     WorkManager.getInstance(context).enqueueUniqueWork(feedUpdateOnceWorkId, ExistingWorkPolicy.APPEND_OR_REPLACE, oneTimeRequest)
                 }
@@ -228,7 +228,7 @@ object FeedUpdateManager {
 
                 val feedIds = inputData.getLongArray(EXTRA_FEED_IDS) ?: longArrayOf()
                 val feeds = if (feedIds.isNotEmpty()) realm.query(Feed::class).query("id IN $0", feedIds.toList()).find() else listOf()
-                Logd(TAG, "doWork feeds: ${feeds.size}")
+                Logd(TAG) { "doWork feeds: ${feeds.size}" }
                 if (feedIds.isNotEmpty() && feeds.isEmpty()) {
                     Loge(TAG, "feeds not found for feedIds ${feedIds.joinToString()}. update abort")
                     if (isPeriodic) rescheduleUpdateTaskOnce()
@@ -241,7 +241,7 @@ object FeedUpdateManager {
                     return Result.retry()
                 }
                 updater.refresh()
-                Logd(TAG, "end of doWork, isPeriodic: $isPeriodic")
+                Logd(TAG) { "end of doWork, isPeriodic: $isPeriodic" }
                 if (isPeriodic) rescheduleUpdateTaskOnce()
                 return Result.success()
             } catch (e: Throwable) {

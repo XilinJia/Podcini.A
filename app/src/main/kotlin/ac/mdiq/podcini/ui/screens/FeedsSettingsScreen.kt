@@ -2,10 +2,9 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.getCache
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.base.forcePlaybackReset
-import ac.mdiq.podcini.playback.base.isPlaying
+import ac.mdiq.podcini.playback.Media3Player.Companion.getCache
+import ac.mdiq.podcini.playback.theatres
+import ac.mdiq.podcini.playback.forcePlaybackReset
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
 import ac.mdiq.podcini.sourcing.clientByFeed
 import ac.mdiq.podcini.sourcing.clientsHaveMultiQ
@@ -189,7 +188,7 @@ fun FeedsSettingsScreen() {
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            Logd(TAG, "LifecycleEventObserver event: $event")
+            Logd(TAG) { "LifecycleEventObserver event: $event" }
             when (event) {
                 Lifecycle.Event.ON_CREATE -> if (feedsToSet.size == 1) feedFlow = realm.query<Feed>("id == $0", feedsToSet[0].id).first().asFlow()
                 Lifecycle.Event.ON_START -> {}
@@ -205,7 +204,7 @@ fun FeedsSettingsScreen() {
     }
 
     LaunchedEffect(feedToSet) {
-        Logd(TAG, "LaunchedEffect feed")
+        Logd(TAG) { "LaunchedEffect feed" }
         refresh()
     }
 
@@ -267,7 +266,7 @@ fun FeedsSettingsScreen() {
                             var selected by remember {mutableStateOf(if (selectedOption == none) none else custom)}
                             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Checkbox(checked = none == selected,
-                                    onCheckedChange = { isChecked ->
+                                    onCheckedChange = {
                                         selected = none
                                         runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.volumeId = -1L } } }
                                         curVolumeName = selected
@@ -275,11 +274,11 @@ fun FeedsSettingsScreen() {
                                     })
                                 Text(none)
                                 Spacer(Modifier.width(50.dp))
-                                Checkbox(checked = custom == selected, onCheckedChange = { isChecked -> selected = custom })
+                                Checkbox(checked = custom == selected, onCheckedChange = { selected = custom })
                                 Text(custom)
                             }
                             if (selected == custom) {
-                                Logd(TAG, "volumes: ${allVolumes.size}")
+                                Logd(TAG) { "volumes: ${allVolumes.size}" }
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     val sortedVols = remember { allVolumes.sortedBy { it.name } }
                                     for (i in sortedVols.indices) {
@@ -338,7 +337,7 @@ fun FeedsSettingsScreen() {
                             var selected by remember {mutableStateOf(if (selectedOption == none) none else custom)}
                             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Checkbox(checked = none == selected,
-                                    onCheckedChange = { isChecked ->
+                                    onCheckedChange = {
                                         selected = none
                                         runOnIOScope {
                                             realm.write { for (f in feedsToSet) { findLatest(f)?.let {
@@ -352,11 +351,11 @@ fun FeedsSettingsScreen() {
                                     })
                                 Text(none)
                                 Spacer(Modifier.width(50.dp))
-                                Checkbox(checked = custom == selected, onCheckedChange = { isChecked -> selected = custom })
+                                Checkbox(checked = custom == selected, onCheckedChange = { selected = custom })
                                 Text(custom)
                             }
                             if (selected == custom) {
-                                Logd(TAG, "queues: ${queuesLive.size}")
+                                Logd(TAG) { "queues: ${queuesLive.size}" }
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     for (i in queuesLive.indices) {
                                         FilterChip(label = { Text(queuesLive[i].name) }, selected = false, border = BorderStroke(1.dp, borderColor),
@@ -434,7 +433,7 @@ fun FeedsSettingsScreen() {
                                     Checkbox(checked = option.tag == selected,
                                         onCheckedChange = { isChecked ->
                                             selected = option.tag
-                                            if (isChecked) Logd(TAG, "$option is checked")
+                                            if (isChecked) Logd(TAG) { "$option is checked" }
                                             val type = Feed.AudioType.fromTag(selected)
                                             audioType = type.tag
                                             runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.audioType = type.code } } }
@@ -755,8 +754,8 @@ fun FeedsSettingsScreen() {
                                 VolumeAdaptionSetting.entries.forEach { item ->
                                     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Checkbox(checked = (item == selectedOption),
-                                            onCheckedChange = { _ ->
-                                                Logd(TAG, "row clicked: $item $selectedOption")
+                                            onCheckedChange = {
+                                                Logd(TAG) { "row clicked: $item $selectedOption" }
                                                 if (item != selectedOption) {
                                                     onOptionSelected(item)
                                                     runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.volumeAdaptionSetting = item } } }
@@ -988,10 +987,10 @@ fun FeedsSettingsScreen() {
                             },
                             confirmButton = {
                                 TextButton(onClick = {
-                                    Logd(TAG, "autoDLPolicy: ${selectedPolicy.name} ${selectedPolicy.replace}")
+                                    Logd(TAG) { "autoDLPolicy: ${selectedPolicy.name} ${selectedPolicy.replace}" }
                                     runOnIOScope {
                                         realm.write { for (f in feedsToSet) { findLatest(f)?.let {
-                                            Logd(TAG, "feed episodeFilter: ${it.episodeFilter} episodeSortOrder: ${it.episodeSortOrder}")
+                                            Logd(TAG) { "feed episodeFilter: ${it.episodeFilter} episodeSortOrder: ${it.episodeSortOrder}" }
                                             it.autoDLEQs[index].autoDLPolicy = selectedPolicy
                                             if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) {
                                                 it.autoDLEQs[index].episodeFilterADL = it.episodeFilter
@@ -1206,7 +1205,7 @@ fun FeedsSettingsScreen() {
                                         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Checkbox(checked = (text == selectedOption),
                                                 onCheckedChange = {
-                                                    Logd(TAG, "row clicked: $text $selectedOption")
+                                                    Logd(TAG) { "row clicked: $text $selectedOption" }
                                                     if (text != selectedOption) {
                                                         onOptionSelected(text)
                                                         val action_ = when (text) {

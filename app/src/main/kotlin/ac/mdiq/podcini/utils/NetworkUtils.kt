@@ -192,7 +192,7 @@ object NetworkUtils {
 
     fun networkChangedDetected(isConnected: Boolean) {
 //        if (networkMonitor.networkAllowAutoDownload) {
-//            Logd(TAG, "auto-dl network available, starting auto-download")
+//            Logd(TAG) { "auto-dl network available, starting auto-download" }
 //            if (appAttribs.dlCanceledWhenDisconnected) {
 //                upsertBlk(appAttribs) { it.dlCanceledWhenDisconnected = false }
 //                autodownload()

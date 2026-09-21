@@ -239,10 +239,10 @@ fun ImportExportScreen() {
     var readElements by remember { mutableStateOf<List<OpmlElement>>(listOf()) }
     val chooseOpmlImportPathLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
-        Logd(TAG, "chooseOpmlImportPathResult: uri: $uri")
+        Logd(TAG) { "chooseOpmlImportPathResult: uri: $uri" }
         OpmlTransporter.startImport(uri) {
             readElements = it
-            Logd(TAG, "readElements: ${readElements.size}")
+            Logd(TAG) { "readElements: ${readElements.size}" }
             showOpmlImportSelectionDialog = true
         }
     }
@@ -281,9 +281,9 @@ fun ImportExportScreen() {
                         try {
                             withContext(Dispatchers.IO) {
                                 val rootFile = uri.toUF()
-                                Logd(TAG, "comboDic[ComboIEOptions.Clips.name] ${comboDic[ComboIEOptions.Clips.name]}")
-                                Logd(TAG, "comboDic[ComboIEOptions.MeidaFiles.name] ${comboDic[ComboIEOptions.MeidaFiles.name]}")
-                                Logd(TAG, "comboDic[ComboIEOptions.Database.name] ${comboDic[ComboIEOptions.Database.name]}")
+                                Logd(TAG) { "comboDic[ComboIEOptions.Clips.name] ${comboDic[ComboIEOptions.Clips.name]}" }
+                                Logd(TAG) { "comboDic[ComboIEOptions.MeidaFiles.name] ${comboDic[ComboIEOptions.MeidaFiles.name]}" }
+                                Logd(TAG) { "comboDic[ComboIEOptions.Database.name] ${comboDic[ComboIEOptions.Database.name]}" }
                                 for (file in rootFile.listChildren()) {
                                     if (file.isDirectory()) {
                                         if (file.name == mediaFilesDirName && comboDic[ComboIEOptions.MeidaFiles.name] == true) MediaFilesTransporter(mediaFilesDirName).fromUFToMediaDir(file)
@@ -368,7 +368,7 @@ fun ImportExportScreen() {
             comboDic.clear()
             runBlocking {
                 for (child in rootFile.listChildren()) {
-                    Logd(TAG, "restoreComboLauncher child: ${child.isDirectory()} ${child.name} ${child.toAndroidUri()} ")
+                    Logd(TAG) { "restoreComboLauncher child: ${child.isDirectory()} ${child.name} ${child.toAndroidUri()} " }
                     if (child.isDirectory()) {
                         if (child.name == clipsDirName) comboDic[ComboIEOptions.Clips.name] = true
                         if (child.name == mediaFilesDirName) comboDic[ComboIEOptions.MeidaFiles.name] = false
@@ -445,7 +445,7 @@ fun ImportExportScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            Logd(TAG, "LifecycleEventObserver: $event")
+            Logd(TAG) { "LifecycleEventObserver: $event" }
             when (event) {
                 Lifecycle.Event.ON_START -> {}
                 Lifecycle.Event.ON_STOP -> {}
@@ -466,7 +466,7 @@ fun ImportExportScreen() {
         TitleSummarySwitchRow(R.string.pref_auto_backup_title, R.string.pref_auto_backup_sum, appPrefs.autoBackup) {
             upsertBlk(appPrefs) { p -> p.autoBackup = it}
             appPrefs.autoBackupFolder?.toSafeUri()?.let { uri->
-                try { getAppContext().contentResolver.releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) } catch (e: Exception) { Logd(TAG, "uri can not be released: $uri")}
+                try { getAppContext().contentResolver.releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) } catch (e: Exception) { Logd(TAG) { "uri can not be released: $uri" }}
             }
         }
         if (appPrefs.autoBackup) {
@@ -594,9 +594,9 @@ class EpisodeProgressReader {
         val jsonArray = JSONArray(jsonString)
         for (i in 0 until jsonArray.length()) {
             val jsonAction = jsonArray.getJSONObject(i)
-            Logd(TAG, "Loaded EpisodeActions message: $i $jsonAction")
+            Logd(TAG) { "Loaded EpisodeActions message: $i $jsonAction" }
             val action = readFromJsonObject(jsonAction) ?: continue
-            Logd(TAG, "processing action: $action")
+            Logd(TAG) { "processing action: $action" }
             val result = processEpisodeAction(action) ?: continue
             //                upsertBlk(result.second) {}
         }
@@ -613,11 +613,11 @@ class EpisodeProgressReader {
             it.setRating(if (action.isFavorite) Rating.SUPER else Rating.UNRATED)
             it.setPlayState(EpisodeState.fromCode(action.playState))
             if (it.hasAlmostEnded()) {
-                Logd(TAG, "Marking as played: $action")
+                Logd(TAG) { "Marking as played: $action" }
                 it.setPlayState(EpisodeState.PLAYED)
                 //                it.setPosition(0)
                 idRemove = it.id
-            } else Logd(TAG, "Setting position: $action")
+            } else Logd(TAG) { "Setting position: $action" }
         }
         return Pair(idRemove, feedItem)
     }

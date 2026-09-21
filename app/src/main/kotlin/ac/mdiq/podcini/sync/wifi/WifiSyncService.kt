@@ -43,6 +43,7 @@ import java.net.Socket
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
+import kotlin.time.Duration.Companion.milliseconds
 
 // TODO: need modernize
 class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(context, params), ISyncService {
@@ -51,7 +52,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
 
     override suspend fun doWork(): Result {
         initialize()
-        Logd(TAG, "doWork() called")
+        Logd(TAG) { "doWork() called" }
 
         SynchronizationSettings.updateLastSynchronizationAttempt()
         setCurrentlyActive(true)
@@ -60,7 +61,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
 
         if (socket != null && !loginFail) {
             if (isGuest) {
-                delay(1000)
+                delay(1000.milliseconds)
 //                TODO: not using lastSync
                 val lastSync = SynchronizationSettings.lastEpisodeActionSynchronizationTimestamp
                 val newTimeStamp = pushEpisodeActions(this, 0L, nowInMillis())
@@ -118,7 +119,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
     private var socket: Socket? = null
 
      override fun login() {
-        Logd(TAG, "serverIp: $hostIp serverPort: $hostPort $isGuest")
+        Logd(TAG) { "serverIp: $hostIp serverPort: $hostPort $isGuest" }
         EventFlow.postEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_in_progress, "2"))
         if (!isPortInUse(hostPort)) {
             if (isGuest) {
@@ -143,7 +144,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
                     try {
                         socket = serverSocket!!.accept()
                         while (true) {
-                            Logd(TAG, "waiting for guest message")
+                            Logd(TAG) { "waiting for guest message" }
                             try {
                                 receiveFromPeer()
                                 sendToPeer("Hello", "Hello, Client")
@@ -164,7 +165,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
                 }
             }
         } else {
-            Logd(TAG, "port $hostPort in use, ignored")
+            Logd(TAG) { "port $hostPort in use, ignored" }
             loginFail = true
         }
         EventFlow.postEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_in_progress, "5"))
@@ -174,7 +175,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
         val command = "netstat -tlnp"
         val process = Runtime.getRuntime().exec(command)
         val output = process.inputStream.bufferedReader().use { it.readText() }
-//        Logd(TAG, "isPortInUse: $output")
+//        Logd(TAG) { "isPortInUse: $output" }
         return output.contains(":$port") // Check if output contains the port
     }
 
@@ -196,24 +197,24 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
                 val messageData = parts[1]
                 // Process the message based on the type
                 when (messageType) {
-                    "Hello" -> Logd(TAG, "Received Hello message: $messageData")
+                    "Hello" -> Logd(TAG) { "Received Hello message: $messageData" }
                     "EpisodeActions" -> {
                         val remoteActions = mutableListOf<EpisodeAction>()
                         val jsonArray = JSONArray(messageData)
                         for (i in 0 until jsonArray.length()) {
                             val jsonAction = jsonArray.getJSONObject(i)
 
-                            Logd(TAG, "Received EpisodeActions message: $i $jsonAction")
+                            Logd(TAG) { "Received EpisodeActions message: $i $jsonAction" }
                             val action = EpisodeAction.readFromJsonObject(jsonAction)
                             if (action != null) remoteActions.add(action)
                         }
                         processEpisodeActions(remoteActions)
                     }
                     "AllSent" -> {
-                        Logd(TAG, "Received AllSent message: $messageData")
+                        Logd(TAG) { "Received AllSent message: $messageData" }
                         return true
                     }
-                    else -> Logd(TAG, "Received unknown message: $messageData")
+                    else -> Logd(TAG) { "Received unknown message: $messageData" }
                 }
             }
         }
@@ -222,19 +223,19 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
 
     @Throws(SyncServiceException::class)
     override fun getSubscriptionChanges(lastSync: Long): SubscriptionChanges? {
-        Logd(TAG, "getSubscriptionChanges does nothing")
+        Logd(TAG) { "getSubscriptionChanges does nothing" }
         return null
     }
 
     @Throws(SyncServiceException::class)
     override fun uploadSubscriptionChanges(added: List<String>, removed: List<String>): UploadChangesResponse? {
-        Logd(TAG, "uploadSubscriptionChanges does nothing")
+        Logd(TAG) { "uploadSubscriptionChanges does nothing" }
         return null
     }
 
     @Throws(SyncServiceException::class)
     override fun getEpisodeActionChanges(lastSync: Long): EpisodeActionChanges? {
-        Logd(TAG, "getEpisodeActionChanges does nothing")
+        Logd(TAG) { "getEpisodeActionChanges does nothing" }
         return null
     }
 
@@ -242,7 +243,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
         var newTimeStamp = newTimeStamp_
         EventFlow.postStickyEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_episodes_upload))
         val queuedEpisodeActions: MutableList<EpisodeAction> = synchronizationQueueStorage.queuedEpisodeActions
-        Logd(TAG, "pushEpisodeActions queuedEpisodeActions: ${queuedEpisodeActions.size}")
+        Logd(TAG) { "pushEpisodeActions queuedEpisodeActions: ${queuedEpisodeActions.size}" }
 
         if (lastSync == 0L) {
             EventFlow.postStickyEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_upload_played))
@@ -254,7 +255,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
             comItems.addAll(pausedItems)
             comItems.addAll(readItems)
             comItems.addAll(favoriteItems)
-            Logd(TAG, "First sync. Upload state for all " + comItems.size + " played episodes")
+            Logd(TAG) { "First sync. Upload state for all " + comItems.size + " played episodes" }
             for (item in comItems) {
                 val played = EpisodeAction.Builder(item, EpisodeAction.PLAY)
                     .timestamp(item.lastPlayedTime)
@@ -271,10 +272,10 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
         if (queuedEpisodeActions.isNotEmpty()) {
             LockingAsyncExecutor.lock.lock()
             try {
-                Logd(TAG, "Uploading ${queuedEpisodeActions.size} actions: ${queuedEpisodeActions.joinToString(", ")}")
+                Logd(TAG) { "Uploading ${queuedEpisodeActions.size} actions: ${queuedEpisodeActions.joinToString(", ")}" }
                 val postResponse = uploadEpisodeActions(queuedEpisodeActions)
                 newTimeStamp = postResponse.timestamp
-                Logd(TAG, "Upload episode response: $postResponse")
+                Logd(TAG) { "Upload episode response: $postResponse" }
                 synchronizationQueueStorage.clearEpisodeActionQueue()
             } finally { LockingAsyncExecutor.lock.unlock() }
         }
@@ -283,7 +284,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
 
     @Throws(SyncServiceException::class)
     override fun uploadEpisodeActions(queuedEpisodeActions: List<EpisodeAction>): UploadChangesResponse {
-//        Logd(TAG, "uploadEpisodeActions called")
+//        Logd(TAG) { "uploadEpisodeActions called" }
         var i = 0
         while (i < queuedEpisodeActions.size) {
             uploadEpisodeActionsPartial(queuedEpisodeActions, i, min(queuedEpisodeActions.size, (i + UPLOAD_BULK_SIZE)))
@@ -295,14 +296,14 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
 
     @Throws(SyncServiceException::class)
     private fun uploadEpisodeActionsPartial(queuedEpisodeActions: List<EpisodeAction>, from: Int, to: Int) {
-//        Logd(TAG, "uploadEpisodeActionsPartial called")
+//        Logd(TAG) { "uploadEpisodeActionsPartial called" }
         try {
             val list = JSONArray()
             for (i in from until to) {
                 val episodeAction = queuedEpisodeActions[i]
                 val obj = episodeAction.writeToJsonObject()
                 if (obj != null) {
-                    Logd(TAG, "sending EpisodeAction: $obj")
+                    Logd(TAG) { "sending EpisodeAction: $obj" }
                     list.put(obj)
                 }
             }
@@ -317,11 +318,11 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
         val guid = if (isValidGuid(action.guid)) action.guid else null
         var feedItem = episodeByGuidOrUrl(guid, action.episode, false)
         if (feedItem == null) {
-            Logd(TAG, "Unknown feed item: $action")
+            Logd(TAG) { "Unknown feed item: $action" }
             return null
         }
         var idRemove: Long? = null
-        Logd(TAG, "processEpisodeAction ${feedItem.lastPlayedTime} ${(action.timestamp?:0L)} ${action.position} ${feedItem.title}")
+        Logd(TAG) { "processEpisodeAction ${feedItem?.lastPlayedTime} ${(action.timestamp?:0L)} ${action.position} ${feedItem?.title}" }
         if (feedItem.lastPlayedTime < (action.timestamp?:0L)) {
             feedItem = upsertBlk(feedItem) {
                 it.startPosition = action.started * 1000
@@ -331,13 +332,13 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
                 it.setRating(if (action.isFavorite) Rating.SUPER else Rating.UNRATED)
                 it.setPlayState(EpisodeState.fromCode(action.playState))
                 if (it.hasAlmostEnded()) {
-                    Logd(TAG, "Marking as played")
+                    Logd(TAG) { "Marking as played" }
                     it.setPlayState(EpisodeState.PLAYED)
 //                    it.setPosition(0)
                     idRemove = it.id
-                } else Logd(TAG, "Setting position")
+                } else Logd(TAG) { "Setting position" }
             }
-        } else Logd(TAG, "local is newer, no change")
+        } else Logd(TAG) { "local is newer, no change" }
         return if (idRemove != null) Pair(idRemove, feedItem) else null
     }
 

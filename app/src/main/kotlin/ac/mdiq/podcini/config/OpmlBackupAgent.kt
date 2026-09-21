@@ -35,9 +35,9 @@ class OpmlBackupAgent : BackupAgentHelper() {
     override fun onCreate() {
         val isAutoBackupOPML = appPrefsFlow!!.value.OPMLBackup
         if (isAutoBackupOPML) {
-            Logd(TAG, "Backup of OPML enabled in preferences")
+            Logd(TAG) { "Backup of OPML enabled in preferences" }
             addHelper(OPML_BACKUP_KEY, OpmlBackupHelper())
-        } else Logd(TAG, "Backup of OPML disabled in preferences")
+        } else Logd(TAG) { "Backup of OPML disabled in preferences" }
     }
 
     private class OpmlBackupHelper() : BackupHelper {
@@ -45,14 +45,14 @@ class OpmlBackupAgent : BackupAgentHelper() {
 
         override fun performBackup(oldState: ParcelFileDescriptor?, data: BackupDataOutput, newState: ParcelFileDescriptor) {
             runOnIOScope {
-                Logd(TAG, "Performing backup")
+                Logd(TAG) { "Performing backup" }
                 val digester: MessageDigest = MessageDigest.getInstance("MD5")
                 val file = getOpmlFile()
 
                 try { // Write OPML
                     OpmlTransporter.OpmlWriter().writeDocument(getFeedList("isLocal == false"), file) // Compare checksum of new and old file to see if we need to perform a backup at all
                     val newChecksum = digester.digest()
-                    Logd(TAG, "New checksum: " + BigInteger(1, newChecksum).toString(16)) // Get the old checksum
+                    Logd(TAG) { "New checksum: " + BigInteger(1, newChecksum).toString(16)} // Get the old checksum
                     if (oldState != null) {
                         val inputStream = FileInputStream(oldState.fileDescriptor)
                         val source = inputStream.asSource().buffered()
@@ -65,7 +65,7 @@ class OpmlBackupAgent : BackupAgentHelper() {
                             if (len > 0) {
                                 val oldChecksum = input.readByteArray(len)
                                 if (oldChecksum.contentEquals(mChecksum)) {
-                                    Logd(TAG, "Checksums are same; skipping backup")
+                                    Logd(TAG) { "Checksums are same; skipping backup" }
                                     return@runOnIOScope
                                 }
                             }
@@ -73,7 +73,7 @@ class OpmlBackupAgent : BackupAgentHelper() {
                     }
                     writeNewStateDescription(newState, newChecksum)
 
-                    Logd(TAG, "Backing up OPML")
+                    Logd(TAG) { "Backing up OPML" }
                     val bytes = file.source().buffer().use { it.readByteArray() }
                     if (bytes.isNotEmpty()) {
                         data.writeEntityHeader(OPML_ENTITY_KEY, bytes.size)
@@ -90,9 +90,9 @@ class OpmlBackupAgent : BackupAgentHelper() {
 
         override fun restoreEntity(data: BackupDataInputStream) {
             runOnIOScope {
-                Logd(TAG, "Backup restore")
+                Logd(TAG) { "Backup restore" }
                 if (OPML_ENTITY_KEY != data.key) {
-                    Logd(TAG, "Unknown entity key: " + data.key)
+                    Logd(TAG) { "Unknown entity key: " + data.key}
                     return@runOnIOScope
                 }
                 val digester = MessageDigest.getInstance("MD5")
@@ -114,17 +114,17 @@ class OpmlBackupAgent : BackupAgentHelper() {
                                 digester.update(bytes)
                                 sink.write(bytes)
                                 linesRead++
-                                Logd(TAG, "restoreEntity: $linesRead $line")
+                                Logd(TAG) { "restoreEntity: $linesRead $line" }
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    if (e.message?.contains("zero bytes") == true) Logd(TAG, "Stream ended prematurely or returned zero bytes. Stopping.")
+                    if (e.message?.contains("zero bytes") == true) Logd(TAG) { "Stream ended prematurely or returned zero bytes. Stopping." }
                     else Logs(TAG, e, "Failed to restore OPML backup.")
                 } finally {
                     mChecksum = digester.digest() ?: byteArrayOf()
                     if (linesRead > 0) {
-                        Logd(TAG, "restoreEntity finally $feedCount")
+                        Logd(TAG) { "restoreEntity finally $feedCount" }
                         upsertBlk(appPrefsFlow!!.value) {
                             it.OPMLRestored = true
                             it.OPMLFeedsToRestore = feedCount
@@ -165,7 +165,7 @@ class OpmlBackupAgent : BackupAgentHelper() {
 
         fun performRestore() {
             runOnIOScope {
-                Logd(TAG, "performRestore")
+                Logd(TAG) { "performRestore" }
                 val tempFile = getOpmlFile()
                 if (tempFile.exists()) {
                     val opmlElements = OpmlTransporter.OpmlReader().readDocument(tempFile)

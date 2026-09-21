@@ -4,7 +4,7 @@ import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.config.AppConfig.isInitialized
-import ac.mdiq.podcini.playback.base.TTSEngine.closeTTS
+import ac.mdiq.podcini.playback.TTSEngine.closeTTS
 import ac.mdiq.podcini.playback.cast.BaseActivity
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
@@ -275,7 +275,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
-        Logd(TAG, "onDestroy")
+        Logd(TAG) { "onDestroy" }
         WorkManager.getInstance(this).pruneWork()
         WorkManager.getInstance(applicationContext).pruneWork()
         closeTTS()
@@ -305,7 +305,7 @@ class MainActivity : BaseActivity() {
 
         firstStart = false
         val curTime = nowInMillis()
-        Logd(TAG, "onResume curTime: $curTime postRepeatsTime: ${appPrefsFlow!!.value.postRepeatsTime}")
+        Logd(TAG) { "onResume curTime: $curTime postRepeatsTime: ${appPrefsFlow!!.value.postRepeatsTime}" }
         if ((curTime - appPrefsFlow!!.value.postRepeatsTime) > 3600000L * 24)
             runOnIOScope {
                 val count = realm.query(Episode::class).query("playState == ${EpisodeState.AGAIN.code} OR playState == ${EpisodeState.FOREVER.code}").query("repeatTime <= $curTime").count().find()
@@ -336,7 +336,7 @@ class MainActivity : BaseActivity() {
     private fun procFlowEvents() {
         if (eventSink == null) eventSink = lifecycleScope.launch {
             EventFlow.events.collectLatest { event ->
-                Logd(TAG, "Received event: ${event.TAG}")
+                Logd(TAG) { "Received event: ${event.TAG}" }
                 when (event) {
                     is FlowEvent.MessageEvent -> {
                         if (event.action != null)
@@ -353,28 +353,28 @@ class MainActivity : BaseActivity() {
             }
         }
         if (eventStickySink == null) eventStickySink = lifecycleScope.launch {
-            EventFlow.stickyEvents.collectLatest { event -> Logd(TAG, "Received sticky event: ${event.TAG}") }
+            EventFlow.stickyEvents.collectLatest { event -> Logd(TAG) { "Received sticky event: ${event.TAG}" } }
         }
     }
 
     private fun handleNavIntent() {
-        Logd(TAG, "handleNavIntent()")
+        Logd(TAG) { "handleNavIntent()" }
         when {
             intent.hasExtra(Extras.feed_id.name) -> {
                 val feedId = intent.getLongExtra(Extras.feed_id.name, 0)
-                Logd(TAG, "handleNavIntent: feedId: $feedId")
+                Logd(TAG) { "handleNavIntent: feedId: $feedId" }
                 if (feedId > 0) navTo(FeedDetails(feedId = feedId))
                 psState = PSState.PartiallyExpanded
             }
             intent.hasExtra(Extras.queue_id.name) -> {
                 val queueId = intent.getLongExtra(Extras.queue_id.name, 0)
-                Logd(TAG, "handleNavIntent: queueId: $queueId")
+                Logd(TAG) { "handleNavIntent: queueId: $queueId" }
                 if (queueId >= 0) navTo(Queues(id = queueId))
                 psState = PSState.PartiallyExpanded
             }
             intent.hasExtra(Extras.facet_name.name) -> {
                 val facetName = intent.getStringExtra(Extras.facet_name.name)
-                Logd(TAG, "handleNavIntent: facetName: $facetName")
+                Logd(TAG) { "handleNavIntent: facetName: $facetName" }
                 if (!facetName.isNullOrEmpty()) QuickAccess.entries.find { it.name == facetName }?.let { navTo(Facets(modeName = it.name)) }
                 psState = PSState.PartiallyExpanded
             }
@@ -382,7 +382,7 @@ class MainActivity : BaseActivity() {
                 val feedurl = intent.getStringExtra(Extras.feed_url.name)
                 val isShared = intent.getBooleanExtra(Extras.isShared.name, false)
                 val source = intent.getStringExtra(Extras.source.name) ?: ""
-                Logd(TAG, "handleNavIntent feedurl: $feedurl")
+                Logd(TAG) { "handleNavIntent feedurl: $feedurl" }
                 if (!feedurl.isNullOrBlank()) navTo(OnlineFeed(url = feedurl, source = source, shared = isShared))
             }
             intent.hasExtra(Extras.search_string.name) -> {
@@ -392,7 +392,7 @@ class MainActivity : BaseActivity() {
             intent.getBooleanExtra(Extras.open_player.name, false) -> psState = PSState.Expanded
             intent.hasExtra("shortcut_route") -> {
                 val route = intent.getStringExtra("shortcut_route")
-                Logd(TAG, "intent.hasExtra(shortcut_route) route $route")
+                Logd(TAG) { "intent.hasExtra(shortcut_route) route $route" }
                 val screen = when (route) {
                     "Queues" -> Queues()
                     "Facets" -> Facets()
@@ -407,7 +407,7 @@ class MainActivity : BaseActivity() {
                 // deeplink
                 val uri = intent.data
                 if (uri?.path == null) return
-                Logd(TAG, "Handling deeplink: $uri")
+                Logd(TAG) { "Handling deeplink: $uri" }
                 when (uri.path) {
                     "/deeplink/search" -> {
                         val query = uri.getQueryParameter("query") ?: return

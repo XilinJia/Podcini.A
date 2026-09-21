@@ -53,12 +53,12 @@ private const val TAG = "LocalFeeds"
 suspend fun loadLocalFolder(uri: Uri, feedsExist: List<Feed> = listOf()) {
     try {
         for (f in feedsExist) {
-            Logd(TAG, "loadLocalFolder check for feed: ${f.title}")
+            Logd(TAG) { "loadLocalFolder check for feed: ${f.title}" }
             if (f.downloadUrl.isNullOrBlank()) {
                 LogFor(TAG, f, false, "downloadUrl is null or empty")
                 continue
             }
-            if (f.downloadUrl!!.startsWith("podcini_local:")) Logd(TAG, "loadLocalFolder invalid url: ${f.title} ${f.downloadUrl}")
+            if (f.downloadUrl!!.startsWith("podcini_local:")) Logd(TAG) { "loadLocalFolder invalid url: ${f.title} ${f.downloadUrl}" }
             val folder = f.downloadUrl!!.toUF()
             if (!folder.exists()) {
                 Logt(TAG, "loadLocalFolder feed folder not exists, deleting: ${f.title}")
@@ -79,7 +79,7 @@ suspend fun loadLocalFolder(uri: Uri, feedsExist: List<Feed> = listOf()) {
             val filesInThisDir = content.filter { !it.isDirectory() }
 
             if (filesInThisDir.isNotEmpty()) {
-                Logd(TAG, "loadLocalFolder Found files in folder: ${directory.toAndroidUri()}")
+                Logd(TAG) { "loadLocalFolder Found files in folder: ${directory.toAndroidUri()}" }
                 val uri = directory.toAndroidUri()
                 val title = directory.name
                 val dirFeed = Feed(uri.toString(), null, title)
@@ -109,7 +109,7 @@ suspend fun loadLocalFolder(uri: Uri, feedsExist: List<Feed> = listOf()) {
                     v.parentId = parentId
                     v.isLocal = true
                     volumes.add(v)
-                    Logd(TAG, "loadLocalFolder Created volume: ${v.name} $parentId")
+                    Logd(TAG) { "loadLocalFolder Created volume: ${v.name} $parentId" }
                 } else v = realm.copyFromRealm(vExist)
                 for (subDir in subDirsInThisDir) traverseDirectory(subDir, v.id)
             }
@@ -123,7 +123,7 @@ suspend fun loadLocalFolder(uri: Uri, feedsExist: List<Feed> = listOf()) {
         }
         if (feeds.isNotEmpty()) FeedUpdater(feeds, doItAnyway = true).start()
         Logt(TAG, "loadLocalFolder Imported ${feeds.size} local feeds in ${volumes.size} volumes")
-        for (f in allFeeds) Logd(TAG, "loadLocalFolder feed: ${f.id} ${f.title} episodesCount: ${f.episodesCount}")
+        for (f in allFeeds) Logd(TAG) { "loadLocalFolder feed: ${f.id} ${f.title} episodesCount: ${f.episodesCount}" }
     } catch (e: Throwable) {
         Logs(TAG, e, e.localizedMessage ?: "No messaage")
     }
@@ -147,7 +147,7 @@ suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) 
         val item = Episode(0L, file.name, null, file.name, file.lastModified, EpisodeState.UNPLAYED.code, feed)
         item.isAutoDownloadEnabled = false
         val size = file.length
-        Logd(TAG, "createEpisode file.uri: ${file.uri}")
+        Logd(TAG) { "createEpisode file.uri: ${file.uri}" }
         item.fillMedia(0, 0, size, file.type, file.uri.toString(), file.uri.toString(), false, 0L, 0, 0)
         val episodes = feed.episodes
         for (existingItem in episodes) {
@@ -209,7 +209,7 @@ suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) 
 
     val allFiles = mutableListOf<DocFile>()
     fun traverseAll(uri: Uri, docId: String? = null) {
-        Logd(TAG, "traverseAll uri: $uri docId: $docId")
+        Logd(TAG) { "traverseAll uri: $uri docId: $docId" }
         val authority = uri.authority ?: return
         val treeId = DocumentsContract.getTreeDocumentId(uri)
         val startDocId = when {
@@ -234,7 +234,7 @@ suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) 
                 val size = cursor.getLong(2)
                 val lastModified = cursor.getLong(3)
                 val mime = cursor.getString(4)
-                Logd(TAG, "traverseAll doc: $name mime: $mime")
+                Logd(TAG) { "traverseAll doc: $name mime: $mime" }
                 if (mime == DocumentsContract.Document.MIME_TYPE_DIR) traverseAll(uri, id)
                 else allFiles.add(DocFile(name, mime, uri, size, lastModified))
             }
@@ -260,22 +260,22 @@ suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) 
         if (mediaType == MediaType.AUDIO || mediaType == MediaType.VIDEO) {
             mediaFiles.add(file)
             mediaFileNames.add(file.name)
-            Logd(TAG, "updateLocalFeed add to mediaFileNames ${file.name}")
+            Logd(TAG) { "updateLocalFeed add to mediaFileNames ${file.name}" }
         }
     }
 
     val newItems = mutableListOf<Episode>()
     for (i in mediaFiles.indices) {
-        Logd(TAG, "updateLocalFeed mediaFiles ${mediaFiles[i].name}")
+        Logd(TAG) { "updateLocalFeed mediaFiles ${mediaFiles[i].name}" }
         val oldItem = realm.query(Episode::class).query("feedId == ${feed.id} AND link == $0", mediaFiles[i].name).first().find()
         val newItem = createEpisode(feed, mediaFiles[i])
-        Logd(TAG, "updateLocalFeed oldItem: ${oldItem?.title} url: ${oldItem?.downloadUrl}")
-        Logd(TAG, "updateLocalFeed newItem: ${newItem.title} url: ${newItem.downloadUrl}")
+        Logd(TAG) { "updateLocalFeed oldItem: ${oldItem?.title} url: ${oldItem?.downloadUrl}" }
+        Logd(TAG) { "updateLocalFeed newItem: ${newItem.title} url: ${newItem.downloadUrl}" }
         if (oldItem != null) upsertBlk(oldItem) { it.updateFromOther(newItem) }
         newItems.add(newItem)
         progressCB?.invoke(i, mediaFiles.size)
     }
-    Logd(TAG, "updateLocalFeed newItems: ${newItems.size}")
+    Logd(TAG) { "updateLocalFeed newItems: ${newItems.size}" }
 
     // remove feed items without corresponding file
     val it = newItems.iterator()
@@ -286,7 +286,7 @@ suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) 
             it.remove()
         }
     }
-    Logd(TAG, "updateLocalFeed newItems 1: ${newItems.size}")
+    Logd(TAG) { "updateLocalFeed newItems 1: ${newItems.size}" }
     feed.addImage(Image(getImageUrl(allFiles, folderUri)))
     feed.episodes.addAll(newItems)
     updateFeedFull(feed, removeUnlistedItems = true)

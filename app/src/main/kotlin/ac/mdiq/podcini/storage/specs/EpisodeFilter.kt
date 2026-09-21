@@ -42,9 +42,9 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
     }
 
     fun queryString(): String {
-        Logd(TAG, "queryString propertySet: ${propertySet.size} $propertySet")
-//        Logd(TAG, "actual type: ${propertySet::class}")
-//        propertySet.forEach { Logd(TAG, "element: [$it] hash=${it.hashCode()}") }
+        Logd(TAG) { "queryString propertySet: ${propertySet.size} $propertySet" }
+//        Logd(TAG) { "actual type: ${propertySet::class}" }
+//        propertySet.forEach { Logd(TAG) { "element: [$it] hash=${it.hashCode()}" } }
 
         val statements: MutableList<String> = mutableListOf()
         fun assembleSubQueries(qSet: List<String>) {
@@ -104,7 +104,7 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
             .mapNotNull { it.removePrefix("${States.text.name} ").takeIf(String::isNotBlank) }
         for (tq in tqs) textQuerys.add(tq)
         assembleSubQueries(textQuerys)
-        Logd(TAG, "queryString statements after textQuerys: $statements")
+        Logd(TAG) { "queryString statements after textQuerys: $statements" }
 
         when {
             propertySet.contains(States.paused.name) -> statements.add(" position > 0 ")
@@ -146,7 +146,7 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
             propertySet.contains(States.no_transcript.name) -> statements.add("transcriptMetas.@count == 0 ")
         }
 
-        Logd(TAG, "queryString titleText: $titleText")
+        Logd(TAG) { "queryString titleText: $titleText" }
         if (titleText.isNotBlank()) {
             when {
                 propertySet.contains(States.title_off.name) -> {}
@@ -161,7 +161,7 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         if (propertySet.contains(States.higher.name)) durationQuerys.add("duration > $durationCeiling ")
         assembleSubQueries(durationQuerys)
 
-        Logd(TAG, "queryString ${propertySet.contains(States.has_comments.name)} ${States.has_comments.name} $propertySet")
+        Logd(TAG) { "queryString ${propertySet.contains(States.has_comments.name)} ${States.has_comments.name} $propertySet" }
         when {
             propertySet.contains(States.has_comments.name) -> statements.add(" comment != '' ")
             propertySet.contains(States.no_comments.name) -> statements.add(" comment == '' ")
@@ -190,7 +190,7 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
             query.append(r)
         }
         query.append(") ")
-        Logd(TAG, "queryString query: $query")
+        Logd(TAG) { "queryString query: $query" }
         return query.toString()
     }
 

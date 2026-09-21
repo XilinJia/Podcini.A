@@ -1,7 +1,5 @@
-package ac.mdiq.podcini.playback.base
+package ac.mdiq.podcini.playback
 
-import ac.mdiq.podcini.shared.PodciniHttpClient.proxyConfig
-import ac.mdiq.podcini.shared.ProxyConfig
 import ac.mdiq.podcini.sourcing.download.DownloadRequest
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.model.Episode
@@ -12,7 +10,6 @@ import kotlinx.io.IOException
 import okhttp3.Call
 import okhttp3.Connection
 import okhttp3.ConnectionPool
-import okhttp3.Credentials.basic
 import okhttp3.EventListener
 import okhttp3.Interceptor
 import okhttp3.Interceptor.Chain
@@ -25,10 +22,9 @@ import okio.ByteString
 import java.io.InterruptedIOException
 import java.io.UnsupportedEncodingException
 import java.net.HttpURLConnection
-import java.net.InetSocketAddress
-import java.net.Proxy
 import java.util.concurrent.TimeUnit
 
+// this now is only needed for testing purpose
 object OKHTTP {
     private const val TAG = "OKHTTP"
     private const val CONNECTION_TIMEOUT = 15000
@@ -41,7 +37,7 @@ object OKHTTP {
     }
 
     private fun newBuilder(): Builder {
-        Logd(TAG, "Creating optimized HTTP client for Media3 Streaming")
+        Logd(TAG) { "Creating optimized HTTP client for Media3 Streaming" }
         val builder = Builder()
         builder.retryOnConnectionFailure(true)
         builder.connectTimeout(CONNECTION_TIMEOUT.toLong(), TimeUnit.MILLISECONDS)
@@ -61,7 +57,7 @@ object OKHTTP {
         }
         builder.addInterceptor { chain ->
             val response = chain.proceed(chain.request())
-            Logd(TAG,
+            Logd(TAG) {
                 """
                 host=${chain.request().url.host}
                 protocol=${response.protocol}
@@ -72,21 +68,21 @@ object OKHTTP {
                 contentEncoding=${response.header("Content-Encoding")}
                 connection=${response.header("Connection")}
                 """.trimIndent()
-            )
+            }
             response
         }
         builder.interceptors().add(BasicAuthorizationInterceptor())
 
         builder.eventListener(object : EventListener() {
             override fun connectionAcquired(call: Call, connection: Connection) {
-                Logd(TAG, "acquired: $connection")
+                Logd(TAG) { "acquired: $connection" }
             }
             override fun connectionReleased(call: Call, connection: Connection) {
-                Logd(TAG, "released: $connection")
+                Logd(TAG) { "released: $connection" }
             }
             override fun callFailed(call: Call, ioe: IOException) {
                 if (call.isCanceled() || ioe is InterruptedIOException && ioe.message?.contains("canceled", ignoreCase = true) == true || ioe.message?.contains("canceled", ignoreCase = true) == true) {
-                    Logd(TAG, "Network call was intentionally canceled. Ignoring error logs.")
+                    Logd(TAG) { "Network call was intentionally canceled. Ignoring error logs." }
                     return
                 }
                 Loge(TAG, "callFailed error ${ioe::class.java.name}: ${ioe.message}")
@@ -121,7 +117,7 @@ object OKHTTP {
     class BasicAuthorizationInterceptor : Interceptor {
         override fun intercept(chain: Chain): Response {
             fun getImageAuthentication(imageUrl: String): String {
-                Logd(TAG, "getImageAuthentication() called with: imageUrl = [$imageUrl]")
+                Logd(TAG) { "getImageAuthentication() called with: imageUrl = [$imageUrl]" }
                 val episode = realm.query(Episode::class).query("imageUrl == $0", imageUrl).first().find() ?: return ""
                 val username = episode.feed?.username
                 val password = episode.feed?.password
@@ -156,23 +152,23 @@ object OKHTTP {
 
             val userInfo = getUserInfo(request)
             if (userInfo.isEmpty()) {
-                Logd(TAG, "No credentials for '${request.url}'")
+                Logd(TAG) { "No credentials for '${request.url}'" }
                 return response
             }
             val parts = userInfo.split(':', limit = 2)
             if (parts.size != 2) {
-                Logd(TAG, "Invalid credentials for '${request.url}'")
+                Logd(TAG) { "Invalid credentials for '${request.url}'" }
                 return response
             }
 
             val username = parts[0]
             val password = parts[1]
-            Logd(TAG, "Retrying auth with ISO-8859-1")
+            Logd(TAG) { "Retrying auth with ISO-8859-1" }
             response.close()
             response = chain.proceed(newRequest.header(HEADER_AUTHORIZATION, encodeCredentials(username, password, "ISO-8859-1")).build())
             if (response.code != HttpURLConnection.HTTP_UNAUTHORIZED) return response
 
-            Logd(TAG, "Retrying auth with UTF-8")
+            Logd(TAG) { "Retrying auth with UTF-8" }
             response.close()
             return chain.proceed(newRequest.header(HEADER_AUTHORIZATION, encodeCredentials(username, password, "UTF-8")).build())
         }

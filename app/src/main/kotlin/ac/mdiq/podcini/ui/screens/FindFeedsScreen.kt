@@ -150,7 +150,7 @@ class FindFeedsVM: ViewModel() {
     }
 
     override fun onCleared() {
-        Logd(TAG, "VM onCleared")
+        Logd(TAG) { "VM onCleared" }
         searchJob?.cancel()
         searchJob = null
     }
@@ -167,7 +167,7 @@ fun FindFeedsScreen() {
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            Logd(TAG, "DisposableEffect Lifecycle.Event: $event")
+            Logd(TAG) { "DisposableEffect Lifecycle.Event: $event" }
             when (event) {
                 Lifecycle.Event.ON_CREATE -> {}
                 Lifecycle.Event.ON_START -> {}

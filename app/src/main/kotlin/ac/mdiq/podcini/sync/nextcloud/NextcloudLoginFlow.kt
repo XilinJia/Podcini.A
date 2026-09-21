@@ -122,7 +122,7 @@ class NextcloudLoginFlow(
 
     @Throws(IOException::class, JSONException::class)
     private suspend fun doRequest(url: URL, bodyContent: String): JSONObject {
-        Logd(TAG, "doRequest $url $bodyContent")
+        Logd(TAG) { "doRequest $url $bodyContent" }
         val response: HttpResponse = httpClient.post(url) {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(bodyContent)
@@ -132,7 +132,7 @@ class NextcloudLoginFlow(
 //            response.close()
             throw IOException("Return code " + response.status)
         }
-        Logd(TAG, "doRequest body: $responseBody ")
+        Logd(TAG) { "doRequest body: $responseBody " }
         return JSONObject(responseBody)
     }
 

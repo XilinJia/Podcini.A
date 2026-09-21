@@ -38,7 +38,7 @@ fun parseWebVtt(input: String): List<CaptionCue> {
             i++
             continue
         }
-//        Logd(TAG, "parseWebVtt $i $line")
+//        Logd(TAG) { "parseWebVtt $i $line" }
         val timingLine: String
         when {
             line.contains("-->") -> timingLine = line
@@ -52,7 +52,7 @@ fun parseWebVtt(input: String): List<CaptionCue> {
             }
         }
         val timing = parseVttTiming(timingLine)
-//        Logd(TAG, "parseWebVtt $i ${timing?.first}")
+//        Logd(TAG) { "parseWebVtt $i ${timing?.first}" }
         if (timing == null) {
             i++
             continue
@@ -91,7 +91,7 @@ fun parseSrt(input: String): List<CaptionCue> {
     var i = 0
     while (i < lines.size) {
         val line = lines[i].trim()
-//        Logd(TAG, "parseSrt line: $line")
+//        Logd(TAG) { "parseSrt line: $line" }
         if (line.isEmpty() || line.toIntOrNull() != null) {
             i++
             continue
@@ -316,7 +316,7 @@ fun parseTTMLCaptions(xml: String): List<CaptionCue> {
         val endMs = p.attr("end").let(::parseTimestampMs) ?: return@mapNotNull null
         val text = p.text().trim()
         if (text.isEmpty()) return@mapNotNull null
-        Logd(TAG, "parseTTMLCaptions $startMs $text")
+        Logd(TAG) { "parseTTMLCaptions $startMs $text" }
         CaptionCue().apply {
             this.startMs = startMs
             this.endMs = endMs

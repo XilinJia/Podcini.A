@@ -69,7 +69,7 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
             }
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
-//                Logd(TAG, "Page finished")
+//                Logd(TAG) { "Page finished" }
                 pageFinishedListener?.invoke()
             }
             override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
@@ -87,13 +87,13 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
         val r: HitTestResult = hitTestResult
         when (r.type) {
             HitTestResult.SRC_ANCHOR_TYPE -> {
-                Logd(TAG, "Link of webview was long-pressed. Extra: " + r.extra)
+                Logd(TAG) { "Link of webview was long-pressed. Extra: " + r.extra }
                 selectedUrl = r.extra
                 showContextMenu()
                 return true
             }
             HitTestResult.EMAIL_TYPE -> {
-                Logd(TAG, "E-Mail of webview was long-pressed. Extra: " + r.extra)
+                Logd(TAG) { "E-Mail of webview was long-pressed. Extra: " + r.extra }
                 ContextCompat.getSystemService(context, ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Podcini", r.extra))
                 // TODO: is checking SDK_INT <= 32 necessary?
                 Logt(TAG, context.getString(R.string.copied_to_clipboard))

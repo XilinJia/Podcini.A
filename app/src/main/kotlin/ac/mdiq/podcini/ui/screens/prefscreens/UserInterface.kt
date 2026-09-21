@@ -11,6 +11,7 @@ import ac.mdiq.podcini.ui.compose.TitleSummarySwitchRow
 import ac.mdiq.podcini.ui.compose.appTheme
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.screens.DefaultPages
+import ac.mdiq.podcini.utils.LogLevel
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +28,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -121,10 +125,21 @@ fun UserInterfaceScreen() {
         }
         TitleSummarySwitchRow(R.string.pref_back_button_opens_drawer, R.string.pref_back_button_opens_drawer_summary, appPrefs.backButtonOpensDrawer) {
             upsertBlk(appPrefs) { p-> p.backButtonOpensDrawer = it } }
-        TitleSummarySwitchRow(R.string.pref_show_error_toasts, R.string.pref_show_error_toasts_sum, appPrefs.showErrorToasts) {
-            upsertBlk(appPrefs) { p-> p.showErrorToasts = it } }
-        TitleSummarySwitchRow(R.string.pref_print_logs, R.string.pref_print_logs_sum, appPrefs.printDebugLogs) {
-            upsertBlk(appPrefs) { p-> p.printDebugLogs = it } }
+
+        Text(stringResource(R.string.pref_show_log_level), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold,  modifier = Modifier.padding(start = 16.dp, top = 10.dp))
+        SingleChoiceSegmentedButtonRow {
+            var selected by remember { mutableIntStateOf(appPrefs.showLogLevel) }
+            LogLevel.entries.forEachIndexed { index, level ->
+                SegmentedButton(shape = SegmentedButtonDefaults.itemShape(index = index, count = LogLevel.entries.size),  selected = level.code == selected,
+                    onClick = {
+                        selected = level.code
+                        upsertBlk(appPrefs) { p-> p.showLogLevel = level.code }
+                    }
+                ) { Text(level.name, maxLines = 1) }
+            }
+        }
+        Text(stringResource(R.string.pref_show_log_level_sum), color = textColor, style = MaterialTheme.typography.bodySmall,  modifier = Modifier.fillMaxWidth().padding(start = 16.dp))
+
         TitleSummarySwitchRow(R.string.pref_dont_ask_restricted, R.string.pref_dont_ask_restricted_sum, appPrefs.dont_ask_again_unrestricted_background) {
             upsertBlk(appPrefs) { p-> p.dont_ask_again_unrestricted_background = it } }
     }

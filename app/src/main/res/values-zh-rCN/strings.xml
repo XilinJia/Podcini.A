@@ -538,10 +538,6 @@
     <string name="pref_default_page_sum">启动 Podcini 时打开屏幕</string>
     <string name="pref_back_button_opens_drawer">返回键打开抽屉栏</string>
     <string name="pref_back_button_opens_drawer_summary">按下默认页面上的后退按钮打开导航栏</string>
-    <string name="pref_show_error_toasts">显示错误提示</string>
-    <string name="pref_show_error_toasts_sum">是否将错误消息显示为Toast。</string>
-    <string name="pref_print_logs">打印调试日志</string>
-    <string name="pref_print_logs_sum">切换是否记录调试消息。这可能降低性能。只有在准备报告问题时才打开它。</string>
     <string name="pref_dont_ask_restricted">不再询问受限背景</string>
     <string name="pref_dont_ask_restricted_sum">请求有限制的后台权限会在权限未授予的情况下被提示。这将禁用提示。 请确保授予权限，否则继续播放并在后台输入更新信息无法正常工作。</string>
     <string name="restore_on_start">启动时恢复</string>

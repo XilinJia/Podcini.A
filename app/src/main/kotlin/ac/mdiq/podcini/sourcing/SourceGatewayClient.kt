@@ -2,7 +2,7 @@ package ac.mdiq.podcini.sourcing
 
 import ac.mdiq.podcini.PodciniApp
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.forcePlaybackReset
+import ac.mdiq.podcini.playback.forcePlaybackReset
 import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.FeedSearchResult
@@ -118,11 +118,11 @@ object AppGatewayRegistry {
 
     fun initialize(loadExternal: Boolean, scope: CoroutineScope) {
         scope.launch {
-            Logd(TAG, "initialize loadExternal: $loadExternal")
+            Logd(TAG) { "initialize loadExternal: $loadExternal" }
             val currentDeferred: CompletableDeferred<List<SourceGatewayClient>>
             mutex.withLock {
                 if (isInitializing) {
-                    Logd(TAG, "initialize skipped, already in progress")
+                    Logd(TAG) { "initialize skipped, already in progress" }
                     return@launch
                 }
                 isInitializing = true
@@ -197,7 +197,7 @@ object AppGatewayRegistry {
                         delay(delayMs.milliseconds)
                         delayMs = (delayMs * 2).coerceAtMost(30_000L)
                     }
-                    Logd(TAG, "reconnectClient Unable to reconnect gateway")
+                    Logd(TAG) { "reconnectClient Unable to reconnect gateway" }
                 }
             }
             val client = SourceGatewayClient()
@@ -206,7 +206,7 @@ object AppGatewayRegistry {
                     try {
                         val remote = IPodciniGateway.Stub.asInterface(service)
                         val attr = remote.attributes
-                        Logd(TAG, "onServiceConnected name: ${attr.name} type: ${attr.feedType} api: ${attr.apiVersion} ${PROVIDER_API_VERSION}")
+                        Logd(TAG) { "onServiceConnected name: ${attr.name} type: ${attr.feedType} api: ${attr.apiVersion} ${PROVIDER_API_VERSION}" }
                         PodcastSearcherRegistry.searcherInfos.clear()
                         val recognized = attr.feedType in FeedType.entries.map { it.name }
                         val versionMatched = attr.apiVersion == PROVIDER_API_VERSION
@@ -252,14 +252,14 @@ object AppGatewayRegistry {
                 }
             }
 
-            Logd(TAG, "bindSingleClient before bind")
+            Logd(TAG) { "bindSingleClient before bind" }
             val success = try {
                 context.bindService(explicitIntent, connection, Context.BIND_AUTO_CREATE or Context.BIND_IMPORTANT)
             } catch (e: Exception) {
                 Loge(TAG, e, "Failed to bind external service")
                 false
             }
-            Logd(TAG, "bindSingleClient after bind")
+            Logd(TAG) { "bindSingleClient after bind" }
 
             if (!success && continuation.isActive) continuation.resumeWith(Result.success(null))
 
@@ -268,15 +268,15 @@ object AppGatewayRegistry {
 
         for (resolveInfo in resolveInfos) {
             val serviceInfo = resolveInfo.serviceInfo
-            Logd(TAG, "getSourceClients exported=${serviceInfo.exported}")
-            Logd(TAG, "getSourceClients permission=${serviceInfo.permission}")
-            Logd(TAG, "getSourceClients Targeting Package: ${serviceInfo.packageName}")
-            Logd(TAG, "getSourceClients Targeting Class: ${serviceInfo.name}")
+            Logd(TAG) { "getSourceClients exported=${serviceInfo.exported}" }
+            Logd(TAG) { "getSourceClients permission=${serviceInfo.permission}" }
+            Logd(TAG) { "getSourceClients Targeting Package: ${serviceInfo.packageName}" }
+            Logd(TAG) { "getSourceClients Targeting Class: ${serviceInfo.name}" }
             val explicitIntent = Intent("ac.mdiq.podcini.action.PODCINI_GATEWAY").apply { component = ComponentName(serviceInfo.packageName, serviceInfo.name) }
 
-            Logd(TAG, "getSourceClients before bindSingleClient")
+            Logd(TAG) { "getSourceClients before bindSingleClient" }
             var client = bindSingleClient(explicitIntent)
-            Logd(TAG, "getSourceClients after bindSingleClient")
+            Logd(TAG) { "getSourceClients after bindSingleClient" }
             if (client == null) client = bindSingleClient(explicitIntent)
             if (client != null) clients.add(client)
         }
@@ -322,7 +322,7 @@ class SourceGatewayClient() {
     }
 
     fun <T> executeBlocking(block: (IPodciniGateway) -> T): T? {
-//        Logd(TAG, "executeBlocking")
+//        Logd(TAG) { "executeBlocking" }
         return runBlocking(Dispatchers.IO) {
             if (gateway == null) return@runBlocking null
             withContext(Dispatchers.IO) { block(gateway!!) }

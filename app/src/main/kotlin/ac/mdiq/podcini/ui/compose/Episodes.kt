@@ -7,9 +7,9 @@ import ac.mdiq.podcini.automation.cancelTimer
 import ac.mdiq.podcini.automation.playEpisodeAtTime
 import ac.mdiq.podcini.automation.reset
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.MediaPlayerBase
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.playback.MediaPlayerBase
+import ac.mdiq.podcini.playback.actQueueFlow
+import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.DiscoveredReceiver
@@ -93,7 +93,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.DragInteraction
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -121,7 +120,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -457,14 +455,14 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
     val dlLogs = remember(episode.id) { realm.query(DownloadResult::class).query("feedfileId == ${episode.id} AND feedfileType == ${RequestType.FEEDMEDIA.code}").sort("completionTime",  Sort.DESCENDING).find() }
 
     LaunchedEffect(episode) {
-        Logd(TAG, "LaunchedEffect(episode, episodeId)")
+        Logd(TAG) { "LaunchedEffect(episode, episodeId)" }
         suspend fun buildCleanedNotes(curItem: Episode, shownotesCleaner: ShownotesCleaner?): Pair<Episode, String?> {
             var curItem_ = curItem
             val url = curItem_.downloadUrl
             var cleanedNotes: String? = null
             val client = clientByEpisode(curItem_)
             if (client != null && curItem_.description?.startsWith("Short:") == true) {
-                Logd(TAG, "buildCleanedNotes getting extended description: ${curItem_.title}")
+                Logd(TAG) { "buildCleanedNotes getting extended description: ${curItem_.title}" }
                 try {
                     val desc = client.withProvider { it.getEpisodeDescription(url) }
                     cleanedNotes = if (!desc.isNullOrBlank()) {
@@ -478,7 +476,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
         if (fetchWebdata) {
             webviewData = webDataCache[episode.id]
             if (webviewData.isNullOrBlank()) {
-//                Logd(TAG, "description: ${episode.description}")
+//                Logd(TAG) { "description: ${episode.description}" }
                 withContext(Dispatchers.IO) {
                     episode.let {
                         webviewData = buildCleanedNotes(episode, ShownotesCleaner()).second
@@ -497,7 +495,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
 
     LaunchedEffect(Unit) {
         if (episode.transcriptMetas.isNotEmpty() && isExtFeed(episode.feed)) {
-            Logd(TAG, "resetting transcriptMetas")
+            Logd(TAG) { "resetting transcriptMetas" }
             val url = episode.transcriptMetas[0].url
             val expireTime = Uri.parse(url).getQueryParameter("expire")?.toLongOrNull()
             if (expireTime != null && expireTime < nowInMillis()) {
@@ -623,7 +621,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                         onClick = {
                             val file = episode.getClipFile(clip)
                             val uri = file.toAndroidUri()
-                            Logd(TAG, "clip file: ${file.absPath} uri: $uri")
+                            Logd(TAG) { "clip file: ${file.absPath} uri: $uri" }
                             if (playerLocal != null && uri != null && runBlocking { file.exists() }) {
                                 playerLocal!!.setMediaItem(MediaItem.fromUri(uri))
                                 playerLocal!!.prepare()
@@ -635,7 +633,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 }
             }
         }
-        //        Logd(TAG, "episode.related: ${episode.related.size}")
+        //        Logd(TAG) { "episode.related: ${episode.related.size}" }
         if (episode.related.isNotEmpty()) {
             var showTodayStats by remember { mutableStateOf(false) }
             if (showTodayStats) RelatedEpisodesDialog(episode) { showTodayStats = false }
@@ -721,7 +719,7 @@ fun RelatedEpisodesDialog(episode: Episode, onDismiss: () -> Unit) {
     // TODO: somehow, episode is not updated after unrelate
     AlertDialog(properties = DialogProperties(usePlatformDefaultWidth = false), modifier = Modifier.fillMaxWidth().height(300.dp).padding(5.dp).border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { onDismiss() },  confirmButton = {},
         text = {
-            Logd(TAG, "episode.related: ${episode.related.size}")
+            Logd(TAG) { "episode.related: ${episode.related.size}" }
             EpisodeLazyColumn(episode.related.toList(), layoutMode = LayoutMode.FeedTitle.code, forceFeedImage = true, showActionButtons = false,
                 actionButtonCB = {e1, _ ->
                     runOnIOScope {
@@ -979,7 +977,7 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
                             if (setDueTime) todo_.dueTime = dueTime
                             upsert(episode) { it.todos.add(todo_) }
                         } else upsertBlkEmb(todo) { todo_ ->
-                            Logd(TAG, "editing todo title: $title note: $note")
+                            Logd(TAG) { "editing todo title: $title note: $note" }
                             todo_.title = title.text
                             todo_.note = note.text
                             todo_.dueTime = 0L
@@ -1053,11 +1051,11 @@ fun EditTimerDialog(timer: Timer? = null, episode: Episode? = null, cb: (Timer)-
                         minute(padding = Padding.NONE)
                     }
                     val triggerTime = format.parse(ymdhm).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-                    Logd(TAG, "triggerTime: $triggerTime")
+                    Logd(TAG) { "triggerTime: $triggerTime" }
                     if (triggerTime < nowInMillis()) wantText = context.getString(R.string.warn_time_past)
                     else {
                         if (timer != null) {
-                            Logd(TAG, "triggerTime: ${timer.triggerTime} $triggerTime")
+                            Logd(TAG) { "triggerTime: ${timer.triggerTime} $triggerTime" }
                             val timer_ = upsertBlkEmb(timer) { it.triggerTime = triggerTime }
                             cb(timer_)
                             reset(timer_)
@@ -1199,12 +1197,12 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                     }
                     if (expandRow) {
                         SearchBarRow(R.string.search_hint, defaultText = queryText, modifier = Modifier.fillMaxWidth().padding(start = 10.dp)) { query ->
-                            Logd(TAG, "SearchBarRow cb query: $query")
+                            Logd(TAG) { "SearchBarRow cb query: $query" }
                             if (query.isNotBlank()) {
                                 selectNone = false
                                 val queryWords = (if (query.contains(",")) query.split(",").map { it.trim() } else query.split("\\s+".toRegex())).dropWhile { it.isEmpty() }
                                 val queryString = searchAlgo.episodesQueryString(0L, queryWords)
-                                Logd(TAG, "SearchBarRow cb queryString: $queryString")
+                                Logd(TAG) { "SearchBarRow cb queryString: $queryString" }
                                 filter.addTextQuery(queryString)
                             } else filter.addTextQuery("")
                             queryText = query
@@ -1276,7 +1274,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                         selectedIndex = -1
                                         filter.remove(item.properties[0].filterId)
                                     }
-                                    Logd("EpisodesFilterDialog", "selectedIndex: $selectedIndex filterValues = [${filter.propertySet}]")
+                                    Logd("EpisodesFilterDialog") { "selectedIndex: $selectedIndex filterValues = [${filter.propertySet}]" }
                                     onFilterChanged(filter)
                                 },
                             ) { Text(text = stringResource(item.properties[0].displayName), color = textColor) }
@@ -1546,7 +1544,7 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
             listenForUDPBroadcasts(udpPort) { list ->
                 if (list.isNotEmpty()) {
                     receivers = list
-                    Logd("MulticastDialog", "number of receivers: ${list.size}")
+                    Logd("MulticastDialog") { "number of receivers: ${list.size}" }
                 }
             }
         }
@@ -1556,7 +1554,7 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
         onDismiss()
     }
     LaunchedEffect(sendJobs.size) {
-        Logd(TAG, "LaunchedEffect(sendJobs.size) ${sendJobs.size}")
+        Logd(TAG) { "LaunchedEffect(sendJobs.size) ${sendJobs.size}" }
         if (sendJobs.isNotEmpty()) started = true
         if (started && sendJobs.isEmpty()) cleanup()
     }
@@ -1580,7 +1578,7 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
                 for (r in receivers) {
                     val job = sendEpisodes(r.ip, r.port, synthName, selected) {
                         sendJobs[r.ip]?.let { j ->
-                            Logd(TAG, "closing job: ${r.ip} ${sendJobs.size}")
+                            Logd(TAG) { "closing job: ${r.ip} ${sendJobs.size}" }
                             j.cancel()
                             sendJobs.remove(r.ip)
                         }

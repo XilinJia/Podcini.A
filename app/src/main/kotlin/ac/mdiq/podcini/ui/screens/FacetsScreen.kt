@@ -186,7 +186,7 @@ class FacetsVM(modeName_: String): ViewModel() {
         }
 
     suspend fun updateToolbar(episodes: List<Episode>) {
-        Logd(TAG, "updateToolbar")
+        Logd(TAG) { "updateToolbar" }
         withContext(Dispatchers.IO) {
             var info = buildListInfo(episodes)
             if (facetsMode == QuickAccess.Downloaded && episodes.isNotEmpty()) {
@@ -203,7 +203,7 @@ class FacetsVM(modeName_: String): ViewModel() {
     }
 
     private fun buildFlow(): Flow<List<Episode>> {
-        Logd(TAG, "buildFlow() called")
+        Logd(TAG) { "buildFlow() called" }
         listIdentity = "Facets.${facetsMode.name}"
         incSortConds = listOf()
         val realmFlow = when (facetsMode) {
@@ -342,7 +342,7 @@ class FacetsVM(modeName_: String): ViewModel() {
     }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun clearHistory() : Job {
-        Logd(TAG, "clearHistory called")
+        Logd(TAG) { "clearHistory called" }
         return runOnIOScope {
             progressing = true
             while (realm.query(Episode::class).query("playbackCompletionTime > 0 || lastPlayedTime > 0").count().find() > 0) {
@@ -365,18 +365,18 @@ class FacetsVM(modeName_: String): ViewModel() {
         suspend fun traverse(srcFile: UnifiedFile) {
             val filename = srcFile.name
             if (srcFile.isDirectory()) {
-                Logd(TAG, "traverse folder title: $filename")
+                Logd(TAG) { "traverse folder title: $filename" }
                 srcFile.listChildren().forEach { file -> traverse(file) }
             } else {
-                Logd(TAG, "traverse: ${srcFile.absPath} filename: $filename")
+                Logd(TAG) { "traverse: ${srcFile.absPath} filename: $filename" }
                 val episode = nameEpisodeMap.remove(filename)
                 if (episode == null) {
-                    Logd(TAG, "traverse: error: episode not exist in map: $filename")
+                    Logd(TAG) { "traverse: error: episode not exist in map: $filename" }
                     filesRemoved.add(filename)
                     runOnIOScope { srcFile.delete() }
                     return
                 }
-                Logd(TAG, "traverse found episode: ${episode.title}")
+                Logd(TAG) { "traverse found episode: ${episode.title}" }
             }
         }
         runOnIOScope {
@@ -384,7 +384,7 @@ class FacetsVM(modeName_: String): ViewModel() {
             nameEpisodeMap.clear()
             MediaFilesTransporter("").updateDB()    // TODO: check out, may run out of memory?
             var eList = getEpisodes(EpisodeFilter(facetsPrefs.filtersMap[QuickAccess.Downloaded.name] ?: EpisodeFilter.States.downloaded.name), sortOrder, copy=false)
-            Logd(TAG, "reconcile eList: ${eList.size}")
+            Logd(TAG) { "reconcile eList: ${eList.size}" }
             val feMap = eList.groupBy { it.feedId }.toMutableMap()
             val iterator = feMap.iterator()
             while (iterator.hasNext()) {
@@ -397,17 +397,17 @@ class FacetsVM(modeName_: String): ViewModel() {
                 val el = feMap[fid] ?: continue
                 for (e in el) {
                     var fileUrl = e.fileUrl
-                    Logd(TAG, "reconcile e: ${e.title} [$fileUrl]")
+                    Logd(TAG) { "reconcile e: ${e.title} [$fileUrl]" }
                     if (fileUrl.isNullOrBlank()) continue
-                    Logd(TAG, "reconcile: fileUrl: $fileUrl")
+                    Logd(TAG) { "reconcile: fileUrl: $fileUrl" }
                     fileUrl = fileUrl.substring(fileUrl.lastIndexOf('/') + 1).decodeURLQueryComponent()
-                    Logd(TAG, "reconcile: add to map: fileUrl: $fileUrl")
+                    Logd(TAG) { "reconcile: add to map: fileUrl: $fileUrl" }
                     nameEpisodeMap[fileUrl] = e
                 }
             }
             eList = listOf()
             mediaDir.listChildren().forEach { file -> traverse(file) }
-            Logd(TAG, "reconcile: end, episodes missing file: ${nameEpisodeMap.size}")
+            Logd(TAG) { "reconcile: end, episodes missing file: ${nameEpisodeMap.size}" }
             if (nameEpisodeMap.isNotEmpty()) for (e in nameEpisodeMap.values) { upsertBlk(e) { it.fileUrl = null } }
             val count = nameEpisodeMap.size
             nameEpisodeMap.clear()
@@ -417,7 +417,7 @@ class FacetsVM(modeName_: String): ViewModel() {
                 val el = query(Episode::class, "feedId == nil").find()
                 if (el.isNotEmpty()) {
                     val size = el.size
-                    for (e in el) Logd(TAG, "deleting ${e.title}")
+                    for (e in el) Logd(TAG) { "deleting ${e.title}" }
                     delete(el)
                     Logt(TAG, "reconcile deleted $size loose episodes")
                 }
@@ -431,7 +431,7 @@ class FacetsVM(modeName_: String): ViewModel() {
                         val el = query(Episode::class, "feedId == $id").find()
                         if (el.isNotEmpty()) {
                             val size = el.size
-                            for (e in el) Logd(TAG, "deleting ${e.title}")
+                            for (e in el) Logd(TAG) { "deleting ${e.title}" }
                             delete(el)
                             Logt(TAG, "reconcile deleted $size episodes in non-existent feed $id")
                         }
@@ -458,7 +458,7 @@ class FacetsVM(modeName_: String): ViewModel() {
                 }
             }
         }
-        Logd(TAG, "facetsMode: ${facetsMode.name} ${facetsPrefs.screenMode}")
+        Logd(TAG) { "facetsMode: ${facetsMode.name} ${facetsPrefs.screenMode}" }
         when {
             modeName == QuickAccess.None.name -> {
                 facetsMode = QuickAccess.entries.find { it.name == facetsPrefs.screenMode } ?: QuickAccess.New
@@ -478,12 +478,12 @@ class FacetsVM(modeName_: String): ViewModel() {
             else -> curIndex = QuickAccess.Custom.ordinal
         }
         tag = TAG + QuickAccess.entries[curIndex]
-        Logd(TAG, "facetsMode 1: ${facetsMode.name} ${facetsPrefs.screenMode}")
+        Logd(TAG) { "facetsMode 1: ${facetsMode.name} ${facetsPrefs.screenMode}" }
         timeIt("$TAG end of init")
     }
 
     override fun onCleared() {
-        Logd(TAG, "VM onCleared")
+        Logd(TAG) { "VM onCleared" }
         facetsPrefsJob?.cancel()
         facetsPrefsJob = null
     }
@@ -597,13 +597,13 @@ fun FacetsScreen(modeName: String = "") {
             else mutableSetOf()
         }
         if (showFilterDialog) EpisodesFilterDialog(filter_ = vm.filter, disabledSet = filtersDisabled(), showAndOr = facetsMode in listOf(QuickAccess.All, QuickAccess.Custom), onDismiss = { showFilterDialog = false }) { filter ->
-            Logd(TAG, "EpisodesFilterDialog cb: filter: ${filter.propertySet}")
+            Logd(TAG) { "EpisodesFilterDialog cb: filter: ${filter.propertySet}" }
             vm.filter = filter
             vm.filterChanged++
             resetSwipes()
         }
         if (showSortDialog) EpisodeSortDialog(initOrder = vm.sortOrder, includeConditionals = vm.incSortConds , onDismiss = { showSortDialog = false }) { order ->
-            Logd(TAG, "EpisodeSortDialog order: $order")
+            Logd(TAG) { "EpisodeSortDialog order: $order" }
             if (order != null) {
                 vm.sortOrder = order
                 resetSwipes()

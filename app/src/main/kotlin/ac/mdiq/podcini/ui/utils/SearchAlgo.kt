@@ -47,7 +47,7 @@ class SearchAlgo {
     }
 
     fun episodesQueryString(feedID: Long, queryWords: List<String>): String {
-        Logd("searchEpisodesQuery", "searchEpisodes called")
+        Logd("searchEpisodesQuery") { "searchEpisodes called" }
         val sb = StringBuilder()
         for (i in queryWords.indices) {
             val sb1 = StringBuilder()
@@ -84,7 +84,7 @@ class SearchAlgo {
 
         var queryString = sb.toString()
         if (feedID != 0L) queryString = "(feedId == $feedID) AND $queryString"
-        Logd(TAG, "searchEpisodes queryString: $queryString")
+        Logd(TAG) { "searchEpisodes queryString: $queryString" }
 
         return queryString
     }
@@ -167,13 +167,13 @@ class SearchAlgo {
     fun searchFeeds(queryWords: List<String>): List<Feed> {
         val queryString = feedQueryString(queryWords)
         if (queryString.isEmpty()) return listOf()
-        Logd(TAG, "searchFeeds queryString: $queryString")
+        Logd(TAG) { "searchFeeds queryString: $queryString" }
         return realm.query(Feed::class).query(queryString).find()
     }
     fun searchPAFeeds(queryWords: List<String>): List<PAFeed> {
         val queryString = paFeedsQueryString(queryWords)
         if (queryString.isEmpty()) return listOf()
-        Logd(TAG, "searchFeeds queryString: $queryString")
+        Logd(TAG) { "searchFeeds queryString: $queryString" }
         return realm.query(PAFeed::class).query(queryString).find()
     }
     fun searchEpisodes(feedID: Long, queryWords: List<String>, sortBY: EpisodeSortOrder = EpisodeSortOrder.DATE_DESC): Flow<ResultsChange<Episode>> {

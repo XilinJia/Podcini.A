@@ -43,7 +43,7 @@ fun reset(timer: Timer) {
     if (pendingIntent != null) {
         alarmManager.cancel(pendingIntent)
         pendingIntent.cancel() // Good practice to also cancel the PendingIntent
-        Logd(TAG, "Timer cancelled.")
+        Logd(TAG) { "Timer cancelled." }
     }
 
     intent.putExtra(ALARM_TYPE, AlarmTypes.PLAY_EPISODE.name + ":" + timer.episodeId.toString())
@@ -61,7 +61,7 @@ fun cancel(timer: Timer) {
     if (pendingIntent != null) {
         alarmManager.cancel(pendingIntent)
         pendingIntent.cancel() // Good practice to also cancel the PendingIntent
-        Logd(TAG, "Timer cancelled.")
+        Logd(TAG) { "Timer cancelled." }
     }
 }
 
@@ -76,7 +76,7 @@ fun cancelTimer(triggerTime: Long) {
     if (pendingIntent != null) {
         alarmManager.cancel(pendingIntent)
         pendingIntent.cancel() // Good practice to also cancel the PendingIntent
-        Logd(TAG, "Timer cancelled.")
+        Logd(TAG) { "Timer cancelled." }
     }
 }
 

@@ -29,12 +29,12 @@ fun autoBackup() {
         return
     }
 
-    Logd("autoBackup", "in autoBackup directory: $uriString")
+    Logd("autoBackup") { "in autoBackup directory: $uriString" }
     suspend fun deleteDirectoryAndContents(directory: UnifiedFile): Boolean {
         if (directory.isDirectory()) {
             directory.listChildren().forEach { file ->
                 if (file.isDirectory()) deleteDirectoryAndContents(file)
-                Logd(TAG, "deleting ${file.name}")
+                Logd(TAG) { "deleting ${file.name}" }
                 try { file.delete() } catch (e: Throwable) {
                     Loge(TAG, e, "deleteDirectoryAndContents: failed to delete ${file.name} ")
                 }
@@ -55,10 +55,10 @@ fun autoBackup() {
                     val backedupDirs = mutableListOf<UnifiedFile>()
                     try {
                         chosenDir.listChildren().forEach { file ->
-                            Logd(TAG, "file: $file")
+                            Logd(TAG) { "file: $file" }
                             if (file.isDirectory() && file.name.startsWith(autoBackupDirName, ignoreCase = true)) backedupDirs.add(file)
                         }
-                        Logd(TAG, "backupDirs: ${backedupDirs.size}")
+                        Logd(TAG) { "backupDirs: ${backedupDirs.size}" }
                         val limit = appPrefsFlow!!.value.autoBackupLimit
                         if (backedupDirs.size >= limit) {
                             backedupDirs.sortBy { it.name }

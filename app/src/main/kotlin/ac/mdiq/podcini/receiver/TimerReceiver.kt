@@ -27,7 +27,7 @@ class TimerReceiver : BroadcastReceiver() {
 
         val message = intent?.getStringExtra(ALARM_TYPE) ?: "Timer Fired!"
 
-        Logd(TAG, "onReceive: message $message")
+        Logd(TAG) { "onReceive: message $message" }
         if (message.startsWith(AlarmTypes.PLAY_EPISODE.name)) {
             CoroutineScope(Dispatchers.IO).launch {
                 if (appPrefsFlow!!.value.loadExternalApp)  AppGatewayRegistry.awaitReady()
@@ -36,7 +36,7 @@ class TimerReceiver : BroadcastReceiver() {
                 if (msgs.size < 2) return@launch
                 val id = msgs[1].toLong()
                 val episode = episodeById(id) ?: return@launch
-                Logd(TAG, "onReceive: episode ${episode.title}")
+                Logd(TAG) { "onReceive: episode ${episode.title}" }
                 val repeat = if (msgs.size == 3) msgs[2].toBoolean() else false
 
                 withContext(Dispatchers.Main) { PlaybackStarter(episode).shouldStreamThisTime(null).setToRepeat(repeat).start(0) }

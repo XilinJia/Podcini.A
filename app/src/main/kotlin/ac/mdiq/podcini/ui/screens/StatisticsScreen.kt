@@ -170,14 +170,14 @@ class StatisticsVM: ViewModel() {
     }
 
     fun loadDailyStats() {
-        Logd(TAG, "loadDailyStats")
+        Logd(TAG) { "loadDailyStats" }
         statsOfDay = getStatistics(date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds(), date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds())
     }
 
     internal fun loadStatistics() {
         loadDailyStats()
         try {
-            Logd(TAG, "loadStatistics")
+            Logd(TAG) { "loadStatistics" }
             statsResult = getStatistics(timeFilterFrom, timeFilterTo)
             statsResult.feedStats.sortWith { stat1: FeedStatistics, stat2: FeedStatistics -> stat2.item.timePlayed.compareTo(stat1.item.timePlayed) }
             val chartValues = MutableList(statsResult.feedStats.size){0f}
@@ -564,9 +564,9 @@ fun StatisticsScreen() {
                     realm.write {
                         val mediaAll = query(Episode::class).query("playedDuration != 0 || timeSpent != 0").find()
                         if (mediaAll.isNotEmpty()) {
-                            Logd(TAG, "mediaAll: ${mediaAll.size}")
+                            Logd(TAG) { "mediaAll: ${mediaAll.size}" }
                             for (m in mediaAll) {
-                                Logd(TAG, "m: ${m.title}")
+                                Logd(TAG) { "m: ${m.title}" }
                                 m.playedDuration = 0
                                 m.timeSpent = 0
                                 m.timeSpentOnStart = 0
@@ -581,7 +581,7 @@ fun StatisticsScreen() {
         }
     }
     if (vm.showFilter) DatesFilterDialog(from = vm.timeFilterFrom, to = vm.timeFilterTo, oldestDate = vm.statsResult.oldestDate, onDismiss = {vm.showFilter = false} ) { from, to ->
-        Logd(TAG, "confirm DatesFilterDialog ${vm.timeFilterFrom} $from ${vm.timeFilterTo} $to")
+        Logd(TAG) { "confirm DatesFilterDialog ${vm.timeFilterFrom} $from ${vm.timeFilterTo} $to" }
         vm.setTimeFilter(from, to)
         vm.chartData = null
         vm.statisticsState++
@@ -697,7 +697,7 @@ private fun getStatistics(episodes: List<Episode>, feedId: Long = 0L, forDL: Boo
     result.oldestDate = Long.MAX_VALUE
     for ((fid, episodes) in groupdMedias) {
         val feed = feedsMap[fid] ?: continue
-        Logd(TAG, "getStatistics feed: ${feed.title}")
+        Logd(TAG) { "getStatistics feed: ${feed.title}" }
         val fStat = FeedStatistics()
         fStat.feed = feed
         fStat.item.episodesTotal = episodes.size
@@ -707,7 +707,7 @@ private fun getStatistics(episodes: List<Episode>, feedId: Long = 0L, forDL: Boo
                 if (e.playStateSetTime > 0L && e.playStateSetTime < result.oldestDate) result.oldestDate = e.playStateSetTime
                 if (e.duration > 0) fStat.item.durationTotal += e.duration
                 else LogeFor(TAG, e.id, "episode duration abnormal: ${e.duration} state: ${e.playState}")
-                Logd(TAG, "getStatistics e.playState: ${e.playState} e.timeSpent: ${e.timeSpent} ${e.playedDuration} ${e.title}")
+                Logd(TAG) { "getStatistics e.playState: ${e.playState} e.timeSpent: ${e.timeSpent} ${e.playedDuration} ${e.title}" }
                 if (e.playState == EpisodeState.PLAYED.code) {
                     fStat.item.episodesPlayed++
                     fStat.item.durationPlayed += e.duration
@@ -786,7 +786,7 @@ private fun getStatistics(episodes: List<Episode>, feedId: Long = 0L, forDL: Boo
 }
 
 private fun getStatistics(timeFrom: Long, timeTo: Long, feedId: Long = 0L, forDL: Boolean = false): StatisticsResult {
-    Logd(TAG, "getStatistics called")
+    Logd(TAG) { "getStatistics called" }
     val qs2 = when {
         forDL -> ""
         else -> getStatsQueryText(timeFrom, timeTo)
@@ -797,7 +797,7 @@ private fun getStatistics(timeFrom: Long, timeTo: Long, feedId: Long = 0L, forDL
         else -> "($qs2)"
     }
     val episodes = realm.query(Episode::class).query(queryString).find()
-    Logd(TAG, "getStatistics queryString: [${episodes.size}] $queryString")
+    Logd(TAG) { "getStatistics queryString: [${episodes.size}] $queryString" }
     return getStatistics(episodes, feedId, forDL)
 }
 
@@ -809,10 +809,10 @@ fun FeedStatisticsDialog(title: String, feedId: Long, timeFrom: Long, timeTo: Lo
         try {
             val data = getStatistics(timeFrom, timeTo, feedId)
             if (data.feedStats.isNotEmpty()) {
-                Logd(TAG, "loadStatistics data.feedStats: ${data.feedStats.size}")
+                Logd(TAG) { "loadStatistics data.feedStats: ${data.feedStats.size}" }
                 data.feedStats.sortWith { stat1: FeedStatistics, stat2: FeedStatistics -> stat2.item.timePlayed.compareTo(stat1.item.timePlayed) }
                 fStat = data.feedStats[0]
-                Logd(TAG,"loadStatistics durationTotal ${fStat?.item?.durationTotal}")
+                Logd(TAG) { "loadStatistics durationTotal ${fStat?.item?.durationTotal}" }
             }
             episodes = data.episodes
         } catch (error: Throwable) { Logs(TAG, error, "loadStatistics failed") }

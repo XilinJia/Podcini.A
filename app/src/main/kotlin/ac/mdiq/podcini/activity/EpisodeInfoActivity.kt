@@ -74,7 +74,7 @@ class EpisodeInfoActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        Logd(TAG, "onNewIntent")
+        Logd(TAG) { "onNewIntent" }
         setIntent(intent)
         currentEpisodeId.value = intent.getLongExtra("episode_info_id", -1L)
     }
@@ -89,6 +89,6 @@ class EpisodeInfoActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Logd(TAG, "onDestroy called")
+        Logd(TAG) { "onDestroy called" }
     }
 }

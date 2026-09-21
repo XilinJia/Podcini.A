@@ -7,11 +7,11 @@ import ac.mdiq.podcini.activity.PlayerUIActivity
 import ac.mdiq.podcini.activity.QueuePickerActivity
 import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.ensureAController
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.isCasting
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.isRunning
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
+import ac.mdiq.podcini.playback.ensureAController
+import ac.mdiq.podcini.playback.theatres
+import ac.mdiq.podcini.playback.PlaybackService.Companion.isCasting
+import ac.mdiq.podcini.playback.PlaybackService.Companion.isRunning
+import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.realm
@@ -98,12 +98,12 @@ class PodciniWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         initialize()
 
-        //        Logd(TAG, "provideGlance id: $id actQueue ${actQueue.name}")
+        //        Logd(TAG) { "provideGlance id: $id actQueue ${actQueue.name}" }
 
         var episodes: List<WidgetEpisode> = listOf()
 
         provideContent { GlanceTheme {
-            Logd(TAG, "provideGlance in provideContent id: $id")
+            Logd(TAG) { "provideGlance in provideContent id: $id" }
 
             val prefs = currentState<Preferences>()
 
@@ -114,7 +114,7 @@ class PodciniWidget : GlanceAppWidget() {
             var queueSize = prefs[intPreferencesKey("queue_size")] ?: 0
 
             val updateYpe = prefs[stringPreferencesKey("update_type")] ?: ""
-            Logd(TAG, "provideGlance updateYpe: $updateYpe")
+            Logd(TAG) { "provideGlance updateYpe: $updateYpe" }
 
             when (updateYpe) {
                 "update" -> {
@@ -128,7 +128,7 @@ class PodciniWidget : GlanceAppWidget() {
                     queueSize = prefs[intPreferencesKey("queue_size")] ?: 0
                     val json = prefs[stringPreferencesKey("episodes")] ?: "[]"
                     episodes = Json.decodeFromString<List<WidgetEpisode>>(json)
-                    Logd(TAG, "provideGlance episodes: ${episodes.size}")
+                    Logd(TAG) { "provideGlance episodes: ${episodes.size}" }
                 }
             }
 
@@ -191,7 +191,7 @@ val MARKED_EPISODE_KEY = longPreferencesKey("marked_episode_id")
 
 class RefreshAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        Logd(TAG, "RefreshAction onAction")
+        Logd(TAG) { "RefreshAction onAction" }
         val queueId = parameters[QUEUE_ID_KEY]
         if (queueId == null) {
             Loge("RefreshAction", "queueId from parameter is null.")
@@ -224,7 +224,7 @@ class RemoveAction : ActionCallback {
             Loge("RemoveAction", "episode with id: $id is null.")
             return
         }
-        Logd(TAG, "RemoveAction onAction episode: ${episode.title}")
+        Logd(TAG) { "RemoveAction onAction episode: ${episode.title}" }
         val episodes = withContext(Dispatchers.IO) {
             smartRemoveFromQueues(episode)
             val queueId = parameters[QUEUE_ID_KEY]
@@ -232,7 +232,7 @@ class RemoveAction : ActionCallback {
                 Loge("RemoveAction", "queueId from parameter is null.")
                 return@withContext listOf()
             }
-            Logd(TAG, "RemoveAction onAction queueId: $queueId")
+            Logd(TAG) { "RemoveAction onAction queueId: $queueId" }
             val queue = realm.query(PlayQueue::class).query("id == $queueId").first().find()
             queue?.episodesSorted?.take(40)?.map { it.toWidget() } ?: listOf()
         }
@@ -249,7 +249,7 @@ class RemoveAction : ActionCallback {
 
 class PlayAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        Logd(TAG, "onReceive")
+        Logd(TAG) { "onReceive" }
         ensureAController()
         updateAppWidgetState(context, glanceId) { prefs ->
             val id = parameters[EPISODE_ID_KEY]
@@ -264,7 +264,7 @@ class PlayAction : ActionCallback {
             }
             prefs[MARKED_EPISODE_KEY] = id
             prefs[stringPreferencesKey("update_type")] = "episode"
-            Logd(TAG, "PlayAction onAction episode: ${episode.title}")
+            Logd(TAG) { "PlayAction onAction episode: ${episode.title}" }
             withContext(Dispatchers.Main) { PlaybackStarter(episode).setWidgetId(glanceId.toString()).shouldStreamThisTime(null).start() }
         }
         PodciniWidget().update(context, glanceId)
@@ -273,11 +273,11 @@ class PlayAction : ActionCallback {
 
 class ToggleAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        Logd(TAG, "onReceive")
+        Logd(TAG) { "onReceive" }
         ensureAController()
         val player = theatres[0].mPlayerFlow.value
         val episode = player?.curMediaFlow?.value
-        Logd(TAG, "ToggleAction onAction isPlaying: $theatres[0].isPlaying")
+        Logd(TAG) { "ToggleAction onAction isPlaying: $theatres[0].isPlaying" }
         if (episode == null) {
             val id = parameters[EPISODE_ID_KEY]
             if (id != null) {
@@ -295,7 +295,7 @@ class ToggleAction : ActionCallback {
                     intent.putExtra(MainActivity.Extras.open_player.name, true)
                     context.startActivity(intent)
                 } else {
-                    Logd(TAG, "Play button clicked: status: ${player.statusSimpleFlow.value} is ready: ${playbackService?.isServiceReady()}")
+                    Logd(TAG) { "Play button clicked: status: ${player.statusSimpleFlow.value} is ready: ${playbackService?.isServiceReady()}" }
                     PlaybackStarter(episode).setWidgetId(glanceId.toString()).shouldStreamThisTime(null).start()
                 }
             }
@@ -306,7 +306,7 @@ class ToggleAction : ActionCallback {
 
 class PrevAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        Logd(TAG, "PrevAction onAction")
+        Logd(TAG) { "PrevAction onAction" }
         withContext(Dispatchers.Main) { theatres[0].mPlayerFlow.value?.seekTo(0) }
         PodciniWidget().update(context, glanceId)
     }
@@ -314,7 +314,7 @@ class PrevAction : ActionCallback {
 
 class RewindAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        Logd(TAG, "RewindAction onAction")
+        Logd(TAG) { "RewindAction onAction" }
         withContext(Dispatchers.Main) { theatres[0].mPlayerFlow.value?.seekDelta(-rewindSecs * 1000) }
         PodciniWidget().update(context, glanceId)
     }
@@ -322,16 +322,16 @@ class RewindAction : ActionCallback {
 
 class ForwardAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        Logd(TAG, "ForwardAction onAction")
+        Logd(TAG) { "ForwardAction onAction" }
         withContext(Dispatchers.Main) { theatres[0].mPlayerFlow.value?.seekDelta(fastForwardSecs * 1000) }
         PodciniWidget().update(context, glanceId)
     }
 }
 class NextAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        Logd(TAG, "NextAction onAction")
+        Logd(TAG) { "NextAction onAction" }
         withContext(Dispatchers.Main) {
-            Logd(TAG, "NextAction onAction isPlaying: $theatres[0].isPlaying isPaused: $theatres[0].isPaused")
+            Logd(TAG) { "NextAction onAction isPlaying: $theatres[0].isPlaying isPaused: $theatres[0].isPaused" }
             if (theatres[0].mPlayerFlow.value!!.isPlaying || theatres[0].mPlayerFlow.value!!.isPaused) theatres[0].mPlayerFlow.value?.skip() }
         PodciniWidget().update(context, glanceId)
     }

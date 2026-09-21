@@ -1,13 +1,16 @@
-package ac.mdiq.podcini.playback.base
+package ac.mdiq.podcini.playback
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
-import ac.mdiq.podcini.playback.service.PlaybackService
+import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.CurrentState
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.PlayQueue
+import ac.mdiq.podcini.storage.model.QueueEntry
 import ac.mdiq.podcini.utils.Logd
+import ac.mdiq.podcini.utils.timeIt
 import android.content.ComponentName
 import androidx.core.content.ContextCompat
 import androidx.media3.session.MediaController
@@ -16,9 +19,12 @@ import com.google.common.util.concurrent.ListenableFuture
 import io.github.xilinjia.krdb.notifications.InitialObject
 import io.github.xilinjia.krdb.notifications.SingleQueryChange
 import io.github.xilinjia.krdb.notifications.UpdatedObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 private const val TAG: String = "Theatres"
 
@@ -51,22 +57,48 @@ class Theatre(val id: Int) {
     fun monitorState() {
         if (curStateMonitor == null) curStateMonitor = runOnIOScope {
             val stateFlow = realm.query(CurrentState::class).query("id == $id").first().asFlow()
-            Logd(TAG, "start monitoring curState: ")
+            Logd(TAG) { "start monitoring curState: " }
             stateFlow.collect { changes: SingleQueryChange<CurrentState> ->
                 when (changes) {
                     is UpdatedObject -> {
                         mPlayerFlow.value?.curState = changes.obj
-                        Logd(TAG, "stateMonitor UpdatedObject ${changes.obj.curMediaId} playerStat: $theatres[0].playerStat ${changes.changedFields.joinToString()}")
+                        Logd(TAG) { "stateMonitor UpdatedObject ${changes.obj.curMediaId} playerStat: $theatres[0].playerStat ${changes.changedFields.joinToString()}" }
                     }
                     is InitialObject -> {
                         mPlayerFlow.value?.curState = changes.obj
-                        Logd(TAG, "stateMonitor InitialObject ${changes.obj.curMediaId}")
+                        Logd(TAG) { "stateMonitor InitialObject ${changes.obj.curMediaId}" }
                     }
-                    else -> Logd(TAG, "stateMonitor other changes: $changes")
+                    else -> Logd(TAG) { "stateMonitor other changes: $changes" }
                 }
             }
         }
     }
+}
+
+internal fun startTheatres() {
+    timeIt("$TAG start of init")
+    CoroutineScope(Dispatchers.IO).launch {
+        for (i in 0..1) {
+            val player = theatres[i].mPlayerFlow.value
+            Logd(TAG) { "starting curState for player: ${player?.playerId}" }
+            player?.curState = realm.query(CurrentState::class).query("id == $i").first().find() ?: run {
+                val cs = CurrentState()
+                cs.id = i.toLong()
+                upsertBlk(cs) { }
+            }
+            if (player != null && player.curState.curMediaId > 0L) player.setAsCurMedia(episodeById(player.curState.curMediaId))
+
+            Logd(TAG) { "curMediaFlow.value from preference: ${player?.curMediaFlow?.value?.title}" }
+            player?.curMediaFlow?.value?.let {
+                val qes = realm.query(QueueEntry::class).query("episodeId == ${it.id}").find()
+                if (qes.isNotEmpty()) realm.query(PlayQueue::class).query("id == ${qes[0].queueId}").first().find()?.let { q-> actQueueFlow.value = q }
+            }
+            theatres[i].curStateMonitor?.cancel()
+            theatres[i].curStateMonitor = null
+            theatres[i].monitorState()
+        }
+    }
+    timeIt("$TAG end of init")
 }
 
 fun ensureAController() {
@@ -116,7 +148,7 @@ fun isCurMedia(id: Long): Boolean {
 }
 
 fun cleanupTheatres() {
-    Logd(TAG, "cleanup()")
+    Logd(TAG) { "cleanup()" }
     for (i in 0..1) {
         if (theatres[i].mPlayerFlow.value?.curMediaFlow?.value != null) theatres[i].mPlayerFlow.value?.curMediaScope?.cancel()
         theatres[i].curStateMonitor?.cancel()

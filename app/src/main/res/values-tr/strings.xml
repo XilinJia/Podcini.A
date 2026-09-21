@@ -533,10 +533,6 @@
     <string name="pref_default_page_sum">Podcini başlatıldığında açılan ekran</string>
     <string name="pref_back_button_opens_drawer">Geri düğmesi çekmeceyi açar</string>
     <string name="pref_back_button_opens_drawer_summary">Varsayılan sayfada geri düğmesine basıldığında gezinme çekmecesi açılır</string>
-    <string name="pref_show_error_toasts">Hata bildirimlerini göster</string>
-    <string name="pref_show_error_toasts_sum">Hata mesajlarının bildirim olarak gösterilip gösterilmeyeceğini aç/kapat.</string>
-    <string name="pref_print_logs">Hata ayıklama günlüklerini yazdır</string>
-    <string name="pref_print_logs_sum">Hata ayıklama mesajlarının kaydedilip kaydedilmeyeceğini aç/kapat. Bu, performansı düşürebilir. Yalnızca sorunları bildirmeye hazırlanırken bunu açın.</string>
 
     <string name="pref_delete_removes_from_queue_title">Silme kuyruktan kaldırır</string>
     <string name="pref_delete_removes_from_queue_sum">Bir bölüm silindiğinde otomatik olarak kuyruktan kaldır</string>

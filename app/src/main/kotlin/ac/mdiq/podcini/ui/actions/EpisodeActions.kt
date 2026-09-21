@@ -2,7 +2,7 @@ package ac.mdiq.podcini.ui.actions
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.addToQueue
@@ -76,7 +76,7 @@ abstract class EpisodeAction {
     @Composable
     open fun ActionOptions() {}
     open fun performAction(e: Episode) {
-        Logd("SwipeAction", "performAction: $title ${e.title}")
+        Logd("SwipeAction") { "performAction: $title ${e.title}" }
         onEpisode = e
     }
     companion object {
@@ -265,11 +265,11 @@ class AddToQueue : EpisodeAction() {
     override fun performAction(e: Episode) {
         super.performAction(e)
         showPutToQueueDialog = true
-        Logd("AddToQueue", "performAction $showPutToQueueDialog")
+        Logd("AddToQueue") { "performAction $showPutToQueueDialog" }
     }
     @Composable
     override fun ActionOptions() {
-        Logd("AddToQueue", "ActionOptions $showPutToQueueDialog")
+        Logd("AddToQueue") { "ActionOptions $showPutToQueueDialog" }
         if (showPutToQueueDialog && onEpisode != null) PutToQueueDialog(listOf(onEpisode!!)) { showPutToQueueDialog = false }
     }
 }
@@ -424,7 +424,7 @@ class SearchSelected : EpisodeAction() {
     }
     @Composable
     override fun ActionOptions() {
-        Logd("SearchSelected", "ActionOptions $showSearchDialog ${onEpisode?.title}")
+        Logd("SearchSelected") { "ActionOptions $showSearchDialog ${onEpisode?.title}" }
         if (showSearchDialog && onEpisode?.title != null) {
             var textFieldValue by remember { mutableStateOf(TextFieldValue(onEpisode!!.title!!)) }
             val selectedText = remember(textFieldValue.selection.collapsed, textFieldValue.selection.start, textFieldValue.selection.end) {
@@ -450,7 +450,7 @@ class SearchSelected : EpisodeAction() {
     }
 }
 
-class Download() : EpisodeAction() {
+class Download : EpisodeAction() {
     override val id: String
         get() = "START_DOWNLOAD"
     override val title: String
@@ -488,7 +488,7 @@ class Shelve : EpisodeAction() {
     }
 }
 
-class Delete() : EpisodeAction() {
+class Delete : EpisodeAction() {
     override val id: String
         get() = "DELETE"
     override val title: String
@@ -519,7 +519,7 @@ class Delete() : EpisodeAction() {
     }
 }
 
-class RemoveFromHistory() : EpisodeAction() {
+class RemoveFromHistory : EpisodeAction() {
     override val id: String
         get() = "REMOVE_FROM_HISTORY"
     val TAG = this::class.simpleName ?: "Anonymous"

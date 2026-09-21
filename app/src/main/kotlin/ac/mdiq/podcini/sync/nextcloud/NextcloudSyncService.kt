@@ -35,7 +35,7 @@ class NextcloudSyncService(private val httpClient: HttpClient, baseHosturl: Stri
 
     @Throws(SyncServiceException::class)
     override fun getSubscriptionChanges(lastSync: Long): SubscriptionChanges {
-        Logd(TAG, "getSubscriptionChanges")
+        Logd(TAG) { "getSubscriptionChanges" }
         try {
             val url: HttpUrl.Builder = makeUrl("/index.php/apps/gpoddersync/subscriptions")
             url.addQueryParameter("since", "" + lastSync)
@@ -47,7 +47,7 @@ class NextcloudSyncService(private val httpClient: HttpClient, baseHosturl: Stri
 
     @Throws(NextcloudSynchronizationServiceException::class)
     override fun uploadSubscriptionChanges(added: List<String>, removed: List<String>): UploadChangesResponse {
-        Logd(TAG, "uploadSubscriptionChanges")
+        Logd(TAG) { "uploadSubscriptionChanges" }
         try {
             val url: HttpUrl.Builder = makeUrl("/index.php/apps/gpoddersync/subscription_change/create")
             val requestObject = JSONObject()
@@ -61,7 +61,7 @@ class NextcloudSyncService(private val httpClient: HttpClient, baseHosturl: Stri
 
     @Throws(SyncServiceException::class)
     override fun getEpisodeActionChanges(timestamp: Long): EpisodeActionChanges {
-        Logd(TAG, "getEpisodeActionChanges")
+        Logd(TAG) { "getEpisodeActionChanges" }
         try {
             val uri: HttpUrl.Builder = makeUrl("/index.php/apps/gpoddersync/episode_action")
             uri.addQueryParameter("since", "" + timestamp)
@@ -73,7 +73,7 @@ class NextcloudSyncService(private val httpClient: HttpClient, baseHosturl: Stri
 
     @Throws(NextcloudSynchronizationServiceException::class)
     override fun uploadEpisodeActions(queuedEpisodeActions: List<EpisodeAction>): UploadChangesResponse {
-        Logd(TAG, "uploadEpisodeActions")
+        Logd(TAG) { "uploadEpisodeActions" }
         var i = 0
         while (i < queuedEpisodeActions.size) {
             uploadEpisodeActionsPartial(queuedEpisodeActions, i, min(queuedEpisodeActions.size, (i + UPLOAD_BULK_SIZE)))
@@ -84,7 +84,7 @@ class NextcloudSyncService(private val httpClient: HttpClient, baseHosturl: Stri
 
     @Throws(NextcloudSynchronizationServiceException::class)
     private fun uploadEpisodeActionsPartial(queuedEpisodeActions: List<EpisodeAction>, from: Int, to: Int) {
-        Logd(TAG, "uploadEpisodeActionsPartial")
+        Logd(TAG) { "uploadEpisodeActionsPartial" }
         try {
             val list = JSONArray()
             for (i in from until to) {
@@ -100,7 +100,7 @@ class NextcloudSyncService(private val httpClient: HttpClient, baseHosturl: Stri
 
     @Throws(IOException::class)
     private suspend fun performRequest(url: HttpUrl.Builder, method_: String, body: RequestBody?): String {
-        Logd(TAG, "performRequest $url $method_ $body")
+        Logd(TAG) { "performRequest $url $method_ $body" }
         val response = httpClient.request(url.build().toString()) {
             method = HttpMethod.parse(method_)
             headers {
@@ -114,7 +114,7 @@ class NextcloudSyncService(private val httpClient: HttpClient, baseHosturl: Stri
     }
 
     private fun makeUrl(path: String): HttpUrl.Builder {
-        Logd(TAG, "makeUrl")
+        Logd(TAG) { "makeUrl" }
         val builder = HttpUrl.Builder()
         if (hostname.scheme != null) builder.scheme(hostname.scheme!!)
         if (hostname.host != null) builder.host(hostname.host!!)

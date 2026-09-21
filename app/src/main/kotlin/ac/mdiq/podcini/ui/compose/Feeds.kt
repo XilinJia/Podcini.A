@@ -188,7 +188,7 @@ fun OnlineFeedItem(result: FeedSearchResult, log: SubscriptionLog? = null) {
                 var episodes = client.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, 0L) }?: listOf()
                 while (episodes.isNotEmpty()) {
                     eList.addAll(episodes)
-                    Logd(TAG, "subscribeFeed eList: ${eList.size}")
+                    Logd(TAG) { "subscribeFeed eList: ${eList.size}" }
                     if (eList.size > EPISODES_LIMIT || episodes.size < EPISODE_BATCH_SIZE) break
                     episodes = client.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, 0L) } ?: listOf()
                 }
@@ -213,7 +213,7 @@ fun OnlineFeedItem(result: FeedSearchResult, log: SubscriptionLog? = null) {
     Column(Modifier.padding(start = 5.dp, end = 5.dp, top = 4.dp, bottom = 4.dp).combinedClickable(
         onClick = {
             if (result.feedUrl != null) {
-                Logd(TAG, "feed.feedId: ${result.feedId}")
+                Logd(TAG) { "feed.feedId: ${result.feedId}" }
                 if (result.feedId > 0) navTo(FeedDetails(feedId = result.feedId))
                 else navTo(OnlineFeed(url = result.feedUrl!!, source = result.source))
             } },
@@ -223,7 +223,7 @@ fun OnlineFeedItem(result: FeedSearchResult, log: SubscriptionLog? = null) {
             Box(modifier = Modifier.width(80.dp).height(80.dp)) {
                 AsyncImage(model = ImageRequest.Builder(context).data(result.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.fillMaxSize())
                 if (result.feedId > 0 || log != null) {
-                    Logd("OnlineFeedItem", "${result.feedId} $log")
+                    Logd("OnlineFeedItem") { "${result.feedId} $log" }
                     val iRes = remember(result) { if (result.feedId > 0) R.drawable.ic_check else R.drawable.baseline_clear_24 }
                     Icon(imageVector = ImageVector.vectorResource(iRes), tint = textColor, contentDescription = "played_mark", modifier = Modifier.background(Color.Green).alpha(1.0f).align(Alignment.BottomEnd))
                 }
@@ -310,7 +310,7 @@ fun OpmlImportSelectionDialog(readElements: List<OpmlTransporter.OpmlElement>, o
         },
         confirmButton = {
             Button(onClick = {
-                Logd("OpmlImportSelectionDialog", "checked: $selectedItems")
+                Logd("OpmlImportSelectionDialog") { "checked: $selectedItems" }
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         withContext(Dispatchers.IO) {
@@ -386,7 +386,7 @@ fun AssociatedFeedsGrid(feedsAssociated: List<Feed>) {
                             start.linkTo(parent.start)
                         }.combinedClickable(
                             onClick = { navTo(FeedDetails(feedId = feed.id)) },
-                            onLongClick = { Logd(TAG, "long clicked: ${feed.title}") })
+                            onLongClick = { Logd(TAG) { "long clicked: ${feed.title}" } })
                 )
                 val numEpisodes by remember(feed.episodesCount) { mutableIntStateOf(feed.episodesCount) }
                 Text(formatWithGrouping(numEpisodes.toLong()), color = Color.Green,
@@ -421,7 +421,7 @@ fun SendToDevice(onDismiss: ()->Unit, cb: (String, Int)->Job?) {
                 port = list[0].port
                 name = list[0].name
                 uid = list[0].uid
-                Logd("SendToDevice", "name: $name host: $host port: $port")
+                Logd("SendToDevice") { "name: $name host: $host port: $port" }
             }
         }
     }

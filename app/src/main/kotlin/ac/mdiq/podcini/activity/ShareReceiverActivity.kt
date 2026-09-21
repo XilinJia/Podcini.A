@@ -60,7 +60,7 @@ class ShareReceiverActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         initialize()
 
-        Logd(TAG, "intent: $intent")
+        Logd(TAG) { "intent: $intent" }
         when (intent.action) {
             Intent.ACTION_SEND -> sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
             Intent.ACTION_VIEW -> sharedText = intent.dataString
@@ -72,7 +72,7 @@ class ShareReceiverActivity : ComponentActivity() {
         val regex = Regex("""https?://[^\s'"<>]+""")
         val rawUrl = regex.find(sharedText!!)?.value
         val text = rawUrl?.toSafeUri()?.getQueryParameter("url")?.decodeURLQueryComponent() ?: rawUrl ?: sharedText!!
-        Logd(TAG, "feedUrl: $sharedText")
+        Logd(TAG) { "feedUrl: $sharedText" }
 
         var addAsNew by mutableStateOf(false)
         var failed by mutableStateOf(false)
@@ -136,12 +136,12 @@ class ShareReceiverActivity : ComponentActivity() {
         }
 
         suspend fun handleShared(sharedText: String, activity: ComponentActivity, finish: Boolean, log: ShareLog? = null, extMediaCB: (SourceGatewayClient, List<Episode>)->Unit) {
-            Logd(TAG, "receiveShared sharedText: $sharedText")
+            Logd(TAG) { "receiveShared sharedText: $sharedText" }
             when {
 //            plain text
                 sharedText.matches(Regex("^[^<>/]+$")) -> {
                     if (log != null)  upsertBlk(log) {it.type = ShareLog.ShareType.Text.name }
-                    Logd(TAG, "receiveShared Activity is started with text $sharedText")
+                    Logd(TAG) { "receiveShared Activity is started with text $sharedText" }
                     val intent = Intent(getAppContext(), MainActivity::class.java).apply {
                         putExtra(Extras.search_string.name, sharedText)
                         addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -152,7 +152,7 @@ class ShareReceiverActivity : ComponentActivity() {
                 else -> {
                     fun openAsFeed(source: String?) {
                         if (log != null) upsertBlk(log) { it.type = ShareLog.ShareType.Feed.name }
-                        Logd(TAG, "openAsFeed Activity is started with url $sharedText")
+                        Logd(TAG) { "openAsFeed Activity is started with url $sharedText" }
                         val intent = Intent(getAppContext(), MainActivity::class.java).apply {
                             putExtra(Extras.feed_url.name, sharedText)
                             putExtra(Extras.isShared.name, true)
@@ -164,7 +164,7 @@ class ShareReceiverActivity : ComponentActivity() {
                     }
                     if (appPrefsFlow!!.value.loadExternalApp) AppGatewayRegistry.awaitReady()
                     val client = sourceClients.find { it.withProviderBlocking { p-> p.canHandleUrl(sharedText) == 1 } == true }
-                    Logd(TAG, "receiveShared canHandleUrl==1 client: ${client!= null}")
+                    Logd(TAG) { "receiveShared canHandleUrl==1 client: ${client!= null}" }
                     if (client != null) {
                         val episode = client.withProviderBlocking { it.buildEpisode(sharedText)?.toEpisode() }
                         if (episode == null) openAsFeed(client.feedSearcher?.name)
@@ -176,7 +176,7 @@ class ShareReceiverActivity : ComponentActivity() {
                         return
                     }
                     val clients = sourceClients.filter { it.withProviderBlocking { p-> p.canHandleUrl(sharedText) == 0 } == true }
-                    Logd(TAG, "receiveShared canHandleUrl==0 clients: ${clients.size}")
+                    Logd(TAG) { "receiveShared canHandleUrl==0 clients: ${clients.size}" }
                     for (client in clients) {
                         val episode = client.withProviderBlocking { it.buildEpisode(sharedText)?.toEpisode() } ?: continue
                         val existing = realm.query(Episode::class).query("title == $0", episode.title).find()

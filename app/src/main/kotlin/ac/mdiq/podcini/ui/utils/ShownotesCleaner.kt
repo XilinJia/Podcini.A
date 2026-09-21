@@ -72,11 +72,11 @@ class ShownotesCleaner {
     }
 
     fun processShownotes(rawShownotes: String, playableDuration: Int): String {
-        Logd(TAG, "processShownotes called")
+        Logd(TAG) { "processShownotes called" }
 
         var shownotes = rawShownotes
         if (shownotes.isEmpty()) {
-            Logd(TAG, "processShownotes shownotesProvider contained no shownotes. Returning 'no shownotes' message")
+            Logd(TAG) { "processShownotes shownotesProvider contained no shownotes. Returning 'no shownotes' message" }
             shownotes = "<html><head></head><body><p id='apNoShownotes'>$noShownotesLabel</p></body></html>"
         }
 
@@ -91,7 +91,7 @@ class ShownotesCleaner {
         }
         document.head().appendElement("style").attr("type", "text/css").text(webviewStyle)
         val elementsWithTimeCodes = document.body().getElementsMatchingOwnText(TIMECODE_REGEX)
-        Logd(TAG, "processShownotes Recognized " + elementsWithTimeCodes.size + " timecodes")
+        Logd(TAG) { "processShownotes Recognized " + elementsWithTimeCodes.size + " timecodes" }
         if (elementsWithTimeCodes.isNotEmpty()) {
             var useHourFormat = true
             if (playableDuration != Int.MAX_VALUE) { // We need to decide if we are going to treat short timecodes as HH:MM or MM:SS. To do

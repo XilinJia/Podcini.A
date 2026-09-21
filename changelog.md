@@ -1,3 +1,22 @@
+# 12.12.0
+
+* reworked Android Auto routines
+	* categories include all queues and most recent 5 feeds, 
+	* on play, force audio only
+	* fixed audio focus issue
+	* improved car connect detection
+* in Settings->User interface, removed "show errors" and "print logs", added log level setting with intro text
+* in PlayerDetailed, if audioOnly is pressed, ensure to strip away video stream even the feed is set to play video
+* in change stream dialog, corrected bitrate option not shown when only one option
+* in Play app:
+	* improved casting detection 
+	* when casting video, ensure to use muxed video stream
+* improved release app efficiency related to debug logging
+* Kotlin upped to 2.4.20, krdb upped to 3.3.6
+* AGP upped to 9.4.1
+* some dependencies update
+* some code refactoring
+
 # 12.11.1
 
 * amended transcript popup 

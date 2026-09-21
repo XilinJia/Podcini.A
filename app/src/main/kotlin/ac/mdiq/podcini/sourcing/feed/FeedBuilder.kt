@@ -40,7 +40,7 @@ class FeedBuilder(val showError: (String?, String)->Unit) {
     private var downloader: Downloader? = null
 
     suspend fun buildPodcast(url: String, username: String?, password: String?, handleFeed: suspend (Feed, Map<String, String>)->Unit) {
-        Logd(TAG, "buildPodcast: $url")
+        Logd(TAG) { "buildPodcast: $url" }
         suspend fun detectPodcastFeedType(url: String): String? {
             suspend fun fetchContentType(url: String): String? {
                 suspend fun extractType(block: suspend () -> HttpResponse): String? {
@@ -67,7 +67,7 @@ class FeedBuilder(val showError: (String?, String)->Unit) {
             }
             return try {
                 val type = fetchContentType(url)
-                Logd(TAG, "Feed content type: $type")
+                Logd(TAG) { "Feed content type: $type" }
                 when {
                     type == null -> null
                     "xml" in type || "rss" in type || "atom" in type -> "XML"
@@ -84,12 +84,12 @@ class FeedBuilder(val showError: (String?, String)->Unit) {
                 try {
                     val doc = Ksoup.parseGetRequest(url)
                     val linkElements = doc.select("link[type=application/rss+xml]")
-                    Logd(TAG, "buildPodcast got elements: ${linkElements.size}")
+                    Logd(TAG) { "buildPodcast got elements: ${linkElements.size}" }
                     if (linkElements.isEmpty()) showError("buildPodcast error: failed getting elements in html", "")
                     //                TODO: should show all as options
                     for (element in linkElements) {
                         val rssUrl = element.attr("href")
-                        Logd(TAG, "buildPodcast RSS URL: $rssUrl")
+                        Logd(TAG) { "buildPodcast RSS URL: $rssUrl" }
                         buildPodcast(rssUrl, username, password) { feed, map -> handleFeed(feed, map) }
                     }
                     return
@@ -107,7 +107,7 @@ class FeedBuilder(val showError: (String?, String)->Unit) {
         try {
             downloader = downloaderFor(request)
             downloader?.download { source ->
-                //                        Logd(TAG, "buildPodcast destination: $destination")
+                //                        Logd(TAG) { "buildPodcast destination: $destination" }
                 val feed = Feed(selectedDownloadUrl, null)
                 feed.isBuilding = true
                 val result = PodcastHandler.parseFeed(source, feed)

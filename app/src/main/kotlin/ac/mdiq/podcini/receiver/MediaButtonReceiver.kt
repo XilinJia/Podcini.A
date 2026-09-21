@@ -19,17 +19,17 @@ class MediaButtonReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         initialize()
 
-        Logd(TAG, "onReceive Received intent: $intent Action: ${intent.action}")
+        Logd(TAG) { "onReceive Received intent: $intent Action: ${intent.action}" }
         val extras = intent.extras
-        Logd(TAG, "onReceive Extras: $extras")
+        Logd(TAG) { "onReceive Extras: $extras" }
         if (extras == null) return
-        Logd(TAG, "onReceive Extras: ${extras.keySet()}")
-        for (key in extras.keySet()) Logd(TAG, "onReceive Extra[$key] = ${extras[key]}")
+        Logd(TAG) { "onReceive Extras: ${extras.keySet()}" }
+        for (key in extras.keySet()) Logd(TAG) { "onReceive Extra[$key] = ${extras[key]}" }
 
 //        val event = extras.getParcelable(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
         val keyEvent: KeyEvent? = if (Build.VERSION.SDK_INT >= 33) extras.getParcelable(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
         else extras.getParcelable(Intent.EXTRA_KEY_EVENT) as KeyEvent?
-        Logd(TAG, "onReceive keyEvent = $keyEvent" )
+        Logd(TAG) { "onReceive keyEvent = $keyEvent" }
 
         if (keyEvent != null && keyEvent.action == KeyEvent.ACTION_DOWN && keyEvent.repeatCount == 0) {
             val serviceIntent = Intent(PLAYBACK_SERVICE_INTENT)

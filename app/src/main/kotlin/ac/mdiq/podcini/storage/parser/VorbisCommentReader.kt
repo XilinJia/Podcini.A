@@ -48,7 +48,7 @@ abstract class VorbisCommentReader internal constructor(private val source: Coun
                 val idx = text.indexOf('=')
                 if (idx <= 0) return
                 val key = text.substring(0, idx).lowercase()
-                Logd(TAG, "readUserComment key: $key")
+                Logd(TAG) { "readUserComment key: $key" }
                 val value = text.substring(idx + 1)
                 if (handles(key)) onContentVectorValue(key, value)
             } catch (e: Exception) { Logs(TAG, e, "readUserComment failed") }
@@ -107,7 +107,7 @@ abstract class VorbisCommentReader internal constructor(private val source: Coun
                 isFlac() -> findFlacCommentBlock()
             }
             val commentHeader = readCommentHeader()
-            Logd(TAG, "commentHeader: $commentHeader")
+            Logd(TAG) { "commentHeader: $commentHeader" }
             val count = commentHeader.userCommentLength.coerceAtMost(1000)
             repeat(count.toInt()) { readUserComment() }
         } catch (e: Throwable) { Loge(TAG, e, "Vorbis parser") }
@@ -154,7 +154,7 @@ class VorbisCommentMetadataReader(source: CountingSource) : VorbisCommentReader(
     }
 
     public override fun onContentVectorValue(key: String?, value: String) {
-        Logd("VorbisCommentMetadataReader", "onContentVectorValue key: $key value: $value")
+        Logd("VorbisCommentMetadataReader") { "onContentVectorValue key: $key value: $value" }
         when (key) {
             null -> {}
             KEY_DESCRIPTION, KEY_COMMENT -> if (description == null || value.length > description!!.length) description = value

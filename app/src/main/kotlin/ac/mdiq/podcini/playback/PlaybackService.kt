@@ -1,29 +1,19 @@
-package ac.mdiq.podcini.playback.service
+package ac.mdiq.podcini.playback
 
-import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
+import ac.mdiq.podcini.PodciniApp
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.config.AppConfig.initialize
-import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.Media3Player
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.buildMetadata
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.createDataSourceEngine
-import ac.mdiq.podcini.playback.base.SleepManager
-import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.activeTheatresCount
-import ac.mdiq.podcini.playback.base.cleanupTheatres
-import ac.mdiq.podcini.playback.base.isCurMedia
-import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.config.AppConfig
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
 import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.storage.database.fastForwardSecs
+import ac.mdiq.podcini.storage.database.feedsMap
+import ac.mdiq.podcini.storage.database.getEpisodes
+import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.rewindSecs
-import ac.mdiq.podcini.storage.database.upsertBlk
-import ac.mdiq.podcini.storage.model.CurrentState
-import ac.mdiq.podcini.storage.model.PlayQueue
-import ac.mdiq.podcini.storage.model.QueueEntry
+import ac.mdiq.podcini.storage.model.Episode
+import ac.mdiq.podcini.storage.model.Feed
+import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
@@ -36,17 +26,13 @@ import ac.mdiq.podcini.utils.timeIt
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
-import android.app.PendingIntent.FLAG_IMMUTABLE
-import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.bluetooth.BluetoothA2dp
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.Intent.EXTRA_KEY_EVENT
 import android.content.IntentFilter
 import android.media.AudioManager
 import android.os.Build
-import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -54,14 +40,15 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.view.KeyEvent
-import android.view.KeyEvent.KEYCODE_MEDIA_STOP
 import android.view.ViewConfiguration
 import androidx.annotation.RequiresPermission
+import androidx.car.app.connection.CarConnection
+import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.Observer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.Player.STATE_ENDED
-import androidx.media3.common.Player.STATE_IDLE
+import androidx.media3.common.Player
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.LibraryResult
@@ -71,18 +58,23 @@ import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
-import androidx.work.impl.utils.futures.SettableFuture
+import com.google.android.gms.cast.framework.CastSession
+import com.google.android.gms.cast.framework.SessionManagerListener
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import io.github.xilinjia.krdb.query.Sort
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class PlaybackService : MediaLibraryService() {
     private val scope = CoroutineScope(Dispatchers.Main)
+    private val serviceIOScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var mediaLibrarySession: MediaLibrarySession? = null
     private val notificationCustomButtons = NotificationCustomButton.entries.map { command -> command.commandButton }
@@ -90,24 +82,16 @@ class PlaybackService : MediaLibraryService() {
     private var clickCount = 0
     private val clickHandler = Handler(Looper.getMainLooper())
 
-    private val autoStateUpdated: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val player = theatres[0].mPlayerFlow.value ?: return
-            Logd(TAG, "autoStateUpdated onReceive called with action: ${intent.action}")
-            val status = intent.getStringExtra("media_connection_status")
-            Logd(TAG, "Received Auto Connection update: $status")
-            if ("media_connected" != status) Logd(TAG, "Car was unplugged during playback.")
-            else {
-                when  {
-                    player.isPaused || player.isPrepared -> player.play()
-                    player.isInitialized -> {
-                        player.isStartWhenPrepared = true
-                        player.prepareInitialized()
-                    }
-                    else -> {}
-                }
-            }
+    private lateinit var carConnection: CarConnection
+    private val carConnectionObserver = Observer<Int> { connectionType ->
+        val isConnected = when (connectionType) {
+            CarConnection.CONNECTION_TYPE_PROJECTION -> true
+            CarConnection.CONNECTION_TYPE_NATIVE -> true
+            else -> false
         }
+        isAutoController = isConnected
+        Logd(TAG) { "carConnectionObserver Car Connection state updated: $isConnected (Type: $connectionType)" } //        if (isConnected) mediaLibrarySession?.player?.playWhenReady = false
+        (theatres[0].mPlayerFlow.value as? Media3Player)?.configurePlayerForCar(isCarConnected = isConnected)
     }
 
     private val headsetDisconnected: BroadcastReceiver = object : BroadcastReceiver() {
@@ -120,12 +104,12 @@ class PlaybackService : MediaLibraryService() {
             // Don't pause playback after we just started, just because the receiver
             // delivers the current headset state (instead of a change)
             if (isInitialStickyBroadcast) return
-            Logd(TAG, "headsetDisconnected onReceive called with action: ${intent.action}")
+            Logd(TAG) { "headsetDisconnected onReceive called with action: ${intent.action}" }
             if (intent.action == Intent.ACTION_HEADSET_PLUG) {
                 val state = intent.getIntExtra("state", -1)
-                Logd(TAG, "Headset plug event. State is $state")
+                Logd(TAG) { "Headset plug event. State is $state" }
                 when (state) {
-                    -1 -> LogeFor(TAG, theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id,"Received invalid ACTION_HEADSET_PLUG intent")
+                    -1 -> LogeFor(TAG, theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id, "Received invalid ACTION_HEADSET_PLUG intent")
                     UNPLUGGED -> {}
                     PLUGGED -> unpauseIfPauseOnDisconnect(false)
                 }
@@ -136,11 +120,11 @@ class PlaybackService : MediaLibraryService() {
     private val bluetoothStateUpdated: BroadcastReceiver = object : BroadcastReceiver() {
         @RequiresPermission(Manifest.permission.VIBRATE)
         override fun onReceive(context: Context, intent: Intent) {
-            Logd(TAG, "bluetoothStateUpdated onReceive called with action: ${intent.action}")
+            Logd(TAG) { "bluetoothStateUpdated onReceive called with action: ${intent.action}" }
             if (intent.action == BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED) {
                 val state = intent.getIntExtra(BluetoothA2dp.EXTRA_STATE, -1)
                 if (state == BluetoothA2dp.STATE_CONNECTED) {
-                    Logd(TAG, "Received bluetooth connection intent")
+                    Logd(TAG) { "Received bluetooth connection intent" }
                     unpauseIfPauseOnDisconnect(true)
                 }
             }
@@ -151,8 +135,8 @@ class PlaybackService : MediaLibraryService() {
         override fun onReceive(context: Context, intent: Intent) {
             if (theatres[0].mPlayerFlow.value == null) return
             // sound is about to change, eg. bluetooth -> speaker
-            Logd(TAG, "audioBecomingNoisy onReceive called with action: ${intent.action}")
-            Logd(TAG, "Pausing playback because audio is becoming noisy")
+            Logd(TAG) { "audioBecomingNoisy onReceive called with action: ${intent.action}" }
+            Logd(TAG) { "Pausing playback because audio is becoming noisy" }
 //            pauseIfPauseOnDisconnect()
             transientPause = theatres[0].mPlayerFlow.value!!.isPlaying
             if (appPrefsFlow!!.value.pauseOnHeadsetDisconnect && !isCasting) theatres[0].mPlayerFlow.value?.pause(false)
@@ -161,46 +145,71 @@ class PlaybackService : MediaLibraryService() {
 
 //    private val shutdownReceiver: BroadcastReceiver = object : BroadcastReceiver() {
 //        override fun onReceive(context: Context, intent: Intent) {
-//            Logd(TAG, "shutdownReceiver onReceive called with action: ${intent.action}")
+//            Logd(TAG) { "shutdownReceiver onReceive called with action: ${intent.action}" }
 ////            if (intent.action == ACTION_SHUTDOWN_PLAYBACK_SERVICE) EventFlow.postEvent(FlowEvent.PlaybackServiceEvent(FlowEvent.PlaybackServiceEvent.Action.SERVICE_SHUT_DOWN))
 //        }
 //    }
 
+    object MediaRepository {
+        data class MediaCategory(val id: String, val type: String, val title: String)
+//        val actQueueCategory = actQueueFlow.value.let { MediaCategory(id = it.id.toString(), type = "Queue", title = it.name) }
+        val queueCategories = queuesLive.map { MediaCategory(id = it.id.toString(), type = "Queue", title = it.name) }
+        val feedCategories = realm.query(Feed::class).sort("lastPlayed", sortOrder = Sort.DESCENDING).limit(5).find().map { MediaCategory(id = it.id.toString(), type = "Feed", title = it.title?.take(50)?:"No title") }
+        val categories = queueCategories + feedCategories
+        fun tracksInCategory(id: String): List<MediaItem> {
+            val cat = categories.firstOrNull { it.id == id } ?: return listOf()
+            val episodes = when (cat.type) {
+                "Queue" -> {
+                    val q = queuesLive.firstOrNull { it.id.toString() == id }
+                    q?.episodes ?: listOf()
+                }
+                "Feed" -> {
+                    var list = listOf<Episode>()
+                    id.toLongOrNull()?.let {
+                        val f = feedsMap[it]
+                        if (f != null) list = getEpisodes(f.episodeFilter, f.episodeSortOrder, it, limit = 50, copy = false)
+                    }
+                    list
+                }
+                else -> listOf()
+            }
+            return episodes.map { e -> MediaItem.Builder().setMediaId(e.id.toString()).setMediaMetadata(MediaMetadata.Builder().setTitle(e.title ?: "No title").setArtist(e.feed?.title ?: "Unknown feed").setIsBrowsable(false).setIsPlayable(true).setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC).setArtworkUri(((e.images.firstOrNull() ?: e.feed?.images?.firstOrNull())?.href ?: "").toSafeUri()).build()).build() }
+        }
+    }
+
     inner class MediaLibrarySessionCK : MediaLibrarySession.Callback {
         override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
-            Logd(TAG, "in MyMediaSessionCallback onConnect")
-            isAutoController = controller.packageName == "com.google.android.projection.gearhead" || controller.packageName == "com.google.android.apps.automotive.templates.host"
+            Logd(TAG) { "in MyMediaSessionCallback onConnect" }
             when {
                 session.isMediaNotificationController(controller) -> {
-                    Logd(TAG, "MyMediaSessionCallback onConnect isMediaNotificationController")
+                    Logd(TAG) { "MyMediaSessionCallback onConnect isMediaNotificationController" }
                     val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
                     val playerCommands = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
                     notificationCustomButtons.forEach { commandButton ->
-                        Logd(TAG, "MyMediaSessionCallback onConnect commandButton ${commandButton.displayName}")
+                        Logd(TAG) { "MyMediaSessionCallback onConnect commandButton ${commandButton.displayName}" }
                         commandButton.sessionCommand?.let(sessionCommands::add)
                     }
                     return MediaSession.ConnectionResult.accept(sessionCommands.build(), playerCommands.build())
                 }
                 session.isAutoCompanionController(controller) -> {
-                    Logd(TAG, "MyMediaSessionCallback onConnect isAutoCompanionController")
+                    Logd(TAG) { "MyMediaSessionCallback onConnect isAutoCompanionController" }
                     val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
+                    val playerCommands = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
                     notificationCustomButtons.forEach { commandButton ->
-                        Logd(TAG, "MyMediaSessionCallback onConnect commandButton ${commandButton.displayName}")
+                        Logd(TAG) { "MyMediaSessionCallback onConnect commandButton ${commandButton.displayName}" }
                         commandButton.sessionCommand?.let(sessionCommands::add)
                     }
-                    return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
-                        .setAvailableSessionCommands(sessionCommands.build())
-                        .build()
+                    return MediaSession.ConnectionResult.accept(sessionCommands.build(), playerCommands.build())
                 }
                 else -> {
-                    Logd(TAG, "MyMediaSessionCallback onConnect other controller: $controller")
+                    Logd(TAG) { "MyMediaSessionCallback onConnect other controller: $controller" }
                     return MediaSession.ConnectionResult.AcceptedResultBuilder(session).build()
                 }
             }
         }
         override fun onPostConnect(session: MediaSession, controller: MediaSession.ControllerInfo) {
             super.onPostConnect(session, controller)
-            Logd(TAG, "MyMediaSessionCallback onPostConnect")
+            Logd(TAG) { "MyMediaSessionCallback onPostConnect" }
             if (notificationCustomButtons.isNotEmpty()) {
                 mediaLibrarySession?.setCustomLayout(notificationCustomButtons)
 //                mediaSession?.setCustomLayout(customMediaNotificationProvider.notificationMediaButtons)
@@ -208,7 +217,7 @@ class PlaybackService : MediaLibraryService() {
         }
         override fun onCustomCommand(session: MediaSession, controller: MediaSession.ControllerInfo, customCommand: SessionCommand, args: Bundle): ListenableFuture<SessionResult> {
             val player = theatres[0].mPlayerFlow.value
-            Logd(TAG, "MyMediaSessionCallback onCustomCommand ${customCommand.customAction}")
+            Logd(TAG) { "MyMediaSessionCallback onCustomCommand ${customCommand.customAction}" }
             when (customCommand.customAction) {
                 NotificationCustomButton.REWIND.customAction -> player?.seekDelta(-rewindSecs * 1000)
                 NotificationCustomButton.FORWARD.customAction -> player?.seekDelta(fastForwardSecs * 1000)
@@ -217,33 +226,35 @@ class PlaybackService : MediaLibraryService() {
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
         override fun onPlaybackResumption(mediaSession: MediaSession, controller: MediaSession.ControllerInfo, isForPlayback: Boolean): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
-            Logd(TAG, "MyMediaSessionCallback onPlaybackResumption isForPlayback: $isForPlayback")
-            val settable = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
-//            scope.launch {
-//                // Your app is responsible for storing the playlist and the start position to use here
-//                val resumptionPlaylist = restorePlaylist()
-//                settable.set(resumptionPlaylist)
-//            }
-            return settable
+            Logd(TAG) { "MyMediaSessionCallback onPlaybackResumption isForPlayback: $isForPlayback" }
+            mediaSession.player.playWhenReady = false
+            val player = theatres[0].mPlayerFlow.value as? Media3Player
+            val lastItem = player?.mediaItem
+            if (lastItem != null) {
+                val lastPositionMs = player.getPosition().toLong()
+                val result = MediaSession.MediaItemsWithStartPosition(listOf(lastItem), 0, lastPositionMs)
+                return Futures.immediateFuture(result)
+            }
+            return super.onPlaybackResumption(mediaSession, controller, isForPlayback)
         }
         override fun onDisconnected(session: MediaSession, controller: MediaSession.ControllerInfo) {
-            Logd(TAG, "in MyMediaSessionCallback onDisconnected")
+            Logd(TAG) { "in MyMediaSessionCallback onDisconnected" }
             when {
                 session.isMediaNotificationController(controller) -> {
-                    Logd(TAG, "MyMediaSessionCallback onDisconnected isMediaNotificationController")
+                    Logd(TAG) { "MyMediaSessionCallback onDisconnected isMediaNotificationController" }
                 }
                 session.isAutoCompanionController(controller) -> {
-                    Logd(TAG, "MyMediaSessionCallback onDisconnected isAutoCompanionController")
+                    Logd(TAG) { "MyMediaSessionCallback onDisconnected isAutoCompanionController" }
                 }
             }
         }
         override fun onMediaButtonEvent(mediaSession: MediaSession, controller: MediaSession.ControllerInfo, intent: Intent): Boolean {
-            val keyEvent = if (Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) intent.extras!!.getParcelable(EXTRA_KEY_EVENT, KeyEvent::class.java)
+            val keyEvent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent.extras!!.getParcelable(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
             else {
                 @Suppress("DEPRECATION")
-                intent.extras!!.getParcelable(EXTRA_KEY_EVENT) as? KeyEvent
+                intent.extras!!.getParcelable(Intent.EXTRA_KEY_EVENT) as? KeyEvent
             }
-            Logd(TAG, "onMediaButtonEvent ${keyEvent?.keyCode}")
+            Logd(TAG) { "onMediaButtonEvent ${keyEvent?.keyCode}" }
             if (keyEvent != null && keyEvent.action == KeyEvent.ACTION_DOWN && keyEvent.repeatCount == 0) {
                 val keyCode = keyEvent.keyCode
                 if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
@@ -262,76 +273,85 @@ class PlaybackService : MediaLibraryService() {
             }
             return false
         }
-        override fun onGetItem(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, mediaId: String): ListenableFuture<LibraryResult<MediaItem>> {
-            Logd(TAG, "MyMediaSessionCallback onGetItem called mediaId:$mediaId")
-            return super.onGetItem(session, browser, mediaId)
-        }
+//        override fun onGetItem(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, mediaId: String): ListenableFuture<LibraryResult<MediaItem>> {
+//            Logd(TAG) { "MyMediaSessionCallback onGetItem called mediaId:$mediaId" }
+//            return super.onGetItem(session, browser, mediaId)
+//        }
         override fun onGetLibraryRoot(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, params: LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> {
-            Logd(TAG, "MyMediaSessionCallback onGetLibraryRoot called")
-            val rootItem: MediaItem = MediaItem.Builder().setMediaId("ActQueue")
-                .setMediaMetadata(MediaMetadata.Builder().setIsBrowsable(true).setIsPlayable(false).setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED).setTitle(actQueueFlow.value.name).build())
-                .build()
+    Logd(TAG) { "MyMediaSessionCallback onGetLibraryRoot called" }
+            val rootItem = MediaItem.Builder().setMediaId(ROOT_ID).setMediaMetadata(MediaMetadata.Builder().setIsBrowsable(true).setIsPlayable(false).build()).build()
             return Futures.immediateFuture(LibraryResult.ofItem(rootItem, params))
         }
-        override fun onGetChildren(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String, page: Int, pageSize: Int,
-                                   params: LibraryParams?): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-            Logd(TAG, "MyMediaSessionCallback onGetChildren called parentId:$parentId page:$page pageSize:$pageSize")
-//            return super.onGetChildren(session, browser, parentId, page, pageSize, params)
-            val mediaItemsInQueue: MutableList<MediaItem> by lazy {
-                val list = mutableListOf<MediaItem>()
-                actQueueFlow.value.episodesSorted.forEach { e-> e.downloadUrl?.let { list += MediaItem.Builder().setMediaId(it).setUri(it.toSafeUri()).setMediaMetadata(buildMetadata(e)).build() } }
-                Logd(TAG, "mediaItemsInQueue: ${list.size}")
-                list
-            }
-            return Futures.immediateFuture(LibraryResult.ofItemList(mediaItemsInQueue, params))
+        override fun onGetChildren(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String, page: Int, pageSize: Int, params: LibraryParams?): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            Logd(TAG) { "MyMediaSessionCallback onGetChildren called" }
+            val mediaItems = if (parentId == ROOT_ID) MediaRepository.categories.map { category -> MediaItem.Builder().setMediaId(category.id).setMediaMetadata(MediaMetadata.Builder().setTitle(category.title).setIsBrowsable(true).setIsPlayable(false).setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED).build()).build() }
+            else MediaRepository.tracksInCategory(parentId)
+            return Futures.immediateFuture(LibraryResult.ofItemList(mediaItems, params))
         }
-        override fun onSubscribe(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String,
-                                 params: LibraryParams?): ListenableFuture<LibraryResult<Void>> {
-            return Futures.immediateFuture(LibraryResult.ofVoid())
-        }
-        override fun onAddMediaItems(mediaSession: MediaSession, controller: MediaSession.ControllerInfo, mediaItems: MutableList<MediaItem>): ListenableFuture<MutableList<MediaItem>> {
-            Logd(TAG, "MyMediaSessionCallback onAddMediaItems called ${mediaItems.size} ${mediaItems[0]}")
-            // TODO check this out
-            val episode = episodeByGuidOrUrl(null, mediaItems.first().mediaId, copy = false) ?: return Futures.immediateFuture(mutableListOf())
-            if (!isCurMedia(episode)) {
-                for (i in 0..1) {
-                    if (episode.id != theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) continue
-                    PlaybackStarter(episode).start(i)
+        override fun onAddMediaItems(mediaSession: MediaSession, controller: MediaSession.ControllerInfo, mediaItems: MutableList<MediaItem>): ListenableFuture<List<MediaItem>> {
+            val item = mediaItems.firstOrNull() ?: return Futures.immediateFuture(mutableListOf())
+            val id = item.mediaId.toLongOrNull() ?: return Futures.immediateFuture(mutableListOf())
+            val episode = episodeById(id) ?: return Futures.immediateFuture(mutableListOf())
+            Logd(TAG) { "MyMediaSessionCallback onAddMediaItems: episode: ${episode.title}" }
+            var updatedItems = mediaItems.toList()
+            var playerId: Int? = null
+            val sameMedia = isCurMedia(episode)
+            if (sameMedia) playerId = (0..1).firstOrNull { i -> episode.id == theatres.getOrNull(i)?.mPlayerFlow?.value?.curMediaFlow?.value?.id }
+            if (playerId == null) playerId = 0
+            val player = theatres[playerId].mPlayerFlow.value as? Media3Player ?: return Futures.immediateFuture(updatedItems)
+//            player?.mediaItem = placeholderItems[0]
+            if (!sameMedia || player.mediaItem == null) {
+                Logd(TAG) { "MyMediaSessionCallback onAddMediaItems preparing mediaItem" }
+                player.deferredMediaItem = CompletableDeferred()
+                PlaybackStarter(episode).shouldStreamThisTime(null).setAudioOnly().start(playerId)
+                return CallbackToFutureAdapter.getFuture { completer ->
+                    serviceIOScope.launch {
+                        try {
+                            val resolvedItem = player.deferredMediaItem!!.await()
+                            updatedItems = mediaItems.mapIndexed { index, item -> if (index == 0) resolvedItem else item }
+                            completer.set(updatedItems)
+                        } catch (e: Exception) {
+                            completer.setException(e)
+                        }
+                    }
+                    "auto_add_media_items_deferred"
                 }
             }
-            val updatedMediaItems = mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
-//            updatedMediaItems += mediaItemsInQueue
-//            Logd(TAG, "MyMediaSessionCallback onAddMediaItems updatedMediaItems: ${updatedMediaItems.size} ")
-            return Futures.immediateFuture(updatedMediaItems)
+            return Futures.immediateFuture(updatedItems)
+        }
+        override fun onSubscribe(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String, params: LibraryParams?): ListenableFuture<LibraryResult<Void>> {
+            return Futures.immediateFuture(LibraryResult.ofVoid())
         }
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate() {
         super.onCreate()
-        initialize()
+        AppConfig.initialize()
 
-        Logd(TAG, "onCreate Service created.")
+        Logd(TAG) { "onCreate Service created." }
         timeIt("$TAG onCreate Service")
+        Media3Player.createDataSourceEngine()
 
-        createDataSourceEngine()
+        carConnection = CarConnection(this)
+        carConnection.type.observeForever(carConnectionObserver)
 
         isRunning = true
         playbackService = this
 
-        if (Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
-            registerReceiver(autoStateUpdated, IntentFilter("com.google.android.gms.car.media.STATUS"), RECEIVER_NOT_EXPORTED)
+//        if (Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
+//            registerReceiver(autoStateUpdated, IntentFilter("com.google.android.gms.car.media.STATUS"), RECEIVER_EXPORTED)
 //            registerReceiver(shutdownReceiver, IntentFilter(ACTION_SHUTDOWN_PLAYBACK_SERVICE), RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(autoStateUpdated, IntentFilter("com.google.android.gms.car.media.STATUS"))
+//        } else {
+//            registerReceiver(autoStateUpdated, IntentFilter("com.google.android.gms.car.media.STATUS"))
 //            registerReceiver(shutdownReceiver, IntentFilter(ACTION_SHUTDOWN_PLAYBACK_SERVICE))
-        }
+//        }
 
         registerReceiver(headsetDisconnected, IntentFilter(Intent.ACTION_HEADSET_PLUG))
         registerReceiver(bluetoothStateUpdated, IntentFilter(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED))
         registerReceiver(audioBecomingNoisy, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
         procFlowEvents()
-        sleepManager = SleepManager()
+        SleepManager.sleepManager = SleepManager()
 
         if (mediaLibrarySession == null) createMediaSessionAndPlayers()
 
@@ -339,41 +359,15 @@ class PlaybackService : MediaLibraryService() {
         timeIt("$TAG onCreate Service end")
     }
 
-    private fun startTheatres() {
-        timeIt("$TAG start of init")
-        CoroutineScope(Dispatchers.IO).launch {
-            for (i in 0..1) {
-                val player = theatres[i].mPlayerFlow.value
-                Logd(TAG, "starting curState for player: ${player?.playerId}")
-                player?.curState = realm.query(CurrentState::class).query("id == $i").first().find() ?: run {
-                    val cs = CurrentState()
-                    cs.id = i.toLong()
-                    upsertBlk(cs) { }
-                }
-                if (player != null && player.curState.curMediaId > 0L) player.setAsCurMedia(episodeById(player.curState.curMediaId))
-
-                Logd(TAG, "curMediaFlow.value from preference: ${player?.curMediaFlow?.value?.title}")
-                player?.curMediaFlow?.value?.let {
-                    val qes = realm.query(QueueEntry::class).query("episodeId == ${it.id}").find()
-                    if (qes.isNotEmpty()) realm.query(PlayQueue::class).query("id == ${qes[0].queueId}").first().find()?.let { q-> actQueueFlow.value = q }
-                }
-                theatres[i].curStateMonitor?.cancel()
-                theatres[i].curStateMonitor = null
-                theatres[i].monitorState()
-            }
-        }
-        timeIt("$TAG end of init")
-    }
-
-    fun createMediaSessionAndPlayers() {
-        Logd(TAG, "recreateMediaSession")
+    private fun createMediaSessionAndPlayers() {
+        Logd(TAG) { "recreateMediaSession" }
         setMediaNotificationProvider(CustomMediaNotificationProvider())
 
         recreateMediaPlayers()
         startTheatres()
 
         val intent = packageManager.getLaunchIntentForPackage(packageName)
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent, FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE)
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         mediaLibrarySession = MediaLibrarySession.Builder(applicationContext, theatres[0].mPlayerFlow.value!!.castPlayer!!, MediaLibrarySessionCK())
             .setId(packageName)
             .setSessionActivity(pendingIntent)
@@ -388,12 +382,14 @@ class PlaybackService : MediaLibraryService() {
                 if (wasPlaying) it.pause(reinit = false)
                 it.shutdown()
             }
-        } catch (e: Exception) { Loge(TAG, e, "Error shutting down player $id")}
+        } catch (e: Exception) {
+            Loge(TAG, e, "Error shutting down player $id")
+        }
     }
 
-    fun recreateMediaPlayers() {
+    private fun recreateMediaPlayers() {
         for (id in 0..<activeTheatresCount.value) {
-            Logd(TAG, "recreateMediaPlayer creating player $id of ${activeTheatresCount.value}")
+            Logd(TAG) { "recreateMediaPlayer creating player $id of ${activeTheatresCount.value}" }
             shutdownPlayer(id)
             theatres[id].mPlayerFlow.value = Media3Player(id, if (activeTheatresCount.value > 1) { if (id == 0) -1 else 1} else 0)
         }
@@ -406,14 +402,14 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        Logd(TAG, "onTaskRemoved")
+        Logd(TAG) { "onTaskRemoved" }
         val player = mediaLibrarySession?.player ?: return
         // Stop the service if not playing, continue playing in the background otherwise.
-        if (!player.playWhenReady || player.mediaItemCount == 0 || player.playbackState == STATE_ENDED) stopSelf()
+        if (!player.playWhenReady || player.mediaItemCount == 0 || player.playbackState == Player.STATE_ENDED) stopSelf()
     }
 
     override fun onDestroy() {
-        Logd(TAG, "Service is about to be destroyed")
+        Logd(TAG) { "Service is about to be destroyed" }
         theatres[0].mPlayerFlow.value?.onDestroy()
         mediaLibrarySession?.run {
             player.release()
@@ -423,20 +419,22 @@ class PlaybackService : MediaLibraryService() {
         theatres[1].mPlayerFlow.value?.onDestroy()
 
         cancelFlowEvents()
-        unregisterReceiver(autoStateUpdated)
+//        unregisterReceiver(autoStateUpdated)
         unregisterReceiver(headsetDisconnected)
 //        unregisterReceiver(shutdownReceiver)
         unregisterReceiver(bluetoothStateUpdated)
         unregisterReceiver(audioBecomingNoisy)
-        sleepManager?.disable()
+        SleepManager.sleepManager?.disable()
 
         cleanupTheatres()
         playbackService = null
         isRunning = false
+
+        if (::carConnection.isInitialized) carConnection.type.removeObserver(carConnectionObserver)
         super.onDestroy()
     }
 
-    fun isServiceReady(): Boolean = mediaLibrarySession?.player?.playbackState != STATE_IDLE && mediaLibrarySession?.player?.playbackState != STATE_ENDED
+    fun isServiceReady(): Boolean = mediaLibrarySession?.player?.playbackState != Player.STATE_IDLE && mediaLibrarySession?.player?.playbackState != Player.STATE_ENDED
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
         return mediaLibrarySession
@@ -451,7 +449,9 @@ class PlaybackService : MediaLibraryService() {
             try {
                 startTheatres()
                 player.startPlaying()
-            } catch (e: Throwable) { LogsFor(TAG, player.curMediaFlow.value?.id, e, "EpisodeMedia was not loaded from preferences.") }
+            } catch (e: Throwable) {
+                LogsFor(TAG, player.curMediaFlow.value?.id, e, "EpisodeMedia was not loaded from preferences.")
+            }
         }
         when (keycode) {
             KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
@@ -465,7 +465,7 @@ class PlaybackService : MediaLibraryService() {
                     player.curMediaFlow.value == null -> startPlayingFromPreferences()
                     else -> return false
                 }
-                sleepManager?.restart()
+                SleepManager.sleepManager?.restart()
                 return true
             }
             KeyEvent.KEYCODE_MEDIA_PLAY -> {
@@ -478,7 +478,7 @@ class PlaybackService : MediaLibraryService() {
                     player.curMediaFlow.value == null -> startPlayingFromPreferences()
                     else -> return false
                 }
-                sleepManager?.restart()
+                SleepManager.sleepManager?.restart()
                 return true
             }
             KeyEvent.KEYCODE_MEDIA_PAUSE -> {
@@ -519,12 +519,12 @@ class PlaybackService : MediaLibraryService() {
                     return true
                 }
             }
-            KEYCODE_MEDIA_STOP -> {
+            KeyEvent.KEYCODE_MEDIA_STOP -> {
                 if (player.isPlaying) player.pause(reinit = true)
                 return true
             }
             else -> {
-                Logd(TAG, "Unhandled key code: $keycode")
+                Logd(TAG) { "Unhandled key code: $keycode" }
                 // only notify the user about an unknown key event if it is actually doing something
                 if (player.curMediaFlow.value != null && player.isPlaying) LogeFor(TAG, player.curMediaFlow.value?.id, resources.getString(R.string.unknown_media_key, keycode))
             }
@@ -540,7 +540,7 @@ class PlaybackService : MediaLibraryService() {
     private fun procFlowEvents() {
         if (eventSink == null) eventSink = scope.launch {
             EventFlow.events.collectLatest { event ->
-                Logd(TAG, "Received event: ${event.TAG}")
+                Logd(TAG) { "Received event: ${event.TAG}" }
                 when (event) {
                     is FlowEvent.QueueEvent -> onQueueEvent(event)
 //                    is FlowEvent.BufferUpdateEvent -> for (i in 0..1) theatres[i].mPlayerFlow.value?.onBufferUpdate(event)
@@ -558,7 +558,7 @@ class PlaybackService : MediaLibraryService() {
             for (e in event.episodes) {
                 for (i in 0..1) {
                     if (e.id == theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) {
-                        Logd(TAG, "onQueueEvent: queue event removed ${e.title}")
+                        Logd(TAG) { "onQueueEvent: queue event removed ${e.title}" }
                         theatres[i].mPlayerFlow.value?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = theatres[i].mPlayerFlow.value!!.isPlaying)
                         break
                     }
@@ -573,9 +573,9 @@ class PlaybackService : MediaLibraryService() {
     @RequiresPermission(Manifest.permission.VIBRATE)
     private fun unpauseIfPauseOnDisconnect(bluetooth: Boolean) {
         if (theatres[0].mPlayerFlow.value != null) {
-            val audioManager = getAppContext().getSystemService(AUDIO_SERVICE) as AudioManager
+            val audioManager = PodciniApp.getAppContext().getSystemService(AUDIO_SERVICE) as AudioManager
             if (audioManager.mode != AudioManager.MODE_NORMAL || audioManager.isMusicActive) {
-                Logd(TAG, "unpauseIfPauseOnDisconnect() audio is in use")
+                Logd(TAG) { "unpauseIfPauseOnDisconnect() audio is in use" }
                 return
             }
         }
@@ -584,7 +584,7 @@ class PlaybackService : MediaLibraryService() {
             when {
                 !bluetooth && appPrefsFlow!!.value.unpauseOnHeadsetReconnect -> theatres[0].mPlayerFlow.value?.play()
                 bluetooth && appPrefsFlow!!.value.unpauseOnBluetoothReconnect -> {
-                    val vibrator = if (Build.VERSION.SDK_INT >= VERSION_CODES.S) {
+                    val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
                         manager.defaultVibrator
                     } else {
@@ -629,7 +629,7 @@ class PlaybackService : MediaLibraryService() {
         ),
     }
 
-    class CustomMediaNotificationProvider : DefaultMediaNotificationProvider(getAppContext()) {
+    class CustomMediaNotificationProvider : DefaultMediaNotificationProvider(PodciniApp.getAppContext()) {
         override fun addNotificationActions(mediaSession: MediaSession, mediaButtons: ImmutableList<CommandButton>, builder: NotificationCompat.Builder, actionFactory: MediaNotification.ActionFactory): IntArray {
             val defaultPlayPauseButton = mediaButtons.getOrNull(1)
             val notificationMediaButtons = ImmutableList.builder<CommandButton>().apply {
@@ -650,7 +650,7 @@ class PlaybackService : MediaLibraryService() {
 
         var isAutoController: Boolean = false
 
-        private const val CHANNEL_ID = "podcini playback service"
+        private const val ROOT_ID = "root_id"
 
         private const val CUSTOM_COMMAND_SKIP_ACTION_ID = "ac.mdiq.podcini.SKIP"
         private const val CUSTOM_COMMAND_REWIND_ACTION_ID = "ac.mdiq.podcini.REWIND"
@@ -665,7 +665,19 @@ class PlaybackService : MediaLibraryService() {
         var isRunning = false
 
         var isCasting: Boolean = false
-            internal set
+            set(value) {
+                field = value
+                if (value) {
+                    val player = theatres[0].mPlayerFlow.value ?: return
+                    val media = player.curMediaFlow.value ?: return
+                    val isPlaying = player.isPlaying
+                    val isVideo = player.playingVideoFlow.value
+                    if (isVideo) {
+                        forcePlaybackReset = true
+                        if (isPlaying) PlaybackStarter(media).shouldStreamThisTime(null).start()
+                    }
+                }
+            }
 
         /**
          * Is true if the service was running, but paused due to headphone disconnect

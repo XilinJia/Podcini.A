@@ -3,19 +3,19 @@ package ac.mdiq.podcini.ui.screens
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.activity.MainActivity.Companion.findActivity
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.getCache
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.nuclearCacheWipe
-import ac.mdiq.podcini.playback.base.PlayerStatusSimple
-import ac.mdiq.podcini.playback.base.SleepManager.Companion.isSleepTimerActive
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.activeTheatresCount
-import ac.mdiq.podcini.playback.base.ensureAController
-import ac.mdiq.podcini.playback.base.forcePlaybackReset
-import ac.mdiq.podcini.playback.base.isPlaying
-import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.playback.Media3Player.Companion.getCache
+import ac.mdiq.podcini.playback.Media3Player.Companion.nuclearCacheWipe
+import ac.mdiq.podcini.playback.PlayerStatusSimple
+import ac.mdiq.podcini.playback.SleepManager.Companion.isSleepTimerActive
+import ac.mdiq.podcini.playback.actQueueFlow
+import ac.mdiq.podcini.playback.activeTheatresCount
+import ac.mdiq.podcini.playback.ensureAController
+import ac.mdiq.podcini.playback.forcePlaybackReset
+import ac.mdiq.podcini.playback.isPlaying
+import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.playback.cast.BaseActivity
 import ac.mdiq.podcini.playback.isRecordingFlow
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
+import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.shared.AudioSpec
 import ac.mdiq.podcini.shared.VideoSpec
 import ac.mdiq.podcini.sourcing.clientByEpisode
@@ -225,10 +225,10 @@ class AVPlayerVM0: ViewModel() {
 
     private var eventSink by mutableStateOf<Job?>(null)
     fun procFlowEvents() {
-        Logd(TAG, "procFlowEvents")
+        Logd(TAG) { "procFlowEvents" }
         if (eventSink == null) eventSink = viewModelScope.launch {
             EventFlow.events.collectLatest { event ->
-                Logd(TAG, "Received event: ${event.TAG}")
+                Logd(TAG) { "Received event: ${event.TAG}" }
                 when (event) {
 //                    is FlowEvent.PlaybackServiceEvent -> {
 //                        //                        if (event.action == FlowEvent.PlaybackServiceEvent.Action.SERVICE_SHUT_DOWN)
@@ -251,7 +251,7 @@ class AVPlayerVM0: ViewModel() {
     }
 
     override fun onCleared() {
-        Logd(TAG, "VM onCleared")
+        Logd(TAG) { "VM onCleared" }
         eventSink?.cancel()
         eventSink = null
     }
@@ -300,19 +300,19 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
         }
 //        curStateJob = viewModelScope.launch { theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.statusSimpleFlow ?: flowOf(null) }.collect {
 //            showPlayButton = it != PlayerStatusSimple.PLAYING
-//            Logd(TAG, "curPlayerStatus changed playerId: $playerId showPlayButton $showPlayButton")
+//            Logd(TAG) { "curPlayerStatus changed playerId: $playerId showPlayButton $showPlayButton" }
 //        } }
         curStateJob = viewModelScope.launch {
             theatres[playerId].mPlayerFlow.flatMapLatest { player -> if (player == null) flowOf(null) else combine(player.statusSimpleFlow, player.curMediaFlow) { status, media -> Triple(player, status, media) } }
                 .distinctUntilChanged().collect { value ->
                     val (_, status, media) = value ?: Triple(null, null, null)
                     showPlayButton = status != PlayerStatusSimple.PLAYING && isPlaying(media, playerId) != true
-                    Logd(TAG, "playerId: $playerId status=$status showPlayButton=$showPlayButton")
+                    Logd(TAG) { "playerId: $playerId status=$status showPlayButton=$showPlayButton" }
                 }
         }
         curSpeedJob = viewModelScope.launch { theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.curPlayerSpeedFlow ?: flowOf(1f) }.distinctUntilChanged().collect { speed ->
             curPlaybackSpeed = speed
-            Logd(TAG, "curPlaybackSpeed changed playerId: $playerId curPlaybackSpeed $curPlaybackSpeed")
+            Logd(TAG) { "curPlaybackSpeed changed playerId: $playerId curPlaybackSpeed $curPlaybackSpeed" }
         } }
         timeIt("$TAG end of vm init")
     }
@@ -329,7 +329,7 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
     }
 
     override fun onCleared() {
-        Logd(TAG, "VM onCleared")
+        Logd(TAG) { "VM onCleared" }
         stop()
     }
 }
@@ -424,18 +424,18 @@ fun ControlUI(vm: AVPlayerVM) {
         detectHorizontalDragGestures(
             onDragStart = { velocityTracker.resetTracking() },
             onHorizontalDrag = { change, dragAmount ->
-                Logd(TAG, "detectHorizontalDragGestures onHorizontalDrag $dragAmount")
+                Logd(TAG) { "detectHorizontalDragGestures onHorizontalDrag $dragAmount" }
                 if (abs(dragAmount) > 4) {
                     velocityTracker.addPosition(change.uptimeMillis, change.position)
                     scope.launch { offsetX.snapTo(offsetX.value + dragAmount) }
                 }
             },
             onDragEnd = {
-                Logd(TAG, "detectHorizontalDragGestures onDragEnd")
+                Logd(TAG) { "detectHorizontalDragGestures onDragEnd" }
                 scope.launch {
                     val velocity = velocityTracker.calculateVelocity().x
                     val distance = offsetX.value
-                    Logd(TAG, "detectHorizontalDragGestures velocity: $velocity distance: $distance")
+                    Logd(TAG) { "detectHorizontalDragGestures velocity: $velocity distance: $distance" }
                     val shouldSwipe = abs(distance) > swipeDistanceThreshold && abs(velocity) > swipeVelocityThreshold
                     if (shouldSwipe) {
                         if (distance < 0) {
@@ -451,7 +451,7 @@ fun ControlUI(vm: AVPlayerVM) {
     }) {
         AsyncImage(model = ImageRequest.Builder(context).data(episode?.images?.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(50.dp).height(50.dp).border(border = BorderStroke(1.dp, borderColor)).padding(start = 5.dp).combinedClickable(
             onClick = {
-                Logd(TAG, "playerUi icon was clicked $psState")
+                Logd(TAG) { "playerUi icon was clicked $psState" }
                 actPlayerId = vm.playerId
                 if (psState == PSState.PartiallyExpanded) {
                     episode?.let {
@@ -505,14 +505,14 @@ fun ControlUI(vm: AVPlayerVM) {
         Spacer(Modifier.weight(0.1f))
         Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.size(50.dp).combinedClickable(
             onClick = {
-                Logd(TAG, "onClick Play/Pause: vm.playerId: ${vm.playerId}")
+                Logd(TAG) { "onClick Play/Pause: vm.playerId: ${vm.playerId}" }
                 if (episode != null) {
 //                    vm.showPlayButton = !vm.showPlayButton
                     if (vm.showPlayButton && recordingStartTime != null) {
                         player?.recordClip(recordingStartTime!!, (player.getPosition()).toLong())
                         recordingStartTime = null
                     }
-                    Logd(TAG, "Play button clicked: status: ${player?.statusSimpleFlow?.value} is ready: ${playbackService?.isServiceReady()}")
+                    Logd(TAG) { "Play button clicked: status: ${player?.statusSimpleFlow?.value} is ready: ${playbackService?.isServiceReady()}" }
                     PlaybackStarter(episode!!).shouldStreamThisTime(null).start(vm.playerId)
                     if (episode?.mediaType == MediaType.VIDEO && player?.isPlaying != true && (vm.episodeFeed?.videoModePolicy != VideoMode.AUDIO_ONLY)) {
                         if (!vm.showPlayButton && psState != PSState.Expanded) psState = PSState.Expanded
@@ -644,7 +644,7 @@ fun AVPlayerScreen() {
         val observer = object : android.database.ContentObserver(android.os.Handler(android.os.Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
                 isRotationEnabled = isAutoRotateEnabled()
-                Logd(TAG, "ContentObserver onChange isRotationEnabled: $isRotationEnabled")
+                Logd(TAG) { "ContentObserver onChange isRotationEnabled: $isRotationEnabled" }
             }
         }
         context.contentResolver.registerContentObserver(Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION), false, observer)
@@ -666,21 +666,21 @@ fun AVPlayerScreen() {
     if (!vm0.landscape) vms[actPlayerId].showActionBar = true
 
     LaunchedEffect(key1 = curMedia0?.id) {
-        Logd(TAG, "LaunchedEffect curMediaId: ${curMedia0?.title}")
+        Logd(TAG) { "LaunchedEffect curMediaId: ${curMedia0?.title}" }
         displayedChapterIndex = -1
         vms[0].episodeFeed = curMedia0?.feed
         if (psState == PSState.Hidden && vms[0].episodeFeed != null) psState = PSState.PartiallyExpanded
     }
 
     LaunchedEffect(key1 = curMedia1?.id) {
-        Logd(TAG, "LaunchedEffect curMediaId: ${curMedia1?.title}")
+        Logd(TAG) { "LaunchedEffect curMediaId: ${curMedia1?.title}" }
         displayedChapterIndex = -1
         vms[1].episodeFeed = curMedia1?.feed
         if (psState == PSState.Hidden && vms[1].episodeFeed != null) psState = PSState.PartiallyExpanded
     }
 
     LaunchedEffect(psState, actPlayerId, curMedia?.id) {
-        Logd(TAG, "LaunchedEffect(isBSExpanded, curItem?.id) isBSExpanded: $psState")
+        Logd(TAG) { "LaunchedEffect(isBSExpanded, curItem?.id) isBSExpanded: $psState" }
         if (psState == PSState.Expanded) vm0.sleepTimerActive = isSleepTimerActive()
     }
 
@@ -689,14 +689,14 @@ fun AVPlayerScreen() {
             if (psState == PSState.Expanded) {
                 chapterIndex = it.getCurrentChapterIndex(it.position)
                 displayedChapterIndex = if (it.position > it.duration || chapterIndex >= it.chapters.size - 1) it.chapters.size - 1 else chapterIndex
-                Logd(TAG, "LaunchedEffect(curEpisode?.position) chapterIndex $chapterIndex $displayedChapterIndex")
+                Logd(TAG) { "LaunchedEffect(curEpisode?.position) chapterIndex $chapterIndex $displayedChapterIndex" }
             }
         }
     }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            Logd(TAG, "DisposableEffect Lifecycle.Event: $event")
+            Logd(TAG) { "DisposableEffect Lifecycle.Event: $event" }
             when (event) {
                 Lifecycle.Event.ON_CREATE -> { }
                 Lifecycle.Event.ON_START -> {}
@@ -754,7 +754,7 @@ fun AVPlayerScreen() {
     fun PlayerUI(vm: AVPlayerVM, modifier: Modifier) {
         val player by theatres[vm.playerId].mPlayerFlow.collectAsStateWithLifecycle()
         val episode by player?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
-//        Logd(TAG, "PlayerUI vm.playerId: ${vm.playerId} ${episode?.id}")
+//        Logd(TAG) { "PlayerUI vm.playerId: ${vm.playerId} ${episode?.id}" }
         Box(modifier = modifier.fillMaxWidth().height(100.dp).border(1.dp, MaterialTheme.colorScheme.tertiary)) {
             AsyncImage(model = (episode?.images?.firstOrNull() ?: episode?.feed?.images?.firstOrNull())?.href, imageLoader = imageLoader, contentDescription = "bgImage", contentScale = ContentScale.FillBounds, error = painterResource(R.drawable.teaser), modifier = Modifier.matchParentSize().blur(radiusX = 3.dp, radiusY = 3.dp))
             Box(modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)))
@@ -789,7 +789,7 @@ fun AVPlayerScreen() {
                     val media = upsertBlk(episode) { it.forceVideo = false }
                     vm.forceVideo = false
                     forcePlaybackReset = true
-                    PlaybackStarter(media).shouldStreamThisTime(null).start()
+                    PlaybackStarter(media).shouldStreamThisTime(null).setAudioOnly().start()
                     player?.playingVideoFlow?.value = false
                 }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_audiotrack_24), contentDescription = "audio only") }
                 if (client?.attributes?.hasMultiQualities == true) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_stream_24), contentDescription = "change stream", modifier = Modifier.clickable { showAVChooser = true })
@@ -920,7 +920,7 @@ fun AVPlayerScreen() {
 
         DisposableEffect(lifecycleOwner) {
             val observer = LifecycleEventObserver { _, event ->
-                Logd(TAG, "DisposableEffect Lifecycle.Event: $event")
+                Logd(TAG) { "DisposableEffect Lifecycle.Event: $event" }
                 when (event) {
                     Lifecycle.Event.ON_CREATE -> { }
                     Lifecycle.Event.ON_START -> {}
@@ -1047,7 +1047,7 @@ fun AVPlayerScreen() {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth().padding(top = 5.dp).clickable { showbitrates = !showbitrates }) {
                                 Text("Bitrate: $bitrate", color = textColor, modifier = Modifier.padding(end = 10.dp))
                             }
-                            if (showbitrates && bitRates.size > 1) {
+                            if (showbitrates) {
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (index in bitRates.indices) {
                                         FilterChip(label = { Text(bitRates[index].toString()) }, selected = bitrate==bitRates[index], border = filterChipBorder(bitrate==bitRates[index]), onClick = {
@@ -1118,7 +1118,7 @@ fun AVPlayerScreen() {
                             }
                         }
                         if (reset) Button(onClick = {
-                            Logd(TAG, "before restart episode ${episode.forceVideo}")
+                            Logd(TAG) { "before restart episode ${episode.forceVideo}" }
                             player.pause(false)
                             getCache().removeResource(episode.id.toString())
                             player.setAudioStream(locale, codec, bitrate)
@@ -1235,7 +1235,7 @@ fun AVPlayerScreen() {
         val view = LocalView.current
         DisposableEffect(Unit) {
             val activity = context.findActivity()
-            Logd(TAG, "FullScreenVideoPlayer activity: ${activity?.title}")
+            Logd(TAG) { "FullScreenVideoPlayer activity: ${activity?.title}" }
             if (!isRotationEnabled) activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             val window = activity?.window ?: return@DisposableEffect onDispose {}
             val insetsController = WindowCompat.getInsetsController(window, view)
@@ -1300,7 +1300,7 @@ fun AVPlayerScreen() {
 //        PlayerSurface(player = player?.castPlayer, modifier = Modifier.fillMaxWidth().aspectRatio(aspectRatio))
     }
 
-//    Logd(TAG, "landscape: ${vm.landscape}")
+//    Logd(TAG) { "landscape: ${vm.landscape}" }
 //    if ((landscape || curVideoMode == VideoMode.FULL_SCREEN || (curVideoMode == VideoMode.DEFAULT && appPrefs.videoPlaybackMode == VideoMode.FULL_SCREEN.code)) && playVideo && bsState == BSState.Expanded) {
     if (vm0.landscape && playingVideo && psState == PSState.Expanded) {
         Box {
@@ -1309,7 +1309,7 @@ fun AVPlayerScreen() {
         }
     } else Box(modifier = Modifier.fillMaxWidth().then(if (psState == PSState.PartiallyExpanded) Modifier.windowInsetsPadding(WindowInsets.navigationBars) else Modifier.statusBarsPadding().navigationBarsPadding())) {
         Column(Modifier.align(if (psState == PSState.PartiallyExpanded) Alignment.TopCenter else Alignment.BottomCenter).zIndex(1f)) {
-            Logd(TAG, "activeTheatres: $theatresCount playerMinHeight: $playerMinHeight")
+            Logd(TAG) { "activeTheatres: $theatresCount playerMinHeight: $playerMinHeight" }
             if (theatresCount == 2) {
                 PlayerUI(vms[1], Modifier)
                 var sliderValue by remember { mutableFloatStateOf(0.5f) }

@@ -102,6 +102,6 @@ fun parseDate(input: String?): Instant? {
         val localDateTime = runCatching { components.toLocalDateTime() }.getOrNull()
         if (localDateTime != null) return localDateTime.toInstant(TimeZone.UTC)
     }
-    Logd(TAG, "Could not parse date string \"$input\" [$date], likely an ETag")
+    Logd(TAG) { "Could not parse date string \"$input\" [$date], likely an ETag" }
     return null
 }

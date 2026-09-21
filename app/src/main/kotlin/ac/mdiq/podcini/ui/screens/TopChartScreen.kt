@@ -97,6 +97,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 class DiscoveryVM: ViewModel() {
     val countryNameCodeMap: MutableMap<String, String> = hashMapOf()
@@ -121,10 +122,10 @@ class DiscoveryVM: ViewModel() {
     init {
         timeIt("$TAG start of init")
         countryCode = appAttribsFlow!!.value.topChartCountryCode
-        Logd(TAG, "init countryCode: $countryCode")
+        Logd(TAG) { "init countryCode: $countryCode" }
         for (code in Locale.getISOCountries()) {
             val countryName = Locale.Builder().setRegion(code).build().displayCountry
-//            Logd(TAG, "code: $code countryName: $countryName")
+//            Logd(TAG) { "code: $code countryName: $countryName" }
             countryCodeNameMap[code] = countryName
             countryNameCodeMap[countryName] = code
         }
@@ -148,11 +149,11 @@ class DiscoveryVM: ViewModel() {
                 val NUM_LOADED = 100
                 val COUNTRY_CODE_UNSET = "99"
                 var loadCountry = loadCountry_
-                Logd(TAG, "loadToplist0 loadCountry: $loadCountry countryCode: $countryCode")
+                Logd(TAG) { "loadToplist0 loadCountry: $loadCountry countryCode: $countryCode" }
                 if (countryCode == COUNTRY_CODE_UNSET) loadCountry = Locale.getDefault().country
-                Logd(TAG, "loadToplist loadCountry: $loadCountry countryCode: $countryCode")
+                Logd(TAG) { "loadToplist loadCountry: $loadCountry countryCode: $countryCode" }
                 val reqStr = if (curGenre > 0) "https://itunes.apple.com/$loadCountry/rss/toppodcasts/limit=$NUM_LOADED/genre=$curGenre/json" else "https://itunes.apple.com/$loadCountry/rss/toppodcasts/limit=$NUM_LOADED/json"
-                Logd(TAG, "loadToplist reqStr: $reqStr")
+                Logd(TAG) { "loadToplist reqStr: $reqStr" }
 
                 val feedString = try {
                     val response = getKtorClient().get(reqStr) { header(HttpHeaders.CacheControl, "max-stale=86400") }
@@ -253,11 +254,11 @@ fun TopChartScreen() {
             var debouncedText by remember { mutableStateOf("") }
 
             LaunchedEffect(key1 = vm.textInput) {
-                snapshotFlow { vm.textInput }.debounce(500L).distinctUntilChanged().collectLatest { query ->
+                snapshotFlow { vm.textInput }.debounce(500L.milliseconds).distinctUntilChanged().collectLatest { query ->
                     if (query.length > 1 && debouncedText != query) {
                         debouncedText = query
                         filteredCountries = vm.countryNamesSort.filter { it.contains(query, ignoreCase = true) }.take(5)
-                        Logd(TAG, "input: $query filteredCountries: ${filteredCountries.size}")
+                        Logd(TAG) { "input: $query filteredCountries: ${filteredCountries.size}" }
                         expanded = filteredCountries.isNotEmpty()
                     }
                 }
@@ -308,7 +309,7 @@ fun TopChartScreen() {
                             onClick = {
                                 vm.curIndex = index
                                 vm.curGenre = genres[genres.keys.toList()[index]] ?: 0
-                                Logd(TAG, "SpinnerExternalSet ${vm.curIndex} curGenre: ${vm.curGenre}")
+                                Logd(TAG) { "SpinnerExternalSet ${vm.curIndex} curGenre: ${vm.curGenre}" }
                                 vm.loadToplist(vm.countryCode)
                                 showChooseGenre = false
                             })

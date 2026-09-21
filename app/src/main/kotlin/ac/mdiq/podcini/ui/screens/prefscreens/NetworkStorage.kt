@@ -313,11 +313,11 @@ fun NetworkStorageScreen() {
         }
     }
 
-    Logd(TAG, "useCustomMediaFolder: ${appPrefs.useCustomMediaFolder} customMediaUri: ${appPrefs.customMediaUri}")
+    Logd(TAG) { "useCustomMediaFolder: ${appPrefs.useCustomMediaFolder} customMediaUri: ${appPrefs.customMediaUri}" }
     val selectCustomMediaDirLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             val uri: Uri? = result.data?.data
-            Logd(TAG, "selectCustomMediaDirLauncher the chosen uri: $uri")
+            Logd(TAG) { "selectCustomMediaDirLauncher the chosen uri: $uri" }
             if (uri != null) {
                 showProgress = true
                 CoroutineScope(Dispatchers.IO).launch {
@@ -325,7 +325,7 @@ fun NetworkStorageScreen() {
                     persistedTrees.add(uri)
                     val dir = uri.toUF()
                     dir.listChildren().forEach {
-                        Logd(TAG, "clearing destination: ${it.absPath}")
+                        Logd(TAG) { "clearing destination: ${it.absPath}" }
                         deleteDirectoryRecursively(it)
                     }
                     val mediaDir_ = uri.toUF().createDirectory("Podcini.media")
@@ -373,7 +373,7 @@ fun NetworkStorageScreen() {
                 Text(stringResource(R.string.feed_refresh_title), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 NumberEditor(refreshInterval.toInt(), stringResource(R.string.time_minutes), nz = false, modifier = Modifier.weight(0.6f)) {
                     refreshInterval = it.toString()
-                    Logd("DownloadsSetting", "refreshInterval: $refreshInterval")
+                    Logd("DownloadsSetting") { "refreshInterval: $refreshInterval" }
                     upsertBlk(appPrefs) { p-> p.autoUpdateInterval = it }
                     checkAndScheduleUpdateTaskOnce(replace = true, force = it > 0)
                 }
@@ -382,7 +382,7 @@ fun NetworkStorageScreen() {
             fun getRefreshTime(): String {
                 val initialDelay = intervalInMillis
                 val lastUpdateTime = appAttribsFlow!!.value.prefLastFullUpdateTime
-                Logd(TAG, "lastUpdateTime: $lastUpdateTime updateInterval: $intervalInMillis")
+                Logd(TAG) { "lastUpdateTime: $lastUpdateTime updateInterval: $intervalInMillis" }
                 return if (lastUpdateTime == 0L) {
                     if (initialDelay != 0L) fullDateTimeString(nowInMillis() + initialDelay + intervalInMillis)
                     else getAppContext().getString(R.string.before) + fullDateTimeString(nowInMillis() + intervalInMillis)
@@ -415,7 +415,7 @@ fun NetworkStorageScreen() {
                             MediaFilesTransporter("").fromUFToMediaDir(uf, move = true, verify = false)
                             deleteDirectoryRecursively(uf)
                             findRootForUri(appPrefs.customMediaUri.toSafeUri())?.let {
-                                try { getAppContext().contentResolver.releasePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) } catch (e: Exception) { Logd(TAG, "uri can not be released: $it")}
+                                try { getAppContext().contentResolver.releasePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) } catch (e: Exception) { Logd(TAG) { "uri can not be released: $it" }}
                             }
                             showProgress = false
                             showImporSuccessDialog.value = true
@@ -578,7 +578,7 @@ fun SynchronizationScreen() {
 
         val nextCloudAuthCallback = object : AuthenticationCallback {
             override fun onNextcloudAuthenticated(server: String, username: String, password: String) {
-                Logd("NextcloudAuthenticationDialog", "onNextcloudAuthenticated: $server")
+                Logd("NextcloudAuthenticationDialog") { "onNextcloudAuthenticated: $server" }
                 setSelectedSyncProvider(SynchronizationProviderViewData.NEXTCLOUD_GPODDER)
                 SynchronizationSettings.clear()
                 SynchronizationSettings.password = password
@@ -670,7 +670,7 @@ fun SynchronizationScreen() {
         var errorMessage by remember { mutableStateOf("") }
         LaunchedEffect(Unit) {
             EventFlow.events.collectLatest { event ->
-                Logd(TAG, "Received event: ${event.TAG}")
+                Logd(TAG) { "Received event: ${event.TAG}" }
                 when (event) {
                     is FlowEvent.SyncServiceEvent -> {
                         when (event.messageResId) {
@@ -744,7 +744,7 @@ fun SynchronizationScreen() {
             },
             confirmButton = {
                 if (showConfirm) TextButton(onClick = {
-                    Logd(TAG, "confirm button pressed")
+                    Logd(TAG) { "confirm button pressed" }
                     if (isGuest == null) {
                         Logt(TAG, getAppContext().getString(R.string.host_or_guest))
                         return@TextButton

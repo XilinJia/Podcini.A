@@ -6,9 +6,9 @@ import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.base.PlayerStatusSimple
+import ac.mdiq.podcini.playback.actQueueFlow
+import ac.mdiq.podcini.playback.theatres
+import ac.mdiq.podcini.playback.PlayerStatusSimple
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.clientByEpisode
@@ -216,7 +216,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
             val existing = toFeed.episodes
             for (episode in clientEpisodes) {
                 if (existing.firstOrNull { it.identifyingValue == episode.identifyingValue } != null) continue
-                Logd(TAG, "addToFeed adding new episode: ${episode.title}")
+                Logd(TAG) { "addToFeed adding new episode: ${episode.title}" }
                 episode.id = getEntityId()
                 episode.feedId = toFeed.id
                 upsertBlk(episode) {}
@@ -250,7 +250,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
         onDispose { handleBackSubScreens.remove(TAG) }
     }
     BackHandler(enabled = handleBackSubScreens.contains(TAG)) {
-        Logd(TAG, "BackHandler")
+        Logd(TAG) { "BackHandler" }
         episodeForInfo = null
     }
 
@@ -264,7 +264,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
         val lifecycleOwner = LocalLifecycleOwner.current
         DisposableEffect(lifecycleOwner) {
             val observer = LifecycleEventObserver { _, event ->
-                Logd(TAG, "LifecycleEventObserver: $event")
+                Logd(TAG) { "LifecycleEventObserver: $event" }
                 when (event) {
                     Lifecycle.Event.ON_START -> {}
                     Lifecycle.Event.ON_STOP -> {}
@@ -277,7 +277,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
 
         LaunchedEffect(episodes.size, scrollToOnStart) {
             val lifecycleState = lifecycleOwner.lifecycle.currentState
-            Logd(TAG, "LaunchedEffect(scrollToOnStart) ${episodes.size} $scrollToOnStart ${lazyListState.firstVisibleItemIndex} $lifecycleState")
+            Logd(TAG) { "LaunchedEffect(scrollToOnStart) ${episodes.size} $scrollToOnStart ${lazyListState.firstVisibleItemIndex} $lifecycleState" }
             if (episodes.size > 5 && lifecycleState >= Lifecycle.State.RESUMED && scrollToOnStart >= 0) lazyListState.scrollToItem(scrollToOnStart)
         }
 
@@ -298,7 +298,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
         val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
         val curMedia1 by player1?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 
-        //        Logd(TAG, "outside of LazyColumn")
+        //        Logd(TAG) { "outside of LazyColumn" }
         LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize().padding(start = 5.dp, end = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(items = episodes, key = { it.id }) { episode_ ->
                 val episode by rememberUpdatedState(episode_)
@@ -322,18 +322,18 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                     detectHorizontalDragGestures(
                         onDragStart = { velocityTracker.resetTracking() },
                         onHorizontalDrag = { change, dragAmount ->
-//                            Logd(TAG, "detectHorizontalDragGestures onHorizontalDrag $dragAmount")
+//                            Logd(TAG) { "detectHorizontalDragGestures onHorizontalDrag $dragAmount" }
                             if (abs(dragAmount) > 4) {
                                 velocityTracker.addPosition(change.uptimeMillis, change.position)
                                 scope.launch { offsetX.snapTo(offsetX.value + dragAmount) }
                             }
                         },
                         onDragEnd = {
-//                            Logd(TAG, "detectHorizontalDragGestures onDragEnd")
+//                            Logd(TAG) { "detectHorizontalDragGestures onDragEnd" }
                             scope.launch {
                                 val velocity = velocityTracker.calculateVelocity().x
                                 val distance = offsetX.value
-//                                Logd(TAG, "detectHorizontalDragGestures velocity: $velocity distance: $distance")
+//                                Logd(TAG) { "detectHorizontalDragGestures velocity: $velocity distance: $distance" }
                                 val shouldSwipe = abs(distance) > swipeDistanceThreshold && abs(velocity) > swipeVelocityThreshold
                                 if (shouldSwipe) {
                                     if (distance > 0) rightSwipeCB?.invoke(episode)
@@ -349,7 +349,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         fun TitleColumn(modifier: Modifier) {
                             Column(modifier.padding(start = 6.dp, end = 6.dp).combinedClickable(
                                 onClick = {
-                                    Logd(TAG, "clicked: ${episode.title}")
+                                    Logd(TAG) { "clicked: ${episode.title}" }
                                     if (selectMode) toggleSelected(episode)
                                     else episodeForInfo = episode
                                 },
@@ -363,7 +363,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                         val index = episodes.indexOfFirst { it.id == episode.id }
                                         longPressIndex = index
                                     } else longPressIndex = -1
-                                    Logd(TAG, "long clicked: ${episode.title}")
+                                    Logd(TAG) { "long clicked: ${episode.title}" }
                                 })) {
                                 Text(episode.title ?: "", color = textColor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = titleMaxLines, overflow = TextOverflow.Ellipsis)
                                 @Composable
@@ -450,7 +450,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                         }
                                     }
                                     LayoutMode.FeedTitle.code -> {
-                                        Logd(TAG, "title: ${episode.feed?.title}")
+                                        Logd(TAG) { "title: ${episode.feed?.title}" }
                                         Text(episode.feed?.title ?: "", color = textColor, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         when (statusRowMode) {
                                             StatusRowMode.Comment -> Comment()
@@ -499,7 +499,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                 if (showActionButtons) {
                                     val dlStats = downloadStates[episode.downloadUrl]
                                     if (dlStats != null) {
-//                                        Logd(TAG, "${episode.id} dlStats: ${dlStats.progress} ${dlStats.state}")
+//                                        Logd(TAG) { "${episode.id} dlStats: ${dlStats.progress} ${dlStats.state}" }
                                         actionButton.processing.intValue = dlStats.progress
                                         when (dlStats.state) {
                                             DownloadStatus.State.COMPLETED.code -> {
@@ -513,12 +513,12 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                     LaunchedEffect(statusSimple0, curMedia0?.id, statusSimple1, curMedia1?.id, actionButton.speaking) {
                                         when {
                                             episode.id == curMedia0?.id -> {
-                                                Logd(TAG, "playerStat: $statusSimple0 episode: ${episode.title}")
+                                                Logd(TAG) { "playerStat: $statusSimple0 episode: ${episode.title}" }
                                                 if (statusSimple0 == PlayerStatusSimple.PLAYING) actionButton.type = ButtonTypes.PAUSE
                                                 else actionButton.update(episode)
                                             }
                                             episode.id == curMedia1?.id -> {
-                                                Logd(TAG, "playerStat: $statusSimple1 episode: ${episode.title}")
+                                                Logd(TAG) { "playerStat: $statusSimple1 episode: ${episode.title}" }
                                                 if (statusSimple1 == PlayerStatusSimple.PLAYING) actionButton.type = ButtonTypes.PAUSE
                                                 else actionButton.update(episode)
                                             }
@@ -569,7 +569,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         val eList = multiSelectCB(longPressIndex, -1)
                         if (eList.isEmpty()) for (i in 0..longPressIndex) selected.add(episodes[i])
                         else selected.addAll(eList)
-                        Logd(TAG, "selectedIds: ${selected.size}")
+                        Logd(TAG) { "selectedIds: ${selected.size}" }
                     })
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_downward_24), tint = buttonColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp)
                     .clickable {
@@ -577,7 +577,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         val eList = multiSelectCB(longPressIndex, 1)
                         if (eList.isEmpty()) for (i in longPressIndex..<episodes.size) selected.add(episodes[i])
                         else selected.addAll(eList)
-                        Logd(TAG, "selectedIds: ${selected.size}")
+                        Logd(TAG) { "selectedIds: ${selected.size}" }
                     })
                 var selectAllRes by remember { mutableIntStateOf(R.drawable.ic_select_all) }
                 Icon(imageVector = ImageVector.vectorResource(selectAllRes), tint = buttonColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp)
@@ -593,7 +593,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             longPressIndex = -1
                             selectAllRes = R.drawable.ic_select_all
                         }
-                        Logd(TAG, "selectedIds: ${selected.size}")
+                        Logd(TAG) { "selectedIds: ${selected.size}" }
                     })
 //                data class MenuOption(
 //                    @DrawableRes val iconRes: Int,
@@ -697,7 +697,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                         for (e in selected_) {
                                             for (e1 in selected_) {
                                                 if (e.id == e1.id) continue
-                                                Logd(TAG, "set related: ${e.id} ${e1.id}")
+                                                Logd(TAG) { "set related: ${e.id} ${e1.id}" }
                                                 e.related.add(e1)
                                             }
                                         }

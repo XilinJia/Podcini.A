@@ -2,14 +2,14 @@ package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.base.SleepManager.Companion.autoEnableFrom
-import ac.mdiq.podcini.playback.base.SleepManager.Companion.autoEnableTo
-import ac.mdiq.podcini.playback.base.SleepManager.Companion.lastTimerValue
-import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.service.PlaybackService
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
+import ac.mdiq.podcini.playback.SleepManager.Companion.autoEnableFrom
+import ac.mdiq.podcini.playback.SleepManager.Companion.autoEnableTo
+import ac.mdiq.podcini.playback.SleepManager.Companion.lastTimerValue
+import ac.mdiq.podcini.playback.SleepManager.Companion.sleepManager
+import ac.mdiq.podcini.playback.actQueueFlow
+import ac.mdiq.podcini.playback.theatres
+import ac.mdiq.podcini.playback.PlaybackService
+import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fallbackSpeed
 import ac.mdiq.podcini.storage.database.fastForwardSecs
@@ -250,7 +250,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         onValueChange = {
                             sliderPosition = it
                             speed = slider2Speed(sliderPosition, maxSpeed)
-                            Logd("PlaybackSpeedDialog", "slider value: $it $speed}")
+                            Logd("PlaybackSpeedDialog") { "slider value: $it $speed}" }
                         })
                     Text("+", fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
@@ -331,7 +331,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                             },
                             trailingIcon = { if (showSet) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable {
                                 val pitch = if (unit == "Ratio") pitchStr.toFloat() else pitchStr.toFloat() / 440f
-                                Logd(TAG, "pitch set to $pitch")
+                                Logd(TAG) { "pitch set to $pitch" }
                                 if (tmpPitch) {
                                     player.curPitch = pitch
                                     player.setPlaybackParams(player.curSpeed, pitch)
@@ -473,7 +473,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                             return@Button
                         }
                         val time = if (!toEnd) etxtTime.toLong() else (max(((player0!!.curMediaFlow.value!!.duration) - (player0!!.curMediaFlow.value!!.position)), 0) / player0!!.curPlayerSpeedFlow.value).toLong().milliseconds.inWholeMinutes // ms to minutes
-                        Logd("SleepTimerDialog", "Sleep timer set: $time")
+                        Logd("SleepTimerDialog") { "Sleep timer set: $time" }
                         if (time > 0L) {
                             upsertBlk(sleepPrefs) { it.LastValue = time }
                             sleepManager?.setTimer(time.minutes.inWholeMilliseconds)
@@ -560,7 +560,7 @@ fun SetAVQuality(selectedOption: String, showGlobal: Boolean = true, onDismiss: 
                     Checkbox(checked = option.tag == selected,
                         onCheckedChange = { isChecked ->
                             selected = option.tag
-                            if (isChecked) Logd(TAG, "$option is checked")
+                            if (isChecked) Logd(TAG) { "$option is checked" }
                             val type = AVQuality.fromTag(selected)
                             cb(type)
                             onDismiss()

@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.storage.database
 
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.playback.actQueueFlow
+import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.model.Episode
@@ -36,16 +36,16 @@ private var virQueue = PlayQueue()
 var queuesJob: Job? = null
 
 fun initQueues() {
-    Logd(TAG, "initQueues called ")
+    Logd(TAG) { "initQueues called " }
     timeIt("$TAG start of initQueues")
     queuesLive = realm.query(PlayQueue::class).sort("name").find()
 
     if (queuesJob == null) queuesJob = runOnIOScope {
-        Logd(TAG, "starting queues queuesLive: ${queuesLive.size}")
+        Logd(TAG) { "starting queues queuesLive: ${queuesLive.size}" }
         if (queuesLive.isEmpty()) {
             realm.write {
                 for (i in 0..4) {
-                    Logd(TAG, "creating queue id: $i")
+                    Logd(TAG) { "creating queue id: $i" }
                     val q = PlayQueue()
                     if (i == 0) q.name = "Default"
                     else {
@@ -66,7 +66,7 @@ fun initQueues() {
         queuesFlow.collect { changes: ResultsChange<PlayQueue> ->
             queuesLive = changes.list
             queuesLive.find { it.id == actQueueFlow.value.id }?.let { actQueueFlow.value = it }
-            Logd(TAG, "queuesLive updated")
+            Logd(TAG) { "queuesLive updated" }
             when (changes) {
                 is UpdatedResults -> {
                     when {
@@ -90,7 +90,7 @@ fun cancelQueuesJob() {
 var curIndexInActQueue = -1
 
 fun inQueueEpisodeIdSet(): Set<Long> {
-    Logd(TAG, "getQueueIDList() called")
+    Logd(TAG) { "getQueueIDList() called" }
     return realm.query(QueueEntry::class).find().map { it.episodeId }.toSet()
 }
 
@@ -109,7 +109,7 @@ suspend fun persistOrdered(episodes: List<Episode>, queueEntries: List<QueueEntr
 }
 
 suspend fun addToAssQueue(episodes: List<Episode>) {
-    Logd(TAG, "addToAssQueue( ... ) called")
+    Logd(TAG) { "addToAssQueue( ... ) called" }
     val mapByFeed = episodes.groupBy { it.feedId }
     for (en in mapByFeed.entries) {
         val fid = en.key ?: continue
@@ -121,7 +121,7 @@ suspend fun addToAssQueue(episodes: List<Episode>) {
 }
 
 suspend fun addToQueue(episodes: List<Episode>, queue: PlayQueue) {
-    Logd(TAG, "addToQueue( ... ) called")
+    Logd(TAG) { "addToQueue( ... ) called" }
     if (queue.isVirtual()) {
         Loge(TAG, "Current queue is virtual, ignored")
         return
@@ -135,7 +135,7 @@ suspend fun addToQueue(episodes: List<Episode>, queue: PlayQueue) {
                 qes = queue.entries
                 calcPosition(qes, EnqueueLocation.fromCode(queue.enqueueLocation), curPlaying)
             }
-            Logd(TAG, "addToQueue insertPosition: $insertPosition")
+            Logd(TAG) { "addToQueue insertPosition: $insertPosition" }
             val qe = QueueEntry().apply {
                 id = getEntityId()
                 queueId = queue.id
@@ -151,12 +151,12 @@ suspend fun addToQueue(episodes: List<Episode>, queue: PlayQueue) {
 }
 
 suspend fun queueToVirtual(episode: Episode, episodes: List<Episode>, listIdentity: String, sortOrder: EpisodeSortOrder, playInSequence: Boolean = true) {
-    Logd(TAG, "queueToVirtual ${virQueue.identity} $listIdentity ${episodes.size}")
+    Logd(TAG) { "queueToVirtual ${virQueue.identity} $listIdentity ${episodes.size}" }
     virQueue = queuesLive.find { it.id == VIRTUAL_QUEUE_ID } ?: return
     if (virQueue.identity != listIdentity || !virQueue.contains(episode)) {
         val index = episodes.indexOfFirst { it.id == episode.id }
         if (index >= 0) {
-            Logd(TAG, "queueToVirtual index: $index")
+            Logd(TAG) { "queueToVirtual index: $index" }
             realm.write {
                 val qes = query(QueueEntry::class).query("queueId == $VIRTUAL_QUEUE_ID").find()
                 delete(qes)
@@ -188,7 +188,7 @@ suspend fun queueToVirtual(episode: Episode, episodes: List<Episode>, listIdenti
 
 
 suspend fun smartRemoveFromQueues(item_: Episode, queues_: List<PlayQueue> = listOf()) {
-    Logd(TAG, "smartRemoveFromAllQueues: ${item_.title}")
+    Logd(TAG) { "smartRemoveFromAllQueues: ${item_.title}" }
     var item = item_
     val almostEnded = item.hasAlmostEnded()
     if (almostEnded) {
@@ -208,7 +208,7 @@ suspend fun smartRemoveFromQueues(item_: Episode, queues_: List<PlayQueue> = lis
     }
     //        ensure actQueueFlow.value is last updated
     if (actQueueFlow.value.id in queues.map { it.id }) {
-        Logd(TAG, "actQueueFlow.value: [${actQueueFlow.value.name}]")
+        Logd(TAG) { "actQueueFlow.value: [${actQueueFlow.value.name}]" }
         val qes = actQueueFlow.value.entries
         val curMediaId0 = theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id
         val curMediaId1 = theatres[1].mPlayerFlow.value?.curMediaFlow?.value?.id
@@ -219,7 +219,7 @@ suspend fun smartRemoveFromQueues(item_: Episode, queues_: List<PlayQueue> = lis
 }
 
 suspend fun removeFromAllQueues(episodes: Collection<Episode>, playState: EpisodeState? = null) {
-    Logd(TAG, "removeFromAllQueuesSync called ")
+    Logd(TAG) { "removeFromAllQueuesSync called " }
     for (q in queuesLive) {
         if (q.id != actQueueFlow.value.id) removeFromQueue(q, episodes, playState)
     }
@@ -232,7 +232,7 @@ suspend fun removeFromAllQueues(episodes: Collection<Episode>, playState: Episod
 }
 
 internal suspend fun removeFromQueue(queue_: PlayQueue?, episodes: Collection<Episode>, playState: EpisodeState? = null) {
-//    Logd(TAG, "removeFromQueue called ${queue_?.name}")
+//    Logd(TAG) { "removeFromQueue called ${queue_?.name}" }
     val queue = queue_ ?: actQueueFlow.value
     if (queue.size() == 0) {
         queue.checkAndFill()
@@ -274,7 +274,7 @@ internal suspend fun removeFromQueue(queue_: PlayQueue?, episodes: Collection<Ep
 }
 
 suspend fun removeFromAllQueuesQuiet(episodeIds: List<Long>, updateState: Boolean = true) {
-    Logd(TAG, "removeFromAllQueuesQuiet called ")
+    Logd(TAG) { "removeFromAllQueuesQuiet called " }
 
     suspend fun doit(q: PlayQueue, isActQueue: Boolean = false) {
         if (q.size() == 0) {

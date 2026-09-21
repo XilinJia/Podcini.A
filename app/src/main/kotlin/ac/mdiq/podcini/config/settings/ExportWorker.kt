@@ -27,10 +27,10 @@ class ExportWorker private constructor(private val exportWriter: ExportWriter, p
         return withContext(Dispatchers.IO) {
             if (output.exists()) {
                 output.delete()
-                Logd(TAG, "Overwriting previously exported file")
+                Logd(TAG) { "Overwriting previously exported file" }
             }
             val feeds_ = feeds ?: allFeeds
-            Logd(TAG, "feeds_: ${feeds_.size}")
+            Logd(TAG) { "feeds_: ${feeds_.size}" }
             exportWriter.writeDocument(feeds_, output)
             output
         }
@@ -48,7 +48,7 @@ class DocumentFileExportWorker(private val exportWriter: ExportWriter, private v
             val output = outputFileUri.toUF()
             try {
                 val feeds_ = feeds ?: allFeeds
-                Logd("DocumentFileExportWorker", "feeds_: ${feeds_.size}")
+                Logd("DocumentFileExportWorker") { "feeds_: ${feeds_.size}" }
                 exportWriter.writeDocument(feeds_, output)
                 output
             } catch (e: Exception) { throw e }

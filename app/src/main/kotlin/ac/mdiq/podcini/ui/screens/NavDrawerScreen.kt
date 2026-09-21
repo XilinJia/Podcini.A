@@ -1,8 +1,8 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.activeTheatresCount
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
+import ac.mdiq.podcini.playback.activeTheatresCount
+import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.storage.database.feedCountFlow
 import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.queuesLive
@@ -101,7 +101,7 @@ fun NavDrawerScreen() {
 
     val theatresCount by activeTheatresCount.collectAsStateWithLifecycle()
     LaunchedEffect(drawerState.isOpen) {
-        Logd(TAG, "LaunchedEffect(drawerState.currentValue): ${drawerState.isOpen}")
+        Logd(TAG) { "LaunchedEffect(drawerState.currentValue): ${drawerState.isOpen}" }
         if (drawerState.isOpen) withContext(Dispatchers.IO) {
             navMap[Screens.Queues.name]?.count = queuesLive.sumOf { it.size()}
             navMap[Screens.Library.name]?.count = feedCountFlow.value
@@ -128,7 +128,7 @@ fun NavDrawerScreen() {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(start = 10.dp, end = 5.dp, top = 10.dp, bottom = 10.dp).verticalScroll(rememberScrollState())) {
             for (nav in navMap.entries) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 15.dp).clickable {
-                    Logd(TAG, "nav.key: ${nav.key}")
+                    Logd(TAG) { "nav.key: ${nav.key}" }
                     if (nav.key == Screens.Library.name) feedIdsToUse = listOf()
                     navTo(nav.value.navKey, PopMode.Clear)
                     drawerCtrl?.close()
@@ -149,7 +149,7 @@ fun NavDrawerScreen() {
                 Spacer(Modifier.weight(1f))
                 val playersRes = if (theatresCount == 1) R.drawable.teaser else R.drawable.ic_launcher_foreground
                 AsyncImage(model = playersRes, contentDescription = "Players", modifier = Modifier.height(24.dp).clickable {
-                    Logd(TAG,"activeTheatres: $theatresCount")
+                    Logd(TAG) { "activeTheatres: $theatresCount" }
                     activeTheatresCount.value = if (theatresCount == 1) 2 else {
                         playbackService?.shutdownPlayer(1)
                         1

@@ -78,7 +78,7 @@ fun importAP(uri: Uri, onDismiss: ()->Unit) {
                     }
                 }
                 if (episode.id in favIds) episode.setRating(Rating.SUPER)
-//                Logd(TAG, "episode title: ${episode.title}")
+//                Logd(TAG) { "episode title: ${episode.title}" }
                 episodes.add(episode)
             }
            feed.episodes = episodes
@@ -120,7 +120,7 @@ fun importAP(uri: Uri, onDismiss: ()->Unit) {
                         "tags" -> feed.tags = cursor.getStringOrNull(i)?.split(TAG_SEPARATOR)?.toRealmSet() ?: realmSetOf()
                     }
                 }
-                Logd(TAG, "buildFeeds feed title: ${feed.title}")
+                Logd(TAG) { "buildFeeds feed title: ${feed.title}" }
                 buildEpisodes(db, feed)
 
                 feed.id = 0L
@@ -133,7 +133,7 @@ fun importAP(uri: Uri, onDismiss: ()->Unit) {
         }
     }
 
-    Logd(TAG, "chooseAPImportPathLauncher: uri: $uri")
+    Logd(TAG) { "chooseAPImportPathLauncher: uri: $uri" }
     CoroutineScope(Dispatchers.IO).launch {
         val dbFile = internalDir / "temp.db"
         val sourcePath = uri.toUF()

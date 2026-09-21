@@ -9,7 +9,7 @@ import ac.mdiq.podcini.sourcing.searcher.FeedUrlNotFoundException
 import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry
 import ac.mdiq.podcini.sourcing.feed.subscribe
 import ac.mdiq.podcini.utils.NetworkUtils.getFinalRedirectedUrl
-import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.getEntityId
@@ -190,7 +190,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
         isShared = shared
         preparedUrl = prepareUrl(feedUrl)
 
-        Logd(TAG, "OnlineFeedVM init feedUrl: $feedUrl feedSource: $feedSource isShared: $isShared")
+        Logd(TAG) { "OnlineFeedVM init feedUrl: $feedUrl feedSource: $feedSource isShared: $isShared" }
 
         findExisting(preparedUrl)?.apply { feedId = this.id }
 
@@ -202,7 +202,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
 
         if (feedUrl.isEmpty()) Loge(TAG, "feedUrl is null.")
         else {
-            Logd(TAG, "Activity was started with url $feedUrl")
+            Logd(TAG) { "Activity was started with url $feedUrl" }
             showProgress = true
             // Remove subscribeonandroid.com from feed URL in order to subscribe to the actual feed URL
             if (feedUrl.contains("subscribeonandroid.com")) feedUrl = feedUrl.replaceFirst("((www.)?(subscribeonandroid.com/))".toRegex(), "")
@@ -210,11 +210,11 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
             suspend fun handleClientFeeds(): Boolean {
                 feedOptions = gatewayClient?.withProvider { it.feedsTitlesAtUrl(url) } ?: listOf()
                 val feedOptions_ = feedOptions.filter { it != null && it != "playlists" && it != "shorts" }
-                Logd(TAG, "feedOptions_: ${feedOptions_.size}")
+                Logd(TAG) { "feedOptions_: ${feedOptions_.size}" }
                 when {
                     feedOptions_.size > 1 -> {
                         showTabsDialog = true
-                        feedOptions.forEach { Logd(TAG, "feedOptions: $it") }
+                        feedOptions.forEach { Logd(TAG) { "feedOptions: $it" } }
                         return true
                     }
                     feedOptions_.size <= 1 -> {
@@ -229,21 +229,21 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
                             if (exist != null) {
                                 setExist(exist, R.string.update_url)
                                 updatedFeedUrl = fipc.downloadUrl ?:""
-                                Logd(TAG, "handleClientFeeds updatedFeedUrl: $updatedFeedUrl")
+                                Logd(TAG) { "handleClientFeeds updatedFeedUrl: $updatedFeedUrl" }
                                 return true
                             }
-                            Logd(TAG, "handleClientFeeds feed exists: $exist ${fipc.title}")
+                            Logd(TAG) { "handleClientFeeds feed exists: $exist ${fipc.title}" }
                             val eList = mutableListOf<EpisodeIPC>()
                             var episodes = gatewayClient?.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, 0L) } ?: listOf()
                             while (episodes.isNotEmpty()) {
                                 eList.addAll(episodes)
                                 numEpisodes = eList.size
                                 if (limitEpisodesCount in 1..<numEpisodes || numEpisodes > EPISODES_LIMIT || episodes.size < EPISODE_BATCH_SIZE) break
-                                Logd(TAG, "handleClientFeeds Subscribing eList: ${eList.size}")
+                                Logd(TAG) { "handleClientFeeds Subscribing eList: ${eList.size}" }
                                 episodes = gatewayClient?.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, 0L) } ?: listOf()
                             }
                             fipc.episodes = eList
-                            Logd(TAG, "handleClientFeeds fipc: ${fipc.title} ${fipc.author}")
+                            Logd(TAG) { "handleClientFeeds fipc: ${fipc.title} ${fipc.author}" }
                             handleFeed(fipc.toFeed())
                             return true
                         }
@@ -256,24 +256,24 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
                 if (gatewayClient != null) handleClientFeeds()
                 else {
                     val client = sourceClients.find { it.withProvider { p-> p.canHandleUrl(feedUrl) == 1 } == true }
-                    Logd(TAG, "try positive client: ${client != null}")
+                    Logd(TAG) { "try positive client: ${client != null}" }
                     if (client != null) {
                         gatewayClient = client
                         if (handleClientFeeds()) return@launch
                     }
                     val clients = sourceClients.filter { it.withProvider { p-> p.canHandleUrl(feedUrl) == 0 } == true }
-                    Logd(TAG, "try neutral clients: ${clients.size}")
+                    Logd(TAG) { "try neutral clients: ${clients.size}" }
                     for (client in clients) {
                         gatewayClient = client
                         if (handleClientFeeds()) return@launch
                     }
                     try {
                         val urlString = PodcastSearcherRegistry.lookupUrl(feedUrl)
-                        Logd(TAG, "lookupUrlAndBuild: urlString: $urlString")
+                        Logd(TAG) { "lookupUrlAndBuild: urlString: $urlString" }
                         val feedBuilder = FeedBuilder(showError)
                         feedBuilder.buildPodcast(getFinalRedirectedUrl(urlString), username, password) { feed_, _ -> handleFeed(feed_) }
                     } catch (error: FeedUrlNotFoundException) {
-                        Logd(TAG, "lookupUrlAndBuild in error, trying to Retrieve FeedUrl By Search")
+                        Logd(TAG) { "lookupUrlAndBuild in error, trying to Retrieve FeedUrl By Search" }
                         var url: String? = null
                         val searcher = CombinedSearcher()
                         val query = "${error.trackName} ${error.artistName}"
@@ -288,7 +288,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
                         }
                         if (url != null) {
                             urlToLog = url
-                            Logd(TAG, "Successfully retrieve feed url: $url")
+                            Logd(TAG) { "Successfully retrieve feed url: $url" }
                             isFeedFoundBySearch = true
                             val feedBuilder = FeedBuilder(showError)
                             feedBuilder.buildPodcast(getFinalRedirectedUrl(url), username, password) { feed_, _ -> handleFeed(feed_) }
@@ -315,15 +315,15 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
     }
 
     fun findExisting(feed_: Feed?): Feed? {
-        Logd(TAG, "checkExisting check for ${feed_?.title} ${feed_?.author}")
+        Logd(TAG) { "checkExisting check for ${feed_?.title} ${feed_?.author}" }
         fun isSameFeed(f: Feed): Boolean {
-            Logd(TAG, "isSameFeed check with feed: ${f.type} ${f.title} ${f.author}")
+            Logd(TAG) { "isSameFeed check with feed: ${f.type} ${f.title} ${f.author}" }
             fun getDomain(url: String): String? = try { URI(url).host?.removePrefix("www.") } catch (e: Exception) { null }
             val d1 = getDomain(f.downloadUrl?:"")
             val d2 = getDomain(feed_?.downloadUrl?:"")
             val ds1 = f.description?.takeCodePoints(100).orEmpty()
             val ds2 = f.description?.takeCodePoints(100).orEmpty()
-            Logd(TAG, "isSameFeed d1: $d1 d2: $d2")
+            Logd(TAG) { "isSameFeed d1: $d1 d2: $d2" }
             return  (f.title == feed_?.title && f.author == feed_?.author && d1 == d2 && ds1 == ds2)
         }
         for (f in allFeeds) if (isSameFeed(f)) return f
@@ -333,7 +333,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
     fun findExisting(url: String): Feed? {
         if (url.isNotBlank()) for (f in allFeeds) {
             if (f.downloadUrl == url) {
-                Logd(TAG, "checkExisting found existing feed: ${f.title}")
+                Logd(TAG) { "checkExisting found existing feed: ${f.title}" }
                 return f
             }
         }
@@ -342,7 +342,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
 
 
     internal fun handleFeed(feed_: Feed) {
-        Logd(TAG, "handleFeed feed_.title: ${feed_.title} ${feed_.author}")
+        Logd(TAG) { "handleFeed feed_.title: ${feed_.title} ${feed_.author}" }
         feed = feed_
 //        findExisting(preparedUrl, feed)?.apply { feedId = this.id }
 
@@ -379,7 +379,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
             episodes.addAll(feed!!.episodes)
             infoBarText.value = "${episodes.size} episodes"
 
-            Logd(TAG, "showEpisodes ${episodes.size}")
+            Logd(TAG) { "showEpisodes ${episodes.size}" }
             if (episodes.isEmpty()) return
 //            episodes.sortByDescending { it.pubDate }
             for (episode in episodes) {
@@ -398,19 +398,19 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
 
         when {
             EpisodeAdrDLManager.manager.isDownloading(preparedUrl) -> {
-                Logd(TAG, "handleUpdatedFeedStatus isDownloading")
+                Logd(TAG) { "handleUpdatedFeedStatus isDownloading" }
                 enableSubscribe = false
                 subButTextRes = R.string.subscribe_label
             }
             feedId != 0L -> {
-                Logd(TAG, "handleUpdatedFeedStatus feedId != 0L")
+                Logd(TAG) { "handleUpdatedFeedStatus feedId != 0L" }
                 enableSubscribe = true
                 subButTextRes = R.string.open
                 if (subscribePress) {
                     subscribePress = false
                     runOnIOScope {
                         val feedExisting = getFeed(feedId, true)?: return@runOnIOScope
-                        Logd(TAG, "handleUpdatedFeedStatus ${feedExisting.title} ${feedExisting.author}")
+                        Logd(TAG) { "handleUpdatedFeedStatus ${feedExisting.title} ${feedExisting.author}" }
                         if (appPrefsFlow!!.value.enableAutoDl && !isExtFeed(feedExisting)) feedExisting.autoDownload = autoDownloadChecked
                         if (!username.isNullOrBlank()) {
                             feedExisting.username = username
@@ -421,7 +421,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
                 }
             }
             else -> {
-                Logd(TAG, "handleUpdatedFeedStatus else")
+                Logd(TAG) { "handleUpdatedFeedStatus else" }
                 enableSubscribe = true
                 subButTextRes = R.string.subscribe_label
             }
@@ -429,7 +429,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
     }
 
     override fun onCleared() {
-        Logd(TAG, "VM onCleared")
+        Logd(TAG) { "VM onCleared" }
         episodes.clear()
     }
 }
@@ -449,7 +449,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_CREATE -> Logd(TAG, "feedUrl: ${vm.feedUrl}")
+                Lifecycle.Event.ON_CREATE -> Logd(TAG) { "feedUrl: ${vm.feedUrl}" }
                 Lifecycle.Event.ON_START -> {
                     vm.isPaused = false
                     vm.infoBarText.value = "${vm.episodes.size} episodes"
@@ -492,7 +492,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                         if (!urlEnd.isNullOrBlank() && urlEnd != "playlists" && urlEnd != "shorts") Row(verticalAlignment = Alignment.CenterVertically) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 30.dp)) {
                                 var checked by remember { mutableStateOf(false) }
-                                val isChecked = ytTabsMap.contains(i)   // TODO: better enable multi-select
+//                                val isChecked = ytTabsMap.contains(i)   // TODO: better enable multi-select
                                 Checkbox(checked = selectedId.value == i, onCheckedChange = {
                                     selectedId.value = if (selectedId.value == i) null else i
                                     checked = it
@@ -509,14 +509,14 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                     CoroutineScope(Dispatchers.IO).launch {
                         // TODO: ytTabsMap doesn't handle multiple keys
                         for (i in ytTabsMap.keys) {
-                            Logd(TAG, "Subscribing $i ${vm.feedOptions[i]} ${ytTabsMap[i]}")
+                            Logd(TAG) { "Subscribing $i ${vm.feedOptions[i]} ${ytTabsMap[i]}" }
                             val endUrl = ytTabsMap[i] ?: continue
                             val fipc = vm.gatewayClient?.withProvider { it.buildFeed(url, i) }
                             if (fipc != null) {
                                 fipc.title = "${fipc.title}: $endUrl"
-                                Logd(TAG, "url: $url")
-                                Logd(TAG, "preparedUrl: ${vm.preparedUrl}")
-                                Logd(TAG, "fipc.title: ${fipc.title} ${fipc.downloadUrl}")
+                                Logd(TAG) { "url: $url" }
+                                Logd(TAG) { "preparedUrl: ${vm.preparedUrl}" }
+                                Logd(TAG) { "fipc.title: ${fipc.title} ${fipc.downloadUrl}" }
                                 var exist = vm.findExisting(url)
                                 if (exist != null) {
                                     vm.setExist(exist, R.string.open)
@@ -526,7 +526,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                                 if (exist != null) {
                                     vm.setExist(exist, R.string.update_url)
                                     vm.updatedFeedUrl = fipc.downloadUrl ?:""
-                                    Logd(TAG, "updatedFeedUrl: ${vm.updatedFeedUrl}")
+                                    Logd(TAG) { "updatedFeedUrl: ${vm.updatedFeedUrl}" }
                                     return@launch
                                 }
                                 val eList = mutableListOf<EpisodeIPC>()
@@ -535,7 +535,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                                     eList.addAll(episodes)
                                     vm.numEpisodes = eList.size
                                     if (vm.limitEpisodesCount in 1..vm.numEpisodes || vm.numEpisodes > EPISODES_LIMIT || episodes.size < EPISODE_BATCH_SIZE) break
-                                    Logd(TAG, "Subscribing eList: ${eList.size}")
+                                    Logd(TAG) { "Subscribing eList: ${eList.size}" }
                                     episodes = vm.gatewayClient?.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, 0L) }?: listOf()
                                 }
                                 fipc.episodes = eList
@@ -644,7 +644,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                     if (vm.feedId == 0L) Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.limit_episodes_to), modifier = Modifier.weight(0.5f))
                         NumberEditor(vm.limitEpisodesCount, label = "0 = unlimited", nz = false, instant = false, modifier = Modifier.weight(0.5f)) {
-                            Logd(TAG, "limitEpisodesCount: $it")
+                            Logd(TAG) { "limitEpisodesCount: $it" }
                             vm.limitEpisodesCount = it
                         }
                     }

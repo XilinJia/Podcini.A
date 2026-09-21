@@ -45,7 +45,7 @@ class AppleMediaSearcher : MediaSearcher {
             val response = getKtorClient().get(formattedUrl) { header(HttpHeaders.CacheControl, "max-stale=86400") }
             if (response.status.isSuccess()) {
                 val resultString = response.bodyAsText()
-                Logd(TAG, "search resultString: $resultString")
+                Logd(TAG) { "search resultString: $resultString" }
                 val result = JSONObject(resultString)
                 val j = result.getJSONArray("results")
                 for (i in 0 until j.length()) {

@@ -395,7 +395,8 @@ For more details of the changes, see the [Changelog](changelog.md)
 <img src="./images/Add-feeds.jpg" width="238" /> <img src="./images/9_online_feed_info.jpg" width="238" /> <img src="./images/91_online_episodes.jpg" width="238" />
 
 ### Android Auto
-<img src="./images/92_Auto_list.png" width="238" /> <img src="./images/92_Auto_player.png" width="238" />
+<img src="./images/92_auto categories.png" width="238" /> 
+<img src="./images/92_auto list.png" width="238" /> <img src="./images/92_auto player.png" width="238" />
 
 ## Links
 

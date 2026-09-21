@@ -563,7 +563,7 @@ fun TagSettingDialog(tagType: TagType, existingTags: Set<String>, multiples: Boo
                 Button(onClick = { onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
                 Spacer(Modifier.weight(1f))
                 Button(onClick = {
-                    Logd("TagsSettingDialog", "tags: [${tags.joinToString()}] commonTags: [${existingTags.joinToString()}]")
+                    Logd("TagsSettingDialog") { "tags: [${tags.joinToString()}] commonTags: [${existingTags.joinToString()}]" }
                     cb(tags)
                     if (tagType == TagType.Feed) {
                         val tagsSet = appAttribs.feedTagSet.toMutableSet() + tags

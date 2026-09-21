@@ -267,7 +267,7 @@ fun LogsScreen() {
         LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(logs) { log ->
                 Column(modifier = Modifier.fillMaxWidth().clickable {
-                    Logd(TAG, "shared log url: ${log.url}")
+                    Logd(TAG) { "shared log url: ${log.url}" }
                     if (log.status in listOf(ShareLog.Status.ERROR.code, ShareLog.Status.MISSING.code)) {
                         addAsNew = false
                         client = null
@@ -387,7 +387,7 @@ fun LogsScreen() {
         var url by remember { mutableStateOf("unknown") }
         var feed by remember(status.feedfileId) { mutableStateOf<Feed?>(null) }
         var media by remember(status.feedfileId) { mutableStateOf<Episode?>(null) }
-        Logd(TAG, "DownlaodDetailDialog ${status.feedfileType} status.feedfileId: ${status.feedfileId}")
+        Logd(TAG) { "DownlaodDetailDialog ${status.feedfileType} status.feedfileId: ${status.feedfileId}" }
         LaunchedEffect(status.feedfileId) {
             when (status.feedfileType) {
                 RequestType.FEEDMEDIA.code -> {

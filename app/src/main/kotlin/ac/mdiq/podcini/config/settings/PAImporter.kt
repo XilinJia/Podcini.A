@@ -107,7 +107,7 @@ suspend fun importPA(uri: Uri, importDb: Boolean, importDirectory: Boolean, onDi
 //                        "has_embedded_picture" -> episode.hasEmbeddedPicture = cursor.getInt(i) == 1
                     }
                 }
-//                Logd(TAG, "episode title: ${episode.title}")
+//                Logd(TAG) { "episode title: ${episode.title}" }
                 episodes.add(episode)
             }
            feed.episodes = episodes
@@ -208,7 +208,7 @@ suspend fun importPA(uri: Uri, importDb: Boolean, importDirectory: Boolean, onDi
                         }
                     }
                 }
-                Logd(TAG, "buildFeeds feed title: ${feed.title}")
+                Logd(TAG) { "buildFeeds feed title: ${feed.title}" }
                 feed.tags = pIdTagMap[feed.id.toInt()]?.toRealmSet() ?: realmSetOf()
                 buildEpisodes(db, feed)
 
@@ -319,7 +319,7 @@ suspend fun importPA(uri: Uri, importDb: Boolean, importDirectory: Boolean, onDi
                         "topic_url" -> PAFeed.topicUrl = cursor.getStringOrNull(i)
                     }
                 }
-                Logd(TAG, "buildDirectory feed title: ${PAFeed.name}")
+                Logd(TAG) { "buildDirectory feed title: ${PAFeed.name}" }
                 buildRelations(db, PAFeed)
                 upsertBlk(PAFeed) {}
             }
@@ -353,7 +353,7 @@ suspend fun importPA(uri: Uri, importDb: Boolean, importDirectory: Boolean, onDi
         unzipDir = internalDir.createDirectory("UnzippedFiles")
 
         val unzipPath = unzipDir!!
-        Logd(TAG, "unzipArchive zipFile: ${zipFile.absPath}")
+        Logd(TAG) { "unzipArchive zipFile: ${zipFile.absPath}" }
 
         fs.openZip(zipFile.absPath.OKPath()).use { zipFs ->
             zipFs.listRecursively(".".OKPath()).forEach { entry ->
@@ -375,10 +375,10 @@ suspend fun importPA(uri: Uri, importDb: Boolean, importDirectory: Boolean, onDi
         return if (targetFile.exists()) targetFile else null
     }
 
-    Logd(TAG, "chooseAPImportPathLauncher: uri: $uri")
+    Logd(TAG) { "chooseAPImportPathLauncher: uri: $uri" }
 
     val dbFile = unzipArchive() ?: return
-    Logd(TAG, "chooseAPImportPathLauncher: dbFile: $dbFile")
+    Logd(TAG) { "chooseAPImportPathLauncher: dbFile: $dbFile" }
 
     val database = SQLiteDatabase.openDatabase(dbFile.absPath, null, SQLiteDatabase.OPEN_READONLY)
 

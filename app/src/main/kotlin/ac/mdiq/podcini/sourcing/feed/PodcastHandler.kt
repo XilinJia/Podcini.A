@@ -44,7 +44,7 @@ object PodcastHandler {
         val date = parseDate(input) ?: return null
         val now = Clock.System.now()
         if (date > now) {
-            Logd(TAG, "parseOrNullIfFuture date in the future: ${date.toEpochMilliseconds()}")
+            Logd(TAG) { "parseOrNullIfFuture date in the future: ${date.toEpochMilliseconds()}" }
             return null
         }
         return date
@@ -79,7 +79,7 @@ object PodcastHandler {
                                 val type = when (val tag = reader.localName) {
                                     ATOM_ROOT -> {
                                         feed.type = FeedType.ATOM.name
-                                        Logd(TAG, "getType Recognized type Atom")
+                                        Logd(TAG) { "getType Recognized type Atom" }
                                         reader.getAttributeValue("http://www.w3.org/XML/1998/namespace", "lang")?.let { feed.langSet.add(it) }
                                         Type.ATOM
                                     }
@@ -101,7 +101,7 @@ object PodcastHandler {
                                         throw UnsupportedFeedtypeException(Type.INVALID, tag)
                                     }
                                 }
-                                Logd(TAG, "getType Type is: $type")
+                                Logd(TAG) { "getType Type is: $type" }
                                 handler = SyndHandler(feed, type)
                                 handler.startDocument()
                             }
@@ -113,13 +113,13 @@ object PodcastHandler {
                             handler?.characters(text, 0, text.size)
                         }
                         EventType.END_ELEMENT -> {
-                            //                    Logd(TAG, "EventType.END_ELEMENT ${reader.localName}")
+                            //                    Logd(TAG) { "EventType.END_ELEMENT ${reader.localName}" }
                             handler?.endElement(reader.namespaceURI, reader.localName, reader.localName)
                             reader.namespaceContext.forEach { (prefix, _) -> handler?.endPrefixMapping(prefix) }
                         }
                         EventType.END_DOCUMENT -> handler?.endDocument()
                         else -> {
-                            //                            Logd(TAG, "parseFeed event else: $event")
+                            //                            Logd(TAG) { "parseFeed event else: $event" }
                         }
                     }
                 }
@@ -210,10 +210,10 @@ object PodcastHandler {
         override fun startElement(uri: String, localName: String, qualifiedName: String, attributes: Attributes) {
             state.contentBuf = StringBuilder()
             val namespace = getHandlingNamespace(uri, qualifiedName)
-//            Logd(TAG, "startElement: localName: $localName qualifiedName: $qualifiedName uri: $uri")
+//            Logd(TAG) { "startElement: localName: $localName qualifiedName: $qualifiedName uri: $uri" }
             val element = namespace.handleElementStart(localName, state, attributes)
             state.tagstack.addLast(element)
-//            Logd(TAG, "startElement ${state.items.size} limitEpisodesCount: ${state.feed.limitEpisodesCount}")
+//            Logd(TAG) { "startElement ${state.items.size} limitEpisodesCount: ${state.feed.limitEpisodesCount}" }
             if (state.feed.limitEpisodesCount > 0 && state.items.size > 1.2*state.feed.limitEpisodesCount) {
                 state.feed.episodes.clear()
                 state.feed.episodes.addAll(state.items)
@@ -227,7 +227,7 @@ object PodcastHandler {
         @Throws(SAXException::class)
         override fun endElement(uri: String, localName: String, qualifiedName: String) {
             val namespace = getHandlingNamespace(uri, qualifiedName)
-//            Logd(TAG, "endElement: localName: $localName qualifiedName: $qualifiedName uri: $uri")
+//            Logd(TAG) { "endElement: localName: $localName qualifiedName: $qualifiedName uri: $uri" }
             namespace.handleElementEnd(localName, state)
             state.tagstack.removeLast()
             state.contentBuf = null
@@ -240,7 +240,7 @@ object PodcastHandler {
         override fun startPrefixMapping(prefix: String, uri: String) {
             // Find the right namespace
             if (!state.namespaces.containsKey(uri)) {
-//                Logd(TAG, "startPrefixMapping prefix: $prefix uri: [$uri]")
+//                Logd(TAG) { "startPrefixMapping prefix: $prefix uri: [$uri]" }
                 when {
                     uri == "" -> state.namespaces[uri] = Rss20()
                     uri == Atom.NSURI -> {
@@ -256,7 +256,7 @@ object PodcastHandler {
                     uri == DublinCore.NSURI && prefix == DublinCore.NSTAG -> state.namespaces[uri] = DublinCore()
                     (uri == PodcastIndex.NSURI || uri == PodcastIndex.NSURI2) && prefix == PodcastIndex.NSTAG -> state.namespaces[uri] = PodcastIndex()
                     else -> {
-//                        Logd(TAG, "startPrefixMapping can not handle prefix: $prefix uri: $uri")
+//                        Logd(TAG) { "startPrefixMapping can not handle prefix: $prefix uri: $uri" }
                     }
                 }
             }
@@ -346,7 +346,7 @@ object PodcastHandler {
 
     class Atom : Namespace() {
         override fun handleElementStart(localName: String, state: HandlerState, attributes: Attributes): SyndElement {
-//        Logd(TAG, "handleElementStart $localName")
+//        Logd(TAG) { "handleElementStart $localName" }
             when {
                 ENTRY == localName -> {
                     state.currentItem = Episode()
@@ -420,14 +420,14 @@ object PodcastHandler {
         }
 
         override fun handleElementEnd(localName: String, state: HandlerState) {
-//            Logd(TAG, "Atom handleElementEnd $localName")
+//            Logd(TAG) { "Atom handleElementEnd $localName" }
             if (ENTRY == localName) {
                 if (state.currentItem != null && state.tempObjects.containsKey(Itunes.DURATION)) {
                     val currentItem = state.currentItem
                     if (currentItem != null) {
                         val duration = state.tempObjects[Itunes.DURATION] as Int?
                         if (duration != null) currentItem.duration = (duration)
-//                        Logd(TAG, "Atom handleElementEnd duration: $duration")
+//                        Logd(TAG) { "Atom handleElementEnd duration: $duration" }
                     }
                     state.tempObjects.remove(Itunes.DURATION)
                 }
@@ -555,12 +555,12 @@ object PodcastHandler {
         }
 
         override fun handleElementEnd(localName: String, state: HandlerState) {
-//            Logd(TAG, "Itunes handleElementEnd $localName")
+//            Logd(TAG) { "Itunes handleElementEnd $localName" }
             if (state.contentBuf == null) return
             val content = state.contentBuf.toString()
             if (content.isEmpty()) return
 
-//            Logd(TAG, "Itunes handleElementEnd localName: $localName content $content")
+//            Logd(TAG) { "Itunes handleElementEnd localName: $localName content $content" }
             when (localName) {
                 AUTHOR if state.tagstack.size <= 3 -> state.feed.author = content.parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT).toString()
                 DURATION -> try { state.tempObjects[DURATION] = inMillis(content).toInt() } catch (e: NumberFormatException) { Logs(NSTAG, e, "Duration $content could not be parsed") }
@@ -635,7 +635,7 @@ object PodcastHandler {
     /** Processes tags from the http://search.yahoo.com/mrss/ namespace.  */
     class Media : Namespace() {
         override fun handleElementStart(localName: String, state: HandlerState, attributes: Attributes): SyndElement {
-//        Logd(TAG, "handleElementStart $localName")
+//        Logd(TAG) { "handleElementStart $localName" }
             when (localName) {
                 CONTENT -> {
                     val url: String? = attributes.getValue(DOWNLOAD_URL)
@@ -675,7 +675,7 @@ object PodcastHandler {
                             var durationMs = 0
                             val durationStr: String? = attributes.getValue(DURATION)
                             if (!durationStr.isNullOrEmpty()) try { durationMs = durationStr.toLong().seconds.inWholeMilliseconds.toInt() } catch (e: NumberFormatException) { Logs(TAG, e, "Duration string $durationStr could not be parsed") }
-//                            Logd(TAG, "handleElementStart creating media: ${state.currentItem?.title} $url $size $mimeType durationMs: $durationMs")
+//                            Logd(TAG) { "handleElementStart creating media: ${state.currentItem?.title} $url $size $mimeType durationMs: $durationMs" }
                             state.currentItem?.fillMedia(url, size, mimeType)
                             if (durationMs > 0) state.currentItem?.duration = ( durationMs)
                         }
@@ -699,7 +699,7 @@ object PodcastHandler {
         }
 
         override fun handleElementEnd(localName: String, state: HandlerState) {
-//            Logd(TAG, "Media handleElementEnd $localName")
+//            Logd(TAG) { "Media handleElementEnd $localName" }
             if (DESCRIPTION == localName) {
                 val content = state.contentBuf.toString()
                 state.currentItem?.setDescriptionIfLonger(content)
@@ -734,7 +734,7 @@ object PodcastHandler {
 
     class PodcastIndex : Namespace() {
         override fun handleElementStart(localName: String, state: HandlerState, attributes: Attributes): SyndElement {
-//            Logd(TAG, "handleElementStart $localName")
+//            Logd(TAG) { "handleElementStart $localName" }
             when (localName) {
                 FUNDING -> {
                     val href: String? = attributes.getValue(URL)
@@ -765,7 +765,7 @@ object PodcastHandler {
         override fun handleElementEnd(localName: String, state: HandlerState) {
             if (state.contentBuf == null) return
             val content = state.contentBuf.toString().trim()
-//            Logd(TAG, "handleElementEnd $localName $content")
+//            Logd(TAG) { "handleElementEnd $localName $content" }
             when (localName) {
                 GUID -> if (content.isNotBlank()) state.feed.identifier = content
                 FUNDING -> {
@@ -821,7 +821,7 @@ object PodcastHandler {
 
     class Rss20 : Namespace() {
         override fun handleElementStart(localName: String, state: HandlerState, attributes: Attributes): SyndElement {
-//        Logd(TAG, "handleElementStart $localName")
+//        Logd(TAG) { "handleElementStart $localName" }
             when (localName) {
                 ITEM if CHANNEL == state.tagstack.lastOrNull()?.name -> {
                     state.currentItem = Episode()
@@ -839,7 +839,7 @@ object PodcastHandler {
                     }
                 }
                 else -> {
-//                    Logd(TAG, "handleElementStart unhandled localName: $localName")
+//                    Logd(TAG) { "handleElementStart unhandled localName: $localName" }
                 }
             }
             return SyndElement(localName, this)
@@ -938,7 +938,7 @@ object PodcastHandler {
                         try {
                             val start= parseTimeString(attributes.getValue(START))
                             val title: String? = attributes.getValue(TITLE)
-//                            Logd(TAG, "handleElementStart got chapter: $start $title")
+//                            Logd(TAG) { "handleElementStart got chapter: $start $title" }
                             val link: String? = attributes.getValue(HREF)
                             val imageUrl: String? = attributes.getValue(IMAGE)
                             val chapter = Chapter(start, title, link, imageUrl)

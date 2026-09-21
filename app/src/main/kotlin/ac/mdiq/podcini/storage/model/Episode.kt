@@ -267,7 +267,7 @@ class Episode : RealmObject {
     }
 
     fun updateFromOther(other: Episode, includeState: Boolean = false, includeDuration: Boolean = true) {
-//        Logd(TAG, "updateFromOther ${other.viewCount} ${other.title} $title")
+//        Logd(TAG) { "updateFromOther ${other.viewCount} ${other.title} $title" }
         if (other.images.isNotEmpty()) this.images = other.images
         if (other.title != null) title = other.title
         if (other.description != null) description = other.description
@@ -392,24 +392,24 @@ class Episode : RealmObject {
         this.mimeType = mimeType
         fileUrl = null
         this.downloadUrl = downloadUrl
-//        Logd(TAG, "fillMedia downloadUrl: $downloadUrl")
+//        Logd(TAG) { "fillMedia downloadUrl: $downloadUrl" }
     }
 
     suspend fun getMediaFileUriString(): String {
         val fileName = getMediafilename()
-        Logd(TAG, "getMediaFileUriString: filename: $fileName")
+        Logd(TAG) { "getMediaFileUriString: filename: $fileName" }
         val subDirectoryName = generateFileName(feed?.title ?: "NoFeed")
         var subDirectory = mediaDir.listChildren().find { it.name == subDirectoryName }
         if (subDirectory == null || !subDirectory.exists()) subDirectory = mediaDir.createDirectory(subDirectoryName)
-        Logd(TAG, "getMediaFileUriString subDirectory: ${subDirectory.absPath}")
+        Logd(TAG) { "getMediaFileUriString subDirectory: ${subDirectory.absPath}" }
         var fileUri: String? = subDirectory.listChildren().find { it.name == fileName }?.absPath
-        Logd(TAG, "getMediaFileUriString fileUri: $fileUri")
+        Logd(TAG) { "getMediaFileUriString fileUri: $fileUri" }
         if (fileUri == null) {
             var file = subDirectory / fileName
             if (!file.exists()) file = subDirectory.createFile(mimeType?:"", fileName)
             fileUri = file.absPath
         }
-        Logd(TAG, "getMediaFileUriString fileUri 1: $fileUri")
+        Logd(TAG) { "getMediaFileUriString fileUri 1: $fileUri" }
         return fileUri
     }
 
@@ -423,7 +423,7 @@ class Episode : RealmObject {
     }
 
     fun isDownloaded(): Boolean {
-        Logd(TAG, "isDownloaded fileUrl: $fileUrl")
+        Logd(TAG) { "isDownloaded fileUrl: $fileUrl" }
         val url = fileUrl ?: return false
         return runBlocking { url.toSafeUri().toUF().exists() }
     }
@@ -438,14 +438,14 @@ class Episode : RealmObject {
                     return@withContext -1
                 }
                 force || !isSizeSetUnknown() -> {
-                    Logd(TAG, "fetchMediaSize querying network")
+                    Logd(TAG) { "fetchMediaSize querying network" }
                     val url = downloadUrl
                     if (url.isNullOrEmpty()) return@withContext -1
                     try {
                         val response = getKtorClient().head(url) { header(HttpHeaders.AcceptEncoding, "identity") }
                         if (response.status.isSuccess()) size_ = response.headers[HttpHeaders.ContentLength]?.toLongOrNull() ?: -1L
                     } catch (e: CancellationException) {
-                        Logd(TAG, "fetchMediaSize canceled")
+                        Logd(TAG) { "fetchMediaSize canceled" }
                         return@withContext -1L
                     } catch (e: Exception) {
                         LogsFor(TAG, id, "fetchMediaSize failed ${e.message}")
@@ -474,7 +474,7 @@ class Episode : RealmObject {
      * Position held by this EpisodeMedia should be set accurately before a call to this method is made.
      */
     fun setPlaybackStart() {
-        Logd(TAG, "setPlaybackStart ${nowInMillis()} timeSpent: $timeSpent")
+        Logd(TAG) { "setPlaybackStart ${nowInMillis()} timeSpent: $timeSpent" }
         startPosition = max(position, 0)
         playedDurationWhenStarted = playedDuration
         timeSpentOnStart = timeSpent
@@ -485,7 +485,7 @@ class Episode : RealmObject {
         if (index < 0 || index >= transcriptMetas.size) return
         val trans = transcriptMetas[index]
         if (trans.url.isNullOrBlank()) return
-        Logd(TAG, "fetchCaption url: ${trans.url}")
+        Logd(TAG) { "fetchCaption url: ${trans.url}" }
         val text = try {
             getKtorClient().get(trans.url!!) { expectSuccess = true }.bodyAsText()
         } catch (e: Exception) {
@@ -493,8 +493,8 @@ class Episode : RealmObject {
             null
         } ?: return
 
-        Logd(TAG, "fetchCaption trans.type: ${trans.type}")
-//        Logd(TAG, "fetchCaption text: $text")
+        Logd(TAG) { "fetchCaption trans.type: ${trans.type}" }
+//        Logd(TAG) { "fetchCaption text: $text" }
 
         upsert(this) {
             it.transcript = null
@@ -546,7 +546,7 @@ class Episode : RealmObject {
     }
 
     fun setChapters(chapters_: List<Chapter>) {
-        for (c in chapters_) Logd(TAG, "chapter: ${c.title}")
+        for (c in chapters_) Logd(TAG) { "chapter: ${c.title}" }
         chapters.clear()
         chapters.addAll(chapters_)
         chaptersLoaded = true

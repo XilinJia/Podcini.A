@@ -39,7 +39,7 @@ enum class FeedSearchers {
 
 class PodcastIndexSearcher : FeedSearcher {
     override suspend fun search(query: String): List<FeedSearchResult> {
-        Logd(TAG, "PodcastIndexSearcher search")
+        Logd(TAG) { "PodcastIndexSearcher search" }
         fun fromPodcastIndex(json: JSONObject): FeedSearchResult {
             val title = json.optString("title", "")
             val imageUrl: String? = json.optString("image").takeIf { it.isNotEmpty() }
@@ -61,7 +61,7 @@ class PodcastIndexSearcher : FeedSearcher {
             val response = getKtorClient().get(formattedUrl) { applyPodcastIndexAuth() }
             if (response.status.isSuccess()) {
                 val resultString = response.bodyAsText()
-                Logd(TAG, "search resultString: $resultString")
+                Logd(TAG) { "search resultString: $resultString" }
                 val result = JSONObject(resultString)
                 val j = result.getJSONArray("feeds")
                 for (i in 0 until j.length()) {
@@ -113,13 +113,13 @@ open class ItunesSearcher : FeedSearcher {
     override suspend fun search(query: String): List<FeedSearchResult> {
         val encodedQuery = query.encodeURLParameter()
         val formattedUrl = "https://itunes.apple.com/search?media=podcast&entity=podcast&term=$encodedQuery"
-        Logd(TAG, "search formattedUrl: $formattedUrl")
+        Logd(TAG) { "search formattedUrl: $formattedUrl" }
         val podcasts: MutableList<FeedSearchResult> = mutableListOf()
         try {
             val response = getKtorClient().get(formattedUrl) { header(HttpHeaders.CacheControl, "max-stale=86400") }
             if (response.status.isSuccess()) {
                 val resultString = response.bodyAsText()
-//                Logd(TAG, "search resultString: $resultString")
+//                Logd(TAG) { "search resultString: $resultString" }
                 val result = JSONObject(resultString)
                 val j = result.getJSONArray("results")
                 for (i in 0 until j.length()) {
@@ -145,7 +145,7 @@ open class ItunesSearcher : FeedSearcher {
         }
         if (resultString.trim().startsWith('<')) return url     // XML already
 
-        Logd(TAG, "lookupUrl resultString: $resultString")
+        Logd(TAG) { "lookupUrl resultString: $resultString" }
         val result = JSONObject(resultString)
         val results = result.getJSONArray("results").getJSONObject(0)
         val feedUrlName = "feedUrl"
@@ -158,7 +158,7 @@ open class ItunesSearcher : FeedSearcher {
     }
 
     override fun urlNeedsLookup(url: String): Boolean {
-        Logd(TAG, "urlNeedsLookup url: $url")
+        Logd(TAG) { "urlNeedsLookup url: $url" }
         // TODO: may also need to check podcasts.apple.com?
         return url.contains("//itunes.apple.com") || url.matches(PATTERN_BY_ID)
     }
@@ -214,7 +214,7 @@ class ItunesDeepSearcher: ItunesSearcher() {
 }
 class CombinedSearcher : FeedSearcher {
     override suspend fun search(query: String): List<FeedSearchResult> {
-        Logd(TAG, "CombinedSearcher search")
+        Logd(TAG) { "CombinedSearcher search" }
         val searchProviders = PodcastSearcherRegistry.searcherInfos
         val searchResults = MutableList<List<FeedSearchResult>>(searchProviders.size) { listOf() }
 

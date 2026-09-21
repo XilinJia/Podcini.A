@@ -3,10 +3,10 @@ package ac.mdiq.podcini.ui.screens
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.automation.AutoDownloadAlgorithm
 import ac.mdiq.podcini.automation.AutoEnqueueAlgorithm
-import ac.mdiq.podcini.playback.base.actQueueFlow
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.service.PlaybackService
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.mediaBrowser
+import ac.mdiq.podcini.playback.actQueueFlow
+import ac.mdiq.podcini.playback.theatres
+import ac.mdiq.podcini.playback.PlaybackService
+import ac.mdiq.podcini.playback.PlaybackService.Companion.mediaBrowser
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.appAttribsFlow
@@ -203,7 +203,7 @@ class QueuesVM(id_: Long): ViewModel() {
     val binEpisodesFlow: StateFlow<List<Episode>> = snapshotFlow { queuesMode }
         .combine(curQueueFlow.map { it.idsBinList }.distinctUntilChanged()) { m, b -> m to b }.distinctUntilChanged().flatMapLatest { (mode, bin) ->
         fun initBinFlow(): Flow<List<Episode>> {
-            Logd(TAG, "initBinFlow idsBinList: ${bin.size} ${bin.toSet().size}")
+            Logd(TAG) { "initBinFlow idsBinList: ${bin.size} ${bin.toSet().size}" }
             return realm.query(Episode::class, "id IN $0", bin).asFlow().map { it.list }.map { episodes ->
                 val orderMap = bin.withIndex().associate { it.value to it.index }
                 episodes.sortedBy { episode -> orderMap[episode.id] ?: Int.MAX_VALUE }.reversed()
@@ -218,13 +218,13 @@ class QueuesVM(id_: Long): ViewModel() {
     val episodesSortedFlow: StateFlow<List<Episode>> = snapshotFlow { queuesMode }
         .combine(curQueueFlow.map { it.id }.distinctUntilChanged()) { mode, queueId -> mode to queueId }.distinctUntilChanged().flatMapLatest { (mode, queueId) ->
         fun initQueueFlow():  Flow<List<Episode>> {
-            Logd(TAG, "initQueueFlow ")
+            Logd(TAG) { "initQueueFlow " }
             val orderedEpisodeIdsFlow = realm.query<QueueEntry>("queueId == $0 SORT(position ASC)", queueId).asFlow().map { results -> results.list.map { it.episodeId } }
             val episodesFlow = orderedEpisodeIdsFlow.flatMapLatest { ids ->
                 if (ids.isEmpty()) flowOf(emptyList()) else realm.query<Episode>("id IN $0", ids).asFlow().map { it.list }
             }
             return combine(orderedEpisodeIdsFlow, episodesFlow) { ids, episodes ->
-                Logd(TAG, "initQueueFlow ids: ${ids.size} episodes: ${episodes.size}")
+                Logd(TAG) { "initQueueFlow ids: ${ids.size} episodes: ${episodes.size}" }
                 val episodeMap = episodes.associateBy { it.id }
                 ids.mapNotNull { episodeMap[it] }.distinctBy { it.id }
             }
@@ -236,7 +236,7 @@ class QueuesVM(id_: Long): ViewModel() {
     }.distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = emptyList())
 
     override fun onCleared() {
-        Logd(TAG, "VM onCleared")
+        Logd(TAG) { "VM onCleared" }
     }
 }
 
@@ -261,15 +261,15 @@ fun QueuesScreen(id: Long = -1L) {
     val queues by vm.queuesStateFlow.collectAsStateWithLifecycle()
     val queueNames = remember(queues) { queues.map { it.name } }
     val queueTexts = remember(actQueue.id, queues) { queues.map { "${if (it.id == actQueue.id) "> " else ""}${it.name} : ${it.size()}" } }
-    Logd(TAG, "queues: ${queues.size} ${queueNames.joinToString()}")
+    Logd(TAG) { "queues: ${queues.size} ${queueNames.joinToString()}" }
     val curQueue by vm.curQueueFlow.collectAsStateWithLifecycle()
     var curIndex by remember(curQueue.id, queues) { mutableIntStateOf(queues.indexOfFirst { q-> q.id == curQueue.id }) }
     var curQueuePosition by remember(curQueue) { mutableIntStateOf(curQueue.scrollPosition) }
-    Logd(TAG, "curQueuePosition: $curQueuePosition curIndex: $curIndex ${curQueue.id} ${curQueue.name}")
+    Logd(TAG) { "curQueuePosition: $curQueuePosition curIndex: $curIndex ${curQueue.id} ${curQueue.name}" }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            Logd(TAG, "DisposableEffect LifecycleEventObserver: $event")
+            Logd(TAG) { "DisposableEffect LifecycleEventObserver: $event" }
             when (event) {
                 Lifecycle.Event.ON_CREATE -> {
                     val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
@@ -306,14 +306,14 @@ fun QueuesScreen(id: Long = -1L) {
     }
 
     DisposableEffect(vm.queuesMode, episodeForInfo) {
-        Logd(TAG, "DisposableEffect queuesMode: ${vm.queuesMode}")
+        Logd(TAG) { "DisposableEffect queuesMode: ${vm.queuesMode}" }
         if (vm.queuesMode != QueuesScreenMode.Queue || episodeForInfo != null) handleBackSubScreens.add(TAG)
         else handleBackSubScreens.remove(TAG)
         onDispose { handleBackSubScreens.remove(TAG) }
     }
 
     BackHandler(enabled = handleBackSubScreens.contains(TAG)) {
-        Logd(TAG, "BackHandler ${vm.queuesMode}")
+        Logd(TAG) { "BackHandler ${vm.queuesMode}" }
         if (episodeForInfo != null) episodeForInfo = null
         else when(vm.queuesMode) {
             QueuesScreenMode.Bin, QueuesScreenMode.Feed, QueuesScreenMode.Settings -> {
@@ -326,10 +326,10 @@ fun QueuesScreen(id: Long = -1L) {
     
     val episodes by (if (vm.queuesMode == QueuesScreenMode.Queue) vm.episodesSortedFlow else vm.binEpisodesFlow).collectAsStateWithLifecycle()
     val queueEntries by vm.queueEntriesFlow.collectAsStateWithLifecycle()
-    Logd(TAG, "episodes: ${episodes.size}")
+    Logd(TAG) { "episodes: ${episodes.size}" }
 
     LaunchedEffect( vm.queuesMode) {
-        Logd(TAG, "LaunchedEffect(vm.curQueue, screenMode, dragged)")
+        Logd(TAG) { "LaunchedEffect(vm.curQueue, screenMode, dragged)" }
         when (vm.queuesMode) {
             QueuesScreenMode.Bin -> swipeActions = SwipeActions("${TAG}_Bin")
             QueuesScreenMode.Queue -> swipeActions = SwipeActions(TAG)
@@ -441,7 +441,7 @@ fun QueuesScreen(id: Long = -1L) {
                     Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_playlist_play), contentDescription = "Open Drawer", modifier = Modifier.padding(end = 7.dp).clickable { drawerController?.open() })
                     if (vm.queuesMode == QueuesScreenMode.Queue) {
                         val name = remember(curQueue.id, actQueue.id, curIndex, queueNames.size) { (if (curQueue.id == actQueue.id) "> " else "") + if (curIndex in queueNames.indices) queueNames[curIndex].ifBlank { "No name" } else "No name" }
-                        Logd(TAG, "name: ${curQueue.id} ${actQueue.id} $curIndex [${queueNames.joinToString()}] $name")
+                        Logd(TAG) { "name: ${curQueue.id} ${actQueue.id} $curIndex [${queueNames.joinToString()}] $name" }
                         Text(name, maxLines = 1, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.scale(scaleX = 1f, scaleY = 1.8f).combinedClickable(onClick = { showChooseQueue = true }, onLongClick = {
                             if (curQueue.id == actQueue.id) {
                                 if (episodes.size > 5) {
@@ -647,9 +647,9 @@ fun QueuesScreen(id: Long = -1L) {
                         cancelRes = R.string.cancel_label,
                         onConfirm = {
                             runOnIOScope {
-                                Logd(TAG, "remove_queue ")
+                                Logd(TAG) { "remove_queue " }
                                 realm.write {
-                                    Logd(TAG, "remove_queue episodes: ${episodes.size}")
+                                    Logd(TAG) { "remove_queue episodes: ${episodes.size}" }
                                     episodes.forEach { findLatest(it)?.setPlayState(EpisodeState.UNPLAYED) }
                                     val qDef = queuesLive.find { q-> q.id == 0L }
                                     allFeeds.filter { it.queueId == curQueue.id }.forEach { findLatest(it)?.queue = qDef }
@@ -674,7 +674,7 @@ fun QueuesScreen(id: Long = -1L) {
                 QueuesScreenMode.Settings -> Box(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) { Settings() }
                 else -> {
                     LaunchedEffect(episodes.size) {
-                        Logd(TAG, "LaunchedEffect(episodes.size) ${episodes.size}")
+                        Logd(TAG) { "LaunchedEffect(episodes.size) ${episodes.size}" }
                         withContext(Dispatchers.IO) { listInfoText = buildListInfo(episodes) }
                     }
                     if (vm.queuesMode == QueuesScreenMode.Bin) Column(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
@@ -733,7 +733,7 @@ fun QueuesScreen(id: Long = -1L) {
                                     if (!isScrolling) {
                                         val index = lazyListState.firstVisibleItemIndex
                                         if (index != curQueuePosition) {
-                                            Logd(TAG, "Scroll settled at: $index")
+                                            Logd(TAG) { "Scroll settled at: $index" }
                                             curQueuePosition = index
                                         }
                                     }
@@ -749,7 +749,7 @@ fun QueuesScreen(id: Long = -1L) {
                                     else -> -1
                                 }
                             }
-                            Logd(TAG, "Scaffold scrollToOnStart: $scrollToOnStart $curQueuePosition")
+                            Logd(TAG) { "Scaffold scrollToOnStart: $scrollToOnStart $curQueuePosition" }
                             EpisodeLazyColumn(episodes, curQueue = curQueue, swipeActions = swipeActions, lazyListState = lazyListState, scrollToOnStart = scrollToOnStart, refreshCB = {
                                 commonConfirms.add(CommonConfirmAttrib(title = context.getString(R.string.refresh_associates) + "?", message = "", cancelRes = R.string.cancel_label, confirmRes = R.string.enqueue, onConfirm = {
                                     CoroutineScope(Dispatchers.IO).launch {

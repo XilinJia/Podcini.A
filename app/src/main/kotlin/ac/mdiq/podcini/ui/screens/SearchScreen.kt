@@ -2,7 +2,7 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.sourcing.searcher.AppleMediaSearcher
-import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.MediaSearcher
 import ac.mdiq.podcini.shared.getEntityId
@@ -137,7 +137,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private var curSearchString by mutableStateOf("")
 fun setSearchTerms(query: String? = null) {
-    Logd("setSearchTerms", "query: $query")
+    Logd("setSearchTerms") { "query: $query" }
     if (query != null) {
         curSearchString = query
         saveToSearchHistory()
@@ -177,13 +177,13 @@ class SearchVM: ViewModel() {
     var listIdentity by mutableStateOf("")
 
     init {
-        Logd(TAG, "init $curSearchString")
+        Logd(TAG) { "init $curSearchString" }
         algo.setSearchByAll()
         searchersAll.addAll(sourceClients.mapNotNull { it.mediaSearcher })
         searchersAll.add(AppleMediaSearcher())
         searchers.addAll(searchersAll)
         viewModelScope.launch { snapshotFlow { Pair(curSearchString, searchers.size) }.collectLatest {
-            Logd(TAG, "snapshotFlow { Pair(curSearchString, searchers.size)")
+            Logd(TAG) { "snapshotFlow { Pair(curSearchString, searchers.size)" }
             remoteMediaCache.remove(curSearchString)
             remoteMedia = listOf()
         } }
@@ -213,11 +213,11 @@ class SearchVM: ViewModel() {
             } }
             if (list.isNotEmpty()) results.addAll(list)
         }
-        Logd(TAG, "searchRemoteMedia searchers ${searchers.size}")
+        Logd(TAG) { "searchRemoteMedia searchers ${searchers.size}" }
         for (s in searchers) {
             val type = if (s.name in listOf("Apple")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
             val items = s.searchQuick(curSearchString)
-            Logd(TAG, "searchQuick ${s.name} items: ${items.size}")
+            Logd(TAG) { "searchQuick ${s.name} items: ${items.size}" }
             addItems(items, type)
         }
         remoteMedia = results.toList()
@@ -226,14 +226,14 @@ class SearchVM: ViewModel() {
             for (s in searchers) {
                 val type = if (s.name in listOf("Apple")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
                 val items = s.getMoreItems()
-                Logd(TAG, "searchRemoteMedia ${s.name} more items: ${items.size}")
+                Logd(TAG) { "searchRemoteMedia ${s.name} more items: ${items.size}" }
                 addItems(items, type)
             }
             remoteMedia = results.toList()
             if (counter >= results.size) break
             counter = results.size
         }
-        Logd(TAG, "searchRemoteMedia found items: $counter")
+        Logd(TAG) { "searchRemoteMedia found items: $counter" }
         results.reorderWith(episodeSortOrder)
         remoteMedia = results.toList()
         remoteMediaCache.put(curSearchString, remoteMedia)
@@ -262,7 +262,7 @@ class SearchVM: ViewModel() {
         withContext(Dispatchers.Main) {
             feeds = results_.feeds
             pafeeds = results_.pafeeds
-            Logd(TAG, "Search found feeds: ${feeds.size}")
+            Logd(TAG) { "Search found feeds: ${feeds.size}" }
             results_.episodes.map { it.list }
         }
     }.distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList())
@@ -421,7 +421,7 @@ fun SearchScreen() {
                     fun FeedRow(feed: Feed) {
                         Row(Modifier.background(MaterialTheme.colorScheme.surface)) {
                             AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(80.dp).height(80.dp).clickable {
-                                Logd(TAG, "icon clicked!")
+                                Logd(TAG) { "icon clicked!" }
                                 if (!feed.isBuilding) navTo(FeedDetails(feedId = feed.id, modeName = FeedScreenMode.Info.name))
                             })
                             Column(Modifier.weight(1f).padding(start = 10.dp).clickable { if (!feed.isBuilding) navTo(FeedDetails(feedId = feed.id)) }) {

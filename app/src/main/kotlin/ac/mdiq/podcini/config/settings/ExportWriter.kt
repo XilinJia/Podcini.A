@@ -30,7 +30,7 @@ class EpisodesProgressWriter : ExportWriter {
 
     @Throws(IllegalArgumentException::class, IllegalStateException::class)
     override suspend fun writeDocument(feeds: List<Feed>, writer: UnifiedFile) {
-        Logd(TAG, "Starting to write document")
+        Logd(TAG) { "Starting to write document" }
         val queuedEpisodeActions: MutableList<EpisodeAction> = mutableListOf()
         val pausedItems = getEpisodes(EpisodeFilter(EpisodeFilter.States.paused.name), EpisodeSortOrder.DATE_DESC, copy = false)
         val readItems = getEpisodes(EpisodeFilter(EpisodeFilter.States.PLAYED.name), EpisodeSortOrder.DATE_DESC, copy = false)
@@ -39,7 +39,7 @@ class EpisodesProgressWriter : ExportWriter {
         comItems.addAll(pausedItems)
         comItems.addAll(readItems)
         comItems.addAll(favoriteItems)
-        Logd(TAG, "Save state for all " + comItems.size + " played episodes")
+        Logd(TAG) { "Save state for all " + comItems.size + " played episodes"}
         for (item in comItems) {
             val played = EpisodeAction.Builder(item, EpisodeAction.PLAY)
                 .timestamp(item.lastPlayedTime)
@@ -54,12 +54,12 @@ class EpisodesProgressWriter : ExportWriter {
         }
         if (queuedEpisodeActions.isNotEmpty()) {
             try {
-                Logd(TAG, "Saving ${queuedEpisodeActions.size} actions: ${queuedEpisodeActions.joinToString(", ")}")
+                Logd(TAG) { "Saving ${queuedEpisodeActions.size} actions: ${queuedEpisodeActions.joinToString(", ")}"}
                 val list = JSONArray()
                 for (episodeAction in queuedEpisodeActions) {
                     val obj = episodeAction.writeToJsonObject()
                     if (obj != null) {
-                        Logd(TAG, "saving EpisodeAction: $obj")
+                        Logd(TAG) { "saving EpisodeAction: $obj" }
                         list.put(obj)
                     }
                 }
@@ -69,7 +69,7 @@ class EpisodesProgressWriter : ExportWriter {
                 throw SyncServiceException(e)
             }
         }
-        Logd(TAG, "Finished writing document")
+        Logd(TAG) { "Finished writing document" }
     }
     override fun fileExtension(): String {
         return "json"
@@ -84,7 +84,7 @@ class FavoritesWriter : ExportWriter {
     @Throws(IllegalArgumentException::class, IllegalStateException::class)
     override suspend fun writeDocument(feeds: List<Feed>, writer: UnifiedFile) {
         val context = getAppContext()
-        Logd(TAG, "Starting to write document")
+        Logd(TAG) { "Starting to write document" }
         val template = context.assets.open("html-export-template.html").asSource().buffered().use { it.readString() }.replace("\\{TITLE\\}".toRegex(), "Favorites")
         val templateParts = template.split("\\{FEEDS\\}".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         val favTemplate = context.assets.open(FAVORITE_TEMPLATE).asSource().buffered().use { it.readString() }
@@ -116,7 +116,7 @@ class FavoritesWriter : ExportWriter {
             }
             sink.writeString(templateParts[1], Charsets.UTF_8)
         }
-        Logd(TAG, "Finished writing document")
+        Logd(TAG) { "Finished writing document" }
     }
 
     private fun buildFeedMap(favoritesList: List<Episode>): Map<Long, MutableList<Episode>> {
@@ -140,7 +140,7 @@ class HtmlWriter : ExportWriter {
 
     @Throws(IllegalArgumentException::class, IllegalStateException::class)
     override suspend fun writeDocument(feeds: List<Feed>, writer: UnifiedFile) {
-        Logd(TAG, "Starting to write document")
+        Logd(TAG) { "Starting to write document" }
         val template =  getAppContext().assets.open("html-export-template.html").asSource().buffered().use { it.readString() }.replace("\\{TITLE\\}".toRegex(), "Subscriptions")
         val templateParts = template.split("\\{FEEDS\\}".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         writer.sink(append = false).buffer().use { sink ->
@@ -158,7 +158,7 @@ class HtmlWriter : ExportWriter {
             }
             sink.writeString(templateParts[1], Charsets.UTF_8)
         }
-        Logd(TAG, "Finished writing document")
+        Logd(TAG) { "Finished writing document" }
     }
     override fun fileExtension(): String {
         return "html"

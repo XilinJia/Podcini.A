@@ -94,10 +94,10 @@ val defaultNavKey: NavKey
     get() {
         if (allFeeds.isEmpty()) return FindFeeds
         val value = appPrefsFlow!!.value.defaultPage
-        Logd(TAG, "get defaultScreen defaultPage: [$value]")
+        Logd(TAG) { "get defaultScreen defaultPage: [$value]" }
         fun isValid(): Boolean = runCatching { Screens.valueOf(value) }.isSuccess
         if (value.isBlank() || !isValid()) return Library
-        Logd(TAG, "get defaultScreen value: [$value]")
+        Logd(TAG) { "get defaultScreen value: [$value]" }
         return toNavKey(value)
     }
 

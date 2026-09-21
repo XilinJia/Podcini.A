@@ -1,9 +1,6 @@
-package ac.mdiq.podcini.playback.service
+package ac.mdiq.podcini.playback
 
-
-import ac.mdiq.podcini.config.AppConfig.initialize
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.base.PlayerStatusSimple
+import ac.mdiq.podcini.config.AppConfig
 import ac.mdiq.podcini.receiver.MediaButtonReceiver
 import ac.mdiq.podcini.utils.Logd
 import android.content.ComponentName
@@ -30,7 +27,7 @@ class QuickSettingsTileService : TileService() {
     // Update the tile status when TileService.requestListeningState() is called elsewhere
     override fun onStartListening() {
         super.onStartListening()
-        initialize()
+        AppConfig.initialize()
         updateTile()
     }
 
@@ -42,7 +39,7 @@ class QuickSettingsTileService : TileService() {
 
     private fun updateTile() {
         val qsTile = qsTile
-        if (qsTile == null) Logd(TAG, "Ignored call to update QS tile: getQsTile() returned null.")
+        if (qsTile == null) Logd(TAG) { "Ignored call to update QS tile: getQsTile() returned null." }
         else {
             val isPlaying = (PlaybackService.isRunning && theatres[0].mPlayerFlow.value?.statusSimpleFlow?.value == PlayerStatusSimple.PLAYING)
             qsTile.state = if (isPlaying) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE

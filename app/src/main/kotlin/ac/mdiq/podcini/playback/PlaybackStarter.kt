@@ -1,15 +1,9 @@
 package ac.mdiq.podcini.playback
 
-import ac.mdiq.podcini.playback.base.aController
-import ac.mdiq.podcini.playback.base.aCtrlFuture
-import ac.mdiq.podcini.playback.base.ensureAController
-import ac.mdiq.podcini.playback.base.theatres
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.getCache
-import ac.mdiq.podcini.playback.base.Media3Player.Companion.simpleCache
-import ac.mdiq.podcini.playback.base.MediaPlayerBase.Companion.isStreamingCapable
-import ac.mdiq.podcini.playback.base.SleepManager.Companion.sleepManager
-import ac.mdiq.podcini.playback.base.forcePlaybackReset
-import ac.mdiq.podcini.playback.service.PlaybackService
+import ac.mdiq.podcini.playback.Media3Player.Companion.getCache
+import ac.mdiq.podcini.playback.Media3Player.Companion.simpleCache
+import ac.mdiq.podcini.playback.MediaPlayerBase.Companion.isStreamingCapable
+import ac.mdiq.podcini.playback.SleepManager.Companion.sleepManager
 import ac.mdiq.podcini.storage.database.checkAndMarkDuplicates
 import ac.mdiq.podcini.storage.database.isMediaDownloadable
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
@@ -26,7 +20,9 @@ import kotlin.time.Duration.Companion.seconds
 class PlaybackStarter(private val media: Episode) {
     private val TAG = "PlaybackStarter"
 
+    private var startImmediately = true
     private var shouldStreamThisTime = false
+    private var audioOnly = false
     private var repeat = false
 
     private var widgetId: String = ""
@@ -36,6 +32,16 @@ class PlaybackStarter(private val media: Episode) {
             this.shouldStreamThisTime = media.feed == null || media.feedId == null || (!media.downloaded && media.feed?.isLocal != true)
                     || !isMediaDownloadable(media) || (prefStreamOverDownload && media.feed?.prefStreamOverDownload == true)
         } else this.shouldStreamThisTime = shouldStreamThisTime
+        return this
+    }
+
+    fun setAudioOnly(): PlaybackStarter {
+        audioOnly =  true
+        return this
+    }
+
+    fun setStartNow(start: Boolean): PlaybackStarter {
+        startImmediately = start
         return this
     }
 
@@ -50,7 +56,7 @@ class PlaybackStarter(private val media: Episode) {
     }
 
     fun start(playerId: Int = 0) {
-        Logd(TAG, "start PlaybackService.isRunning: ${PlaybackService.isRunning}")
+        Logd(TAG) { "start PlaybackService.isRunning: ${PlaybackService.isRunning}" }
 //        showStackTrace()
         ensureAController()
 
@@ -69,9 +75,9 @@ class PlaybackStarter(private val media: Episode) {
                 Loge(TAG, "processTask mPlayerFlow.value == null")
                 return
             }
-            Logd(TAG, "aCtrlFuture: ${aCtrlFuture != null} player status: ${player.status}")
+            Logd(TAG) { "aCtrlFuture: ${aCtrlFuture != null} player status: ${player.status}" }
             player.shouldRepeatFlow.value = repeat
-            Logd(TAG, "start: statusFlow: ${player.status} sameMedia: $sameMedia")
+            Logd(TAG) { "start: statusFlow: ${player.status} sameMedia: $sameMedia" }
             player.isStreaming = shouldStreamThisTime
             player.widgetId = widgetId
             when {
@@ -79,7 +85,7 @@ class PlaybackStarter(private val media: Episode) {
                     player.pause(false)
                     if (!sameMedia) {
                         player.isSkipping = true
-                        player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
+                        player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
                         sleepManager?.restart()
                     }
                 }
@@ -87,18 +93,18 @@ class PlaybackStarter(private val media: Episode) {
                     if (sameMedia) player.play()
                     else {
                         player.isSkipping = true
-                        player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
+                        player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
                     }
                     sleepManager?.restart()
                 }
                 player.isStopped -> {
 //                    ContextCompat.startForegroundService(getAppContext(), Intent(getAppContext(), PlaybackService::class.java))
-                    player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
+                    player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
                     sleepManager?.restart()
                 }
                 // TODO: test
                 player.isInitialized -> {
-                    player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = true, prepareImmediately = true, forceReset = forcePlaybackReset)
+                    player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
                     sleepManager?.restart()
                 }
                 else -> {
@@ -111,22 +117,22 @@ class PlaybackStarter(private val media: Episode) {
         }
         aCtrlFuture?.let { future ->
             if (future.isDone && aController?.isConnected == true) {
-                Logd(TAG, "aCtrlFuture aController ready, play, ${player?.status} $shouldStreamThisTime")
+                Logd(TAG) { "aCtrlFuture aController ready, play, ${player?.status} $shouldStreamThisTime" }
                 if (shouldStreamThisTime && !isStreamingCapable(media)) return
                 processTask()
             } else {
-                Logd(TAG, "aCtrlFuture starting PlaybackService")
+                Logd(TAG) { "aCtrlFuture starting PlaybackService" }
 //                ContextCompat.startForegroundService(getAppContext(), Intent(getAppContext(), PlaybackService::class.java))
                 CoroutineScope(Dispatchers.Default).launch {
                     while (!future.isDone || aController?.isConnected != true) {
-                        Logd(TAG, "aCtrlFuture delay ${future.isDone} ${aController?.isConnected}")
+                        Logd(TAG) { "aCtrlFuture delay ${future.isDone} ${aController?.isConnected}" }
                         delay(1.seconds)
                     }
                     withContext(Dispatchers.Main) { processTask() }
                 }
             }
         } ?: run {
-            Logd(TAG, "aCtrlFuture is null, starting service")
+            Logd(TAG) { "aCtrlFuture is null, starting service" }
             processTask()
         }
     }

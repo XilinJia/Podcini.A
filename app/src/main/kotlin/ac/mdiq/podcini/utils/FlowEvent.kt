@@ -68,7 +68,7 @@ object EventFlow {
         if (BuildConfig.DEBUG) {
             val stackTrace = Thread.currentThread().stackTrace
             val caller = if (stackTrace.size > 3) stackTrace[3] else null
-            Logd("EventFlow", "${caller?.className}.${caller?.methodName} posted: $event")
+            Logd("EventFlow") { "${caller?.className}.${caller?.methodName} posted: $event" }
         }
         CoroutineScope(Dispatchers.Default).launch { events.emit(event) }
     }
@@ -77,7 +77,7 @@ object EventFlow {
         if (BuildConfig.DEBUG) {
             val stackTrace = Thread.currentThread().stackTrace
             val caller = if (stackTrace.size > 3) stackTrace[3] else null
-            Logd("EventFlow", "${caller?.className}.${caller?.methodName} posted sticky: $event")
+            Logd("EventFlow") { "${caller?.className}.${caller?.methodName} posted sticky: $event" }
         }
         CoroutineScope(Dispatchers.Default).launch { stickyEvents.emit(event) }
     }
@@ -86,7 +86,7 @@ object EventFlow {
         if (BuildConfig.DEBUG) {
             val stackTrace = Thread.currentThread().stackTrace
             val caller = if (stackTrace.size > 3) stackTrace[3] else null
-            Logd("EventFlow", "${caller?.className}.${caller?.methodName} posted key: $event")
+            Logd("EventFlow") { "${caller?.className}.${caller?.methodName} posted key: $event" }
         }
         CoroutineScope(Dispatchers.Default).launch { keyEvents.emit(event) }
     }

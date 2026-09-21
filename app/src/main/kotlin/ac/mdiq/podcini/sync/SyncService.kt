@@ -18,7 +18,7 @@ import ac.mdiq.podcini.sync.queue.SynchronizationQueueStorage
 import ac.mdiq.podcini.utils.NetworkUtils.containsUrl
 import ac.mdiq.podcini.utils.NetworkUtils.isAllowedOnMobile
 import ac.mdiq.podcini.utils.NetworkUtils.setAllowMobileFor
-import ac.mdiq.podcini.playback.base.actQueueFlow
+import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
@@ -68,9 +68,9 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
     override suspend fun doWork(): Result {
         initialize()
 
-        Logd(TAG, "doWork() called")
+        Logd(TAG) { "doWork() called" }
         val activeSyncProvider = getActiveSyncProvider() ?: return Result.failure()
-        Logd(TAG, "doWork() got syn provider")
+        Logd(TAG) { "doWork() got syn provider" }
 
         SynchronizationSettings.updateLastSynchronizationAttempt()
         setCurrentlyActive(true)
@@ -112,11 +112,11 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
 
     @Throws(SyncServiceException::class)
     private suspend fun syncSubscriptions(syncServiceImpl: ISyncService) {
-        Logd(TAG, "syncSubscriptions called")
+        Logd(TAG) { "syncSubscriptions called" }
         val lastSync = SynchronizationSettings.lastSubscriptionSynchronizationTimestamp
         EventFlow.postStickyEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_subscriptions))
         fun getFeedListDownloadUrls(): List<String> {
-            Logd(TAG, "getFeedListDownloadUrls called")
+            Logd(TAG) { "getFeedListDownloadUrls called" }
             val result: MutableList<String> = mutableListOf()
             for (f in allFeeds) {
                 val url = f.downloadUrl
@@ -131,11 +131,11 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
         val queuedRemovedFeeds: MutableList<String> = synchronizationQueueStorage.queuedRemovedFeeds
         var queuedAddedFeeds: List<String> = synchronizationQueueStorage.queuedAddedFeeds
 
-        Logd(TAG, "Downloaded subscription changes: $subscriptionChanges")
+        Logd(TAG) { "Downloaded subscription changes: $subscriptionChanges" }
         if (subscriptionChanges != null) {
             for (downloadUrl in subscriptionChanges.added) {
                 if (!downloadUrl.startsWith("http")) { // Also matches https
-                    Logd(TAG, "Skipping url: $downloadUrl")
+                    Logd(TAG) { "Skipping url: $downloadUrl" }
                     continue
                 }
                 if (!containsUrl(localSubscriptions, downloadUrl) && !queuedRemovedFeeds.contains(downloadUrl)) {
@@ -153,7 +153,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
             }
 
             if (lastSync == 0L) {
-                Logd(TAG, "First sync. Adding all local subscriptions.")
+                Logd(TAG) { "First sync. Adding all local subscriptions." }
                 queuedAddedFeeds = localSubscriptions.toMutableList()
                 queuedAddedFeeds.removeAll(subscriptionChanges.added)
                 queuedRemovedFeeds.removeAll(subscriptionChanges.removed)
@@ -161,8 +161,8 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
         }
 
         if (queuedAddedFeeds.isNotEmpty() || queuedRemovedFeeds.isNotEmpty()) {
-            Logd(TAG, "Added: " + queuedAddedFeeds.joinToString(", "))
-            Logd(TAG, "Removed: " + queuedRemovedFeeds.joinToString(", "))
+            Logd(TAG) { "Added: " + queuedAddedFeeds.joinToString(", ") }
+            Logd(TAG) { "Removed: " + queuedRemovedFeeds.joinToString(", ") }
 
             LockingAsyncExecutor.lock.lock()
             try {
@@ -175,7 +175,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
     }
 
     private fun removeFeedWithDownloadUrl(downloadUrl: String) {
-        Logd(TAG, "removeFeedWithDownloadUrl called")
+        Logd(TAG) { "removeFeedWithDownloadUrl called" }
         var feedID: Long? = null
         for (f in allFeeds) {
             val url = f.downloadUrl
@@ -189,7 +189,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
     }
 
     private suspend fun waitForDownloadServiceCompleted() {
-        Logd(TAG, "waitForDownloadServiceCompleted called")
+        Logd(TAG) { "waitForDownloadServiceCompleted called" }
         EventFlow.postStickyEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_wait_for_downloads))
         val event = EventFlow.stickyEvents
             .filter { it is FlowEvent.FeedUpdatingEvent }
@@ -219,7 +219,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
         if (lastSync == 0L) {
             EventFlow.postStickyEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_upload_played))
             val readItems = getEpisodes(EpisodeFilter(EpisodeFilter.States.PLAYED.name), EpisodeSortOrder.DATE_DESC)
-            Logd(TAG, "First sync. Upload state for all " + readItems.size + " played episodes")
+            Logd(TAG) { "First sync. Upload state for all " + readItems.size + " played episodes"}
             for (item in readItems) {
                 val played = EpisodeAction.Builder(item, EpisodeAction.PLAY)
                     .currentTimestamp()
@@ -233,10 +233,10 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
         if (queuedEpisodeActions.isNotEmpty()) {
             LockingAsyncExecutor.lock.lock()
             try {
-                Logd(TAG, "Uploading ${queuedEpisodeActions.size} actions: ${queuedEpisodeActions.joinToString(", ")}")
+                Logd(TAG) { "Uploading ${queuedEpisodeActions.size} actions: ${queuedEpisodeActions.joinToString(", ")}" }
                 val postResponse = syncServiceImpl.uploadEpisodeActions(queuedEpisodeActions)
                 newTimeStamp = postResponse?.timestamp?:0L
-                Logd(TAG, "Upload episode response: $postResponse")
+                Logd(TAG) { "Upload episode response: $postResponse" }
                 synchronizationQueueStorage.clearEpisodeActionQueue()
             } finally { LockingAsyncExecutor.lock.unlock() }
         }
@@ -245,7 +245,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
 
      @Throws(SyncServiceException::class)
     private fun syncEpisodeActions(syncServiceImpl: ISyncService) {
-        Logd(TAG, "syncEpisodeActions called")
+        Logd(TAG) { "syncEpisodeActions called" }
         var (lastSync, newTimeStamp) = getEpisodeActions(syncServiceImpl)
 
         // upload local actions
@@ -257,24 +257,24 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
         val guid = if (isValidGuid(action.guid)) action.guid else null
         val feedItem = episodeByGuidOrUrl(guid, action.episode)
         if (feedItem == null) {
-            Logd(TAG, "Unknown feed item: $action")
+            Logd(TAG) { "Unknown feed item: $action" }
             return null
         }
         var idRemove: Long? = null
         feedItem.position = action.position * 1000
         if (feedItem.hasAlmostEnded()) {
-            Logd(TAG, "Marking as played: $action")
+            Logd(TAG) { "Marking as played: $action" }
             feedItem.setPlayState(EpisodeState.PLAYED)
 //            feedItem.setPosition(0)
             idRemove = feedItem.id
-        } else Logd(TAG, "Setting position: $action")
+        } else Logd(TAG) { "Setting position: $action" }
 
         return if (idRemove != null) Pair(idRemove, feedItem) else null
     }
 
      @Synchronized
     fun processEpisodeActions(remoteActions: List<EpisodeAction>) {
-        Logd(TAG, "Processing " + remoteActions.size + " actions")
+        Logd(TAG) { "Processing " + remoteActions.size + " actions" }
         if (remoteActions.isEmpty()) return
 
         val playActionsToUpdate = getRemoteActionsOverridingLocalActions(remoteActions, synchronizationQueueStorage.queuedEpisodeActions)
@@ -303,11 +303,11 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
     }
 
     private fun updateErrorNotification(exception: Exception) {
-        Logd(TAG, "Posting sync error notification")
+        Logd(TAG) { "Posting sync error notification" }
         val description = ("${applicationContext.getString(R.string.gpodnetsync_error_descr)}${exception.message}")
 
         if (!gpodnetNotificationsEnabled()) {
-            Logd(TAG, "Skipping sync error notification because of user setting")
+            Logd(TAG) { "Skipping sync error notification because of user setting" }
             return
         }
 //        TODO:

@@ -9,6 +9,7 @@ import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import android.content.Context
 import android.content.Intent
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.StatFs
 import android.os.storage.StorageManager
@@ -63,7 +64,7 @@ val mediaDir: UnifiedFile
         if (customMediaUriString.isNotBlank()) {
             val d = customMediaUriString.toUF()
             if (d.isDirectory()) {
-                Logd(TAG, "mediaDir: $customMediaUriString")
+                Logd(TAG) { "mediaDir: $customMediaUriString" }
                 return d
             } else {
                 Loge(TAG, "The chosen custom media folder is not valid: ${appPrefsFlow!!.value.customMediaUri}. Reset!")
@@ -74,7 +75,7 @@ val mediaDir: UnifiedFile
                 }
             }
         }
-        Logd(TAG, "mediaDir use internal media folder")
+        Logd(TAG) { "mediaDir use internal media folder" }
         val mediaDir_ = getAppContext().getExternalFilesDir("media") ?: throw IllegalArgumentException("Invalid media dir")
         return mediaDir_.toUF()
     }
@@ -139,7 +140,7 @@ fun findRootForUri(uri: Uri): Uri? {
 }
 
 fun String.OKPath(): Path {
-    Logd(TAG, "String.OKPath() $this")
+    Logd(TAG) { "String.OKPath() $this" }
     val uri = this.toSafeUri()
     return when (uri.scheme) {
         "file" -> uri.path?.toPath() ?: throw kotlinx.io.IOException("Invalid file URI")
@@ -149,7 +150,7 @@ fun String.OKPath(): Path {
 }
 
 fun String.toSafeUri(): Uri {
-    Logd(TAG, "String.toSafeUri() $this")
+    Logd(TAG) { "String.toSafeUri() $this" }
     return when {
         startsWith("content://") || startsWith("file://") || startsWith("http") -> this.toUri()
         startsWith("android_asset/") -> "file:///android_asset/${this.substring(14)}".toUri()
@@ -274,8 +275,8 @@ class ContentUriFile(
 
     val isTreeRoot: Boolean
         get() {
-//            Logd(TAG, "isTreeRoot contentRoot: $contentRoot")
-//            Logd(TAG, "isTreeRoot uri: $uri")
+//            Logd(TAG) { "isTreeRoot contentRoot: $contentRoot" }
+//            Logd(TAG) { "isTreeRoot uri: $uri" }
             return uri in persistedTrees
 //            return try { DocumentsContract.getTreeDocumentId(uri) == DocumentsContract.getTreeDocumentId(mediaDir.toAndroidUri()) } catch (e: Exception) { false }
         }
@@ -285,9 +286,9 @@ class ContentUriFile(
             ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
 
     fun findSavedRoot(): Uri? {
-        Logd(TAG, "findSavedRoot uri: $uri")
+        Logd(TAG) { "findSavedRoot uri: $uri" }
         if (tempRoottree != null && uri.toString().startsWith(tempRoottree.toString())) return tempRoottree
-        persistedTrees.forEach { Logd(TAG, "saved root: $it") }
+        persistedTrees.forEach { Logd(TAG) { "saved root: $it" } }
         val targetTreeId = DocumentsContract.getTreeDocumentId(uri)
         return persistedTrees.find { DocumentsContract.getTreeDocumentId(it) == targetTreeId }
 //        return persistedTrees.find { uri.toString().startsWith(it.toString()) }
@@ -318,7 +319,7 @@ class ContentUriFile(
     }
 
     override fun isDirectory(): Boolean {
-//        Logd(TAG, "isDirectory")
+//        Logd(TAG) { "isDirectory" }
         if (isTreeRoot) return true
         val projection = arrayOf(DocumentsContract.Document.COLUMN_MIME_TYPE)
         context.contentResolver.query(uri, projection, null, null, null)?.use { c ->
@@ -332,7 +333,7 @@ class ContentUriFile(
 
     override suspend fun listChildren(): List<UnifiedFile> {
         val rootUri = findSavedRoot() ?: uri
-        Logd(TAG, "listChildren rootUri: $rootUri")
+        Logd(TAG) { "listChildren rootUri: $rootUri" }
         val result = mutableListOf<Uri>()
         val parentId = if (rootUri == uri) DocumentsContract.getTreeDocumentId(rootUri) else DocumentsContract.getDocumentId(uri)
         val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(rootUri, parentId)
@@ -353,7 +354,7 @@ class ContentUriFile(
     }
 
     override fun sink(append: Boolean): Sink {
-        Logd(TAG, "sink")
+        Logd(TAG) { "sink" }
         val mode = if (append) "wa" else "w"
         val outputStream = context.contentResolver.openOutputStream(uri, mode) ?: throw IllegalStateException("Cannot open output stream for $uri")
         return outputStream.sink()
@@ -362,9 +363,9 @@ class ContentUriFile(
     override suspend fun delete(): Boolean = docFile?.delete() ?: false
 
     override suspend fun createFile(mimeType: String, name: String): UnifiedFile {
-        Logd(TAG, "createFile")
+        Logd(TAG) { "createFile" }
         val rootUri = findSavedRoot() ?: uri
-        Logd(TAG, "createFile rootUri: $rootUri")
+        Logd(TAG) { "createFile rootUri: $rootUri" }
         val newUri = try {
             val parentId = if (rootUri == uri) DocumentsContract.getTreeDocumentId(rootUri) else DocumentsContract.getDocumentId(uri)
             val parentUri = DocumentsContract.buildDocumentUriUsingTree(uri, parentId)
@@ -383,7 +384,7 @@ class ContentUriFile(
     }
 
     override suspend fun createDirectory(name: String): UnifiedFile {
-        Logd(TAG, "createDirectory $name $uri")
+        Logd(TAG) { "createDirectory $name $uri" }
         val rootUri: Uri? = findSavedRoot() ?: uri
         val parentDocId: String = if (rootUri == uri) DocumentsContract.getTreeDocumentId(rootUri) else DocumentsContract.getDocumentId(uri)
         val parentUri: Uri = DocumentsContract.buildDocumentUriUsingTree(uri, parentDocId)
@@ -419,7 +420,7 @@ fun UnifiedFile.toAndroidUri(): Uri? = when (this) {
 fun File.toUF(): UnifiedFile = PathFile(absolutePath.toPath())
 
 fun Uri.toUF(): UnifiedFile {
-    Logd(TAG, "Uri.toUF() $this")
+    Logd(TAG) { "Uri.toUF() $this" }
     return when (scheme) {
         "file" -> PathFile(this.path!!.toPath())
         "content" -> ContentUriFile(this)
@@ -428,7 +429,7 @@ fun Uri.toUF(): UnifiedFile {
 }
 
 fun String.toUF(): UnifiedFile {
-    Logd(TAG, "String.toUF() $this")
+    Logd(TAG) { "String.toUF() $this" }
     val uri = try { this.toSafeUri() } catch (e: Exception) { null }
     return when (uri?.scheme) {
         null -> PathFile(this.toPath())
@@ -439,7 +440,7 @@ fun String.toUF(): UnifiedFile {
 }
 
 suspend fun deleteDirectoryRecursively(dir: UnifiedFile) {
-    Logd(TAG, "deleteDirectoryRecursively ${dir.absPath}")
+    Logd(TAG) { "deleteDirectoryRecursively ${dir.absPath}" }
     if (dir.isDirectory()) {
         for (file in dir.listChildren()) deleteDirectoryRecursively(file)
     }
@@ -549,5 +550,14 @@ fun peekFileFormat(fileSource: BufferedSource): MediaFormat {
         b.size >= 8 && b.rangeEquals(4, "ftyp".encodeUtf8()) -> MediaFormat.M4A
         b.size >= 12 && b.rangeEquals(0, "RIFF".encodeUtf8()) && b.rangeEquals(8, "WAVE".encodeUtf8()) -> MediaFormat.WAV
         else -> MediaFormat.UNKNOWN
+    }
+}
+
+/**
+ * On SDK<29, this class does not have a close method yet, so the app crashes when using try-with-resources.
+ */
+class MediaMetadataRetrieverCompat : MediaMetadataRetriever(), AutoCloseable {
+    override fun close() {
+        try { release() } catch (e: Exception) { Logs(TAG, e, "MediaMetadataRetriever failed") }
     }
 }

@@ -7,7 +7,7 @@ import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
 import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
 import ac.mdiq.podcini.sync.model.EpisodeAction
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
-import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.model.Episode
@@ -43,11 +43,11 @@ import kotlin.math.min
 
 private const val TAG: String = "Episodes"
 
-// TODO: filters of queued and notqueued don't work in this
+// TODO: filters of queued and not queued don't work in this
 fun getEpisodes(filter: EpisodeFilter?, sortOrder: EpisodeSortOrder?, feedId: Long = -1, offset: Int = 0, limit: Int = Int.MAX_VALUE, copy: Boolean = true): List<Episode> {
     var queryString = filter?.queryString()?:"id > 0"
     if (feedId >= 0) queryString += " AND feedId == $feedId "
-    Logd(TAG, "getEpisodes called with: offset=$offset, limit=$limit queryString: $queryString")
+    Logd(TAG) { "getEpisodes called with: offset=$offset, limit=$limit queryString: $queryString" }
     if (offset > 0) {
         var episodes = realm.query(Episode::class).query(queryString).sort(sortPairOf(sortOrder)).find().toMutableList()
         val size = episodes.size
@@ -65,7 +65,7 @@ fun getEpisodesAsFlow(filter: EpisodeFilter?, sortOrder: EpisodeSortOrder?, feed
     var queryString = filter?.queryString()
     if (queryString.isNullOrBlank()) queryString = "id > 0"
     if (feedId >= 0) queryString += " AND feedId == $feedId "
-    Logd(TAG, "getEpisodesAsFlow queryString: $queryString sortOrder: $sortOrder")
+    Logd(TAG) { "getEpisodesAsFlow queryString: $queryString sortOrder: $sortOrder" }
     return realm.query(Episode::class).query(queryString).sort(sortPairOf(sortOrder)).asFlow()
 }
 
@@ -73,7 +73,7 @@ fun getEpisodesAsListFlow(filter: EpisodeFilter?, sortOrder: EpisodeSortOrder?, 
     var queryString = filter?.queryString()
     if (queryString.isNullOrBlank()) queryString = "id > 0"
     if (feedId >= 0) queryString += " AND feedId == $feedId "
-    Logd(TAG, "getEpisodesAsFlow queryString: $queryString sortOrder: $sortOrder")
+    Logd(TAG) { "getEpisodesAsFlow queryString: $queryString sortOrder: $sortOrder" }
     if (sortOrder != null && sortOrder != DATE_DESC)
         return realm.query(Episode::class).query(queryString).asFlow().map { result ->
             val list = result.list.toMutableList()
@@ -85,13 +85,13 @@ fun getEpisodesAsListFlow(filter: EpisodeFilter?, sortOrder: EpisodeSortOrder?, 
 
 fun getEpisodesCount(filter: EpisodeFilter?, feedId: Long = -1): Int {
     var queryString = filter?.queryString()?:"id > 0"
-    Logd(TAG, "getEpisodesCount called queryString: $queryString $feedId")
+    Logd(TAG) { "getEpisodesCount called queryString: $queryString $feedId" }
     if (feedId >= 0) queryString += " AND feedId == $feedId "
     return realm.query(Episode::class).query(queryString).count().find().toInt()
 }
 
 fun episodeByGuidOrUrl(guid: String?, episodeUrl: String, copy: Boolean = true): Episode? {
-    Logd(TAG, "episodeByGuidOrUrl called $guid $episodeUrl")
+    Logd(TAG) { "episodeByGuidOrUrl called $guid $episodeUrl" }
     val episode = if (guid != null) realm.query(Episode::class).query("identifier == $0", guid).first().find()
     else realm.query(Episode::class).query("downloadUrl == $0", episodeUrl).first().find()
     if (!copy || episode == null) return episode
@@ -101,7 +101,7 @@ fun episodeByGuidOrUrl(guid: String?, episodeUrl: String, copy: Boolean = true):
 fun episodeById(id: Long): Episode? = realm.query(Episode::class).query("id == $0", id).first().find()
 
 fun getHistoryAsFlow(feedId: Long = 0L, start: Long = 0L, end: Long = nowInMillis(), filter: EpisodeFilter? = null, sortOrder: EpisodeSortOrder = EpisodeSortOrder.PLAYED_DATE_DESC): Flow<ResultsChange<Episode>> {
-    Logd(TAG, "getHistory() called")
+    Logd(TAG) { "getHistory() called" }
     var qStr = "((playbackCompletionTime > 0) OR (lastPlayedTime > $start AND lastPlayedTime <= $end))"
     if (feedId > 0L) qStr += " AND feedId == $feedId "
     val fqstr = filter?.queryString()
@@ -191,7 +191,7 @@ suspend fun eraseEpisodes(episodes: List<Episode>, msg: String = "") {
     }
     for (e in episodes) if (e.feed?.isLocal != true) deleteMedia(e)
     removeFromAllQueues(episodes)
-    Logd(TAG, "eraseEpisodes deleting episodes: ${episodes.size}")
+    Logd(TAG) { "eraseEpisodes deleting episodes: ${episodes.size}" }
     val feeds = allFeeds.filter { it.id in episodes.map { e-> e.feedId } }
     realm.write { for (e in episodes) findLatest(e)?.let { delete(it) } }
     for (f in feeds) sumup(f)
@@ -201,7 +201,7 @@ suspend fun eraseEpisodes(episodes: List<Episode>, msg: String = "") {
 suspend fun deleteMedia(episode: Episode): Episode {
     val context = getAppContext()
     val url = episode.fileUrl
-    Logd(TAG, "deleteMedia [id=${episode.id}, title=${episode.getEpisodeTitle()}, downloaded=${episode.downloaded} $url")
+    Logd(TAG) { "deleteMedia [id=${episode.id}, title=${episode.getEpisodeTitle()}, downloaded=${episode.downloaded} $url" }
     var episode = episode
     if (!url.isNullOrBlank()) {
         try {
@@ -234,7 +234,7 @@ fun isMediaDownloadable(media: Episode): Boolean {
 }
 
 fun canCheckMediaSize(episode: Episode): Boolean {
-    Logd(TAG, "canCheckMediaSize episode.fileUrl: ${episode.fileUrl} episode.downloadUrl: ${episode.downloadUrl}")
+    Logd(TAG) { "canCheckMediaSize episode.fileUrl: ${episode.fileUrl} episode.downloadUrl: ${episode.downloadUrl}" }
     if (episode.feed?.isLocal == true) return true
     if (episode.downloadUrl != null) return clientByEpisode(episode) == null
     return false
@@ -282,7 +282,7 @@ fun checkAndMarkDuplicates(episode: Episode): Episode {
 fun shouldPreserve(stat: Int): Boolean = stat in listOf(EpisodeState.SOON.code, EpisodeState.LATER.code, EpisodeState.AGAIN.code, EpisodeState.FOREVER.code)
 
 fun buildListInfo(episodes: List<Episode>, total: Int = 0, feed: Feed? = null): String {
-    Logd(TAG, "buildListInfo")
+    Logd(TAG) { "buildListInfo" }
     var infoText = episodes.size.toString()
     if (total > 0) infoText += "/$total"
     if (episodes.isNotEmpty()) {

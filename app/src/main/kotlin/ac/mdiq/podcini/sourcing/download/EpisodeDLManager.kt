@@ -51,17 +51,17 @@ abstract class EpisodeDLManager {
             item = upsert(item) {
                 it.downloaded = true
                 it.fileUrl = request.destination
-                Logd(TAG, "run() set request.destination: ${request.destination}")
+                Logd(TAG) { "run() set request.destination: ${request.destination}" }
                 if (request.destination.isNotBlank()) {
                     val file = request.destination.toUF()
                     runBlocking { it.size = if (file.exists()) file.size()?: 0 else 0 }
-                    Logd(TAG, "run() set size: ${it.size}")
+                    Logd(TAG) { "run() set size: ${it.size}" }
                 }
                 if (chapters.isNotEmpty()) it.setChapters(chapters)
 
                 // TODO: this seems not really needed
 //                if (!it.fileUrl.isNullOrBlank() && it.size > 0) {
-//                    Logd(TAG, "run() it.fileUrl: ${it.fileUrl}")
+//                    Logd(TAG) { "run() it.fileUrl: ${it.fileUrl}" }
 //                    try {
 //                        MediaMetadataRetrieverCompat().use { mmr ->
 //                            mmr.setDataSource(it.fileUrl!!)
@@ -78,17 +78,17 @@ abstract class EpisodeDLManager {
 //                        it.hasEmbeddedPicture = false
 //                    }
 //                } else Loge(TAG, "Get metadata failed for ${it.title}: fileUrl: ${it.fileUrl}")
-//                Logd(TAG, "run() set duration: ${it.duration}")
+//                Logd(TAG) { "run() set duration: ${it.duration}" }
                 it.isAutoDownloadEnabled = false
             }
             // TODO: need to post two events?
             //                if (broadcastUnreadStateUpdate) EventFlow.postEvent(FlowEvent.EpisodeMediaEvent.updated(item))
             if (isSyncProviderConnected) {
-                Logd(TAG, "enqueue synch")
+                Logd(TAG) { "enqueue synch" }
                 val action = EpisodeAction.Builder(item, EpisodeAction.DOWNLOAD).currentTimestamp().build()
                 SynchronizationQueueSink.enqueueEpisodeActionIfSyncActive(action)
             }
-            //                Logd(TAG, "episode.isNew: ${item.isNew} ${item.playState}")
+            //                Logd(TAG) { "episode.isNew: ${item.isNew} ${item.playState}" }
         }
 
     }

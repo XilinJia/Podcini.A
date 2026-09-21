@@ -1,11 +1,10 @@
-package ac.mdiq.podcini.playback.base
+package ac.mdiq.podcini.playback
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
-import ac.mdiq.podcini.playback.SegmentSavingDataSource
-import ac.mdiq.podcini.playback.SegmentSavingDataSourceFactory
 import ac.mdiq.podcini.playback.cast.CastMediaPlayer.buildCastPlayer
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.isCasting
-import ac.mdiq.podcini.playback.service.PlaybackService.Companion.playbackService
+import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
+import ac.mdiq.podcini.playback.PlaybackService.Companion.isCasting
+import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.receiver.PodciniWidget
 import ac.mdiq.podcini.shared.PodciniHttpClient.proxyConfig
 import ac.mdiq.podcini.shared.ProxyConfig
@@ -43,7 +42,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.media.RingtoneManager
 import android.media.audiofx.LoudnessEnhancer
-import android.net.Uri
 import android.net.http.HttpEngine
 import android.os.Build
 import android.os.ext.SdkExtensions
@@ -110,6 +108,7 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.DefaultTrackNameProvider
 import androidx.media3.ui.TrackNameProvider
 import io.github.xilinjia.krdb.ext.toRealmList
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -146,7 +145,8 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     private var loadControl: DynamicLoadControl? = null
 
     private var mediaSource: MediaSource? = null
-    private var mediaItem: MediaItem? = null
+    internal var mediaItem: MediaItem? = null
+    internal var deferredMediaItem: CompletableDeferred<MediaItem>? = null
 
     private var exoplayerListener: Listener? = null
 
@@ -207,22 +207,15 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                 private var isSeeking = false
                 private var wasPlayingBeforeSeek = false
                 override fun onPlaybackStateChanged(playbackState: @State Int) {
-                    Logd(TAG, "exoplayerListener onPlaybackStateChanged $playbackState")
-                    Logd(TAG, "onPlaybackStateChanged state=$playbackState " +
-                                "playWhenReady=${exoPlayer?.playWhenReady} " +
-                                "isPlaying=${exoPlayer?.isPlaying} " +
-                                "position=${exoPlayer?.currentPosition} " +
-                                "buffered=${exoPlayer?.bufferedPosition} " +
-                                "bufferedDuration=${exoPlayer?.totalBufferedDuration} " +
-                                "isLoading=${exoPlayer?.isLoading}"
-                    )
+                    Logd(TAG) { "exoplayerListener onPlaybackStateChanged $playbackState" }
+                    Logd(TAG) { "onPlaybackStateChanged state=$playbackState " + "playWhenReady=${exoPlayer?.playWhenReady} " + "isPlaying=${exoPlayer?.isPlaying} " + "position=${exoPlayer?.currentPosition} " + "buffered=${exoPlayer?.bufferedPosition} " + "bufferedDuration=${exoPlayer?.totalBufferedDuration} " + "isLoading=${exoPlayer?.isLoading}" }
                     when (playbackState) {
                         STATE_BUFFERING -> bufferedPercentFlow.value = BUFFERING_STARTED
                         STATE_READY -> bufferedPercentFlow.value = BUFFERING_ENDED
                         STATE_ENDED -> {
                             val currentPos = exoPlayer?.currentPosition ?: 0L
                             val totalDuration = exoPlayer?.duration ?: 0L
-                            Logd(TAG, "exoplayerListener onPlaybackStateChanged currentPos: $currentPos totalDuration: $totalDuration")
+                            Logd(TAG) { "exoplayerListener onPlaybackStateChanged currentPos: $currentPos totalDuration: $totalDuration" }
                             if (totalDuration > 0 && (totalDuration - currentPos) > 5000) {
                                 Logt(TAG, "Stream ended prematurely at $currentPos ms. Resuming...")
 //                                exoPlayer?.stop()
@@ -237,7 +230,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                             if (!shouldRepeatFlow.value) endPlayback(hasEnded = true, wasSkipped = false)
                         }
                         STATE_IDLE -> {
-                            Logd(TAG, "exoplayerListener onPlaybackStateChanged STATE_IDLE ")
+                            Logd(TAG) { "exoplayerListener onPlaybackStateChanged STATE_IDLE " }
                             if (isCasting && hasStarted && !isSkipping) endPlayback(hasEnded = true, wasSkipped = false)
                             hasStarted = false
                             isSkipping = false
@@ -245,10 +238,10 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     }
                 }
                 override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-                    Logd(TAG, "onPlayWhenReadyChanged value=$playWhenReady reason=$reason state=${exoPlayer?.playbackState} isPlaying=${exoPlayer?.isPlaying}")
+                    Logd(TAG) { "onPlayWhenReadyChanged value=$playWhenReady reason=$reason state=${exoPlayer?.playbackState} isPlaying=${exoPlayer?.isPlaying}" }
                 }
                 override fun onPositionDiscontinuity(oldPosition: PositionInfo, newPosition: PositionInfo, reason: Int) {
-                    Logd(TAG, "onPositionDiscontinuity ${oldPosition.positionMs} ${newPosition.positionMs} $reason")
+                    Logd(TAG) { "onPositionDiscontinuity ${oldPosition.positionMs} ${newPosition.positionMs} $reason" }
                     if (reason == Player.DISCONTINUITY_REASON_SEEK) isSeeking = true
                 }
                 override fun onEvents(player: Player, events: Player.Events) {
@@ -277,7 +270,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     }
                     if (events.contains(Player.EVENT_IS_LOADING_CHANGED) || events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED)) {
                         bufferedPercentFlow.value = player.bufferedPercentage
-                        Logd(TAG, "onEvents buffered: ${bufferedPercentFlow.value}")
+                        Logd(TAG) { "onEvents buffered: ${bufferedPercentFlow.value}" }
                         if (bufferedPercentFlow.value == 100 && curMediaFlow.value != null && curMediaFlow.value!!.duration <= 0 && getDuration() > 0) upsertBlk(curMediaFlow.value!!) { it.duration = getDuration() }
                     }
                 }
@@ -285,11 +278,13 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     curPlayerSpeedFlow.value = playbackParameters.speed
                 }
                 override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
-                    Logd(TAG, "exoplayerListener onMediaItemTransition $reason")
+                    Logd(TAG) { "exoplayerListener onMediaItemTransition $reason" }
+                    if (item == null) return
+                    if (isAutoController) exoPlayer?.seekTo(curMediaFlow.value!!.position.toLong())
 //                    if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) endPlayback(hasEnded = true, wasSkipped = false)
                 }
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    Logd(TAG, "exoplayerListener onIsPlayingChanged $isPlaying $isSeeking $wasPlayingBeforeSeek")
+                    Logd(TAG) { "exoplayerListener onIsPlayingChanged $isPlaying $isSeeking $wasPlayingBeforeSeek" }
                     val media = curMediaFlow.value
                     if (isSeeking) {
                         if (isPlaying) {
@@ -410,7 +405,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 //                    }
                 }
                 override fun onAudioSessionIdChanged(audioSessionId: Int) {
-                    Logd(TAG, "exoplayerListener onAudioSessionIdChanged $audioSessionId")
+                    Logd(TAG) { "exoplayerListener onAudioSessionIdChanged $audioSessionId" }
                     runOnIOScope {
                         try {
                             val newEnhancer = LoudnessEnhancer(audioSessionId)
@@ -424,7 +419,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     }
                 }
                 override fun onTracksChanged(tracks: Tracks) {
-                    Logd(TAG, "exoplayerListener onTracksChanged tracks: ${tracks.groups.size}")
+                    Logd(TAG) { "exoplayerListener onTracksChanged tracks: ${tracks.groups.size}" }
                     tracks.groups.forEach { group ->
                         for (i in 0 until group.length) {
                             if (group.isTrackSelected(i)) {
@@ -437,7 +432,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                                     else -> format.sampleMimeType!!
                                 }
                                 channelCountFlow.value = format.channelCount
-                                Logd(TAG, "exoplayerListener onTracksChanged $i ${format.averageBitrate} ${format.bitrate}")
+                                Logd(TAG) { "exoplayerListener onTracksChanged $i ${format.averageBitrate} ${format.bitrate}" }
                                 if (format.averageBitrate != Format.NO_VALUE) bitrateFlow.value = format.averageBitrate
                                 return@forEach
                             }
@@ -445,21 +440,15 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                     }
                 }
                 override fun onDeviceInfoChanged(deviceInfo: DeviceInfo) {
-                    if (deviceInfo.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE) {
-                        Logd(TAG, "exoplayerListener onDeviceInfoChanged Casting active: Switching to remote URLs")
-                        isCasting = true
-                    } else {
-                        Logd(TAG, "exoplayerListener onDeviceInfoChanged Local play: Switching to local files")
-                        isCasting = false
-                    }
+                    Logd(TAG) { "onDeviceInfoChanged ${deviceInfo.toString()}" }
                 }
             }
             exoplayerOffloadListener = object: ExoPlayer.AudioOffloadListener {
                 override fun onOffloadedPlayback(offloadSchedulingEnabled: Boolean) {
-                    Logd(TAG, "AudioOffloadListener Offload scheduling enabled: $offloadSchedulingEnabled")
+                    Logd(TAG) { "AudioOffloadListener Offload scheduling enabled: $offloadSchedulingEnabled" }
                 }
                 override fun onSleepingForOffloadChanged(isSleepingForOffload: Boolean) {
-                    Logd(TAG, "AudioOffloadListener CPU is sleeping for offload: $isSleepingForOffload")
+                    Logd(TAG) { "AudioOffloadListener CPU is sleeping for offload: $isSleepingForOffload" }
                 }
             }
             createNativePlayer()
@@ -474,7 +463,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                 val pct = exoPlayer!!.bufferedPercentage
                 if (bufferedPercentFlow.value != pct) {
                     bufferedPercentFlow.value = pct
-                    Logd(TAG, "getPlayerBuffer updated: ${bufferedPercentFlow.value}")
+                    Logd(TAG) { "getPlayerBuffer updated: ${bufferedPercentFlow.value}" }
                 }
             }
         }
@@ -483,14 +472,14 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     private fun switchOffload() {
         if (!needChangeOffload || exoPlayer == null || isCasting) return
 
-        Logd(TAG, "switchOffload offloadSpeedEnabled: $speedEnablesOffload offloadSilenceEnabled: $silenceEnablesOffload")
+        Logd(TAG) { "switchOffload offloadSpeedEnabled: $speedEnablesOffload offloadSilenceEnabled: $silenceEnablesOffload" }
         val enabled = speedEnablesOffload && silenceEnablesOffload
         if (enabled == offloadEnabled) {
             needChangeOffload = false
             return
         }
         offloadEnabled = enabled
-        Logd(TAG, "switchOffload set audio offload $offloadEnabled")
+        Logd(TAG) { "switchOffload set audio offload $offloadEnabled" }
 
         val wasPlaying = castPlayer!!.isPlaying
         castPlayer!!.pause()
@@ -612,7 +601,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         val audioOffloadPreferences = AudioOffloadPreferences.Builder()
             .setAudioOffloadMode(if (offloadEnabled) AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED else AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED)
             .build()
-        Logd(TAG, "createNativePlayer creating exoPlayer lr: $lr")
+        Logd(TAG) { "createNativePlayer creating exoPlayer lr: $lr" }
 
         runBlocking { initCache() }
 
@@ -660,7 +649,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             .setAudioOffloadPreferences(audioOffloadPreferences)
             .build()
 
-        Logd(TAG, "createNativePlayer exoplayerListener == null: ${exoplayerListener == null}")
+        Logd(TAG) { "createNativePlayer exoplayerListener == null: ${exoplayerListener == null}" }
         exoplayerListener?.let {
             exoPlayer?.removeListener(it)
             exoPlayer?.addListener(it)
@@ -675,14 +664,18 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     private fun release() {
-        Logd(TAG, "release() called")
+        Logd(TAG) { "release() called" }
         castPlayer?.stop()
         exoPlayer?.stop()
 //        castPlayer?.seekTo(0L)
 //        castPlayer?.clearMediaItems()
     }
 
-    fun mediaSourceFromClient(needVideo: Boolean, sameMedia: Boolean = false): MediaSource? {
+    internal fun configurePlayerForCar(isCarConnected: Boolean) {
+        exoPlayer?.trackSelectionParameters = exoPlayer!!.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isCarConnected).build()
+    }
+
+    private fun mediaSourceFromClient(needVideo: Boolean, sameMedia: Boolean = false): MediaSource? {
         val media = curMediaFlow.value ?: return null
         if (curClient == null)  return null
 
@@ -706,7 +699,8 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                 curMuxedSpec = chooseVideoSpec(muxedSpecs, media)
                 if (!curMuxedSpec?.url.isNullOrBlank()) {
                     val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(curMuxedSpec!!.url!!.toSafeUri()).build())
-                    mSource = MergingMediaSource(true, vSource)
+//                    mSource = MergingMediaSource(true, vSource)
+                    mSource = vSource
                     playingVideoFlow.value = true
                     playingMuxedVideo = true
                     Logt(TAG, "Using muxed video stream")
@@ -714,12 +708,12 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             } else Logt(TAG, "Client provided no muxed video stream")
         }
 
-        Logd(TAG, "mediaSourceFromClient setting for source needVideo: $needVideo media: ${media.title}")
+        Logd(TAG) { "mediaSourceFromClient setting for source needVideo: $needVideo media: ${media.title}" }
         var force = false
         if (sameMedia) {
             val url = curAudioSpec?.url ?: curMuxedSpec?.url
             if (!url.isNullOrBlank()) {
-                val expireTime = Uri.parse(url).getQueryParameter("expire")?.toLongOrNull()
+                val expireTime = url.toUri().getQueryParameter("expire")?.toLongOrNull()
                 force = (expireTime != null && expireTime < nowInMillis())
             }
         }
@@ -731,48 +725,59 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             videoSpecs = listOf()
             muxedSpecs = listOf()
         }
-        if ((curClient?.attributes?.hasSeparateAVs == true && media.feed?.useMuxedVideo != true) || curClient?.attributes?.hasVideo != true) {
-            if (!sameMedia || audioSpecs.isEmpty()) audioSpecs = curClient?.withProviderBlocking { it.getAudioSpecs(media.toIPC()) } ?: listOf()
-            var aSource: ProgressiveMediaSource? = null
-            if (audioSpecs.isNotEmpty()) {
-                Logd(TAG, "mediaSourceFromClient audioSpecs ${audioSpecs.size}")
-                chooseAudioSpec(audioSpecs, media)?.let {
-                    curAudioSpec = it
-                    if (!it.url.isNullOrBlank()) {
-                        aSource = ProgressiveMediaSource.Factory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(it.url!!.toSafeUri()).setCustomCacheKey(media.id.toString()).build())
-                        Logd(TAG, "mediaSourceFromClient aSource set to: ${it.url}")
-                    } else Loge(TAG, "eligible audioStream or its url is null or blank")
-                }
-            } else Logt(TAG, "Client provided no audio stream, trying with muxed video stream")
 
-            if ((aSource == null || needVideo) && curClient?.attributes?.hasVideo == true) {
-                if (aSource == null) setMuxedVideo()
-                else {
-                    if (!sameMedia || videoSpecs.isEmpty()) videoSpecs = curClient?.withProviderBlocking { it.getVideoOnlySpecs(media.toIPC()) } ?: listOf()
-                    Logd(TAG, "mediaSourceFromClient videoSpecs ${videoSpecs.size}")
-                    if (videoSpecs.isNotEmpty()) {
-                        curVideoSpec = chooseVideoSpec(videoSpecs, media)
-                        if (!curVideoSpec?.url.isNullOrBlank()) {
-                            val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(curVideoSpec!!.url!!.toSafeUri()).build())
-                            val mediaSources: MutableList<MediaSource> = mutableListOf()
-                            mediaSources.add(vSource)
-                            mediaSources.add(aSource)
-                            mSource = MergingMediaSource(true, *mediaSources.toTypedArray<MediaSource>())
-                            Logd(TAG, "mediaSourceFromClient vSource set to: ${curVideoSpec?.url}")
-                        } else Loge(TAG, "videoStream or url is null or blank")
-                    } else Logt(TAG, "Client provided no video stream")
-                }
-            } else mSource = aSource
-        } else setMuxedVideo()
+        if (isCasting && needVideo) {
+            setMuxedVideo()
+            return mSource
+        }
+
+        if ((curClient?.attributes?.hasSeparateAVs != true || media.feed?.useMuxedVideo == true) && curClient?.attributes?.hasVideo == true) {
+            setMuxedVideo()
+            return mSource
+        }
+
+        if (!sameMedia || audioSpecs.isEmpty()) audioSpecs = curClient?.withProviderBlocking { it.getAudioSpecs(media.toIPC()) } ?: listOf()
+        var aSource: ProgressiveMediaSource? = null
+        if (audioSpecs.isNotEmpty()) {
+            Logd(TAG) { "mediaSourceFromClient audioSpecs ${audioSpecs.size}" }
+            chooseAudioSpec(audioSpecs, media)?.let {
+                curAudioSpec = it
+                if (!it.url.isNullOrBlank()) {
+                    aSource = ProgressiveMediaSource.Factory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(it.url!!.toSafeUri()).setCustomCacheKey(media.id.toString()).build())
+                    Logd(TAG) { "mediaSourceFromClient aSource set to: ${it.url}" }
+                } else Loge(TAG, "eligible audioStream or its url is null or blank")
+            }
+        } else Logt(TAG, "Client provided no audio stream, trying with muxed video stream")
+
+        if ((aSource == null || needVideo) && curClient?.attributes?.hasVideo == true) {
+            if (aSource == null) {
+                setMuxedVideo()
+                return mSource
+            }
+            if (!sameMedia || videoSpecs.isEmpty()) videoSpecs = curClient?.withProviderBlocking { it.getVideoOnlySpecs(media.toIPC()) } ?: listOf()
+            Logd(TAG) { "mediaSourceFromClient videoSpecs ${videoSpecs.size}" }
+            if (videoSpecs.isNotEmpty()) {
+                curVideoSpec = chooseVideoSpec(videoSpecs, media)
+                if (!curVideoSpec?.url.isNullOrBlank()) {
+                    val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(curVideoSpec!!.url!!.toSafeUri()).build())
+                    val mediaSources: MutableList<MediaSource> = mutableListOf()
+                    mediaSources.add(vSource)
+                    mediaSources.add(aSource)
+                    mSource = MergingMediaSource(true, *mediaSources.toTypedArray<MediaSource>())
+                    Logd(TAG) { "mediaSourceFromClient vSource set to: ${curVideoSpec?.url}" }
+                } else Loge(TAG, "videoStream or url is null or blank")
+            } else Logt(TAG, "Client provided no video stream")
+        } else mSource = aSource
         return mSource
     }
 
     @Throws(IllegalArgumentException::class, IllegalStateException::class)
-    override fun prepareDataSource(sameMedia: Boolean) {
+    override fun prepareDataSource(sameMedia: Boolean, audioOnly: Boolean) {
         val media = curMediaFlow.value ?: return
-        Logd(TAG, "prepareDataSource called ${media.title}")
-        Logd(TAG, "prepareDataSource url [${media.downloadUrl}]")
+        Logd(TAG) { "prepareDataSource called ${media.title}" }
+        Logd(TAG) { "prepareDataSource url [${media.downloadUrl}]" }
         mediaItem = null
+//        deferredMediaItem = CompletableDeferred()
         mediaSource = null
         val url = media.downloadUrl
         if (url.isNullOrBlank()) {
@@ -786,16 +791,17 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         bitrateFlow.value = 0
         resolutionFlow.value = ""
         try {
-            mediaSource = mediaSourceFromClient(media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY, sameMedia = sameMedia)
+            mediaSource = mediaSourceFromClient(!audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY), sameMedia = sameMedia)
             if (mediaSource != null) {
-                Logd(TAG, "prepareDataSource setting with mediaSource")
-                mediaItem = mediaSource?.mediaItem
+                Logd(TAG) { "prepareDataSource setting with mediaSource" }
+                mediaItem = mediaSource!!.mediaItem
                 setSourceCredentials(user, password)
             } else {
                 curClient = null
-                Logd(TAG, "prepareDataSource setting date source")
+                Logd(TAG) { "prepareDataSource setting date source" }
                 prepareDataSource(url, user, password)
             }
+            mediaItem?.let { deferredMediaItem?.complete(it) }
         } catch (e: Throwable) {
             LogsFor(TAG, media.id, "prepareDataSource: ${e.message}")
             runOnIOScope { upsertBlk(media) { it.setPlayState(EpisodeState.ERROR) } }
@@ -806,11 +812,12 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     override fun prepareDataSource(mediaUrl: String, user: String?, password: String?) {
         val media = curMediaFlow.value ?: return
         mediaItem = null
+//        deferredMediaItem = CompletableDeferred()
         mediaSource = null
         val metadata = buildMetadata(media)
-        Logd(TAG, "prepareDataSource: $mediaUrl")
+        Logd(TAG) { "prepareDataSource: $mediaUrl" }
         val uri = mediaUrl.toSafeUri()
-        Logd(TAG, "prepareDataSource position: ${media.position} uri: $uri")
+        Logd(TAG) { "prepareDataSource position: ${media.position} uri: $uri" }
         mediaItem = MediaItem.Builder().setUri(uri).setCustomCacheKey(media.id.toString()).setMediaMetadata(metadata).build()
         setSourceCredentials(user, password)
     }
@@ -835,7 +842,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     override fun setSource() {
-        Logd(TAG, "setSource() called")
+        Logd(TAG) { "setSource() called isCasting: $isCasting" }
         if (mediaSource == null && mediaItem == null) return
         if (needChangeOffload) {
             val enabled = speedEnablesOffload && silenceEnablesOffload
@@ -847,11 +854,11 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             needChangeOffload = false
         }
         if (isCasting) castPlayer?.setMediaItem(mediaItem!!, curMediaFlow.value!!.position.toLong())
-        else {
+        else if (!isAutoController || true) {
             if (mediaSource != null) exoPlayer?.setMediaSource(mediaSource!!, positionWithRewind(curMediaFlow.value!!.position, curMediaFlow.value!!.lastPlayedTime).toLong())
             else castPlayer?.setMediaItem(mediaItem!!, positionWithRewind(curMediaFlow.value!!.position, curMediaFlow.value!!.lastPlayedTime).toLong())
         }
-        castPlayer?.prepare()
+        if (!isAutoController || true) castPlayer?.prepare()
     }
 
     override fun setPlaybackParams() {
@@ -865,7 +872,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         resetPosSaverInterval(speed)
 
         if (abs(castPlayer!!.playbackParameters.speed - speed) < 0.01f) return
-        Logd(TAG, "setPlaybackParams speed=$speed pitch=${playbackParameters.pitch}")
+        Logd(TAG) { "setPlaybackParams speed=$speed pitch=${playbackParameters.pitch}" }
         val wantsOffload = speed == 1f
         if (wantsOffload != speedEnablesOffload) {
             speedEnablesOffload = wantsOffload
@@ -882,17 +889,17 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         val targetPlaybackMs = basePlaybackMs
         val targetRebufferMs = (baseRebufferMs * speed).toInt().coerceIn(2000, 8000)
         val targetMaxBufferMs = maxOf(baseMaxBufferMs, (baseMinBufferMs * speed).toInt() + 10_000)
-        Logd(TAG, "set player buffer: $baseMinBufferMs $targetMaxBufferMs $targetPlaybackMs $targetRebufferMs")
+        Logd(TAG) { "set player buffer: $baseMinBufferMs $targetMaxBufferMs $targetPlaybackMs $targetRebufferMs" }
         loadControl?.updateBufferParameters(minBufferMs = baseMinBufferMs, maxBufferMs = targetMaxBufferMs, playbackMs = targetPlaybackMs, rebufferMs = targetRebufferMs, true)
 
         playbackParameters = PlaybackParameters(if (speed <= 0) playbackParameters.speed else speed, if (pitch <= 0f) playbackParameters.pitch else pitch)
         setPlaybackParams()
-        Logd(TAG, "setPlaybackParams offloadEnabled $speedEnablesOffload")
+        Logd(TAG) { "setPlaybackParams offloadEnabled $speedEnablesOffload" }
     }
 
     override fun setSkipSilence() {
         val skipSilence = skipSilence ?: curMediaFlow.value?.feed?.skipSilence ?: isSkipSilence
-        Logd(TAG, "setSkipSilence skipSilence: $skipSilence")
+        Logd(TAG) { "setSkipSilence skipSilence: $skipSilence" }
         val wantsOffload = !skipSilence
         if (wantsOffload != silenceEnablesOffload) {
             silenceEnablesOffload = wantsOffload
@@ -900,7 +907,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             if (isPlaying) switchOffload()
         }
         exoPlayer?.skipSilenceEnabled = skipSilence
-        Logd(TAG, "setSkipSilence offloadEnabled $silenceEnablesOffload")
+        Logd(TAG) { "setSkipSilence offloadEnabled $silenceEnablesOffload" }
     }
 
     override fun getPlaybackSpeed(): Float {
@@ -942,12 +949,12 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     override fun setVolume(volumeLeft: Float, volumeRight: Float, adaptionFactor: Float) {
         var volumeLeft = volumeLeft
         var volumeRight = volumeRight
-//        Logd(TAG, "setVolume: $volumeLeft $volumeRight $adaptionFactor")
+//        Logd(TAG) { "setVolume: $volumeLeft $volumeRight $adaptionFactor" }
         if (adaptionFactor != 1f) {
             volumeLeft *= adaptionFactor
             volumeRight *= adaptionFactor
         }
-        Logd(TAG, "setVolume 1: $volumeLeft $volumeRight")
+        Logd(TAG) { "setVolume 1: $volumeLeft $volumeRight" }
         if (volumeLeft > 1) {
             castPlayer?.volume = 1f
             loudnessEnhancer?.enabled = true
@@ -956,11 +963,11 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             castPlayer?.volume = volumeLeft
             loudnessEnhancer?.enabled = false
         }
-        Logd(TAG, "Media player volume was set to $volumeLeft $volumeRight")
+        Logd(TAG) { "Media player volume was set to $volumeLeft $volumeRight" }
     }
 
     override fun shutdown() {
-        Logd(TAG, "shutdown() called")
+        Logd(TAG) { "shutdown() called" }
         try {
             if (exoPlayer?.isPlaying == true) exoPlayer?.stop()
         } catch (e: Exception) { LogsFor(TAG, curMediaFlow.value?.id, e) }
@@ -979,7 +986,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     override fun getSelectedAudioTrack(): Int {
         val tracks = exoPlayer?.currentTracks ?: return -1
         val availableFormats = formats
-        Logd(TAG, "selectedAudioTrack called tracks: ${tracks.groups.size} formats: ${availableFormats.size}")
+        Logd(TAG) { "selectedAudioTrack called tracks: ${tracks.groups.size} formats: ${availableFormats.size}" }
         for (group in tracks.groups) {
             if (group.isSelected) {
                 for (i in 0 until group.length) {
@@ -995,7 +1002,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     override fun resetPlayerAttributes() {
-        Logd(TAG, "resetMediaPlayer()")
+        Logd(TAG) { "resetMediaPlayer()" }
         // TODO: test
 //        if (isCasting) release()
         if (curMediaFlow.value == null) {
@@ -1003,19 +1010,19 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             handlePlayerStatus(PlayerStatus.STOPPED, null)
             return
         }
-        val i = curMediaFlow.value?.feed?.audioType?: C.AUDIO_CONTENT_TYPE_SPEECH
-        val a = exoPlayer!!.audioAttributes
-        val b = AudioAttributes.Builder().setContentType(i).setUsage(C.USAGE_MEDIA)
-        Logd(TAG, "activeTheatres: ${activeTheatresCount.value}")
+        val contentType = curMediaFlow.value?.feed?.audioType?: C.AUDIO_CONTENT_TYPE_SPEECH
+//        val a = exoPlayer!!.audioAttributes
+        val b = AudioAttributes.Builder().setContentType(contentType).setUsage(C.USAGE_MEDIA)
+        Logd(TAG) { "activeTheatres: ${activeTheatresCount.value}" }
         exoPlayer?.setAudioAttributes(b.build(), activeTheatresCount.value <= 1 && handleAudioFocus)
-        Logd(TAG, "AudioAttributes: usage=${b.build().usage} contentType=${b.build().contentType} handleAudioFocus=${activeTheatresCount.value <= 2}")
+        Logd(TAG) { "AudioAttributes: usage=${b.build().usage} contentType=${b.build().contentType} handleAudioFocus=${activeTheatresCount.value <= 2}" }
     }
 
     fun isRangeCached(cache:  SimpleCache, key: String, startByte: Long, endByte: Long): Boolean {
         var coveredUntil = startByte
-//        Logd(TAG, "isRangeCached cache keys=${cache.keys}")
+//        Logd(TAG) { "isRangeCached cache keys=${cache.keys}" }
         val spans = cache.getCachedSpans(key).sortedBy { it.position }
-        Logd(TAG, "isRangeCached key: $key spans: ${spans.size}")
+        Logd(TAG) { "isRangeCached key: $key spans: ${spans.size}" }
         for (span in spans) {
             val spanStart = span.position
             val spanEnd = span.position + span.length
@@ -1045,7 +1052,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             return
         }
         val mimeType = audioFormat.sampleMimeType
-        Logd(TAG, "mimeType: [$mimeType]")
+        Logd(TAG) { "mimeType: [$mimeType]" }
         val ext = getFileExtensionFromMimeType(mimeType)
         if (ext == null) {
             Loge(TAG, "recordClip failed: Audio format not supported for recording: $ext")
@@ -1053,7 +1060,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         }
         if (endPositionMs == null) {
             if (uri.scheme == "file" || uri.scheme == "content") {
-                Logd(TAG, "uri is file or content, will extract from the file.")
+                Logd(TAG) { "uri is file or content, will extract from the file." }
                 return
             }
             curDataSource = recordingFactory?.currentDataSource
@@ -1090,18 +1097,18 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                             }
                             outputFile.writeBytes(adjustedSegment)
                             upsert(curMediaFlow.value!!) { it.clips.add(clipname) }
-                            Logd(TAG, "Saved local clip to: ${outputFile.absPath}")
+                            Logd(TAG) { "Saved local clip to: ${outputFile.absPath}" }
                         } else Loge(TAG, "recordClip: Failed to extract segment from local media")
                     } catch (e: Exception) { Loge(TAG, e, "recordClip failed: FileKit operation failed") } finally { tempFile.delete() }
                 }
                 else -> {   // streaming
-                    Logd(TAG, "curDataSource==null: ${curDataSource==null}")
+                    Logd(TAG) { "curDataSource==null: ${curDataSource==null}" }
                     val tempFileDS = curDataSource?.stopRecording(endPositionMs)
                     val cache = getCache()
                     val key = curMediaFlow.value!!.id.toString()
 
                     if (tempFileDS != null) {
-                        Logd(TAG, "Segment not available in cache or full file extraction. Trying with player extract")
+                        Logd(TAG) { "Segment not available in cache or full file extraction. Trying with player extract" }
                         val bytesPerSecond = bitrateFlow.value / 8.0
                         val startByte = (startPositionMs * bytesPerSecond / 1000).toLong()
                         val endByte = (endPositionMs * bytesPerSecond / 1000).toLong()
@@ -1112,7 +1119,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                                 val segmentData = input.readByteArray(bytesToRead)
                                 val totalRead = segmentData.size
                                 tempOutput.writeBytes(segmentData)
-                                Logd(TAG, "Total written: $totalRead bytes")
+                                Logd(TAG) { "Total written: $totalRead bytes" }
                             }
                         } catch (e: Exception) { Loge(TAG, e, "recordClip: Failed to extract from temp files") }
                         val segment = tempOutput.readBytes()
@@ -1127,7 +1134,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                             }
                             outputFile.writeBytes(adjustedSegment)
                             upsert(curMediaFlow.value!!) { it.clips.add(clipname) }
-                            Logd(TAG, "Saved clip to: ${outputFile.absPath}")
+                            Logd(TAG) { "Saved clip to: ${outputFile.absPath}" }
                         } else Loge(TAG, "recordClip: Failed to extract segment from temp file")
                         tempFileDS.delete()
                     } else Loge(TAG, "recordClip: Failed saving clip: No temp file available after stopping recording")
@@ -1288,7 +1295,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         fun createDataSourceEngine() {
             val appContext = getAppContext()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 7 && (proxyConfig == null || proxyConfig!!.host == null)) {
-                Logd(TAG, "createHttpDataSourceFactory setting HttpEngine")
+                Logd(TAG) { "createHttpDataSourceFactory setting HttpEngine" }
                 if (httpEngine == null) httpEngine = HttpEngine.Builder(appContext).setEnableQuic(true).setEnableHttp2(true).setUserAgent(USER_AGENT)
                     .setStoragePath(File(appContext.cacheDir, "httpengine").apply { mkdirs() }.absolutePath)
                     .setEnableHttpCache(HttpEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024).build()

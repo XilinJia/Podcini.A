@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.base.theatres
+import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -89,7 +89,7 @@ fun MainScreen() {
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            Logd(TAG, "DisposableEffect LifecycleEventObserver: $event")
+            Logd(TAG) { "DisposableEffect LifecycleEventObserver: $event" }
             when (event) {
                 Lifecycle.Event.ON_CREATE -> {
                     if (appAttribsFlow!!.value.restoreLastScreen) {
@@ -119,7 +119,7 @@ fun MainScreen() {
     } }
 
     LaunchedEffect(curMedia0?.id, psState) {
-        Logd(TAG, "LaunchedEffect(curMedia0?.id, psState) curMedia0: ${curMedia0?.id} ${psState.name}")
+        Logd(TAG) { "LaunchedEffect(curMedia0?.id, psState) curMedia0: ${curMedia0?.id} ${psState.name}" }
         if ((curMedia0?.id ?: -1L) <= 0) {
             allowSheetHide = true
             if (sheetState.bottomSheetState.targetValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()
@@ -154,7 +154,7 @@ fun MainScreen() {
 
     val configuration = LocalConfiguration.current
     LaunchedEffect(configuration.orientation) {
-        Logd(TAG, "LaunchedEffect(configuration.orientation)")
+        Logd(TAG) { "LaunchedEffect(configuration.orientation)" }
         withFrameNanos { }
         drawerState.snapTo(savedDrawerValue)
     }
@@ -200,7 +200,7 @@ fun MainScreen() {
 
     val windowInfo = LocalWindowInfo.current
     val screenWidth = windowInfo.containerSize.width.dp
-//    Logd(TAG, "before CompositionLocalProvider")
+//    Logd(TAG) { "before CompositionLocalProvider" }
     CompositionLocalProvider(LocalDrawerController provides drawerCtrl, LocalDrawerState provides drawerState) {
         ModalNavigationDrawer(drawerState = drawerState, modifier = Modifier.fillMaxHeight(), drawerContent = { NavDrawerScreen() }) {
             BottomSheetScaffold(sheetContent = { AVPlayerScreen() }, scaffoldState = sheetState, sheetMaxWidth = screenWidth, sheetPeekHeight = bottomInsetPadding + playerMinHeight.dp, sheetDragHandle = {}, sheetShape = RectangleShape, topBar = {}) { paddingValues ->
@@ -213,19 +213,19 @@ fun MainScreen() {
     }
 
     BackHandler(enabled = handleBackSubScreens.isEmpty()) {
-        Logd(TAG, "BackHandler isBSExpanded: $psState")
+        Logd(TAG) { "BackHandler isBSExpanded: $psState" }
         val openDrawer = appPrefs.backButtonOpensDrawer
         val defPage = defaultNavKey
-        Logd(TAG, "BackHandler curruntRoute0: defPage: $defPage")
+        Logd(TAG) { "BackHandler curruntRoute0: defPage: $defPage" }
         when {
             drawerState.isOpen -> drawerCtrl.close()
             psState == PSState.Expanded -> psState = PSState.PartiallyExpanded
             backStack.size > 1 -> {
-                Logd(TAG, "BackHandler nav to back")
+                Logd(TAG) { "BackHandler nav to back" }
                 navBack()
             }
             backStack.size == 1 && defPage != backStack[0] -> {
-                Logd(TAG, "BackHandler nav to defPage: $defPage")
+                Logd(TAG) { "BackHandler nav to defPage: $defPage" }
                 navTo(defPage)
             }
             openDrawer -> drawerCtrl.open()

@@ -81,7 +81,7 @@ class DownloadResult : RealmObject {
         var idCounter: Long = -1
 
         fun getFeedDownloadLogs(feedId: Long): List<DownloadResult> {
-            Logd(TAG, "getFeedDownloadLog() called with: $feedId")
+            Logd(TAG) { "getFeedDownloadLog() called with: $feedId" }
             val dlog = realm.query(DownloadResult::class).query("feedfileId == $0", feedId).find().toMutableList()
             dlog.sortWith { lhs, rhs ->  (rhs.completionTime - lhs.completionTime).toInt() }
             return realm.copyFromRealm(dlog)

@@ -229,7 +229,7 @@ class LibraryVM : ViewModel() {
 
     val subVolumesFlow = snapshotFlow { curVolume?.id }.combine(prefsFlow) { volumeId, prefs -> volumeId to prefs.showArchived }.distinctUntilChanged().flatMapLatest { (volumeId, showArchived) ->
         val qStrArchive = if (curVolume == null) ( if (showArchived) "" else "AND id >= -1" ) else ""
-        Logd(TAG, "getVolumesFlow qStrArchive: $qStrArchive")
+        Logd(TAG) { "getVolumesFlow qStrArchive: $qStrArchive" }
         val realmFlow = realm.query(Volume::class).query("parentId == ${curVolume?.id ?: -1L} $qStrArchive").sort("name").asFlow()
         realmFlow.map { it.list }
     }.distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = emptyList())
@@ -255,13 +255,13 @@ class LibraryVM : ViewModel() {
     val feedsFlow: StateFlow<List<Feed>> = snapshotFlow { feedIdsToUse.size to (curVolume?.id to showAllFeeds) }.combine(prefsFlow) { (feedCount, volumeInfo), prefs ->
         FeedsFlowkeys(id = volumeInfo.first, showAllFeeds = volumeInfo.second, feedsFiltered = prefs.feedsFiltered, feedsSorted = prefs.feedsSorted, showArchived = prefs.showArchived) }
         .distinctUntilChanged().flatMapLatest {
-            Logd(TAG, "feedsFlow $it")
+            Logd(TAG) { "feedsFlow $it" }
             feedsRealmFlows()
         }
         .distinctUntilChanged().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
-        Logd(TAG, "vm init")
+        Logd(TAG) { "vm init" }
         timeIt("$TAG start of vm init")
 
         viewModelScope.launch {
@@ -282,7 +282,7 @@ class LibraryVM : ViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
             queuesFlow.collect { changes ->
-                Logd(TAG, "queuesFlow.collect")
+                Logd(TAG) { "queuesFlow.collect" }
                 queueIds = changes.list.map { it.id }
                 queueNames = changes.list.map { it.name }
             }
@@ -331,7 +331,7 @@ class LibraryVM : ViewModel() {
     }
 
     override fun onCleared() {
-        Logd(TAG, "VM onCleared")
+        Logd(TAG) { "VM onCleared" }
         curVolume = null
         queueIds = listOf()
         queueNames = listOf()
@@ -339,7 +339,7 @@ class LibraryVM : ViewModel() {
     }
 
     suspend fun feedsRealmFlows(): Flow<RealmResults<Feed>> {
-        Logd(TAG, "feedsRealmFlows subPrefs.sortProperty: ${prefsFlow.value.sortProperty}")
+        Logd(TAG) { "feedsRealmFlows subPrefs.sortProperty: ${prefsFlow.value.sortProperty}" }
         fun languagesQS() : String {
             var qrs  = ""
             when {
@@ -350,7 +350,7 @@ class LibraryVM : ViewModel() {
                     if (qrs.isNotEmpty()) qrs += " ) "
                 }
             }
-            Logd(TAG, "languagesQS: $qrs")
+            Logd(TAG) { "languagesQS: $qrs" }
             return qrs
         }
         fun tagsQS() : String {
@@ -366,7 +366,7 @@ class LibraryVM : ViewModel() {
                     if (qrs.isNotEmpty()) qrs += " ) "
                 }
             }
-            Logd(TAG, "tagsQS: $qrs")
+            Logd(TAG) { "tagsQS: $qrs" }
             return qrs
         }
         fun queuesQS() : String {
@@ -379,7 +379,7 @@ class LibraryVM : ViewModel() {
             var qrs  = ""
             for (id in qSelIds_) qrs += if (qrs.isEmpty()) " ( queueId == '$id' " else " OR queueId == '$id' "
             if (qrs.isNotEmpty()) qrs += " ) "
-            Logd(TAG, "queuesQS: $qrs")
+            Logd(TAG) { "queuesQS: $qrs" }
             return qrs
         }
 
@@ -396,7 +396,7 @@ class LibraryVM : ViewModel() {
             if (!prefsFlow.value.showArchived && curVolume?.id == -1L && !showAllFeeds) sb.append(" AND volumeId >= -1 ")
 
             val fetchQS = sb.toString()
-            Logd(TAG, "fetchQS: $fetchQS ${sortPair.first} ${sortPair.second.name}")
+            Logd(TAG) { "fetchQS: $fetchQS ${sortPair.first} ${sortPair.second.name}" }
 
             val realmFlow = if (showAllFeeds) realm.query(Feed::class).query(fetchQS).sort(sortPair).asFlow()
             else realm.query(Feed::class).query("volumeId == ${curVolume?.id ?: -1L}").query(fetchQS).sort(sortPair).asFlow()
@@ -407,12 +407,12 @@ class LibraryVM : ViewModel() {
 
     fun preparePropertySort(feeds: List<Feed>, subIndex: FeedPropertySortIndex? = null) {
         val subIndexOrdinal = subIndex?.code ?: prefsFlow.value.propertySortIndex
-        Logd(TAG, "preparePropertySort subIndexOrdinal: $subIndexOrdinal")
+        Logd(TAG) { "preparePropertySort subIndexOrdinal: $subIndexOrdinal" }
         runOnIOScope {
             realm.write {
                 for (f_ in feeds) {
                     val f = findLatest(f_) ?: continue
-                    Logd(TAG, "preparePropertySort f: ${f.title}")
+                    Logd(TAG) { "preparePropertySort f: ${f.title}" }
                     f.sortInfo = when(subIndexOrdinal) {
                         FeedPropertySortIndex.Rating.code -> Rating.fromCode(f.rating).name
                         FeedPropertySortIndex.Score.code -> "${f.score}(${f.scoreCount})"
@@ -447,7 +447,7 @@ class LibraryVM : ViewModel() {
     }
     fun prepareDateSort(feeds: List<Feed>, subIndex: FeedDateSortIndex? = null) {
         val subIndexOrdinal = subIndex?.code ?: prefsFlow.value.dateSortIndex
-        Logd(TAG, "prepareDateSort")
+        Logd(TAG) { "prepareDateSort" }
         suspend fun persistDateSort() {
             upsert(prefsFlow.value) {
                 it.sortIndex = FeedSortIndex.Date.code
@@ -462,7 +462,7 @@ class LibraryVM : ViewModel() {
                     var queryString = "feedId == $0"
                     if (playStateQueries.isNotEmpty()) queryString += " AND ($playStateQueries)"
                     queryString += " SORT(pubDate DESC)"
-                    Logd(TAG, "prepareSort queryString: $queryString")
+                    Logd(TAG) { "prepareSort queryString: $queryString" }
                     realm.write {
                         for (f_ in feeds) {
                             val f = findLatest(f_) ?: continue
@@ -483,7 +483,7 @@ class LibraryVM : ViewModel() {
                             f.sortInfo = "D: ${formatDateTimeFlex(d)}"
                         }
                     }
-                    Logd(TAG, "prepareSort queryString: $queryString")
+                    Logd(TAG) { "prepareSort queryString: $queryString" }
                     persistDateSort()
                 }
                 FeedDateSortIndex.Played.code -> {  // date last played
@@ -496,7 +496,7 @@ class LibraryVM : ViewModel() {
                             f.sortInfo = "P: ${formatDateTimeFlex(d)}"
                         }
                     }
-                    Logd(TAG, "prepareSort queryString: $queryString")
+                    Logd(TAG) { "prepareSort queryString: $queryString" }
                     persistDateSort()
                 }
                 FeedDateSortIndex.Commented.code -> {  // date last commented
@@ -509,7 +509,7 @@ class LibraryVM : ViewModel() {
                             f.sortInfo = "C: ${formatDateTimeFlex(d)}"
                         }
                     }
-                    Logd(TAG, "prepareSort queryString: $queryString")
+                    Logd(TAG) { "prepareSort queryString: $queryString" }
                     persistDateSort()
                 }
                 else -> Loge(TAG, "No such date sorting ${prefsFlow.value.dateSortIndex}")
@@ -519,7 +519,7 @@ class LibraryVM : ViewModel() {
 
     fun prepareTimeSort(feeds: List<Feed>, subIndex: FeedTimeSortIndex? = null) {
         val subIndexOrdinal = subIndex?.code ?: prefsFlow.value.timeSortIndex
-        Logd(TAG, "prepareTimeSort")
+        Logd(TAG) { "prepareTimeSort" }
         suspend fun persistTimeSort() {
             upsert(prefsFlow.value) {
                 it.sortIndex = FeedSortIndex.Time.code
@@ -551,7 +551,7 @@ class LibraryVM : ViewModel() {
                             f.sortInfo = "Min D: ${durationStringFull(d.toInt())}"
                         }
                     }
-                    Logd(TAG, "prepareSort queryString: $queryString")
+                    Logd(TAG) { "prepareSort queryString: $queryString" }
                     persistTimeSort()
                 }
                 FeedTimeSortIndex.Max.code -> {  // max duration
@@ -564,7 +564,7 @@ class LibraryVM : ViewModel() {
                             f.sortInfo = "Max D: ${durationStringShort(d, true)}"
                         }
                     }
-                    Logd(TAG, "prepareSort queryString: $queryString")
+                    Logd(TAG) { "prepareSort queryString: $queryString" }
                     persistTimeSort()
                 }
                 FeedTimeSortIndex.Average.code -> {  // average duration
@@ -585,7 +585,7 @@ class LibraryVM : ViewModel() {
     }
 
     fun prepareCountSort(feeds: List<Feed>) {
-        Logd(TAG, "prepareCountSort")
+        Logd(TAG) { "prepareCountSort" }
         runOnIOScope {
             val sb = StringBuilder("feedId == $0")
             if (playStateQueries.isNotEmpty()) sb.append(" AND ($playStateQueries)")
@@ -593,7 +593,7 @@ class LibraryVM : ViewModel() {
             if (downloadedQuery.isNotEmpty()) sb.append(" AND ($downloadedQuery)")
             if (commentedQuery.isNotEmpty()) sb.append(" AND ($commentedQuery)")
             val queryString = sb.toString()
-            Logd(TAG, "prepareCountSort queryString: $queryString")
+            Logd(TAG) { "prepareCountSort queryString: $queryString" }
             realm.write {
                 for (f_ in feeds) {
                     val f = findLatest(f_) ?: continue
@@ -738,7 +738,7 @@ fun LibraryScreen() {
                     val uri = result.data!!.data
                     runOnIOScope {
                         try {
-                            Logd(TAG, "selectedFeeds: ${feedsSelected.size}")
+                            Logd(TAG) { "selectedFeeds: ${feedsSelected.size}" }
                             if (uri == null) ExportWorker(OpmlWriter()).exportFile(feedsSelected)
                             else {
                                 val worker = DocumentFileExportWorker(OpmlWriter(), uri)
@@ -761,7 +761,7 @@ fun LibraryScreen() {
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            Logd(TAG, "DisposableEffect Lifecycle.Event: $event")
+            Logd(TAG) { "DisposableEffect Lifecycle.Event: $event" }
             when (event) {
                 Lifecycle.Event.ON_CREATE -> {}
                 Lifecycle.Event.ON_START -> {}
@@ -773,7 +773,7 @@ fun LibraryScreen() {
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
-            Logd(TAG, "Lifecycle.Event onDispose")
+            Logd(TAG) { "Lifecycle.Event onDispose" }
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -787,7 +787,7 @@ fun LibraryScreen() {
     BackHandler(enabled = handleBackSubScreens.contains(TAG)) { vm.curVolume = realm.query(Volume::class).query("id == ${vm.curVolume?.parentId ?: -1L}").first().find() }
 
     LaunchedEffect(subPrefs.sortIndex, feedOperationText, feedList.size, vm.curVolume?.id) {
-        Logd(TAG, "combine(feedsFlow, snapshotFlow {feedOperationText}) sortIndex: ${subPrefs.sortIndex}")
+        Logd(TAG) { "combine(feedsFlow, snapshotFlow {feedOperationText}) sortIndex: ${subPrefs.sortIndex}" }
         if (feedOperationText.isBlank()) when (subPrefs.sortIndex) {
             FeedSortIndex.Feed.code -> vm.preparePropertySort(feedList)
             FeedSortIndex.Date.code -> vm.prepareDateSort(feedList)
@@ -1268,7 +1268,7 @@ fun LibraryScreen() {
                         it.feedsFilteredInc()
                     }
                 }
-                Logd(TAG, "onFilterChanged: ${subPrefs.feedsFilter}")
+                Logd(TAG) { "onFilterChanged: ${subPrefs.feedsFilter}" }
             }
             Dialog(properties = DialogProperties(usePlatformDefaultWidth = false), onDismissRequest = { onDismiss() }) {
                 val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
@@ -1276,13 +1276,13 @@ fun LibraryScreen() {
                 Surface(modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp).height(350.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
                     Column(Modifier.fillMaxSize()) {
                         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                            Logd(TAG, "appAttribs.langSet: ${appAttribs.langSet.size}")
+                            Logd(TAG) { "appAttribs.langSet: ${appAttribs.langSet.size}" }
                             if (appAttribs.langSet.isNotEmpty()) {
                                 val langs = remember(appAttribs.langSet.size) { appAttribs.langSet.toList().sorted().toMutableStateList() }
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     val selectedList = remember { MutableList(langs.size) { mutableStateOf(false) } }
                                     LaunchedEffect(reset) {
-                                        Logd(TAG, "LaunchedEffect(reset) lang")
+                                        Logd(TAG) { "LaunchedEffect(reset) lang" }
                                         for (index in selectedList.indices) {
                                             if (langs[index] in subPrefs.langsSel) selectedList[index].value = true
                                             langFull = selectedList.count { it.value } == selectedList.size
@@ -1301,7 +1301,7 @@ fun LibraryScreen() {
                                                         it.feedsFilteredInc()
                                                     }
                                                 }
-                                                Logd(TAG, "langsSel: ${subPrefs.langsSel.size} ${langs.size}")
+                                                Logd(TAG) { "langsSel: ${subPrefs.langsSel.size} ${langs.size}" }
                                             }
                                             SelectLowerAllUpper(selectedList, lowerCB = cb, allCB = cb, upperCB = cb)
                                         }
@@ -1327,7 +1327,7 @@ fun LibraryScreen() {
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 val selectedList = remember { MutableList(vm.queueNames.size) { mutableStateOf(false) } }
                                 LaunchedEffect(reset) {
-                                    Logd(TAG, "LaunchedEffect(reset) queue")
+                                    Logd(TAG) { "LaunchedEffect(reset) queue" }
                                     for (index in selectedList.indices) {
                                         if (vm.queueIds[index] in subPrefs.queueSelIds) selectedList[index].value = true
                                         queuesFull = selectedList.count { it.value } == selectedList.size
@@ -1373,7 +1373,7 @@ fun LibraryScreen() {
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     val selectedList = remember { MutableList(tagList.size) { mutableStateOf(false) } }
                                     LaunchedEffect(reset) {
-                                        Logd(TAG, "LaunchedEffect(reset) tag")
+                                        Logd(TAG) { "LaunchedEffect(reset) tag" }
                                         for (index in selectedList.indices) {
                                             if (tagList[index] in subPrefs.tagsSel) selectedList[index].value = true
                                             tagsFull = selectedList.count { it.value } == selectedList.size
@@ -1466,7 +1466,7 @@ fun LibraryScreen() {
                                         val selectedList = remember { MutableList(item.values.size) { mutableStateOf(false) } }
                                         var allOrNone by remember { mutableStateOf(false) }
                                         LaunchedEffect(reset) {
-                                            Logd(TAG, "LaunchedEffect(reset) filter")
+                                            Logd(TAG) { "LaunchedEffect(reset) filter" }
                                             if (filter != null) {
                                                 for (index in selectedList.indices) {
                                                     if (item.values[index].filterId in filter.properties) selectedList[index].value = true
@@ -1645,7 +1645,7 @@ fun LibraryScreen() {
                         Text(custom)
                     }
                     if (selected == custom) {
-                        Logd(TAG, "volumes: ${volumes.size}")
+                        Logd(TAG) { "volumes: ${volumes.size}" }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             for (index in volumes.indices) {
                                 FilterChip(label = { Text(volumes[index].name) }, selected = false,
@@ -1685,7 +1685,7 @@ fun LibraryScreen() {
                         Text(custom)
                     }
                     if (selected == custom) {
-                        Logd(TAG, "queues: ${queuesLive.size}")
+                        Logd(TAG) { "queues: ${queuesLive.size}" }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             for (index in queuesLive.indices) {
                                 FilterChip(label = { Text(queuesLive[index].name) }, selected = false,
@@ -1733,7 +1733,7 @@ fun LibraryScreen() {
                             confirmRes = R.string.confirm_label,
                             cancelRes = R.string.cancel_label,
                             onConfirm = {
-                                Logd(TAG, "removing volume: ${volumeToOperate?.name}")
+                                Logd(TAG) { "removing volume: ${volumeToOperate?.name}" }
                                 runOnIOScope {
                                     feedOperationText = "Processing"
                                     deleteVolumeTree(volumeToOperate!!)
@@ -1751,7 +1751,7 @@ fun LibraryScreen() {
                             confirmRes = R.string.confirm_label,
                             cancelRes = R.string.cancel_label,
                             onConfirm = {
-                                Logd(TAG, "reconnecting folder: ${volumeToOperate?.name}")
+                                Logd(TAG) { "reconnecting folder: ${volumeToOperate?.name}" }
                                 try { connectLocalFolderLauncher.launch(null) } catch (e: ActivityNotFoundException) { Logs(TAG, e, "No activity found. Should never happen...") }
                             }))
                     }) {
@@ -1808,7 +1808,7 @@ fun LibraryScreen() {
                         }
                     }
                     if (selected == custom) {
-                        Logd(TAG, "volumes: ${volumes.size}")
+                        Logd(TAG) { "volumes: ${volumes.size}" }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             for (index in volumes.indices) if (volumes[index].id != volume.id) FilterChip(onClick = { parent = volumes[index] }, label = { Text(volumes[index].name) }, selected = parent == volumes[index], border = filterChipBorder(parent == volumes[index]))
                         }
@@ -1874,7 +1874,7 @@ fun LibraryScreen() {
                         }
                         Column(Modifier.background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface).combinedClickable(
                             onClick = {
-                                Logd(TAG, "clicked: ${feed.title}")
+                                Logd(TAG) { "clicked: ${feed.title}" }
                                 if (!feed.isBuilding) {
                                     if (selectMode) toggleSelected()
                                     else navTo(FeedDetails(feedId = feed.id))
@@ -1893,7 +1893,7 @@ fun LibraryScreen() {
                                         longPressIndex = -1
                                     }
                                 }
-                                Logd(TAG, "long clicked: ${feed.title}")
+                                Logd(TAG) { "long clicked: ${feed.title}" }
                             })) {
                             ConstraintLayout(Modifier.fillMaxSize()) {
                                 val (coverImage, episodeCount, rating, error) = createRefs()
@@ -1931,7 +1931,7 @@ fun LibraryScreen() {
                     onDispose {
                         val index = listState.firstVisibleItemIndex
                         val offset = listState.firstVisibleItemScrollOffset
-                        Logd(TAG, "DisposableEffect onDispose save positions: $index $offset")
+                        Logd(TAG) { "DisposableEffect onDispose save positions: $index $offset" }
                         runOnIOScope {
                             upsert(subPrefs) {
                                 it.positionIndex = index
@@ -1942,7 +1942,7 @@ fun LibraryScreen() {
                 }
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(start = 5.dp, end = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (feedIdsToUse.isEmpty() && !vm.showAllFeeds && volumes.isNotEmpty()) items(volumes, key = { v -> v.id}) { volume ->
-//                        Logd(TAG, "Volume: ${volume.name} ${volume.id}")
+//                        Logd(TAG) { "Volume: ${volume.name} ${volume.id}" }
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.combinedClickable(
                             onClick = { vm.curVolume = volume },
                             onLongClick = {
@@ -1962,7 +1962,7 @@ fun LibraryScreen() {
                             isSelected = !isSelected
                             if (isSelected) feedsSelected.add(feed)
                             else feedsSelected.remove(feed)
-                            Logd(TAG, "toggleSelected: selected: ${feedsSelected.size}")
+                            Logd(TAG) { "toggleSelected: selected: ${feedsSelected.size}" }
                         }
                         val imageSize = 60
                         Row(Modifier.height(imageSize.dp).background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface)) {
@@ -1970,7 +1970,7 @@ fun LibraryScreen() {
                                 AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover",
                                     colorFilter = if (!feed.inNormalVolume) ColorFilter.tint(color = Color.Gray.copy(alpha = 0.5f), blendMode = BlendMode.SrcAtop) else null,
                                     modifier = Modifier.fillMaxSize().clickable {
-                                        Logd(TAG, "icon clicked!")
+                                        Logd(TAG) { "icon clicked!" }
                                         if (!feed.isBuilding) {
                                             if (selectMode) toggleSelected()
                                             else navTo(FeedDetails(feedId = feed.id, modeName = FeedScreenMode.Info.name))
@@ -2000,7 +2000,7 @@ fun LibraryScreen() {
                             })) {
                                 Text(feed.title ?: "No title", color = textColor, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.align(Alignment.TopStart))
                                 Row(modifier = Modifier.align(Alignment.BottomStart)) {
-//                                    Logd(TAG, "episodesCount: ${feed.id} ${feed.episodesCount} ${feed.totleDuration}")
+//                                    Logd(TAG) { "episodesCount: ${feed.id} ${feed.episodesCount} ${feed.totleDuration}" }
                                     val measureString = remember(feed.episodesCount, feed.totleDuration) { formatWithGrouping(feed.episodesCount.toLong()) + " : " + durationInHours(feed.totleDuration/1000, false) }
                                     Text(measureString, color = textColor, style = MaterialTheme.typography.bodyMedium)
                                     Spacer(modifier = Modifier.weight(1f))
@@ -2019,13 +2019,13 @@ fun LibraryScreen() {
                         feedsSelected.clear()
                         for (i in 0..longPressIndex) feedsSelected.add(feedList[i])
                         selectedSize = feedsSelected.size
-                        Logd(TAG, "selectedIds: ${feedsSelected.size}")
+                        Logd(TAG) { "selectedIds: ${feedsSelected.size}" }
                     })
                     Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_downward_24), tint = buttonColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp).clickable {
                         feedsSelected.clear()
                         for (i in longPressIndex..<feedList.size) feedsSelected.add(feedList[i])
                         selectedSize = feedsSelected.size
-                        Logd(TAG, "selectedIds: ${feedsSelected.size}")
+                        Logd(TAG) { "selectedIds: ${feedsSelected.size}" }
                     })
                     var selectAllRes by remember { mutableIntStateOf(R.drawable.ic_select_all) }
                     Icon(imageVector = ImageVector.vectorResource(selectAllRes), tint = buttonColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp).clickable {
@@ -2039,7 +2039,7 @@ fun LibraryScreen() {
                             selectAllRes = R.drawable.ic_select_all
                         }
                         selectedSize = feedsSelected.size
-                        Logd(TAG, "selectedIds: ${feedsSelected.size}")
+                        Logd(TAG) { "selectedIds: ${feedsSelected.size}" }
                     })
                     @Composable
                     fun FeedsSpeedDial(selected: List<Feed>, modifier: Modifier = Modifier) {

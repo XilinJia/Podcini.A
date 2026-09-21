@@ -146,7 +146,7 @@ class Feed : RealmObject {
         set(value) {
             field = value
             filterString = value.propertySet.joinToString()
-            Logd(TAG, "episodeFilter filterString: $filterString")
+            Logd(TAG) { "episodeFilter filterString: $filterString" }
             filterAndOr = value.andOr
             titleFilterText = value.titleText
             durationFloor = value.durationFloor

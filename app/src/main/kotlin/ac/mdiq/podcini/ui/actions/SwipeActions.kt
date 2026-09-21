@@ -90,7 +90,7 @@ class SwipeActions(private val tag: String, private val isSubscribed: Boolean = 
                 }
             }
         } else CommonPopupCard(onDismiss = { onDismiss() }) {
-            Logd("SwipeActions", "SwipeActions tag: $tag")
+            Logd("SwipeActions") { "SwipeActions tag: $tag" }
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 val forScreen = remember(tag) {
                     if (tag != Screens.Queues.name) keys = keys.filter { a: EpisodeAction -> a !is RemoveFromAllQueues && a !is RemoveFromCurQueue }
