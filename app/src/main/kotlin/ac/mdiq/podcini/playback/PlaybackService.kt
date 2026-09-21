@@ -13,7 +13,6 @@ import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.rewindSecs
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
-import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
@@ -58,8 +57,6 @@ import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
-import com.google.android.gms.cast.framework.CastSession
-import com.google.android.gms.cast.framework.SessionManagerListener
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
