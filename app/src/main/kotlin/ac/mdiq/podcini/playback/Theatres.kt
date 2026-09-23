@@ -50,7 +50,7 @@ var forcePlaybackReset: Boolean = false
     }
 
 class Theatre(val id: Int) {
-    val mPlayerFlow = MutableStateFlow<MediaPlayerBase?>(null)
+    val mPlayerFlow = MutableStateFlow<BasePlayer?>(null)
 
     var curStateMonitor: Job? = null
 
@@ -118,7 +118,7 @@ fun releaseAController() {
     }
 }
 
-fun playerOf(media: Episode?): MediaPlayerBase? {
+fun playerOf(media: Episode?): BasePlayer? {
     return when {
         media == null -> null
         theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id == media.id -> theatres[0].mPlayerFlow.value

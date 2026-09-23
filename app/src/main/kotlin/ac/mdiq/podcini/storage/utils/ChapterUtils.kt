@@ -12,6 +12,7 @@ import ac.mdiq.podcini.storage.parser.VorbisCommentReaderException
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import android.content.ContentResolver
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeoutConfig
@@ -25,6 +26,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.decodeURLQueryComponent
 import io.ktor.http.isSuccess
+import io.ktor.http.userAgent
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readAvailable
 import okio.Buffer
@@ -67,7 +69,10 @@ suspend fun fetchChapters(episode: Episode): List<Chapter> {
         chaptersFromPodcastIndex = try {
             val url = episode.podcastIndexChapterUrl!!
             Logd(TAG) { "fetchChapters fetching from url: $url" }
-            val response = getKtorClient().get(url) { header(HttpHeaders.CacheControl, null) }
+            val response = getKtorClient().get(url) {
+                userAgent(PODCINI_USER_AGENT)
+                header(HttpHeaders.CacheControl, null)
+            }
             if (response.status.isSuccess()) parse(response.bodyAsText()) else listOf()
         } catch (e: Exception) {
             Logs(TAG, e, "Error getting chapters from url for ${episode.title}")
@@ -391,6 +396,7 @@ suspend fun loadChaptersFromMedia(episode: Episode): List<Chapter> {
                 if (streamurl.isNullOrEmpty()) throw Exception("Failed loading chapters for ${episode.title}: stream url is null of empty")
 //                Logd(TAG) { "openSource open streaming source" }
                 getKtorClient().prepareGet(streamurl) {
+                    userAgent(PODCINI_USER_AGENT)
                     header("Range", "bytes=0-131072")
                     timeout { requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS }
                 }.execute { response ->
@@ -420,7 +426,9 @@ suspend fun loadChaptersFromMedia(episode: Episode): List<Chapter> {
             val tailSize = 128_000L // 128KB is usually enough for the 'moov' atom
             val startRange = contentLength - tailSize
             try {
-                client.prepareGet(streamurl) { header(HttpHeaders.Range, "bytes=$startRange-$contentLength") }.execute { response ->
+                client.prepareGet(streamurl) {
+                    userAgent(PODCINI_USER_AGENT)
+                    header(HttpHeaders.Range, "bytes=$startRange-$contentLength") }.execute { response ->
                     val channel = response.bodyAsChannel()
                     fs.appendingSink(tempPath).buffer().use { sink ->
                         val buffer = ByteArray(8192)

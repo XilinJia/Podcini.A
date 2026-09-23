@@ -1,9 +1,0 @@
-* further amended Logs screen
-	* replaced mode title with icon
-	* added switch in Session, Downloads and Shares modes to show success/error logs only
-	* in Downloads mode
-		* past superseded items are not shown
-		* Redo action is moved to the dialog
-	* reformatted details dialogs
-	* Clear logs is moved to the menu
-	* EpisodeInfo opened from Logs screen does not have a Close icon

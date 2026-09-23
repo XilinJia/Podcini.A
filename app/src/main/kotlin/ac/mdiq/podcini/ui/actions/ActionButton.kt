@@ -2,18 +2,9 @@ package ac.mdiq.podcini.ui.actions
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
-import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
-import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
-import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
-import ac.mdiq.podcini.utils.NetworkUtils
-import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
-import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
+import ac.mdiq.podcini.playback.BasePlayer.Companion.handleAudioFocus
+import ac.mdiq.podcini.playback.PlaybackService
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.actQueueFlow
-import ac.mdiq.podcini.playback.activeTheatresCount
-import ac.mdiq.podcini.playback.theatres
-import ac.mdiq.podcini.playback.MediaPlayerBase.Companion.handleAudioFocus
 import ac.mdiq.podcini.playback.TTSEngine
 import ac.mdiq.podcini.playback.TTSEngine.doTTS
 import ac.mdiq.podcini.playback.TTSEngine.doTTSNow
@@ -21,11 +12,16 @@ import ac.mdiq.podcini.playback.TTSEngine.ensureTTS
 import ac.mdiq.podcini.playback.TTSEngine.tts
 import ac.mdiq.podcini.playback.TTSEngine.ttsJob
 import ac.mdiq.podcini.playback.TTSEngine.ttsTmpFiles
+import ac.mdiq.podcini.playback.actQueueFlow
+import ac.mdiq.podcini.playback.activeTheatresCount
 import ac.mdiq.podcini.playback.isCurMedia
 import ac.mdiq.podcini.playback.isPlaying
-import ac.mdiq.podcini.playback.PlaybackService
-import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
+import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.sourcing.clientByEpisode
+import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
+import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
+import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
+import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
 import ac.mdiq.podcini.storage.database.isMediaDownloadable
@@ -36,20 +32,18 @@ import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.tmpQueue
 import ac.mdiq.podcini.storage.specs.EpisodeState
-import ac.mdiq.podcini.storage.specs.MediaType
-import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.commonConfirms
-import ac.mdiq.podcini.ui.screens.PSState
-import ac.mdiq.podcini.ui.screens.curVideoMode
-import ac.mdiq.podcini.ui.screens.psState
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.LogeFor
+import ac.mdiq.podcini.utils.NetworkUtils
+import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
+import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.utils.openInSystemDefault
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +51,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -171,14 +164,12 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 if (fileNotExist()) return
                 if (activeTheatresCount.value == 1) {
                     PlaybackStarter(item).start(0)
-                    playVideoIfNeeded(item)
                 } else askForPlayer { i-> PlaybackStarter(item).start(i) }
             }
             ButtonTypes.PLAY_ONE -> {
                 if (fileNotExist()) return
                 if (activeTheatresCount.value == 1) {
                     PlaybackStarter(item).start(0)
-                    playVideoIfNeeded(item)
                     actQueueFlow.value = tmpQueue()
                 } else askForPlayer { i->
                     PlaybackStarter(item).start(i)
@@ -189,7 +180,6 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 if (fileNotExist()) return
                 if (activeTheatresCount.value == 1) {
                     PlaybackStarter(item).setToRepeat(true).start(0)
-                    playVideoIfNeeded(item)
                     actQueueFlow.value = tmpQueue()
                 } else askForPlayer { i->
                     PlaybackStarter(item).setToRepeat(true).start(i)
@@ -213,7 +203,6 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 askToStream {
                     if (activeTheatresCount.value == 1) {
                         PlaybackStarter(item).shouldStreamThisTime(true).start(0)
-                        playVideoIfNeeded(item)
                     } else askForPlayer { i-> PlaybackStarter(item).shouldStreamThisTime(true).start(i) }
                 }
             }
@@ -222,7 +211,6 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 askToStream {
                     if (activeTheatresCount.value == 1) {
                         PlaybackStarter(item).shouldStreamThisTime(true).setToRepeat(true).start(0)
-                        playVideoIfNeeded(item)
                         actQueueFlow.value = tmpQueue()
                     } else askForPlayer { i->
                         PlaybackStarter(item).shouldStreamThisTime(true).setToRepeat(true).start(i)
@@ -233,7 +221,6 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             ButtonTypes.STREAM_ONE -> {
                 if (activeTheatresCount.value == 1) {
                     PlaybackStarter(item).shouldStreamThisTime(true).start(0)
-                    playVideoIfNeeded(item)
                     actQueueFlow.value = tmpQueue()
                 } else askForPlayer { i->
                     PlaybackStarter(item).shouldStreamThisTime(true).start(i)
@@ -343,7 +330,6 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                         if (item.playState < EpisodeState.PROGRESS.code || item.playState == EpisodeState.SKIPPED.code || item.playState == EpisodeState.AGAIN.code) item = upsertBlk(item) { it.setPlayState(EpisodeState.PROGRESS) }
                     }
                 }
-                playVideoIfNeeded(item)
 //                type = ButtonTypes.PAUSE  leave it to playerStat
             }
             else -> {}
@@ -457,18 +443,6 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
         }
     }
     
-    companion object {
-        @OptIn(ExperimentalMaterial3Api::class)
-        fun playVideoIfNeeded(item: Episode) {
-            for (i in 0..1) {
-                if (item.id != theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) continue
-                if (!isAutoController && (item.forceVideo || (item.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && item.mediaType == MediaType.VIDEO))) {
-                    theatres[i].mPlayerFlow.value?.playingVideoFlow?.value = true
-                    psState = PSState.Expanded
-                } else theatres[i].mPlayerFlow.value?.playingVideoFlow?.value = false
-            }
-        }
-    }
 }
 
 val streamActions = listOf(ButtonTypes.STREAM, ButtonTypes.STREAM_REPEAT, ButtonTypes.STREAM_ONE)

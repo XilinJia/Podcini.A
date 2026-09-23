@@ -9,6 +9,7 @@ import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.formatEpochMillisSimple
 import com.fleeksoft.ksoup.Ksoup
 import io.ktor.client.request.HttpRequestBuilder
@@ -18,6 +19,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
+import io.ktor.http.userAgent
 import io.ktor.util.hex
 import io.ktor.util.sha1
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +60,10 @@ class PodcastIndexSearcher : FeedSearcher {
         val formattedUrl = "https://api.podcastindex.org/api/1.0/search/byterm?q=${encodedQuery}"
         val podcasts: MutableList<FeedSearchResult> = mutableListOf()
         try {
-            val response = getKtorClient().get(formattedUrl) { applyPodcastIndexAuth() }
+            val response = getKtorClient().get(formattedUrl) {
+                userAgent(PODCINI_USER_AGENT)
+                applyPodcastIndexAuth()
+            }
             if (response.status.isSuccess()) {
                 val resultString = response.bodyAsText()
                 Logd(TAG) { "search resultString: $resultString" }
@@ -116,7 +121,10 @@ open class ItunesSearcher : FeedSearcher {
         Logd(TAG) { "search formattedUrl: $formattedUrl" }
         val podcasts: MutableList<FeedSearchResult> = mutableListOf()
         try {
-            val response = getKtorClient().get(formattedUrl) { header(HttpHeaders.CacheControl, "max-stale=86400") }
+            val response = getKtorClient().get(formattedUrl) {
+                userAgent(PODCINI_USER_AGENT)
+                header(HttpHeaders.CacheControl, "max-stale=86400")
+            }
             if (response.status.isSuccess()) {
                 val resultString = response.bodyAsText()
 //                Logd(TAG) { "search resultString: $resultString" }
@@ -136,7 +144,10 @@ open class ItunesSearcher : FeedSearcher {
     override suspend fun lookupUrl(url: String): String {
         val lookupUrl = PATTERN_BY_ID.find(url)?.let { match -> "https://itunes.apple.com/lookup?id=${match.groups[1]?.value}" } ?: url
         val resultString = try {
-            val response = getKtorClient().get(lookupUrl) { header(HttpHeaders.CacheControl, "max-stale=86400") }
+            val response = getKtorClient().get(lookupUrl) {
+                userAgent(PODCINI_USER_AGENT)
+                header(HttpHeaders.CacheControl, "max-stale=86400")
+            }
             if (response.status.isSuccess()) response.bodyAsText()
             else throw IOException(response.toString())
         } catch (e: Exception) {
@@ -195,8 +206,9 @@ class ItunesDeepSearcher: ItunesSearcher() {
         }
         return runCatching {
             val html = getKtorClient().get(collectionViewUrl) {
+                userAgent(PODCINI_USER_AGENT)
                 header(HttpHeaders.Accept, "application/json")
-                header(HttpHeaders.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
+//                header(HttpHeaders.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
             }.bodyAsText()
             val directMatch = feedUrlRegex.find(html)?.groupValues?.get(1)
             if (directMatch != null) return@runCatching unescapeUrl(directMatch)
@@ -223,7 +235,7 @@ class CombinedSearcher : FeedSearcher {
             val searchJobs = searchProviders.mapIndexed { index, searchProviderInfo ->
                 val searcher = searchProviderInfo.searcher
                 if (searchProviderInfo.weight > 0.00001f && searcher.javaClass != CombinedSearcher::class.java) {
-                    async(Dispatchers.IO) { try { searchResults[index] = searcher.search(query) } catch (e: Throwable) { Logs(TAG, e) } }
+                    async(Dispatchers.IO) { try { searchResults[index] = searcher.search(query) } catch (e: Exception) { Logs(TAG, e) } }
                 } else null
             }.filterNotNull()
             searchJobs.awaitAll()

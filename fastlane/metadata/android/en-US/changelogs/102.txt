@@ -1,5 +1,0 @@
-* likely fixed external clients possibly not ready when updating feeds
-* in feed Updater, ensure the correct feed id is added in the log for external feeds
-* in Logs screen, ensured again past superseded Shares and Downloads logs are not shown
-* in Info view of FeedDetails screen, removed languages, added parent volume and associated queue
-* when adding comment in an media, a new time stamp is added only if it's more than 30 minutes from the previous time stamp

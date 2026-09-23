@@ -1,6 +1,0 @@
-* in Facets screen, fixed filter and sort, and disabled the buttons in modes not relevant
-* Feed title sorting for episodes is only available in Queues screen
-* added "Feed score" and "Feed score count" sortings for episodes in Queues screen
-* disabled some sorts in FeedDetails and OnlineFeed screens for feed not supporting them
-* in FeedSettings, volumes are sorted by name in parent volume popup
-* in History mode of FeedDetails and Bin mode of Queues, Play/Stream buttons are set to Single

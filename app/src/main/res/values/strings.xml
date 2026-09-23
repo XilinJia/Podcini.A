@@ -327,8 +327,18 @@
 
     <string name="media_type">Media type</string>
     <string name="unknown">Unknown</string>
+
+    <string name="stream_composer">Streams composer</string>
+    <string name="locale">Locale</string>
+    <string name="codec">Codec</string>
+    <string name="bitrate">Bitrate</string>
     <string name="audio">Audio</string>
+    <string name="audio_stream_set_sum">Attributes Locale, Codec, and Bitrate need to be set in that order. The first two can be left alone, Bitrate must be selected before Confirm button appears.</string>
     <string name="video">Video</string>
+    <string name="video_stream_set_sum">Attributes Protocol, Video Codec, and Resolution need to be set in that order. The first two can be left alone, Resolution must be selected before Confirm button appears.</string>
+    <string name="protocol">Protocol</string>
+    <string name="resolution">Resolution</string>
+
     <string name="audio_app">Audio app</string>
     <string name="rating_label">Rating</string>
     <string name="unrated">Unrated</string>

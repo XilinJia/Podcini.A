@@ -94,6 +94,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
@@ -378,7 +379,10 @@ fun LogsScreen() {
         val sessionLogs by sessionLogsFlow.collectAsStateWithLifecycle()
         val logs = remember(sessionLogs, vm.showSuccessLogs) { sessionLogs.reversed().filter { vm.showSuccessLogs == !it.contains("Error", ignoreCase = true) } }
         LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(logs) { log -> Text(log, color = if (log.contains("Error", ignoreCase = true)) Color.Red else textColor) }
+            items(logs) { log -> Text(log, color = if (log.contains("Error", ignoreCase = true)) Color.Red else textColor, modifier = Modifier.clickable {
+                ContextCompat.getSystemService(context, ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Podcini", log))
+                Logt(TAG, "log copied to clipboard")
+            }) }
         }
     }
 

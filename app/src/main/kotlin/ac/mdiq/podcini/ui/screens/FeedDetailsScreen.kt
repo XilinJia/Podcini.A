@@ -264,8 +264,8 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     val feed by vm.feedFlow.collectAsStateWithLifecycle()
     val screenMode by vm.screenModeFlow.collectAsStateWithLifecycle()
 
-    Logd(TAG) { "FeedDetailsScreen guid: ${feed?.identifier} medium: ${feed?.medium} aiContent: ${feed?.aiContent} images: ${feed?.images?.size}" }
-    feed?.images?.forEach { Logd(TAG) { "FeedDetailsScreen image: ${it.type} ${it.purpose} ${it.aspectRatio} ${it.width} ${it.height} ${it.href}" } }
+//    Logd(TAG) { "FeedDetailsScreen guid: ${feed?.identifier} medium: ${feed?.medium} aiContent: ${feed?.aiContent} images: ${feed?.images?.size}" }
+//    feed?.images?.forEach { Logd(TAG) { "FeedDetailsScreen image: ${it.type} ${it.purpose} ${it.aspectRatio} ${it.width} ${it.height} ${it.href}" } }
     val deletionLogs = remember { mutableStateSetOf<SubscriptionLog>() }
     LaunchedEffect(feed?.id) {
         deletionLogs.clear()

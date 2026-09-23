@@ -13,6 +13,7 @@ import ac.mdiq.podcini.ui.compose.filterChipBorder
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.timeIt
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -86,6 +87,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
+import io.ktor.http.userAgent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
@@ -156,7 +158,9 @@ class DiscoveryVM: ViewModel() {
                 Logd(TAG) { "loadToplist reqStr: $reqStr" }
 
                 val feedString = try {
-                    val response = getKtorClient().get(reqStr) { header(HttpHeaders.CacheControl, "max-stale=86400") }
+                    val response = getKtorClient().get(reqStr) {
+                        userAgent(PODCINI_USER_AGENT)
+                        header(HttpHeaders.CacheControl, "max-stale=86400") }
                     when {
                         response.status.isSuccess() -> response.bodyAsText()
                         response.status == HttpStatusCode.BadRequest -> throw IOException("iTunes does not have data for the selected country.")

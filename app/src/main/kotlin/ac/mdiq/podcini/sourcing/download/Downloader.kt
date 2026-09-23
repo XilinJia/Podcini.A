@@ -16,6 +16,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.startTiming
 import ac.mdiq.podcini.utils.timeIt
 import io.ktor.client.network.sockets.SocketTimeoutException
@@ -31,6 +32,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
 import io.ktor.http.isSuccess
+import io.ktor.http.userAgent
 import io.ktor.util.network.UnresolvedAddressException
 import io.ktor.utils.io.asSource
 import io.ktor.utils.io.readAvailable
@@ -142,6 +144,7 @@ class FeedDownloader(request: DownloadRequest): Downloader(request) {
         try {
             val uri = getURIFromRequestUrl(request.source)
             getKtorClient().prepareGet(uri.toString()) {
+                userAgent(PODCINI_USER_AGENT)
                 attributes.put(CredentialsKey, request)
                 header(HttpHeaders.CacheControl, "no-store")
                 if (uri.scheme == "http") header("Upgrade-Insecure-Requests", "1")
@@ -310,6 +313,7 @@ class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
                 }
 
                 getKtorClient().prepareGet(uri.toString()) {
+                    userAgent(PODCINI_USER_AGENT)
                     timeout {
                         requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
                         socketTimeoutMillis = 30_000

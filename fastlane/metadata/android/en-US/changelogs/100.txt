@@ -1,4 +1,0 @@
-* fixed filter again in Facets screen,
-* when manually setting episodes to Skipped, Passed, Ignroed, they are auto removed from queues
-* in MediaPlayer, when checking duplicates, not set curEpisode to Ignored when duplicates were set to ignored
-* integrated simplified Chinese translation

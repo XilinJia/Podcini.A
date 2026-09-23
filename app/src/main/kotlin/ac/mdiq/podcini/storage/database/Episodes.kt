@@ -240,9 +240,9 @@ fun canCheckMediaSize(episode: Episode): Boolean {
     return false
 }
 
-fun checkAndMarkDuplicates(episode: Episode): Episode {
+suspend fun checkAndMarkDuplicates(episode: Episode): Episode {
     var updated = false
-    realm.writeBlocking {
+    realm.write {
         val candidates = query(Episode::class, "title == $0 OR downloadUrl == $1", episode.title, episode.downloadUrl).find()
         if (candidates.size > 1) {
             Logt(TAG, "Found ${candidates.size - 1} duplicate episodes, setting to Ignored")
@@ -251,28 +251,13 @@ fun checkAndMarkDuplicates(episode: Episode): Episode {
                 if (e.id == episode.id) continue
                 if (e.duration > 0L && episode.duration > 0L && abs(e.duration - episode.duration) < 0.05 * (e.duration + episode.duration)) duplicates.add(e)
             }
-//            val ignoredDups = duplicates.filter { it.playState == EpisodeState.IGNORED.code }
-            val comment = "duplicate"
             for (e in duplicates) {
                 if (e.playState <= EpisodeState.AGAIN.code) {
                     e.setPlayState(EpisodeState.IGNORED)
-                    e.addComment(comment)
+                    e.addComment("duplicate")
                 }
             }
-//            if (ignoredDups.isNotEmpty()) {
-//                val m = findLatest(episode)?.let {
-//                    it.setPlayState(EpisodeState.IGNORED)
-//                    it.addComment(comment)
-//                    it
-//                }
-//                m?.let { updated = true }
-////                LogtFor(TAG, e.id,"Duplicate item was previously set to ${fromCode(e.playState).name} ${e.downloadUrl}")
-//            }
-            for (e in candidates) {
-                for (e1 in candidates) {
-                    if (e.id != e1.id) e.related.add(e1)
-                }
-            }
+            for (e in candidates) for (e1 in candidates) if (e.id != e1.id) e.related.add(e1)
             updated = true
         }
     }

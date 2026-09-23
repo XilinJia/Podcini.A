@@ -6,6 +6,7 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
 import ac.mdiq.podcini.playback.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
+import ac.mdiq.podcini.playback.PlaybackService.Companion.serviceIOScope
 import ac.mdiq.podcini.shared.AudioSpec
 import ac.mdiq.podcini.shared.VideoSpec
 import ac.mdiq.podcini.shared.nowInMillis
@@ -81,7 +82,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-abstract class MediaPlayerBase {
+abstract class BasePlayer {
     val context = getAppContext()
 
     var playerId: Int = -1
@@ -297,7 +298,7 @@ abstract class MediaPlayerBase {
             }
             isError -> {
                 saveCurState()
-                pause(reinit = false)
+                pause(reprepare = false)
             }
             else -> {}
         }
@@ -410,7 +411,7 @@ abstract class MediaPlayerBase {
     open fun createNativePlayer() {}
 
     @Throws(IllegalArgumentException::class, IllegalStateException::class)
-    protected abstract fun prepareDataSource(sameMedia: Boolean = false, audioOnly: Boolean = false)
+    protected abstract fun prepareDataSource(audioOnly: Boolean = false)
 
     protected abstract fun prepareDataSource(mediaUrl: String, user: String?, password: String?)
 
@@ -476,7 +477,7 @@ abstract class MediaPlayerBase {
                 when {
                     streaming -> {
                         Logd(TAG) { "prepareMedia streamurl: ${curMediaFlow.value?.downloadUrl}" }
-                        if (!curMediaFlow.value?.downloadUrl.isNullOrBlank()) prepareDataSource(sameMedia, audioOnly = audioOnly)
+                        if (!curMediaFlow.value?.downloadUrl.isNullOrBlank()) prepareDataSource(audioOnly = audioOnly)
                         else throw IOException("episode downloadUrl is null or empty ${curMediaFlow.value?.title}")
                     }
                     else -> {
@@ -507,7 +508,7 @@ abstract class MediaPlayerBase {
     fun playPause() {
         Logd(TAG) { "playPause statusFlow: $status" }
         when {
-            isPlaying -> pause(reinit = false)
+            isPlaying -> pause(reprepare = false)
             isPaused || isPrepared -> play()
             isInitialized -> {
                 isStartWhenPrepared = true
@@ -521,7 +522,7 @@ abstract class MediaPlayerBase {
         Logd(TAG) { "play(): statusFlow: $status playbackState: ${castPlayer?.playbackState}" }
         if (isPaused || isPrepared) {
             Logd(TAG) { "play() Resuming/Starting playback" }
-            if (shouldSetSource()) setSource()
+            if (shouldSetSource()) setSourceToPlayer()
             val volAdpFac = if (curMediaFlow.value != null) curMediaFlow.value!!.feed?.volumeAdaptionSetting?.adaptionFactor ?: 1f else 1f
             setVolume(1.0f, 1.0f, volAdpFac)
             Logd(TAG) { "play(): position: ${curMediaFlow.value?.position}" }
@@ -532,12 +533,12 @@ abstract class MediaPlayerBase {
         } else Logd(TAG) { "Call to play() was ignored because current state of PSMP object is $status" }
     }
 
-    fun pause(reinit: Boolean) {
+    fun pause(reprepare: Boolean) {
         if (isPlaying || isError) {
-            Logd(TAG) { "Pausing playback $reinit" }
+            Logd(TAG) { "Pausing playback $reprepare" }
             castPlayer?.pause()
             handlePlayerStatus(PlayerStatus.PAUSED, curMediaFlow.value)
-            if (isStreaming && reinit) reinit()
+            if (isStreaming && reprepare) reprepareMedia()
             cancelPositionSaver()
             isSpeedForward = false
             isFallbackSpeed = false
@@ -545,20 +546,22 @@ abstract class MediaPlayerBase {
         } else Logd(TAG) { "Ignoring call to pause: Player is in $status state" }
     }
 
-    internal abstract fun setSource()
+    abstract suspend fun clearFromCache(key: String?)
+
+    internal abstract fun setSourceToPlayer()
 
     internal fun prepareInitialized() {
         Logd(TAG) { "prepare Preparing media player: statusFlow: $status isStartWhenPrepared: $isStartWhenPrepared" }
         if (isInitialized) {
             // TODO: test
-            setSource()
+            setSourceToPlayer()
 //            if (mediaType == MediaType.VIDEO) videoSize = Pair(videoWidth, videoHeight)
             handlePlayerStatus(PlayerStatus.PREPARED, curMediaFlow.value)
             if (isStartWhenPrepared) play()
         } else Logt(TAG, "prepare() call ignored with statusFlow: $status")
     }
 
-    fun reinit() {
+    fun reprepareMedia() {
         Logd(TAG) { "reinit() called" }
         when {
             curMediaFlow.value != null -> prepareMedia(playable = curMediaFlow.value!!, streaming = isStreaming, startWhenPrepared = isStartWhenPrepared, prepareImmediately = false, forceReset = true, doPostPlayback = true)
@@ -607,29 +610,34 @@ abstract class MediaPlayerBase {
 
     internal abstract fun notifyWidget()
 
-    private fun getNextInQueue(): Episode? {
-        Logd(TAG) { "getNextInQueue called curMediaFlow.value: ${curMediaFlow.value?.getEpisodeTitle()}" }
+    private fun getNextMedia(onResult: (Episode?)->Unit) {
+        Logd(TAG) { "getNextMedia called curMediaFlow.value: ${curMediaFlow.value?.getEpisodeTitle()}" }
         if (!actQueueFlow.value.playInSequence) {
-            Logd(TAG) { "getNextInQueue(), but follow queue is not enabled." }
+            Logd(TAG) { "getNextMedia(), but follow queue is not enabled." }
             saveCurState()
-            return null
+            onResult(null)
+            return
         }
         val qes = actQueueFlow.value.entries
         if (qes.isEmpty()) {
-            Logd(TAG) { "getNextInQueue queue is empty" }
+            Logd(TAG) { "getNextMedia queue is empty" }
             saveCurState()
-            return null
+            onResult(null)
+            return
         }
         var curIndex = qes.indexOfFirst { isCurMedia(it.episodeId) }
         if (curIndex < 0 && curIndexInActQueue >= 0) {
             curIndex = curIndexInActQueue
             curIndexInActQueue = -1
         }
-        Logd(TAG) { "getNextInQueue curIndexInQueue: $curIndex ${qes.size}" }
+        Logd(TAG) { "getNextMedia curIndexInQueue: $curIndex ${qes.size}" }
         val nextQE = if (curIndex >= 0 && curIndex < qes.size) {
             when {
                 !isCurMedia(qes[curIndex].episodeId) -> qes[curIndex]
-                qes.size == 1 -> return null
+                qes.size == 1 -> {
+                    onResult(null)
+                    return
+                }
                 else -> {
                     var j = if (curIndex < qes.size - 1) curIndex + 1 else 0
                     val start = j
@@ -641,72 +649,72 @@ abstract class MediaPlayerBase {
                 }
             }
         } else qes[0]
-        if (isCurMedia(nextQE.episodeId)) return null
-        var nextItem = episodeById(nextQE.episodeId) ?: return null
-        Logd(TAG) { "getNextInQueue nextItem ${nextItem.title}" }
-        nextItem = checkAndMarkDuplicates(nextItem)
-        return nextItem
+        if (isCurMedia(nextQE.episodeId)) {
+            onResult(null)
+            return
+        }
+
+        serviceIOScope.launch {
+            var nextItem = episodeById(nextQE.episodeId)
+            Logd(TAG) { "getNextMedia nextItem ${nextItem?.title}" }
+            if (nextItem != null) nextItem = checkAndMarkDuplicates(nextItem)
+            withContext(Dispatchers.Main) { onResult(nextItem) }
+        }
+    }
+
+    private fun stopPlayer() {
+        Logd(TAG) { "endPlayback stopPlayer is called" }
+        curSpeed = SPEED_USE_GLOBAL
+        cancelPositionSaver()
+        setAsCurMedia(null)
+        castPlayer?.stop()
+    }
+
+    fun startNext() {
+        val wasPlayng = isPlaying
+        if (!isCasting) pause(false)
+        getNextMedia { nextMedia->
+            if (nextMedia == null) {
+                stopPlayer()
+                return@getNextMedia
+            }
+            Logd(TAG) { "endPlayback has nextMedia. statusFlow: $status ${nextMedia.title}" }
+            //                    if (wasSkipped) handlePlayerStatus(PlayerStatus.INDETERMINATE, null)
+            curSpeed = SPEED_USE_GLOBAL
+            Logd(TAG) { "endPlayback useRingTone: ${appPrefsFlow!!.value.useRingTone} ringToneUriString: ${appPrefsFlow!!.value.ringToneUriString}" }
+            if (appPrefsFlow!!.value.useRingTone && !appPrefsFlow!!.value.ringToneUriString.isNullOrBlank() && (nextMedia.feed?.audioType != AudioType.MUSIC.code || !appPrefsFlow!!.value.disableRingToneOnMusic)) playChime()
+
+            val needStreaming = (nextMedia.feed?.isLocal != true && nextMedia.fileUrl.isNullOrBlank())
+            if (needStreaming && !isStreamingCapable(nextMedia)) return@getNextMedia
+
+            prepareMedia(playable = nextMedia, streaming = needStreaming, startWhenPrepared = wasPlayng, prepareImmediately = wasPlayng, doPostPlayback = false)
+            if (widgetId.isNotEmpty()) notifyWidget()
+        }
     }
 
     internal fun endPlayback(hasEnded: Boolean, wasSkipped: Boolean, shouldContinue: Boolean = true) {
         showStackTrace()
-        if (curMediaFlow.value == null) {
-            Logd(TAG) { "endPlayback curMediaFlow.value is null, return" }
-            return
-        }
+        Logd(TAG) { "endPlayback ${curMediaFlow.value?.title}" }
+        cancelPositionSaver()
+        var currentMedia = curMediaFlow.value ?: return
         // we're relying on the position stored in the EpisodeMedia object for post-playback processing
         val position = getPosition()
-        if (position >= 0) upsertBlk(curMediaFlow.value!!) { it.position = position }
-        Logd(TAG) { "endPlayback hasEnded=$hasEnded wasSkipped=$wasSkipped shouldContinue=$shouldContinue ${curMediaFlow.value?.title}" }
+        if (position >= 0) currentMedia = upsertBlk(currentMedia) { it.position = position }
+        Logd(TAG) { "endPlayback hasEnded=$hasEnded wasSkipped=$wasSkipped shouldContinue=$shouldContinue" }
 
-        fun stopPlayer() {
-            Logd(TAG) { "endPlayback stopPlayer is called" }
-            curSpeed = SPEED_USE_GLOBAL
-            cancelPositionSaver()
-            setAsCurMedia(null)
-            castPlayer?.stop()
-        }
-
-        val currentMedia = curMediaFlow.value
         when {
             shouldContinue -> {
-                // Load next episode if previous episode was in the queue and if there is an episode in the queue left.
-                // Start playback immediately if continuous playback is enabled
-                val nextMedia = getNextInQueue()
-                if (nextMedia == null) {
-                    currentMedia?.let { onPostPlayback(it, hasEnded, wasSkipped, false) }
-                    stopPlayer()
-                } else {
-                    Logd(TAG) { "endPlayback has nextMedia. statusFlow: $status ${nextMedia.title}" }
-                    val wasPlayng = isPlaying
-                    if (!isCasting) pause(false)
-//                    if (wasSkipped) handlePlayerStatus(PlayerStatus.INDETERMINATE, null)
-                    curSpeed = SPEED_USE_GLOBAL
-                    cancelPositionSaver()
-                    Logd(TAG) { "endPlayback useRingTone: ${appPrefsFlow!!.value.useRingTone} ringToneUriString: ${appPrefsFlow!!.value.ringToneUriString}" }
-                    if (appPrefsFlow!!.value.useRingTone && !appPrefsFlow!!.value.ringToneUriString.isNullOrBlank() && (nextMedia.feed?.audioType != AudioType.MUSIC.code || !appPrefsFlow!!.value.disableRingToneOnMusic)) playChime()
-
-                    val needStreaming = (nextMedia.feed?.isLocal != true && nextMedia.fileUrl.isNullOrBlank())
-                    if (needStreaming) {
-                        if (!isStreamingCapable(nextMedia)) {
-                            currentMedia?.let { onPostPlayback(it, hasEnded, wasSkipped, false) }
-                            return
-                        }
-                    }
-                    prepareMedia(playable = nextMedia, streaming = needStreaming, startWhenPrepared = wasPlayng, prepareImmediately = wasPlayng)
-                    if (widgetId.isNotEmpty()) notifyWidget()
-                }
+                onPostPlayback(currentMedia, hasEnded, wasSkipped, false)
+                startNext()
             }
-
             isPlaying -> {
                 // TODO: likely not reached?
                 Logd(TAG) { "endPlayback isPlaying" }
-                onPlaybackPause(currentMedia, currentMedia?.position ?: 0)
+                onPlaybackPause(currentMedia, currentMedia.position)
             }
-
             else -> {
                 Logd(TAG) { "endPlayback else" }
-                currentMedia?.let { onPostPlayback(it, hasEnded, wasSkipped, false) }
+                onPostPlayback(currentMedia, hasEnded, wasSkipped, false)
                 stopPlayer()
             }
         }
@@ -867,15 +875,15 @@ abstract class MediaPlayerBase {
     internal fun chooseAudioSpec(audioSpecs: List<AudioSpec>, media: Episode): AudioSpec? {
         val asl = mutableListOf<AudioSpec>()
 //        Logd(TAG) { "useLocale: $useLocale useCodex: $useCodex useABPS: $useABPS audioIndex: $audioIndex" }
-        Logd(TAG) { "setAudioSpec media.feed?.preferredLnaguages: [${media.feed?.preferredLnaguages?.joinToString()}]" }
-        Logd(TAG) { "setAudioSpec appAttribs.langsPreferred: [${appAttribsFlow!!.value.langsPreferred.joinToString()}]" }
+        Logd(TAG) { "chooseAudioSpec media.feed?.preferredLnaguages: [${media.feed?.preferredLnaguages?.joinToString()}]" }
+        Logd(TAG) { "chooseAudioSpec appAttribs.langsPreferred: [${appAttribsFlow!!.value.langsPreferred.joinToString()}]" }
         useLocales = media.feed?.preferredLnaguages?.ifEmpty { appAttribsFlow!!.value.langsPreferred }?.ifEmpty { setOf("en-US", "en-GB", "en") } ?: setOf("en-US", "en-GB", "en")
-        Logd(TAG) { "setAudioSpec useLocales: ${useLocales.joinToString()}" }
+        Logd(TAG) { "chooseAudioSpec useLocales: ${useLocales.joinToString()}" }
         curLocales.clear()
         for (s in audioSpecs) {
-            Logd(TAG) { "setAudioSpec s.audioLocale [${s.audioLocale}] ${s.codec} ${s.averageBitrate}" }
+            Logd(TAG) { "chooseAudioSpec s.audioLocale [${s.audioLocale}] ${s.codec} ${s.averageBitrate}" }
             curLocales.add(s.audioLocale ?: "")
-            if ((useCodex == "Any" || s.codec == useCodex) && (useABPS == 0 || s.averageBitrate == useABPS)) {
+            if ((useLocale == null || useLocale == s.audioLocale) && (useCodex == "Any" || s.codec == useCodex) && (useABPS == 0 || s.averageBitrate == useABPS)) {
                 when {
                     s.audioLocale == null -> asl.add(s)
                     useLocale != null -> if (s.audioLocale == useLocale) asl.add(s)
@@ -883,16 +891,16 @@ abstract class MediaPlayerBase {
                 }
             }
         }
-        Logd(TAG) { "setAudioSpec langset: [${curLocales.joinToString()}]" }
+        Logd(TAG) { "chooseAudioSpec langset: [${curLocales.joinToString()}]" }
         if (curLocales.isNotEmpty()) {
             runOnIOScope {
                 if (media.feed != null && !media.feed!!.langSet.containsAll(curLocales)) upsert(media.feed!!) { it.langSet.addAll(curLocales) }
                 if (!appAttribsFlow!!.value.langSet.containsAll(curLocales)) upsertBlk(appAttribsFlow!!.value) { it.langSet.addAll(curLocales) }
             }
         }
-        Logd(TAG) { "setAudioSpec asl: ${asl.size}" }
+        Logd(TAG) { "chooseAudioSpec asl: ${asl.size}" }
         if (asl.isEmpty()) {
-            Loge(TAG, "setAudioSpec: eligible audio stream list is empty.\nAvailable languages: ${curLocales.joinToString()}.\nYou prefer: ${useLocales.joinToString()}")
+            Loge(TAG, "chooseAudioSpec: eligible audio stream list is empty.\nAvailable languages: ${curLocales.joinToString()}.\nYou prefer: ${useLocales.joinToString()}")
             bitrateFlow.value = 0
             resolutionFlow.value = ""
             return null
@@ -903,7 +911,7 @@ abstract class MediaPlayerBase {
             if (audioSpec != null) {
                 bitrateFlow.value = audioSpec.bitrate
                 return audioSpec
-            } else Logt(TAG, "setAudioSpec Requested audio doesn't exist ($useLocale, $useCodex, $useABPS), getting one based on settings.")
+            } else Logt(TAG, "chooseAudioSpec Requested audio doesn't exist ($useLocale, $useCodex, $useABPS), getting one based on settings.")
         }
 
         val prefLowQualityMedia: Boolean = appPrefsFlow!!.value.lowQualityOnMobile
@@ -925,12 +933,12 @@ abstract class MediaPlayerBase {
                 }
             }
 
-        for (a in asl) Logd(TAG) { "setAudioSpec asl: bitrateFlow.value: ${a.bitrate} averageBitrate: ${a.averageBitrate} delivery: ${a.deliveryMethod}  codec: ${a.codec} audioLocale: ${a.audioLocale.toString()} id: ${a.audioTrackId} name: ${a.audioTrackName} format: ${a.format} ${a.url}" }
+        for (a in asl) Logd(TAG) { "chooseAudioSpec asl: bitrateFlow.value: ${a.bitrate} averageBitrate: ${a.averageBitrate} delivery: ${a.deliveryMethod}  codec: ${a.codec} audioLocale: ${a.audioLocale.toString()} id: ${a.audioTrackId} name: ${a.audioTrackName} format: ${a.format} ${a.url}" }
 
         val audioSpec = if (audioIndex >= 0 && audioIndex < asl.size) asl[audioIndex] else null
         bitrateFlow.value = audioSpec?.bitrate ?: 0
-        Logd(TAG) { "setAudioSpec use audio quality: ${audioSpec?.bitrate} forceVideo: ${media.forceVideo}" }
-        Logd(TAG) { "setAudioSpec: ${audioSpec?.url}" }
+        Logd(TAG) { "chooseAudioSpec use audio quality: ${audioSpec?.bitrate} forceVideo: ${media.forceVideo}" }
+        Logd(TAG) { "chooseAudioSpec: ${audioSpec?.url}" }
         return audioSpec
     }
 
@@ -989,7 +997,7 @@ abstract class MediaPlayerBase {
         when {
             event.isOver -> {
                 Logd(TAG) { "sleep timer is over" }
-                pause(reinit = false)
+                pause(reprepare = false)
                 setVolume(1.0f, 1.0f)
             }
             event.getTimeLeft() < SleepManager.SLEEP_TIMER_ENDING_THRESHOLD -> {
@@ -1006,8 +1014,7 @@ abstract class MediaPlayerBase {
         if (event.action == FlowEvent.EpisodeMediaEvent.Action.REMOVED) {
             for (e in event.episodes) {
                 if (e.id == curMediaFlow.value?.id) {
-                    setAsCurMedia(e)  // TODO: seems having no effect
-                    endPlayback(hasEnded = false, wasSkipped = true)
+                    startNext()
                     break
                 }
             }
@@ -1015,7 +1022,7 @@ abstract class MediaPlayerBase {
     }
 
     companion object {
-        private val TAG: String = MediaPlayerBase::class.simpleName ?: "Anonymous"
+        private val TAG: String = BasePlayer::class.simpleName ?: "Anonymous"
 
         private const val MIN_POSITION_SAVER_INTERVAL: Int = 5000   // in millisoconds
 

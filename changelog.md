@@ -1,3 +1,15 @@
+# 12.13.0
+
+* in MediaPlayer, 10 most recent media specs from external apps are cached in memory, auto removed when expired
+* improved Stream composer in PlayerDetailed
+* ensure to properly clear media cache
+* db related task in getNextMedia is moved to IO dispatcher
+* tweaked user agent string, and set headers in http/cronet engines for media3
+* in Session view of Log screen, click on a log copies it to clipboard
+* PodciniLib upped to 1.1.5, external apps (if used) need to be updated for compatibility
+* NDK upped to 30.0.16248370
+* soem code refactoring
+
 # 12.12.1
 
 * fixed UI hiccup when start playing a new media

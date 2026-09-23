@@ -56,6 +56,8 @@ import kotlinx.serialization.Serializable
 import ac.mdiq.podcini.storage.utils.parseSrt
 import ac.mdiq.podcini.storage.utils.parseTTMLCaptions
 import ac.mdiq.podcini.storage.utils.parseWebVtt
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
+import io.ktor.http.userAgent
 import kotlin.math.max
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -442,7 +444,10 @@ class Episode : RealmObject {
                     val url = downloadUrl
                     if (url.isNullOrEmpty()) return@withContext -1
                     try {
-                        val response = getKtorClient().head(url) { header(HttpHeaders.AcceptEncoding, "identity") }
+                        val response = getKtorClient().head(url) {
+                            userAgent(PODCINI_USER_AGENT)
+                            header(HttpHeaders.AcceptEncoding, "identity")
+                        }
                         if (response.status.isSuccess()) size_ = response.headers[HttpHeaders.ContentLength]?.toLongOrNull() ?: -1L
                     } catch (e: CancellationException) {
                         Logd(TAG) { "fetchMediaSize canceled" }
@@ -487,7 +492,10 @@ class Episode : RealmObject {
         if (trans.url.isNullOrBlank()) return
         Logd(TAG) { "fetchCaption url: ${trans.url}" }
         val text = try {
-            getKtorClient().get(trans.url!!) { expectSuccess = true }.bodyAsText()
+            getKtorClient().get(trans.url!!) {
+                userAgent(PODCINI_USER_AGENT)
+                expectSuccess = true
+            }.bodyAsText()
         } catch (e: Exception) {
             Loge(TAG, e, "Failed to fetch transcript: ${trans.url}")
             null

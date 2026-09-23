@@ -22,6 +22,7 @@ import io.ktor.http.URLProtocol
 import io.ktor.http.Url
 import io.ktor.http.isSuccess
 import io.ktor.http.toURI
+import io.ktor.http.userAgent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,8 @@ import kotlinx.coroutines.withContext
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.net.URI
+
+const val PODCINI_USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
 
 @Suppress("EnumEntryName")
 enum class MobileUpdateOptions(val res: Int) {
@@ -129,7 +132,7 @@ object NetworkUtils {
             Loge(TAG, "fetchHtmlSource urlString invalid: $urlString")
             return@withContext ""
         }
-        PodciniHttpClient.getKtorClient().get(url).bodyAsText()
+        getKtorClient().get(url) { userAgent(PODCINI_USER_AGENT) }.bodyAsText()
     }
 
     fun getURIFromRequestUrl(source: String): URI {
@@ -147,7 +150,7 @@ object NetworkUtils {
 
     fun getFinalRedirectedUrl(url: String): String {
         return try {
-            val response = runBlocking { PodciniHttpClient.getKtorClient().get(url) }
+            val response = runBlocking { PodciniHttpClient.getKtorClient().get(url) { userAgent(PODCINI_USER_AGENT) } }
             if (response.status.isSuccess()) response.call.request.url.toString() else url
         } catch (e: Exception) { url }
     }

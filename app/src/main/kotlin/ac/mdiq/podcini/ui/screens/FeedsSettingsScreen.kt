@@ -131,9 +131,11 @@ import io.github.xilinjia.krdb.ext.query
 import io.github.xilinjia.krdb.ext.toRealmList
 import io.github.xilinjia.krdb.notifications.SingleQueryChange
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "FeedSettingsScreen"
 
@@ -479,8 +481,8 @@ fun FeedsSettingsScreen() {
                                         val episode0 = player0?.curMediaFlow?.value
                                         if (episode0?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) {
                                             player0?.pause(false)
-                                            getCache().removeResource(episode0!!.id.toString())
-                                            player0.startPlaying(episode0)
+                                            player0?.clearFromCache(episode0!!.id.toString())
+                                            player0?.startPlaying(episode0)
                                         }
                                     }
                                     showIcon =  false

@@ -25,7 +25,6 @@ import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.tmpQueue
 import ac.mdiq.podcini.storage.specs.AVQuality
 import ac.mdiq.podcini.storage.utils.durationStringFull
-import ac.mdiq.podcini.ui.actions.ActionButton.Companion.playVideoIfNeeded
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
@@ -545,7 +544,6 @@ fun PlayRandom(episodes: List<Episode>, playNext: Boolean = false) {
     if (episodes.isNotEmpty()) Icon(imageVector = ImageVector.vectorResource(R.drawable.random_svgrepo_com), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "random", modifier = Modifier.clickable {
         val item = episodes.random()
         PlaybackStarter(item).shouldStreamThisTime(null).start(0)
-        playVideoIfNeeded(item)
         if (!playNext) actQueueFlow.value = tmpQueue()
     })
 }

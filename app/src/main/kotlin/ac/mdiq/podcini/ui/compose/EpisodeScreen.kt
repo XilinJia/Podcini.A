@@ -193,6 +193,8 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
     var showTransDialog by remember { mutableStateOf(false) }
     var showTransMetaDialog by remember { mutableStateOf(false) }
 
+    val client = remember(episode.id) { clientByEpisode(episode) }
+
     val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
 
     val timers = remember(episode.id, appAttribs ) { appAttribs.timetable.filter { it.episodeId == episode.id } }
@@ -224,7 +226,6 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
 
         if (showTransDialog) TranscriptDialog(episode, player, cueIndex) { showTransDialog = false }
         if (showTransMetaDialog) CommonPopupCard(onDismiss = { showTransMetaDialog = false }) {
-            val client = remember(episode.id) { clientByEpisode(episode) }
             if (client == null) {
                 Logt(TAG, "can not find service app for episode")
                 return@CommonPopupCard
@@ -277,7 +278,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                         IconButton(onClick = { showTransDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_description_24), contentDescription = "transcript") }
                         Spacer(Modifier.weight(1f))
                     }
-                    if (episode.transcriptMetas.isEmpty() && isExtFeed(episode.feed)) {
+                    if (episode.transcriptMetas.isEmpty() && client?.attributes?.hasTranscripts == true) {
                         IconButton(onClick = { showTransMetaDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_closed_caption_add_24), contentDescription = "fetch transcript") }
                         Spacer(Modifier.weight(1f))
                     }

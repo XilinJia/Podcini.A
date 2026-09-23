@@ -6,9 +6,10 @@ import ac.mdiq.podcini.playback.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.playback.cast.CastMediaPlayer.buildCastPlayer
 import ac.mdiq.podcini.receiver.PodciniWidget
+import ac.mdiq.podcini.shared.AudioSpec
 import ac.mdiq.podcini.shared.PodciniHttpClient.proxyConfig
 import ac.mdiq.podcini.shared.ProxyConfig
-import ac.mdiq.podcini.shared.USER_AGENT
+import ac.mdiq.podcini.shared.VideoSpec
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
@@ -36,6 +37,7 @@ import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.LogsFor
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.LogtFor
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.nowInSeconds
 import ac.mdiq.podcini.utils.timeIt
 import android.annotation.SuppressLint
@@ -47,6 +49,7 @@ import android.os.Build
 import android.os.ext.SdkExtensions
 import android.util.Base64
 import android.util.Pair
+import androidx.collection.LruCache
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.appwidget.GlanceAppWidgetManager
@@ -105,12 +108,16 @@ import androidx.media3.exoplayer.trackselection.ExoTrackSelection
 import androidx.media3.exoplayer.upstream.Allocator
 import androidx.media3.exoplayer.upstream.DefaultAllocator
 import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.extractor.mkv.MatroskaExtractor
+import androidx.media3.extractor.mp4.FragmentedMp4Extractor
+import androidx.media3.extractor.mp4.Mp4Extractor
 import androidx.media3.ui.DefaultTrackNameProvider
 import androidx.media3.ui.TrackNameProvider
 import io.github.xilinjia.krdb.ext.toRealmList
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -134,9 +141,10 @@ import java.nio.ByteBuffer
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
+class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
     private var exoPlayer: ExoPlayer? = null
 
     private var curDataSource: SegmentSavingDataSource? = null
@@ -184,19 +192,6 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             for (i in 0 until(exoPlayer?.rendererCount?:0)) if (exoPlayer?.getRendererType(i) == C.TRACK_TYPE_AUDIO) return i
             return -1
         }
-
-    private val cacheMutex = Mutex()
-    private suspend fun initCache() = withContext(Dispatchers.IO) {
-        cacheMutex.withLock {
-            simpleCache?.let { return@withLock }
-            val appContext = getAppContext()
-            val cacheDir = File(appContext.cacheDir, "media_cache")
-            if (!cacheDir.exists()) cacheDir.mkdirs()
-            val databaseProvider = StandaloneDatabaseProvider(appContext)
-            val evictor = LeastRecentlyUsedCacheEvictor(streamingCacheSizeMB * 1024L * 1024L)
-            simpleCache = SimpleCache(cacheDir, evictor, databaseProvider)
-        }
-    }
 
     init {
         this.playerId = playerId
@@ -312,16 +307,17 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                         castPlayer?.clearMediaItems()
                         handlePlayerStatus(PlayerStatus.STOPPED, curMediaFlow.value)
                     }
-                    Loge(TAG, error, "exoplayerListener onPlayerError: error code: ${error.errorCode}")
+                    Logd(TAG) { "exoplayerListener onPlayerError: error code: ${error.errorCode}"}
                     when (error.errorCode) {
                         PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED -> {
-                            curMediaFlow.value?.let { getCache().removeResource(it.id.toString()) }
-                            Logt(TAG, "corrupted cache is cleared, try playing it again")
+                            exoPlayer?.stop()
+                            curMediaFlow.value?.let { runOnIOScope { getCache().removeResource(it.id.toString()) } }
+                            Logt(TAG, "onPlayerError corrupted cache is cleared, try playing it again")
                         }
                         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
                         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
                         PlaybackException.ERROR_CODE_TIMEOUT -> {
-                            LogtFor(TAG, curMediaFlow.value?.id, "player error: ${error.localizedMessage}, retrying...")
+                            LogtFor(TAG, curMediaFlow.value?.id, "onPlayerError: ${error.localizedMessage}, retrying...")
                             val lastPosition = exoPlayer?.currentPosition ?: 0L
                             forcePlaybackReset = true
                             exoPlayer?.prepare()
@@ -329,6 +325,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                             exoPlayer?.play()
                         }
                         PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW -> {
+                            Logt(TAG, "onPlayerError behind live window, retrying...")
                             forcePlaybackReset = true
                             castPlayer?.prepare()
                             castPlayer?.play()
@@ -336,9 +333,9 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                         PlaybackException.ERROR_CODE_IO_UNSPECIFIED -> {
                             val cause = error.cause
 //                            LogtFor(TAG, curMediaFlow.value?.id, "Caught Source Error 2000 (NPE). Attempting a clean recovery...")
-                            LogtFor(TAG, curMediaFlow.value?.id,
+                            LogeFor(TAG, curMediaFlow.value?.id,
                                 """
-                                    IO error:
+                                    onPlayerError IO error:
                                       class=${cause?.javaClass?.name}
                                       message=${cause?.message}
                                       root=${cause?.cause?.javaClass?.name}
@@ -361,35 +358,34 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 //                            }
                         }
                         PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
-                        PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED -> {
-                            handleTerminalError("Device media decoder failed. Try restarting the app.")
-                        }
+                        PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED -> handleTerminalError("onPlayerError Device media decoder failed. Try restart the app.")
                         PlaybackException.ERROR_CODE_DRM_LICENSE_ACQUISITION_FAILED,
-                        PlaybackException.ERROR_CODE_DRM_PROVISIONING_FAILED -> {
-                            handleTerminalError("This content is protected and cannot be played.")
-                        }
+                        PlaybackException.ERROR_CODE_DRM_PROVISIONING_FAILED -> handleTerminalError("onPlayerError This content is protected and cannot be played.")
                         PlaybackException.ERROR_CODE_DECODING_FAILED,
-                        PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED -> {
-                            handleTerminalError("This device cannot play this file format.")
-                        }
+                        PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED -> handleTerminalError("onPlayerError This device cannot play this file format.")
                         PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED-> {
                             forcePlaybackReset = true
-                            Logt(TAG, "Player error: if media is served by an external app, try play again, or try toggling 'Use external apps' in Settings, and play again.")
+                            Logt(TAG, "onPlayerError: if media is served by an external app, try play again, or try toggling 'Use external apps' in Settings, and play again.")
                         }
                         else -> {
-                            // Terminal errors (404, Media Unsupported)
                             val cause = error.cause
-                            LogeFor(TAG, curMediaFlow.value?.id, "Player error: ${error.localizedMessage} ${error.errorCode} ${cause?.message}")
+//                            LogeFor(TAG, curMediaFlow.value?.id, "Player error: ${error.localizedMessage} ${error.errorCode} ${cause?.message}")
                             when {
                                 cause is AudioSink.InitializationException -> {
                                     if (enableFloat) {
-                                        Logt(TAG, "system can not handle float sampling, recreating players with float off")
+                                        Logt(TAG, "onPlayerError system can not handle float sampling, recreating players with float off")
                                         enableFloat = false
                                         playbackService?.switchPlayersMode()
                                     }
                                 }
-                                error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND || (cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 404) -> handleTerminalError("Episode not found on server (404).")
-                                cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 403 -> handleTerminalError("Access denied (403). Check your subscription.")
+                                error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND || (cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 404) -> handleTerminalError("onPlayerError Episode not found on server (404).")
+                                cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 403 -> {
+                                    Loge(TAG, "onPlayerError Access denied (403). Check your subscription. headers=${cause.headerFields} ")
+                                    Logd(TAG) { "onPlayerError Access denied (403) url: ${cause.dataSpec.uri}" }
+//                                    handleTerminalError("Access denied (403). Check your subscription.")
+                                    forcePlaybackReset = true
+                                }
+                                else -> Loge(TAG, "onPlayerError error code: ${error.errorCode} cause: ${cause?.localizedMessage} ${cause?.message}")
                             }
                         }
                     }
@@ -624,10 +620,21 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
 //                val upstreamFactory = DefaultDataSource.Factory(context, baseHttpDataSourceFactory)
 //                val mediaSourceFactory = DefaultMediaSourceFactory(context).setDataSourceFactory(upstreamFactory)
 
-        val extractorsFactory = DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true)
+        val extractorsFactory = DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true).apply {
+            setMp4ExtractorFlags(Mp4Extractor.FLAG_READ_SEF_DATA)
+            setFragmentedMp4ExtractorFlags(FragmentedMp4Extractor.FLAG_ENABLE_EMSG_TRACK)
+            setMatroskaExtractorFlags(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES)
+        }
+        val headers = mapOf("Accept" to "*/*", "Accept-Language" to "en-US,en;q=0.9", "Sec-Fetch-Mode" to "cors", "Sec-Fetch-Dest" to "empty")
         val httpDataSourceFactory =
-            if (httpEngine != null) HttpEngineDataSource.Factory(httpEngine!!, networkExecutor).setConnectionTimeoutMs(8_000).setReadTimeoutMs(8_000)
-            else CronetDataSource.Factory(cronetEngine!!, networkExecutor).setConnectionTimeoutMs(8_000).setReadTimeoutMs(8_000)
+            if (httpEngine != null) HttpEngineDataSource.Factory(httpEngine!!, networkExecutor)
+                .setUserAgent(PODCINI_USER_AGENT)
+                .setDefaultRequestProperties(headers)
+                .setConnectionTimeoutMs(8_000).setReadTimeoutMs(8_000)
+            else CronetDataSource.Factory(cronetEngine!!, networkExecutor)
+                .setUserAgent(PODCINI_USER_AGENT)
+                .setDefaultRequestProperties(headers)
+                .setConnectionTimeoutMs(8_000).setReadTimeoutMs(8_000)
         val upstreamFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
         val cacheDataSourceFactory = CacheDataSource.Factory()
             .setCache(getCache())
@@ -675,14 +682,33 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         exoPlayer?.trackSelectionParameters = exoPlayer!!.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, isCarConnected).build()
     }
 
-    private fun mediaSourceFromClient(needVideo: Boolean, sameMedia: Boolean = false): MediaSource? {
+    private fun specsFromCache(media: Episode) {
+        audioSpecs = audioSpecsCache[media.id] ?: listOf()
+        videoSpecs = videoSpecsCache[media.id] ?: listOf()
+        muxedSpecs = muxedSpecsCache[media.id] ?: listOf()
+        val url = if (audioSpecs.isNotEmpty()) audioSpecs[0].url else if ( muxedSpecs.isNotEmpty()) muxedSpecs[0].url else null
+        if (!url.isNullOrBlank()) {
+            val expireTime = url.toUri().getQueryParameter("expire")?.toLongOrNull()
+            if (expireTime != null && expireTime < nowInSeconds()) clearSpecs(media)
+        }
+    }
+    private fun clearSpecs(media: Episode) {
+        audioSpecsCache.remove(media.id)
+        videoSpecsCache.remove(media.id)
+        muxedSpecsCache.remove(media.id)
+        audioSpecs = listOf()
+        videoSpecs = listOf()
+        videoSpecs = listOf()
+    }
+
+    private fun mediaSourceFromClient(needVideo: Boolean): MediaSource? {
         val media = curMediaFlow.value ?: return null
         if (curClient == null)  return null
 
-        if (media.transcriptMetas.isEmpty()) runOnIOScope {
-            val captions = curClient!!.withProvider { it.getCaptionSpecs(media.toIPC()) }
-            if (!captions.isNullOrEmpty()) {
-                val tm = captions.map { it.toTranscriptMeta() }.toRealmList()
+        if (curClient!!.attributes?.hasTranscripts == true && media.transcriptMetas.isEmpty() && media.captionCues.isEmpty()) runOnIOScope {
+            val specs = curClient!!.withProvider { it.getCaptionSpecs(media.toIPC()) }
+            if (!specs.isNullOrEmpty()) {
+                val tm = specs.map { it.toTranscriptMeta() }.toRealmList()
                 upsert(media) { it.transcriptMetas = tm }
             }
         }
@@ -694,8 +720,9 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         playingMuxedVideo = false
 
         fun setMuxedVideo() {
-            if (!sameMedia || muxedSpecs.isEmpty()) muxedSpecs = curClient?.withProviderBlocking { it.getVideoSpecs(media.toIPC()) } ?: listOf()
+            if (muxedSpecs.isEmpty()) muxedSpecs = curClient?.withProviderBlocking { it.getVideoSpecs(media.toIPC()) } ?: listOf()
             if (muxedSpecs.isNotEmpty()) {
+                muxedSpecsCache.put(media.id, muxedSpecs)
                 curMuxedSpec = chooseVideoSpec(muxedSpecs, media)
                 if (!curMuxedSpec?.url.isNullOrBlank()) {
                     val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(curMuxedSpec!!.url!!.toSafeUri()).build())
@@ -709,22 +736,8 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         }
 
         Logd(TAG) { "mediaSourceFromClient setting for source needVideo: $needVideo media: ${media.title}" }
-        var force = false
-        if (sameMedia) {
-            val url = curAudioSpec?.url ?: curMuxedSpec?.url
-            if (!url.isNullOrBlank()) {
-                val expireTime = url.toUri().getQueryParameter("expire")?.toLongOrNull()
-                force = (expireTime != null && expireTime < nowInSeconds())
-            }
-        }
-        if (!sameMedia || force) {
-            curAudioSpec = null
-            curVideoSpec = null
-            curMuxedSpec = null
-            audioSpecs = listOf()
-            videoSpecs = listOf()
-            muxedSpecs = listOf()
-        }
+
+        specsFromCache(media)
 
         if (isCasting && needVideo) {
             setMuxedVideo()
@@ -736,15 +749,17 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             return mSource
         }
 
-        if (!sameMedia || audioSpecs.isEmpty()) audioSpecs = curClient?.withProviderBlocking { it.getAudioSpecs(media.toIPC()) } ?: listOf()
+        Logd(TAG) { "mediaSourceFromClient audioSpecs ${audioSpecs.size}" }
+        if (audioSpecs.isEmpty()) audioSpecs = curClient?.withProviderBlocking { it.getAudioSpecs(media.toIPC()) } ?: listOf()
         var aSource: ProgressiveMediaSource? = null
         if (audioSpecs.isNotEmpty()) {
-            Logd(TAG) { "mediaSourceFromClient audioSpecs ${audioSpecs.size}" }
+            audioSpecsCache.put(media.id, audioSpecs)
+            Logd(TAG) { "mediaSourceFromClient audioSpecs new ${audioSpecs.size}" }
             chooseAudioSpec(audioSpecs, media)?.let {
                 curAudioSpec = it
                 if (!it.url.isNullOrBlank()) {
                     aSource = ProgressiveMediaSource.Factory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(it.url!!.toSafeUri()).setCustomCacheKey(media.id.toString()).build())
-                    Logd(TAG) { "mediaSourceFromClient aSource set to: ${it.url}" }
+                    Logd(TAG) { "mediaSourceFromClient aSource set to: ${it.audioLocale} ${it.codec} ${it.bitrate} ${it.url}" }
                 } else Loge(TAG, "eligible audioStream or its url is null or blank")
             }
         } else Logt(TAG, "Client provided no audio stream, trying with muxed video stream")
@@ -754,9 +769,11 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
                 setMuxedVideo()
                 return mSource
             }
-            if (!sameMedia || videoSpecs.isEmpty()) videoSpecs = curClient?.withProviderBlocking { it.getVideoOnlySpecs(media.toIPC()) } ?: listOf()
             Logd(TAG) { "mediaSourceFromClient videoSpecs ${videoSpecs.size}" }
+            if (videoSpecs.isEmpty()) videoSpecs = curClient?.withProviderBlocking { it.getVideoOnlySpecs(media.toIPC()) } ?: listOf()
             if (videoSpecs.isNotEmpty()) {
+                Logd(TAG) { "mediaSourceFromClient videoSpecs new ${videoSpecs.size}" }
+                videoSpecsCache.put(media.id, videoSpecs)
                 curVideoSpec = chooseVideoSpec(videoSpecs, media)
                 if (!curVideoSpec?.url.isNullOrBlank()) {
                     val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(curVideoSpec!!.url!!.toSafeUri()).build())
@@ -772,7 +789,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
     }
 
     @Throws(IllegalArgumentException::class, IllegalStateException::class)
-    override fun prepareDataSource(sameMedia: Boolean, audioOnly: Boolean) {
+    override fun prepareDataSource(audioOnly: Boolean) {
         val media = curMediaFlow.value ?: return
         Logd(TAG) { "prepareDataSource called ${media.title}" }
         Logd(TAG) { "prepareDataSource url [${media.downloadUrl}]" }
@@ -791,7 +808,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         bitrateFlow.value = 0
         resolutionFlow.value = ""
         try {
-            mediaSource = mediaSourceFromClient(!isAutoController && !audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY), sameMedia = sameMedia)
+            mediaSource = mediaSourceFromClient(!isAutoController && !audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY))
             if (mediaSource != null) {
                 Logd(TAG) { "prepareDataSource setting with mediaSource" }
                 mediaItem = mediaSource!!.mediaItem
@@ -841,7 +858,7 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         return castPlayer?.playbackState in listOf(STATE_IDLE, STATE_ENDED)
     }
 
-    override fun setSource() {
+    override fun setSourceToPlayer() {
         Logd(TAG) { "setSource() called isCasting: $isCasting" }
         if (mediaSource == null && mediaItem == null) return
         if (needChangeOffload) {
@@ -1016,6 +1033,17 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         Logd(TAG) { "activeTheatres: ${activeTheatresCount.value}" }
         exoPlayer?.setAudioAttributes(b.build(), activeTheatresCount.value <= 1 && handleAudioFocus)
         Logd(TAG) { "AudioAttributes: usage=${b.build().usage} contentType=${b.build().contentType} handleAudioFocus=${activeTheatresCount.value <= 2}" }
+    }
+
+    override suspend fun clearFromCache(key: String?) {
+        exoPlayer?.stop()
+        castPlayer?.stop()
+        withContext(Dispatchers.IO) {
+            delay(1.seconds)
+            val cache = getCache()
+            if (key == null) cache.keys.forEach { key -> cache.removeResource(key) }
+            else cache.removeResource(key)
+        }
     }
 
     fun isRangeCached(cache:  SimpleCache, key: String, startByte: Long, endByte: Long): Boolean {
@@ -1243,31 +1271,39 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
         var httpEngine: HttpEngine? = null
         var cronetEngine: CronetEngine? = null
 
-        var simpleCache: SimpleCache? = null
+        private var simpleCache: SimpleCache? = null
+
+        private val cacheMutex = Mutex()
+        private suspend fun initCache() = withContext(Dispatchers.IO) {
+            cacheMutex.withLock {
+                simpleCache?.let { return@withLock }
+                val appContext = getAppContext()
+                val cacheDir = File(appContext.cacheDir, "media_cache")
+                if (!cacheDir.exists()) cacheDir.mkdirs()
+                val databaseProvider = StandaloneDatabaseProvider(appContext)
+                val evictor = LeastRecentlyUsedCacheEvictor(streamingCacheSizeMB * 1024L * 1024L)
+                simpleCache = SimpleCache(cacheDir, evictor, databaseProvider)
+            }
+        }
 
         fun getCache(): SimpleCache {
             return simpleCache ?: throw IllegalStateException("Cache not initialized yet!")
         }
 
-        fun releaseCache() {
+        private fun releaseCache() {
             simpleCache?.release()
             simpleCache = null
         }
 
-        fun nuclearCacheWipe() {
-            val cacheDir = File(getAppContext().cacheDir, "media_cache")
-            if (cacheDir.exists()) {
-                val success = cacheDir.deleteRecursively()
-                Logt(TAG, "Physical cache folder deleted: $success")
-            }
-        }
+        private val audioSpecsCache = LruCache<Long, List<AudioSpec>>(10)
+        private val videoSpecsCache = LruCache<Long, List<VideoSpec>>(10)
+        private val muxedSpecsCache = LruCache<Long, List<VideoSpec>>(10)
 
-        fun createCronetEngine(config: ProxyConfig?, executor: Executor): CronetEngine {
+        private fun createCronetEngine(config: ProxyConfig?, executor: Executor): CronetEngine {
             val builder = CronetEngine.Builder(getAppContext())
             builder.enableHttp2(true)
                 .enableQuic(true)
                 .enableBrotli(true)
-                .setUserAgent(USER_AGENT)
                 .setStoragePath(File(getAppContext().cacheDir, "cronet").apply { mkdirs() }.absolutePath)
                 .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024)
             if (config?.type == Type.HTTP && !config.host.isNullOrEmpty()) {
@@ -1296,13 +1332,13 @@ class Media3Player(playerId: Int, val lr: Int) : MediaPlayerBase() {
             val appContext = getAppContext()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 7 && (proxyConfig == null || proxyConfig!!.host == null)) {
                 Logd(TAG) { "createHttpDataSourceFactory setting HttpEngine" }
-                if (httpEngine == null) httpEngine = HttpEngine.Builder(appContext).setEnableQuic(true).setEnableHttp2(true).setUserAgent(USER_AGENT)
+                if (httpEngine == null) httpEngine = HttpEngine.Builder(appContext).setEnableQuic(true).setEnableHttp2(true)
                     .setStoragePath(File(appContext.cacheDir, "httpengine").apply { mkdirs() }.absolutePath)
                     .setEnableHttpCache(HttpEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 10L * 1024 * 1024).build()
             } else if (cronetEngine == null) cronetEngine = createCronetEngine(proxyConfig, networkExecutor)
         }
 
-        fun buildMetadata(e: Episode): MediaMetadata {
+        private fun buildMetadata(e: Episode): MediaMetadata {
             val date = Instant.fromEpochMilliseconds(e.pubDate).toLocalDateTime(TimeZone.UTC).date
 
             val builder = MediaMetadata.Builder()

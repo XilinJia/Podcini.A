@@ -6,12 +6,14 @@ import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.storage.utils.parseDate
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
+import io.ktor.http.userAgent
 import org.json.JSONObject
 
 class AppleMediaSearcher : MediaSearcher {
@@ -42,7 +44,10 @@ class AppleMediaSearcher : MediaSearcher {
         val formattedUrl = "https://itunes.apple.com/search?term=$encodedQuery&media=podcast&entity=podcastEpisode&limit=200"
         val medias: MutableList<EpisodeIPC> = mutableListOf()
         try {
-            val response = getKtorClient().get(formattedUrl) { header(HttpHeaders.CacheControl, "max-stale=86400") }
+            val response = getKtorClient().get(formattedUrl) {
+                userAgent(PODCINI_USER_AGENT)
+                header(HttpHeaders.CacheControl, "max-stale=86400")
+            }
             if (response.status.isSuccess()) {
                 val resultString = response.bodyAsText()
                 Logd(TAG) { "search resultString: $resultString" }

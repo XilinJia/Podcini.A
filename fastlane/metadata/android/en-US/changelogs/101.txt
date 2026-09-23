@@ -1,6 +1,0 @@
-* Feed auto download/enqueue specs are moved to a separate DB model, DB migration is performed on app update
-* rearranged FeedSettings, and added "Enable second algorithm" for auto-download/enqueue
-* improved handling of feed flow in FeedDetails screen
-* Second algorithm is enabled in auto-download/enqueue routine
-* in the popup from speedometer on the Player UI, added helper text
-* in Settings->Playback, removed those redundant settings that can be handled in speedometer popup

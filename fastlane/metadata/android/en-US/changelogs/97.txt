@@ -1,6 +1,0 @@
-* in OnlineFeed screen
-	* if feed exists, "Limit episodes" row is not shown, number of episodes in existing feed is shown
-	* if the existing feed has a different url, "Update url" button is shown, which updates the feed's url and opens it
-* in MediaPlayer, when checking duplicates, duration is checked to be close
-* in EpisodeInfo, show last played date if set
-* ensured when receiving feeds from other device, feeds are put to the current volume

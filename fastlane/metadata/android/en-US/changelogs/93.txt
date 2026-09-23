@@ -1,7 +1,0 @@
-* in StreamChanger popup, added Protocols for video streams
-* tuned player buffer sizing for faster start and little hiccups
-* disabled Download option in action button's alternative menu for media from external apps
-* in Search screen, ensure to add all query strings to history
-* fixed reminder of past due media showing too often
-* amended feed origin filters in Library and fixed crash
-* tuned some initialization procedure

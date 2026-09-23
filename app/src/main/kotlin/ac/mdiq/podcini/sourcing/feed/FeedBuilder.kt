@@ -14,6 +14,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.network.parseGetRequest
 import io.github.xilinjia.krdb.ext.toRealmList
@@ -26,6 +27,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.http.userAgent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -58,6 +60,7 @@ class FeedBuilder(val showError: (String?, String)->Unit) {
                 extractType { client.head(url) { expectSuccess = false } }?.let { return it }
                 extractType {
                     client.get(url) {
+                        userAgent(PODCINI_USER_AGENT)
                         expectSuccess = false
                         header(HttpHeaders.Range, "bytes=0-1024")
                     }

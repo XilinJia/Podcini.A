@@ -1,13 +1,19 @@
 package ac.mdiq.podcini.playback
 
-import ac.mdiq.podcini.playback.Media3Player.Companion.getCache
-import ac.mdiq.podcini.playback.Media3Player.Companion.simpleCache
-import ac.mdiq.podcini.playback.MediaPlayerBase.Companion.isStreamingCapable
+import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
+import ac.mdiq.podcini.playback.BasePlayer.Companion.isStreamingCapable
+import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
 import ac.mdiq.podcini.playback.SleepManager.Companion.sleepManager
+import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.checkAndMarkDuplicates
 import ac.mdiq.podcini.storage.database.isMediaDownloadable
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.model.Episode
+import ac.mdiq.podcini.storage.specs.MediaType
+import ac.mdiq.podcini.storage.specs.VideoMode
+import ac.mdiq.podcini.ui.screens.PSState
+import ac.mdiq.podcini.ui.screens.curVideoMode
+import ac.mdiq.podcini.ui.screens.psState
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import kotlinx.coroutines.CoroutineScope
@@ -60,80 +66,90 @@ class PlaybackStarter(private val media: Episode) {
 //        showStackTrace()
         ensureAController()
 
-        var media_ = media
-        if (forcePlaybackReset && simpleCache != null) getCache().removeResource(media.id.toString())
-        var sameMedia = !forcePlaybackReset
-        val player = theatres[playerId].mPlayerFlow.value
-        if (player?.curMediaFlow?.value?.id != media.id) {
-            sameMedia = false
-            media_ = checkAndMarkDuplicates(media)
-//            player.setAsCurEpisode(media_)   // seems redundant
-        }
-
-        fun processTask() {
-            if (player == null) {
-                Loge(TAG, "processTask mPlayerFlow.value == null")
-                return
+        appMainScope.launch {
+            var media_ = media
+            val player = theatres[playerId].mPlayerFlow.value
+            if (forcePlaybackReset) player?.clearFromCache(media.id.toString())
+            var sameMedia = !forcePlaybackReset
+            if (player?.curMediaFlow?.value?.id != media.id) {
+                sameMedia = false
+                withContext(Dispatchers.IO) { media_ = checkAndMarkDuplicates(media) }
+            //            player.setAsCurEpisode(media_)   // seems redundant
             }
-            Logd(TAG) { "aCtrlFuture: ${aCtrlFuture != null} player status: ${player.status}" }
-            player.shouldRepeatFlow.value = repeat
-            Logd(TAG) { "start: statusFlow: ${player.status} sameMedia: $sameMedia" }
-            player.isStreaming = shouldStreamThisTime
-            player.widgetId = widgetId
-            when {
-                player.isPlaying -> {
-                    player.pause(false)
-                    if (!sameMedia) {
-                        player.isSkipping = true
+
+            fun playVideoIfNeeded() {
+                Logd("ActionButton") { "playVideoIfNeeded got item ${media_.id}" }
+                if (!isAutoController && (media_.forceVideo || (media_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && media_.mediaType == MediaType.VIDEO))) {
+                    player?.playingVideoFlow?.value = true
+                    psState = PSState.Expanded
+                } else player?.playingVideoFlow?.value = false
+            }
+
+            fun processTask() {
+                if (player == null) {
+                    Loge(TAG, "processTask mPlayerFlow.value == null")
+                    return
+                }
+                Logd(TAG) { "aCtrlFuture: ${aCtrlFuture != null} player status: ${player.status}" }
+                player.shouldRepeatFlow.value = repeat
+                Logd(TAG) { "start: statusFlow: ${player.status} sameMedia: $sameMedia" }
+                player.isStreaming = shouldStreamThisTime
+                player.widgetId = widgetId
+                when {
+                    player.isPlaying -> {
+                        player.pause(false)
+                        if (!sameMedia) {
+                            player.isSkipping = true
+                            player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
+                            sleepManager?.restart()
+                        }
+                    }
+                    player.isPaused || player.isPrepared -> {
+                        if (sameMedia) player.play()
+                        else {
+                            player.isSkipping = true
+                            player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
+                        }
+                        sleepManager?.restart()
+                    }
+                    player.isStopped -> { //                    ContextCompat.startForegroundService(getAppContext(), Intent(getAppContext(), PlaybackService::class.java))
+                        player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
+                        sleepManager?.restart()
+                    } // TODO: test
+                    player.isInitialized -> {
                         player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
                         sleepManager?.restart()
                     }
-                }
-                player.isPaused || player.isPrepared -> {
-                    if (sameMedia) player.play()
-                    else {
-                        player.isSkipping = true
-                        player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
+                    else -> {
+                        player.setAsCurMedia(media_)
+                        player.reprepareMedia()
+                        sleepManager?.restart()
                     }
-                    sleepManager?.restart()
                 }
-                player.isStopped -> {
-//                    ContextCompat.startForegroundService(getAppContext(), Intent(getAppContext(), PlaybackService::class.java))
-                    player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
-                    sleepManager?.restart()
-                }
-                // TODO: test
-                player.isInitialized -> {
-                    player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
-                    sleepManager?.restart()
-                }
-                else -> {
-                    player.setAsCurMedia(media_)
-                    player.reinit()
-                    sleepManager?.restart()
-                }
+                forcePlaybackReset = false
+
+                playVideoIfNeeded()
             }
-            forcePlaybackReset = false
-        }
-        aCtrlFuture?.let { future ->
-            if (future.isDone && aController?.isConnected == true) {
-                Logd(TAG) { "aCtrlFuture aController ready, play, ${player?.status} $shouldStreamThisTime" }
-                if (shouldStreamThisTime && !isStreamingCapable(media)) return
+
+            aCtrlFuture?.let { future ->
+                if (future.isDone && aController?.isConnected == true) {
+                    Logd(TAG) { "aCtrlFuture aController ready, play, ${player?.status} $shouldStreamThisTime" }
+                    if (shouldStreamThisTime && !isStreamingCapable(media)) return@launch
+                    processTask()
+                } else {
+                    Logd(TAG) { "aCtrlFuture starting PlaybackService" } //                ContextCompat.startForegroundService(getAppContext(), Intent(getAppContext(), PlaybackService::class.java))
+                    CoroutineScope(Dispatchers.Default).launch {
+                        while (!future.isDone || aController?.isConnected != true) {
+                            Logd(TAG) { "aCtrlFuture delay ${future.isDone} ${aController?.isConnected}" }
+                            delay(1.seconds)
+                        }
+                        withContext(Dispatchers.Main) { processTask() }
+                    }
+                }
+            } ?: run {
+                Logd(TAG) { "aCtrlFuture is null, starting service" }
                 processTask()
-            } else {
-                Logd(TAG) { "aCtrlFuture starting PlaybackService" }
-//                ContextCompat.startForegroundService(getAppContext(), Intent(getAppContext(), PlaybackService::class.java))
-                CoroutineScope(Dispatchers.Default).launch {
-                    while (!future.isDone || aController?.isConnected != true) {
-                        Logd(TAG) { "aCtrlFuture delay ${future.isDone} ${aController?.isConnected}" }
-                        delay(1.seconds)
-                    }
-                    withContext(Dispatchers.Main) { processTask() }
-                }
             }
-        } ?: run {
-            Logd(TAG) { "aCtrlFuture is null, starting service" }
-            processTask()
         }
     }
 }

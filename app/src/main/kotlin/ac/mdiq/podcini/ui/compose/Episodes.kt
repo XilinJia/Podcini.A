@@ -7,7 +7,7 @@ import ac.mdiq.podcini.automation.cancelTimer
 import ac.mdiq.podcini.automation.playEpisodeAtTime
 import ac.mdiq.podcini.automation.reset
 import ac.mdiq.podcini.playback.PlaybackStarter
-import ac.mdiq.podcini.playback.MediaPlayerBase
+import ac.mdiq.podcini.playback.BasePlayer
 import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.getEntityId
@@ -61,7 +61,6 @@ import ac.mdiq.podcini.storage.utils.toAndroidUri
 import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
 import ac.mdiq.podcini.sync.model.EpisodeAction
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
-import ac.mdiq.podcini.ui.actions.ActionButton.Companion.playVideoIfNeeded
 import ac.mdiq.podcini.ui.screens.SearchBy
 import ac.mdiq.podcini.ui.utils.SearchAlgo
 import ac.mdiq.podcini.ui.utils.ShownotesCleaner
@@ -321,7 +320,7 @@ fun Context.findActivity(): Activity? = when (this) {
 }
 
 @Composable
-fun TranscriptDialog(episode: Episode, player:  MediaPlayerBase? = null, cueIndex: Int = -1, onDismiss: () -> Unit) {
+fun TranscriptDialog(episode: Episode, player:  BasePlayer? = null, cueIndex: Int = -1, onDismiss: () -> Unit) {
     Dialog(properties = DialogProperties(usePlatformDefaultWidth = false), onDismissRequest = onDismiss) {
         var isExpanded by remember { mutableStateOf(false) }
         val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
@@ -665,7 +664,6 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                             }
                             else -> {
                                 PlaybackStarter(episode).shouldStreamThisTime(episode.fileUrl == null).start(0)
-                                playVideoIfNeeded(episode)
                                 theatres[0].mPlayerFlow.value?.seekTo(ch.start.toInt())
                             }
                         }

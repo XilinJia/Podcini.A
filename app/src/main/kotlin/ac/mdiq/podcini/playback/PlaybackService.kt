@@ -70,14 +70,15 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class PlaybackService : MediaLibraryService() {
-    private val scope = CoroutineScope(Dispatchers.Main)
-    private val serviceIOScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     private var mediaLibrarySession: MediaLibrarySession? = null
     private val notificationCustomButtons = NotificationCustomButton.entries.map { command -> command.commandButton }
 
     private var clickCount = 0
     private val clickHandler = Handler(Looper.getMainLooper())
+
+    private var transientPause = false
+
+    private val audioManager by lazy { getSystemService(AUDIO_SERVICE) as AudioManager }
 
     private lateinit var carConnection: CarConnection
     private val carConnectionObserver = Observer<Int> { connectionType ->
@@ -106,7 +107,7 @@ class PlaybackService : MediaLibraryService() {
                 val state = intent.getIntExtra("state", -1)
                 Logd(TAG) { "Headset plug event. State is $state" }
                 when (state) {
-                    -1 -> LogeFor(TAG, theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id, "Received invalid ACTION_HEADSET_PLUG intent")
+                    -1 -> Loge(TAG, "Received invalid ACTION_HEADSET_PLUG intent")
                     UNPLUGGED -> {}
                     PLUGGED -> unpauseIfPauseOnDisconnect(false)
                 }
@@ -134,11 +135,36 @@ class PlaybackService : MediaLibraryService() {
             // sound is about to change, eg. bluetooth -> speaker
             Logd(TAG) { "audioBecomingNoisy onReceive called with action: ${intent.action}" }
             Logd(TAG) { "Pausing playback because audio is becoming noisy" }
-//            pauseIfPauseOnDisconnect()
             transientPause = theatres[0].mPlayerFlow.value!!.isPlaying
             if (appPrefsFlow!!.value.pauseOnHeadsetDisconnect && !isCasting) theatres[0].mPlayerFlow.value?.pause(false)
         }
     }
+
+//    private fun isOutputHeadset(device: AudioDeviceInfo): Boolean {
+//        Logd(TAG) { "isOutputHeadset: ${device.type}"}
+//        if (!device.isSink) return false
+//        return when (device.type) {
+//            AudioDeviceInfo.TYPE_WIRED_HEADSET,
+//            AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+//            AudioDeviceInfo.TYPE_USB_HEADSET,
+//            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP -> true
+//            AudioDeviceInfo.TYPE_BLE_HEADSET,
+//            AudioDeviceInfo.TYPE_BLE_SPEAKER -> true
+//            else -> false
+//        }
+//    }
+//
+//    private val audioDeviceCallback = object : AudioDeviceCallback() {
+//        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) {
+//            Logd(TAG) { "audioDeviceCallback" }
+//            val isHeadsetConnected = addedDevices.any { device -> isOutputHeadset(device) }
+//            if (isHeadsetConnected) {
+//                Logd(TAG) { "audioDeviceCallback Audio device connected" }
+//                unpauseIfPauseOnDisconnect(true)
+//            }
+//        }
+//        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {}
+//    }
 
 //    private val shutdownReceiver: BroadcastReceiver = object : BroadcastReceiver() {
 //        override fun onReceive(context: Context, intent: Intent) {
@@ -337,16 +363,15 @@ class PlaybackService : MediaLibraryService() {
         playbackService = this
 
 //        if (Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
-//            registerReceiver(autoStateUpdated, IntentFilter("com.google.android.gms.car.media.STATUS"), RECEIVER_EXPORTED)
 //            registerReceiver(shutdownReceiver, IntentFilter(ACTION_SHUTDOWN_PLAYBACK_SERVICE), RECEIVER_NOT_EXPORTED)
 //        } else {
-//            registerReceiver(autoStateUpdated, IntentFilter("com.google.android.gms.car.media.STATUS"))
 //            registerReceiver(shutdownReceiver, IntentFilter(ACTION_SHUTDOWN_PLAYBACK_SERVICE))
 //        }
 
         registerReceiver(headsetDisconnected, IntentFilter(Intent.ACTION_HEADSET_PLUG))
         registerReceiver(bluetoothStateUpdated, IntentFilter(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED))
         registerReceiver(audioBecomingNoisy, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
+//        audioManager.registerAudioDeviceCallback(audioDeviceCallback, Handler(Looper.getMainLooper()))
         procFlowEvents()
         SleepManager.sleepManager = SleepManager()
 
@@ -376,7 +401,7 @@ class PlaybackService : MediaLibraryService() {
         try {
             theatres[id].mPlayerFlow.value?.let {
                 val wasPlaying = it.isPlaying
-                if (wasPlaying) it.pause(reinit = false)
+                if (wasPlaying) it.pause(reprepare = false)
                 it.shutdown()
             }
         } catch (e: Exception) {
@@ -416,10 +441,10 @@ class PlaybackService : MediaLibraryService() {
         theatres[1].mPlayerFlow.value?.onDestroy()
 
         cancelFlowEvents()
-//        unregisterReceiver(autoStateUpdated)
         unregisterReceiver(headsetDisconnected)
 //        unregisterReceiver(shutdownReceiver)
         unregisterReceiver(bluetoothStateUpdated)
+//        audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
         unregisterReceiver(audioBecomingNoisy)
         SleepManager.sleepManager?.disable()
 
@@ -517,7 +542,7 @@ class PlaybackService : MediaLibraryService() {
                 }
             }
             KeyEvent.KEYCODE_MEDIA_STOP -> {
-                if (player.isPlaying) player.pause(reinit = true)
+                if (player.isPlaying) player.pause(reprepare = true)
                 return true
             }
             else -> {
@@ -535,7 +560,7 @@ class PlaybackService : MediaLibraryService() {
         eventSink = null
     }
     private fun procFlowEvents() {
-        if (eventSink == null) eventSink = scope.launch {
+        if (eventSink == null) eventSink = serviceMainScope.launch {
             EventFlow.events.collectLatest { event ->
                 Logd(TAG) { "Received event: ${event.TAG}" }
                 when (event) {
@@ -555,22 +580,26 @@ class PlaybackService : MediaLibraryService() {
             for (e in event.episodes) {
                 for (i in 0..1) {
                     if (e.id == theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) {
+                        val player = theatres[i].mPlayerFlow.value
                         Logd(TAG) { "onQueueEvent: queue event removed ${e.title}" }
-                        theatres[i].mPlayerFlow.value?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = theatres[i].mPlayerFlow.value!!.isPlaying)
+                        player?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = player!!.isPlaying)
                         break
                     }
                 }
             }
         } else if (event.action == FlowEvent.QueueEvent.Action.CLEARED) {
             mediaLibrarySession?.notifyChildrenChanged("ActQueue", 0, null)
-            for (i in 0..1) theatres[i].mPlayerFlow.value?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = theatres[i].mPlayerFlow.value!!.isPlaying)
+            for (i in 0..1) {
+                val player = theatres[i].mPlayerFlow.value
+                player?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = player!!.isPlaying)
+            }
         }
     }
 
     @RequiresPermission(Manifest.permission.VIBRATE)
     private fun unpauseIfPauseOnDisconnect(bluetooth: Boolean) {
         if (theatres[0].mPlayerFlow.value != null) {
-            val audioManager = PodciniApp.getAppContext().getSystemService(AUDIO_SERVICE) as AudioManager
+//            val audioManager = PodciniApp.getAppContext().getSystemService(AUDIO_SERVICE) as AudioManager
             if (audioManager.mode != AudioManager.MODE_NORMAL || audioManager.isMusicActive) {
                 Logd(TAG) { "unpauseIfPauseOnDisconnect() audio is in use" }
                 return
@@ -645,6 +674,9 @@ class PlaybackService : MediaLibraryService() {
     companion object {
         private val TAG: String = PlaybackService::class.simpleName ?: "Anonymous"
 
+        val serviceMainScope = CoroutineScope(Dispatchers.Main)
+        val serviceIOScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
         var isAutoController: Boolean = false
 
         private const val ROOT_ID = "root_id"
@@ -675,10 +707,5 @@ class PlaybackService : MediaLibraryService() {
                     }
                 }
             }
-
-        /**
-         * Is true if the service was running, but paused due to headphone disconnect
-         */
-        private var transientPause = false
     }
 }
