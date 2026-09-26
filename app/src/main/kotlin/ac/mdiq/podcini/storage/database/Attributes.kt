@@ -92,44 +92,44 @@ const val EPISODE_CACHE_SIZE_UNLIMITED: Int = 0
 var isSkipSilence: Boolean
     get() = appPrefsFlow!!.value.skipSilence
     set(value) {
-        upsertBlk(appPrefsFlow!!.value) { it.skipSilence = value }
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.skipSilence = value } }
     }
 
 var speedforwardSpeed: Float
     get() = appPrefsFlow!!.value.speedforwardSpeed
     set(speed) {
-        upsertBlk(appPrefsFlow!!.value) { it.speedforwardSpeed = speed }
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.speedforwardSpeed = speed } }
     }
 
 var skipforwardSpeed: Float
     get() = appPrefsFlow!!.value.skipforwardSpeed
     set(speed) {
-        upsertBlk(appPrefsFlow!!.value) { it.skipforwardSpeed = speed }
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.skipforwardSpeed = speed } }
     }
 
 var fallbackSpeed: Float
     get() = appPrefsFlow!!.value.fallbackSpeed
     set(speed) {
-        upsertBlk(appPrefsFlow!!.value) { it.fallbackSpeed = speed }
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.fallbackSpeed = speed } }
     }
 
 var fastForwardSecs: Int
     get() = appPrefsFlow!!.value.fastForwardSecs
     set(secs) {
-        upsertBlk(appPrefsFlow!!.value) { it.fastForwardSecs = secs }
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.fastForwardSecs = secs } }
     }
 
 var rewindSecs: Int
     get() = appPrefsFlow!!.value.rewindSecs
     set(secs) {
-        upsertBlk(appPrefsFlow!!.value) { it.rewindSecs = secs }
+        runOnIOScope {  upsert(appPrefsFlow!!.value) { it.rewindSecs = secs } }
     }
 
 var streamingCacheSizeMB: Int
     get() = appPrefsFlow!!.value.streamingCacheSizeMB
     set(size) {
         val size_ = if (size < 10) 10 else size
-        upsertBlk(appPrefsFlow!!.value) { it.streamingCacheSizeMB = size_ }
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.streamingCacheSizeMB = size_ } }
     }
 
 var proxyConfig: ProxyConfig
@@ -142,17 +142,19 @@ var proxyConfig: ProxyConfig
         return ProxyConfig(type, host, port, username, password)
     }
     set(config) {
-        upsertBlk(appPrefsFlow!!.value) {
-            it.proxyType = config.type.name
-            it.proxyHost = if (config.host.isNullOrEmpty()) null else config.host
-            it.proxyPort = if (config.port !in 1..65535) 0 else config.port
-            it.proxyUser = if (config.username.isNullOrEmpty()) null else config.username
-            it.proxyPassword = if (config.password.isNullOrEmpty()) null else config.password
+        runOnIOScope {
+            upsert(appPrefsFlow!!.value) {
+                it.proxyType = config.type.name
+                it.proxyHost = if (config.host.isNullOrEmpty()) null else config.host
+                it.proxyPort = if (config.port !in 1..65535) 0 else config.port
+                it.proxyUser = if (config.username.isNullOrEmpty()) null else config.username
+                it.proxyPassword = if (config.password.isNullOrEmpty()) null else config.password
+            }
         }
     }
 
 var prefStreamOverDownload: Boolean
     get() = appPrefsFlow!!.value.streamOverDownload
     set(stream) {
-        upsertBlk(appPrefsFlow!!.value) { it.streamOverDownload = stream }
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.streamOverDownload = stream } }
     }

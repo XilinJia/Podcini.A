@@ -201,12 +201,12 @@ suspend fun eraseEpisodes(episodes: List<Episode>, msg: String = "") {
 suspend fun deleteMedia(episode: Episode): Episode {
     val context = getAppContext()
     val url = episode.fileUrl
-    Logd(TAG) { "deleteMedia [id=${episode.id}, title=${episode.getEpisodeTitle()}, downloaded=${episode.downloaded} $url" }
+    Logd(TAG) { "deleteMedia [id=${episode.id}, title=${episode.titleOrIdv()}, downloaded=${episode.downloaded} $url" }
     var episode = episode
     if (!url.isNullOrBlank()) {
         try {
             url.toUF().delete()
-            episode = upsertBlk(episode) {
+            episode = upsert(episode) {
                 it.fileUrl = null
                 it.hasEmbeddedPicture = false
                 if (it.playState < EpisodeState.SKIPPED.code && !shouldPreserve(it.playState)) it.setPlayState(EpisodeState.SKIPPED)

@@ -6,6 +6,8 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.PodciniHttpClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.storage.database.appPrefsFlow
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import android.annotation.SuppressLint
 import android.content.Context
@@ -103,7 +105,7 @@ object NetworkUtils {
         val allowed: MutableSet<String> = HashSet(getValueStringSet)
         if (allow) allowed.add(type)
         else allowed.remove(type)
-        upsertBlk(appPrefsFlow!!.value) { it.mobileUpdateTypes = allowed.toRealmSet() }
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.mobileUpdateTypes = allowed.toRealmSet() } }
     }
 
     fun wasDownloadBlocked(throwable: Throwable?): Boolean {

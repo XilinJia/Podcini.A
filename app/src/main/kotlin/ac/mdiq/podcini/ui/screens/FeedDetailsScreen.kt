@@ -723,9 +723,11 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                                     val eps = realm.query(Episode::class).query("feedId == ${feed!!.id}").find()
                                     val count = eps.size
                                     val dur = eps.sumOf { it.duration }
-                                    upsertBlk(feed!!) {
-                                        it.episodesCount = count
-                                        it.totleDuration = dur.toLong()
+                                    runOnIOScope {
+                                        upsert(feed!!) {
+                                            it.episodesCount = count
+                                            it.totleDuration = dur.toLong()
+                                        }
                                     }
                                     Logt(TAG, "episode count updated for synthetic feed: $count")
                                 }

@@ -8,7 +8,6 @@ import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getFeed
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
-import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.CATALOG_VOLUME_ID_START
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.EpisodeDTO
@@ -253,7 +252,7 @@ class FeedReceiver(port: Int, val volumeId: Long): Receiver(port) {
                     val json = bytes.decodeToString()
                     val pkg = Json.decodeFromString<FeedPackage>(json)
                     val f = pkg.feed.toFeed()
-                    upsertBlk(f) { it.volumeId = volumeId }
+                    upsert(f) { it.volumeId = volumeId }
                     Logd(TAG) { "Saved feed: ${f.title}" }
 
                     runOnIOScope {
@@ -265,7 +264,6 @@ class FeedReceiver(port: Int, val volumeId: Long): Receiver(port) {
                     }
 
                     receiveClips(channel)
-
                     Logt(TAG, "Received ${pkg.feed.eigenTitle} with ${pkg.episodes.size} episodes and ${pkg.clips.size} clips")
                 } catch (e: Exception) {
                     Logt(TAG, "Receiving feed terminated: ${e.message}")
@@ -351,13 +349,13 @@ class EpisodesReceiver(port: Int, val onEnd: ()->Unit): Receiver(port) {
 
                     val f = allFeeds.find { it.eigenTitle == pkg.syntheticName } ?: run {
                         val f_ = createSynthetic(0, pkg.syntheticName)
-                        upsertBlk(f_) {}
+                        upsert(f_) {}
                     }
 
                     Logd(TAG) { "Saved feed: ${f.title}" }
                     pkg.episodes.forEach {
                         val e = it.toEpisode()
-                        upsertBlk(e) { e_ -> e_.feedId = f.id }
+                        upsert(e) { e_ -> e_.feedId = f.id }
                         Logd(TAG) { "Saved episode: ${e.title}" }
                     }
 
@@ -477,14 +475,14 @@ class CatalogReceiver(port: Int, val onEnd: ()->Unit): Receiver(port) {
                         v.name = pkg.senderName
                         v.originId = pkg.senderUID
                         v.parentId = CATALOG_VOLUME_ID_START
-                        upsertBlk(v) {}
+                        upsert(v) {}
                     }
 
                     Logd(TAG) { "CatalogReceiver Received from ${pkg.senderName} ${pkg.feedDTOs.size} feeds" }
                     for (fdto in pkg.feedDTOs) {
                         val f = fdto.toFeed()
                         Logd(TAG) { "CatalogReceiver got feed ${f.title}" }
-                        upsertBlk(f) {
+                        upsert(f) {
                             it.volumeId = v.id
                             it.keepUpdated = false
                         }

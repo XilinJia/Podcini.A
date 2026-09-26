@@ -1,9 +1,10 @@
 package ac.mdiq.podcini.sync.queue
 
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.syncPrefs
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.sync.SynchronizationSettings
 import ac.mdiq.podcini.sync.model.EpisodeAction
-import ac.mdiq.podcini.storage.database.syncPrefs
-import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.utils.Logs
 import org.json.JSONArray
 import org.json.JSONException
@@ -48,22 +49,26 @@ class SynchronizationQueueStorage() {
         }
 
     fun clearEpisodeActionQueue() {
-        upsertBlk(syncPrefs) { it.QUEUED_EPISODE_ACTIONS = "[]"}
+        runOnIOScope {  upsert(syncPrefs) { it.QUEUED_EPISODE_ACTIONS = "[]"} }
     }
 
     fun clearFeedQueues() {
-        upsertBlk(syncPrefs) {
-            it.QUEUED_FEEDS_ADDED = "[]"
-            it.QUEUED_FEEDS_REMOVED = "[]"
+        runOnIOScope {
+            upsert(syncPrefs) {
+                it.QUEUED_FEEDS_ADDED = "[]"
+                it.QUEUED_FEEDS_REMOVED = "[]"
+            }
         }
     }
 
     fun clearQueue() {
         SynchronizationSettings.resetTimestamps()
-        upsertBlk(syncPrefs) {
-            it.QUEUED_EPISODE_ACTIONS = "[]"
-            it.QUEUED_FEEDS_ADDED = "[]"
-            it.QUEUED_FEEDS_REMOVED = "[]"
+        runOnIOScope {
+            upsert(syncPrefs) {
+                it.QUEUED_EPISODE_ACTIONS = "[]"
+                it.QUEUED_FEEDS_ADDED = "[]"
+                it.QUEUED_FEEDS_REMOVED = "[]"
+            }
         }
     }
 
@@ -73,9 +78,11 @@ class SynchronizationQueueStorage() {
             addedQueue.put(downloadUrl)
             val removedQueue = JSONArray(syncPrefs.QUEUED_FEEDS_REMOVED)
             removedQueue.remove(indexOf(downloadUrl, removedQueue))
-            upsertBlk(syncPrefs) {
-                it.QUEUED_FEEDS_ADDED = addedQueue.toString()
-                it.QUEUED_FEEDS_REMOVED = removedQueue.toString()
+            runOnIOScope {
+                upsert(syncPrefs) {
+                    it.QUEUED_FEEDS_ADDED = addedQueue.toString()
+                    it.QUEUED_FEEDS_REMOVED = removedQueue.toString()
+                }
             }
         } catch (jsonException: JSONException) { Logs("SynchronizationQueueStorage", jsonException) }
     }
@@ -86,9 +93,11 @@ class SynchronizationQueueStorage() {
             removedQueue.put(downloadUrl)
             val addedQueue = JSONArray(syncPrefs.QUEUED_FEEDS_ADDED)
             addedQueue.remove(indexOf(downloadUrl, addedQueue))
-            upsertBlk(syncPrefs) {
-                it.QUEUED_FEEDS_ADDED = addedQueue.toString()
-                it.QUEUED_FEEDS_REMOVED = removedQueue.toString()
+            runOnIOScope {
+                upsert(syncPrefs) {
+                    it.QUEUED_FEEDS_ADDED = addedQueue.toString()
+                    it.QUEUED_FEEDS_REMOVED = removedQueue.toString()
+                }
             }
         } catch (jsonException: JSONException) { Logs("SynchronizationQueueStorage", jsonException) }
     }
@@ -103,7 +112,7 @@ class SynchronizationQueueStorage() {
         try {
             val queue = JSONArray(json)
             queue.put(action.writeToJsonObjectForServer())
-            upsertBlk(syncPrefs) { it.QUEUED_EPISODE_ACTIONS = queue.toString() }
+            runOnIOScope { upsert(syncPrefs) { it.QUEUED_EPISODE_ACTIONS = queue.toString() } }
         } catch (jsonException: JSONException) { Logs("SynchronizationQueueStorage", jsonException) }
     }
 }

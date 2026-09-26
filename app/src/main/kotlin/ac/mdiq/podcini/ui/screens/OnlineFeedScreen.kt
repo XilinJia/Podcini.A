@@ -357,10 +357,12 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
 
         numEpisodes = feed_.episodes.size
         if (isShared) {
-            val log = realm.query(ShareLog::class).query("url == $0", urlToLog).first().find()
-            if (log != null) upsertBlk(log) {
-                it.title = feed_.title
-                it.author = feed_.author
+            runOnIOScope {
+                val log = realm.query(ShareLog::class).query("url == $0", urlToLog).first().find()
+                if (log != null) upsert(log) {
+                    it.title = feed_.title
+                    it.author = feed_.author
+                }
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -601,11 +603,13 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                         Spacer(modifier = Modifier.weight(0.2f))
                         if (vm.showFeedDisplay && vm.enableSubscribe) Button(onClick = {
                             if (vm.feedId != 0L) {
+                                runOnIOScope {
                                 if (vm.isShared) {
-                                    val log = realm.query(ShareLog::class).query("url == $0", vm.feedUrl).first().find()
-                                    if (log != null) upsertBlk(log) { it.status = ShareLog.Status.EXISTING.code }
+                                        val log = realm.query(ShareLog::class).query("url == $0", vm.feedUrl).first().find()
+                                        if (log != null) upsert(log) { it.status = ShareLog.Status.EXISTING.code }
+                                    }
+                                    if (vm.updatedFeedUrl.isNotBlank() && vm.feed != null) upsert(vm.feed!!) { it.downloadUrl = vm.updatedFeedUrl }
                                 }
-                                if (vm.updatedFeedUrl.isNotBlank() && vm.feed != null) upsertBlk(vm.feed!!) { it.downloadUrl = vm.updatedFeedUrl }
                                 navTo(FeedDetails(feedId = vm.feedId, modeName = FeedScreenMode.Info.name))
                             } else {
                                 if (vm.feed == null) return@Button
@@ -615,8 +619,10 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                                     if (vm.limitEpisodesCount > 0) vm.feed?.limitEpisodesCount = vm.limitEpisodesCount
                                     subscribe(vm.feed!!)
                                     if (vm.isShared) {
-                                        val log = realm.query(ShareLog::class).query("url == $0", vm.feedUrl).first().find()
-                                        if (log != null) upsertBlk(log) { it.status = ShareLog.Status.SUCCESS.code }
+                                        runOnIOScope {
+                                            val log = realm.query(ShareLog::class).query("url == $0", vm.feedUrl).first().find()
+                                            if (log != null) upsert(log) { it.status = ShareLog.Status.SUCCESS.code }
+                                        }
                                     }
                                     withContext(Dispatchers.Main) {
                                         runCatching {

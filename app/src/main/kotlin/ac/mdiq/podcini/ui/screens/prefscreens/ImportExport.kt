@@ -23,6 +23,8 @@ import ac.mdiq.podcini.sync.model.EpisodeAction
 import ac.mdiq.podcini.sync.model.EpisodeAction.Companion.readFromJsonObject
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.specs.EpisodeState
@@ -354,7 +356,7 @@ fun ImportExportScreen() {
             if (uri != null) {
                 persistedTrees.add(uri)
                 getAppContext().contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                upsertBlk(appPrefs) { p-> p.autoBackupFolder = uri.toString() }
+                runOnIOScope { upsert(appPrefs) { p-> p.autoBackupFolder = uri.toString() } }
             }
         }
     }
@@ -461,10 +463,10 @@ fun ImportExportScreen() {
 
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp).verticalScroll(rememberScrollState()).background(MaterialTheme.colorScheme.surface)) {
         TitleSummarySwitchRow(R.string.pref_backup_on_google_title, R.string.pref_backup_on_google_sum, appPrefs.OPMLBackup) {
-            upsertBlk(appPrefs) { p -> p.OPMLBackup = it}
+            runOnIOScope { upsert(appPrefs) { p -> p.OPMLBackup = it} }
         }
         TitleSummarySwitchRow(R.string.pref_auto_backup_title, R.string.pref_auto_backup_sum, appPrefs.autoBackup) {
-            upsertBlk(appPrefs) { p -> p.autoBackup = it}
+            runOnIOScope { upsert(appPrefs) { p -> p.autoBackup = it} }
             appPrefs.autoBackupFolder?.toSafeUri()?.let { uri->
                 try { getAppContext().contentResolver.releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) } catch (e: Exception) { Logd(TAG) { "uri can not be released: $uri" }}
             }
@@ -473,7 +475,7 @@ fun ImportExportScreen() {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Text(stringResource(R.string.pref_auto_backup_interval), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 NumberEditor(appPrefs.autoBackupIntervall, label = "hours", nz = false, modifier = Modifier.weight(0.5f)) {
-                    upsertBlk(appPrefs) { p-> p.autoBackupIntervall = it }
+                    runOnIOScope {  upsert(appPrefs) { p-> p.autoBackupIntervall = it } }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
@@ -493,7 +495,7 @@ fun ImportExportScreen() {
                         if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon",
                             modifier = Modifier.size(30.dp).clickable {
                                 if (count.isEmpty()) count = "0"
-                                upsertBlk(appPrefs) { p-> p.autoBackupLimit = count.toIntOrNull()?:0 }
+                                runOnIOScope { upsert(appPrefs) { p-> p.autoBackupLimit = count.toIntOrNull()?:0 } }
                                 showIcon = false
                             })
                     })

@@ -2,6 +2,8 @@ package ac.mdiq.podcini.ui.compose
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.storage.database.appPrefsFlow
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import android.app.Activity
 import android.content.res.Configuration
@@ -92,7 +94,7 @@ var appTheme: AppThemes
             AppThemes.DARK -> "1"
             else -> "system"
         }
-        upsertBlk(appPrefsFlow!!.value) { it.theme = t }
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.theme = t } }
     }
 
 @Composable

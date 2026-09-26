@@ -4,15 +4,15 @@ import ac.mdiq.podcini.PodciniApp
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.sourcing.download.DownloadError
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.addNewFeed
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.feedByIdentityOrID
 import ac.mdiq.podcini.storage.database.getFeed
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
+import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
-import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -146,9 +146,12 @@ suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) 
     fun createEpisode(feed: Feed, file: DocFile): Episode {
         val item = Episode(0L, file.name, null, file.name, file.lastModified, EpisodeState.UNPLAYED.code, feed)
         item.isAutoDownloadEnabled = false
-        val size = file.length
         Logd(TAG) { "createEpisode file.uri: ${file.uri}" }
-        item.fillMedia(0, 0, size, file.type, file.uri.toString(), file.uri.toString(), false, 0L, 0, 0)
+        item.size = file.length
+        item.mimeType = file.type
+        item.fileUrl = file.uri.toString()
+        item.downloadUrl = file.uri.toString()
+        item.downloaded = false
         val episodes = feed.episodes
         for (existingItem in episodes) {
             if (existingItem.downloadUrl == file.uri.toString() && existingItem.size == file.length) {
@@ -271,7 +274,7 @@ suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) 
         val newItem = createEpisode(feed, mediaFiles[i])
         Logd(TAG) { "updateLocalFeed oldItem: ${oldItem?.title} url: ${oldItem?.downloadUrl}" }
         Logd(TAG) { "updateLocalFeed newItem: ${newItem.title} url: ${newItem.downloadUrl}" }
-        if (oldItem != null) upsertBlk(oldItem) { it.updateFromOther(newItem) }
+        if (oldItem != null) runOnIOScope { upsert(oldItem) { it.updateFromOther(newItem) } }
         newItems.add(newItem)
         progressCB?.invoke(i, mediaFiles.size)
     }

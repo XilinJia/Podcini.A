@@ -1,0 +1,9 @@
+* the captions popup allows operation outside of the popup
+* improved caption index search on seek
+* in PlayerDetailed and EpisodeInfo, fixed possibly building description webview multiple times
+* put more small db writes into IO dispatcher
+* on some player errors, remove cached media specs
+* on feed full refresh
+	* ensure to update episodes' transcript meta and aiContent
+	* ensure episodes' full description are not reset
+* ensure to update feeds' medium and aiContent on refresh

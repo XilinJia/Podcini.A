@@ -15,6 +15,7 @@ import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.feedCountFlow
 import ac.mdiq.podcini.sourcing.feed.loadLocalFolder
 import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.SearchHistorySize
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.feedLogsMap
@@ -236,10 +237,12 @@ fun FindFeedsScreen() {
                 SearchBarRow(R.string.search_podcast_hint, modifier = Modifier.weight(1f), defaultText = searchText, history = appAttribs.onlineSearchHistory) { str ->
                     if (str.isBlank()) return@SearchBarRow
                     searchText = str
-                    upsertBlk(appAttribs) {
-                        if (str in it.onlineSearchHistory) it.onlineSearchHistory.remove(str)
-                        it.onlineSearchHistory.add(0, str)
-                        if (it.onlineSearchHistory.size > SearchHistorySize+4) it.onlineSearchHistory.apply { subList(SearchHistorySize, size).clear() }
+                    runOnIOScope {
+                        upsert(appAttribs) {
+                            if (str in it.onlineSearchHistory) it.onlineSearchHistory.remove(str)
+                            it.onlineSearchHistory.add(0, str)
+                            if (it.onlineSearchHistory.size > SearchHistorySize + 4) it.onlineSearchHistory.apply { subList(SearchHistorySize, size).clear() }
+                        }
                     }
                     if (str.matches("http[s]?://.*".toRegex())) navTo(OnlineFeed(url=str))
                     else vm.search(str)

@@ -219,7 +219,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                 Logd(TAG) { "addToFeed adding new episode: ${episode.title}" }
                 episode.id = getEntityId()
                 episode.feedId = toFeed.id
-                upsertBlk(episode) {}
+                runOnIOScope { upsert(episode) {} }
             }
             EventFlow.postStickyEvent(FlowEvent.FeedUpdatingEvent(false))
         }

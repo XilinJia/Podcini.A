@@ -1,3 +1,21 @@
+# 12.13.1
+
+* the captions popup
+	* is added with Close icon
+	* only closes on press of the Close icon
+	* allows operation outside of the popup
+* improved caption index search on seek
+* in PlayerDetailed and EpisodeInfo, fixed possibly building description webview multiple times
+* put more small db writes into IO dispatcher
+* on some player errors, remove cached media specs
+* cleaned out some redundant operations on play/pause in MediaPlayer
+* on feed full refresh
+	* ensure to update episodes' transcript meta and aiContent
+	* ensure episodes' full description are not reset
+* ensure to update feeds' medium and aiContent on refresh
+* some code refactoring
+* some dependencies update
+
 # 12.13.0
 
 * in MediaPlayer, 10 most recent media specs from external apps are cached in memory, auto removed when expired
@@ -8,7 +26,7 @@
 * in Session view of Log screen, click on a log copies it to clipboard
 * PodciniLib upped to 1.1.5, external apps (if used) need to be updated for compatibility
 * NDK upped to 30.0.16248370
-* soem code refactoring
+* some code refactoring
 
 # 12.12.1
 

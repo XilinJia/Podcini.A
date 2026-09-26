@@ -13,6 +13,7 @@ import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.removeFromAllQueues
 import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -222,7 +223,7 @@ private suspend fun assembleCandidates(feeds_: List<Feed>?, candidates: MutableS
                     if (isCurMedia(e)) continue
                     if (e.downloadUrl.isNullOrBlank()) {
                         LogeFor(TAG, e.id, "episode downloadUrl is null or blank, skipped from auto-download")
-                        upsertBlk(e) { it.isAutoDownloadEnabled = false }
+                        upsert(e) { it.isAutoDownloadEnabled = false }
                         continue
                     }
                     candidates.add(e)

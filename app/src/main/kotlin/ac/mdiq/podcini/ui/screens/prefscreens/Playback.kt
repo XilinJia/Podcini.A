@@ -96,9 +96,11 @@ fun PlaybackScreen() {
 //            context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             selectedRingtoneUri = uri
             ringtoneName = RingtoneManager.getRingtone(context, uri).getTitle(context) ?: "Silent"
-            upsertBlk(appPrefs) {
-                it.ringToneName = ringtoneName
-                it.ringToneUriString = uri.toString()
+            runOnIOScope {
+                upsert(appPrefs) {
+                    it.ringToneName = ringtoneName
+                    it.ringToneUriString = uri.toString()
+                }
             }
             Logd(TAG) { "ringtoneName $ringtoneName" }
         }
@@ -109,14 +111,14 @@ fun PlaybackScreen() {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp).verticalScroll(rememberScrollState()).background(MaterialTheme.colorScheme.surface)) {
         Text(stringResource(R.string.interruptions), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         TitleSummarySwitchRow(R.string.pref_pauseOnHeadsetDisconnect_title, R.string.pref_pauseOnDisconnect_sum, appPrefs.pauseOnHeadsetDisconnect) {
-            upsertBlk(appPrefs) { p-> p.pauseOnHeadsetDisconnect = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.pauseOnHeadsetDisconnect = it } }
         }
         if (appPrefs.pauseOnHeadsetDisconnect) {
             TitleSummarySwitchRow(R.string.pref_unpauseOnHeadsetReconnect_title, R.string.pref_unpauseOnHeadsetReconnect_sum, appPrefs.unpauseOnHeadsetReconnect) {
-                upsertBlk(appPrefs) { p-> p.unpauseOnHeadsetReconnect = it }
+                runOnIOScope { upsert(appPrefs) { p-> p.unpauseOnHeadsetReconnect = it } }
             }
             TitleSummarySwitchRow(R.string.pref_unpauseOnBluetoothReconnect_title, R.string.pref_unpauseOnBluetoothReconnect_sum, appPrefs.unpauseOnBluetoothReconnect) {
-                upsertBlk(appPrefs) { p-> p.unpauseOnBluetoothReconnect = it }
+                runOnIOScope { upsert(appPrefs) { p-> p.unpauseOnBluetoothReconnect = it } }
             }
         }
         HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 5.dp))
@@ -151,7 +153,7 @@ fun PlaybackScreen() {
         }
 
         TitleSummarySwitchRow(R.string.use_ring_tone, R.string.use_ring_tone_sum, appPrefs.useRingTone) {
-            upsertBlk(appPrefs) { p-> p.useRingTone = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.useRingTone = it } }
         }
         if (appPrefs.useRingTone) {
             Column(Modifier.padding(start = 10.dp)) {
@@ -167,7 +169,7 @@ fun PlaybackScreen() {
                     ringtonePickerLauncher.launch(intent)
                 }
                 TitleSummarySwitchRow(R.string.disable_ring_tone_on_music, R.string.disable_ring_tone_on_music_sum, appPrefs.disableRingToneOnMusic) {
-                    upsertBlk(appPrefs) { p-> p.disableRingToneOnMusic = it }
+                    runOnIOScope { upsert(appPrefs) { p-> p.disableRingToneOnMusic = it } }
                 }
             }
         }
@@ -175,7 +177,7 @@ fun PlaybackScreen() {
         var prefStreaming by remember { mutableStateOf(prefStreamOverDownload) }
         TitleSummarySwitchRow(R.string.pref_stream_over_download_title, R.string.pref_stream_over_download_sum, appPrefs.streamOverDownload) {
             prefStreaming = it
-            upsertBlk(appPrefs) { p-> p.streamOverDownload = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.streamOverDownload = it } }
         }
         if (prefStreaming) Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -195,7 +197,7 @@ fun PlaybackScreen() {
             var showAudioDialog by remember { mutableStateOf(false) }
             if (showAudioDialog) SetAVQuality(selectedOption = audioQuality.tag, showGlobal = false, onDismiss = { showAudioDialog = false }) { type ->
                 audioQuality = type
-                upsertBlk(appPrefs) { it.audioQuality  = audioQuality.code }
+                runOnIOScope { upsert(appPrefs) { it.audioQuality  = audioQuality.code } }
             }
             Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Row(Modifier.fillMaxWidth()) {
@@ -208,7 +210,7 @@ fun PlaybackScreen() {
             var showVideoDialog by remember { mutableStateOf(false) }
             if (showVideoDialog) SetAVQuality(selectedOption = videoQuality.tag, showGlobal = false, onDismiss = { showVideoDialog = false }) { type->
                 videoQuality = type
-                upsertBlk(appPrefs) { it.videoQuality  = videoQuality.code }
+                runOnIOScope { upsert(appPrefs) { it.videoQuality  = videoQuality.code } }
             }
             Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Row(Modifier.fillMaxWidth()) {
@@ -219,17 +221,19 @@ fun PlaybackScreen() {
                 Text(text = stringResource(R.string.pref_video_quality_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
             TitleSummarySwitchRow(R.string.pref_low_quality_on_mobile_title, R.string.pref_low_quality_on_mobile_sum, appPrefs.lowQualityOnMobile) {
-                upsertBlk(appPrefs) { p-> p.lowQualityOnMobile = it }
+                runOnIOScope { upsert(appPrefs) { p-> p.lowQualityOnMobile = it } }
             }
         }
         TitleSummarySwitchRow(R.string.pref_use_adaptive_progress_title, R.string.pref_use_adaptive_progress_sum, appPrefs.useAdaptiveProgressUpdate) {
-            upsertBlk(appPrefs) { p-> p.useAdaptiveProgressUpdate = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.useAdaptiveProgressUpdate = it } }
         }
         var showVideoModeDialog by remember { mutableStateOf(false) }
         if (showVideoModeDialog) VideoModeDialog(initMode =  VideoMode.fromCode(appPrefs.videoPlaybackMode), isDemuxed = false, muxed = appPrefs.useMuxedVideo, onDismiss = { showVideoModeDialog = false }) { mode, muxed ->
-            upsertBlk(appPrefs) {
-                it.videoPlaybackMode = mode.code
-//                it.useMuxedVideo = muxed  // not used now
+            runOnIOScope {
+                upsert(appPrefs) {
+                    it.videoPlaybackMode = mode.code
+                //                it.useMuxedVideo = muxed  // not used now
+                }
             }
         }
         TitleSummaryActionColumn(R.string.pref_playback_video_mode, R.string.pref_playback_video_mode_sum) { showVideoModeDialog = true }
@@ -254,7 +258,7 @@ fun PlaybackScreen() {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        upsertBlk(appPrefs) { it.hardwareForwardButton = tempFFSelectedOption.toString() }
+                        runOnIOScope { upsert(appPrefs) { it.hardwareForwardButton = tempFFSelectedOption.toString() } }
                         showHardwareForwardButtonOptions = false
                     }) { Text(text = "OK") }
                 },
@@ -279,7 +283,7 @@ fun PlaybackScreen() {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        upsertBlk(appPrefs) { it.hardwarePreviousButton = tempPRSelectedOption.toString()}
+                        runOnIOScope { upsert(appPrefs) { it.hardwarePreviousButton = tempPRSelectedOption.toString()} }
                         showHardwarePreviousButtonOptions = false
                     }) { Text(text = "OK") }
                 },
@@ -289,18 +293,18 @@ fun PlaybackScreen() {
         HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 5.dp))
         Text(stringResource(R.string.queue_label) + "/" + stringResource(R.string.episodes_label), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 15.dp))
         TitleSummarySwitchRow(R.string.pref_enqueue_downloaded_title, R.string.pref_enqueue_downloaded_summary, appPrefs.enqueueDownloaded) {
-            upsertBlk(appPrefs) { p-> p.enqueueDownloaded = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.enqueueDownloaded = it } }
         }
 
         TitleSummarySwitchRow(R.string.pref_skip_keeps_episodes_title, R.string.pref_skip_keeps_episodes_sum, appPrefs.skipKeepsEpisode) {
-            upsertBlk(appPrefs) { p-> p.skipKeepsEpisode = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.skipKeepsEpisode = it } }
         }
         TitleSummarySwitchRow(R.string.pref_mark_played_removes_from_queue_title, R.string.pref_mark_played_removes_from_queue_sum, appPrefs.removeFromQueueMarkPlayed) {
-            upsertBlk(appPrefs) { p-> p.removeFromQueueMarkPlayed = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.removeFromQueueMarkPlayed = it } }
         }
 
         TitleSummarySwitchRow(R.string.auto_delete, R.string.pref_auto_delete_sum, appPrefs.autoDelete) {
-            upsertBlk(appPrefs) { p-> p.autoDelete = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.autoDelete = it } }
         }
         var blockAutoDeleteLocal by remember { mutableStateOf(true) }
         TitleSummarySwitchRow(R.string.pref_auto_local_delete_title, R.string.pref_auto_local_delete_sum, appPrefs.autoDeleteLocal) {
@@ -312,16 +316,16 @@ fun PlaybackScreen() {
                     cancelRes = R.string.cancel_label,
                     onConfirm = {
                         blockAutoDeleteLocal = false
-                        upsertBlk(appPrefs) { p-> p.autoDeleteLocal = it }
+                        runOnIOScope { upsert(appPrefs) { p-> p.autoDeleteLocal = it } }
                         blockAutoDeleteLocal = true
                     }))
             }
         }
         TitleSummarySwitchRow(R.string.pref_keeps_important_episodes_title, R.string.pref_keeps_important_episodes_sum, appPrefs.favoriteKeepsEpisode) {
-            upsertBlk(appPrefs) { p-> p.favoriteKeepsEpisode = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.favoriteKeepsEpisode = it } }
         }
         TitleSummarySwitchRow(R.string.pref_delete_removes_from_queue_title, R.string.pref_delete_removes_from_queue_sum, appPrefs.deleteRemovesFromQueue) {
-            upsertBlk(appPrefs) { p-> p.deleteRemovesFromQueue = it }
+            runOnIOScope { upsert(appPrefs) { p-> p.deleteRemovesFromQueue = it } }
         }
     }
 }

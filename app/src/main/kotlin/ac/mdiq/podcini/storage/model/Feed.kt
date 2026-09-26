@@ -352,8 +352,7 @@ class Feed : RealmObject {
         fillPreferences(false, AutoDeleteAction.GLOBAL, VolumeAdaptionSetting.OFF, username, password)
     }
 
-    fun fillPreferences(autoDownload: Boolean, autoDeleteAction: AutoDeleteAction,
-                        volumeAdaptionSetting: VolumeAdaptionSetting?, username: String?, password: String?) {
+    fun fillPreferences(autoDownload: Boolean, autoDeleteAction: AutoDeleteAction, volumeAdaptionSetting: VolumeAdaptionSetting?, username: String?, password: String?) {
         this.autoDownload = autoDownload
         this.autoDeleteAction = autoDeleteAction
         if (volumeAdaptionSetting != null) this.volumeAdaptionSetting = volumeAdaptionSetting
@@ -370,7 +369,7 @@ class Feed : RealmObject {
     fun updateFromOther(other: Feed, includingPrefs: Boolean = false) {
         // don't update feed's download_url, we do that manually if redirected
         // see PodciniHttpClient
-        if (other.images.isNotEmpty()) this.images = other.images
+        if (other.images.isNotEmpty()) images = other.images
         if (eigenTitle == null && other.eigenTitle != null) eigenTitle = other.eigenTitle
         if (other.identifier != null) identifier = other.identifier
         if (other.link != null) link = other.link
@@ -378,22 +377,25 @@ class Feed : RealmObject {
         if (other.author != null) author = other.author
         if (other.fundings.isNotEmpty()) fundings = other.fundings
 
+        if (!other.medium.isNullOrBlank()) medium = other.medium
+        aiContent = other.aiContent
+
         // this feed's nextPage might already point to a higher page, so we only update the nextPage value
         // if this feed is not paged and the other feed is.
-        if (!this.isPaged && other.isPaged) {
-            this.isPaged = other.isPaged
-            this.nextPageLink = other.nextPageLink
+        if (!isPaged && other.isPaged) {
+            isPaged = other.isPaged
+            nextPageLink = other.nextPageLink
         }
 
         if (includingPrefs) {
-//            if (this.preferences == null) this.preferences = FeedPreferences(id, false, AutoDeleteAction.GLOBAL, VolumeAdaptionSetting.OFF, "", "")
-            this.tags = other.tags
-            this.keepUpdated = other.keepUpdated
-            this.username = other.username
-            this.password = other.password
-            this.playSpeed = other.playSpeed
-            this.autoDownload = other.autoDownload
-            this.autoEnqueue = other.autoEnqueue
+//            if (preferences == null) preferences = FeedPreferences(id, false, AutoDeleteAction.GLOBAL, VolumeAdaptionSetting.OFF, "", "")
+            tags = other.tags
+            keepUpdated = other.keepUpdated
+            username = other.username
+            password = other.password
+            playSpeed = other.playSpeed
+            autoDownload = other.autoDownload
+            autoEnqueue = other.autoEnqueue
         }
     }
 
@@ -405,8 +407,8 @@ class Feed : RealmObject {
         if (other.description != null && (description == null || description != other.description)) return true
         if (other.author != null && (author == null || author != other.author)) return true
         if (other.fundings.isNotEmpty() && (fundings.isEmpty() || fundings != other.fundings)) return true
-        if (other.isPaged && !this.isPaged) return true
-        if (other.nextPageLink != this.nextPageLink) return true
+        if (other.isPaged && !isPaged) return true
+        if (other.nextPageLink != nextPageLink) return true
         return false
     }
 

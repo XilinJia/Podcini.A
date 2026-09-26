@@ -2,14 +2,13 @@ package ac.mdiq.podcini.sourcing.download
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.config.CHANNEL_ID
 import ac.mdiq.podcini.config.AppConfig.initialize
+import ac.mdiq.podcini.config.CHANNEL_ID
 import ac.mdiq.podcini.config.NotificationIds
+import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager.Companion.WORK_DATA_PROGRESS
 import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
-import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
-import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -17,8 +16,8 @@ import ac.mdiq.podcini.storage.database.deleteMedia
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.removeFromAllQueues
 import ac.mdiq.podcini.storage.database.removeFromQueue
+import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
-import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.takeCodePoints
@@ -30,6 +29,7 @@ import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
+import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
@@ -106,11 +106,13 @@ class EpisodeAdrDLManager: EpisodeDLManager() {
         val workRequest: OneTimeWorkRequest.Builder = OneTimeWorkRequest.Builder(EpisodesDownloadWorker::class.java)
             .setInitialDelay(0L, TimeUnit.MILLISECONDS)
             .addTag(EpisodesDownload)
-        upsertBlk(appAttribsFlow!!.value) {
-            episodes.forEach { episode ->
-                if (episode.suitableForDownload()) {
-                    workRequest.addTag(WORK_TAG_EPISODE_URL + episode.downloadUrl)
-                    it.episodeIdsToDownload.add(episode.id)
+        runOnIOScope {
+            upsert(appAttribsFlow!!.value) {
+                episodes.forEach { episode ->
+                    if (episode.suitableForDownload()) {
+                        workRequest.addTag(WORK_TAG_EPISODE_URL + episode.downloadUrl)
+                        it.episodeIdsToDownload.add(episode.id)
+                    }
                 }
             }
         }
@@ -161,7 +163,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
                 val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 while (isActive) {
                     try {
-                        synchronized(notificationProgress) { notificationProgress.put(media.getEpisodeTitle(), request.progressPercent) }
+                        synchronized(notificationProgress) { notificationProgress.put(media.titleOrIdv(), request.progressPercent) }
                         withTimeoutOrNull(5000.milliseconds) {
                             setProgressAsync(Data.Builder().putInt(WORK_DATA_PROGRESS, request.progressPercent).build()).get()
                             nm.notify(NotificationIds.downloading, generateProgressNotification())
@@ -188,7 +190,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
             progressUpdaterJob.cancel()
             progressUpdaterJob.join()
             synchronized(notificationProgress) {
-                notificationProgress.remove(media.getEpisodeTitle())
+                notificationProgress.remove(media.titleOrIdv())
                 if (notificationProgress.isEmpty()) {
                     val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                     nm.cancel(NotificationIds.downloading)

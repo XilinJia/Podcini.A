@@ -6,6 +6,8 @@ import ac.mdiq.podcini.config.settings.ClipsTransporter
 import ac.mdiq.podcini.config.settings.DatabaseTransporter
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appPrefsFlow
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
@@ -69,7 +71,7 @@ fun autoBackup() {
                         val realmFile = exportSubDir.createFile("application/octet-stream", "backup.realm")
                         DatabaseTransporter().exportToUri(realmFile)
                         ClipsTransporter("Podcini-Clips").fromMediaDirToUF(exportSubDir)
-                        upsertBlk(appPrefsFlow!!.value) { it.autoBackupTimeStamp = curTime }
+                        upsert(appPrefsFlow!!.value) { it.autoBackupTimeStamp = curTime }
                     } catch (e: Exception) { Logs("autoBackup", e, "Error backing up") }
                 } else Loge("autoBackup", context.getString(R.string.auto_backup_folder_not_available))
             } else Loge("autoBackup", "Uri permissions are no longer valid")

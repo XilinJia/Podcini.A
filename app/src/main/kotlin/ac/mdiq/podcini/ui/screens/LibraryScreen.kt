@@ -877,7 +877,7 @@ fun LibraryScreen() {
                     })
                     if (!vm.isViewGarden) {
                         fun toggleArchived() {
-                            upsertBlk(subPrefs) { it.showArchived = !it.showArchived }
+                            runOnIOScope { upsert(subPrefs) { it.showArchived = !it.showArchived } }
                             expanded = false
                         }
                         DropdownMenuItem(text = {
@@ -1547,9 +1547,11 @@ fun LibraryScreen() {
                         Button({
                             val v = Volume()
                             v.id = getEntityId()
-                            upsertBlk(v) {
-                                it.name = name
-                                it.parentId = parent?.id ?: -1L
+                            runOnIOScope {
+                                upsert(v) {
+                                    it.name = name
+                                    it.parentId = parent?.id ?: -1L
+                                }
                             }
                             onDismiss()
                         }) { Text(stringResource(R.string.confirm_label)) }
@@ -1593,9 +1595,13 @@ fun LibraryScreen() {
                 },
                 confirmButton = {
                     if (receiveJob == null && !ip.isNullOrBlank()) TextButton(onClick = {
-                        if (udpPort != appAttribs.udpPort) upsertBlk(appAttribs) { it.udpPort = udpPort }
                         broadcastJob = scope.launch { broadcastPresence(udpPort, tcpPort) }
-                        if (tcpPort != appAttribs.transceivePort) upsertBlk(appAttribs) { it.transceivePort = tcpPort }
+                        runOnIOScope {
+                            upsert(appAttribs) {
+                                if (udpPort != it.udpPort) it.udpPort = udpPort
+                                if (tcpPort != it.transceivePort) it.transceivePort = tcpPort
+                            }
+                        }
                         receiver = when (contentType) {
                             ContentType.Feed -> FeedReceiver(tcpPort, vm.curVolume?.id ?: -1L)
                             ContentType.Catalog -> CatalogReceiver(tcpPort) { onDismiss() }
@@ -1817,9 +1823,11 @@ fun LibraryScreen() {
                         Button({ onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
                         Spacer(Modifier.weight(1f))
                         Button({
-                            upsertBlk(volume) {
-                                it.name = name
-                                it.parentId = parent?.id ?: -1L
+                            runOnIOScope {
+                                upsert(volume) {
+                                    it.name = name
+                                    it.parentId = parent?.id ?: -1L
+                                }
                             }
                             onDismiss()
                         }) { Text(stringResource(R.string.confirm_label)) }

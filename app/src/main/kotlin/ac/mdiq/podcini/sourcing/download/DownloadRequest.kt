@@ -164,7 +164,7 @@ class DownloadRequest private constructor(
 
         suspend fun requestFor(media: Episode): Builder {
             Logd(TAG) { "requestFor: ${media.fileUrl} ${media.title}" }
-            val destUriString = try { media.getMediaFileUriString() } catch (e: Throwable ) {
+            val destUriString = try { media.mediaFileUriString() } catch (e: Throwable ) {
                 Logs(TAG, e, "destUriString is invalid")
                 ""
             }

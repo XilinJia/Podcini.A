@@ -6,6 +6,7 @@ import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.utils.UnifiedFile
@@ -125,9 +126,11 @@ class OpmlBackupAgent : BackupAgentHelper() {
                     mChecksum = digester.digest() ?: byteArrayOf()
                     if (linesRead > 0) {
                         Logd(TAG) { "restoreEntity finally $feedCount" }
-                        upsertBlk(appPrefsFlow!!.value) {
-                            it.OPMLRestored = true
-                            it.OPMLFeedsToRestore = feedCount
+                        runOnIOScope {
+                            upsert(appPrefsFlow!!.value) {
+                                it.OPMLRestored = true
+                                it.OPMLFeedsToRestore = feedCount
+                            }
                         }
                     }
                 }

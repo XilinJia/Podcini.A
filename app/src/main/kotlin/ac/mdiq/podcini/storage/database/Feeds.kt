@@ -50,13 +50,13 @@ fun compileLanguages() {
         else langsSet.add("")
     }
     Logd(TAG) { "langsSet: ${langsSet.size} appAttribs.langSet: ${appAttribsFlow!!.value.langSet.size}" }
-    if (!appAttribsFlow!!.value.langSet.containsAll(langsSet)) upsertBlk(appAttribsFlow!!.value) { it.langSet.addAll(langsSet) }
+    runOnIOScope { if (!appAttribsFlow!!.value.langSet.containsAll(langsSet)) upsert(appAttribsFlow!!.value) { it.langSet.addAll(langsSet) } }
 }
 
 fun compileTags() {
     val tagsSet = mutableSetOf<String>()
     for (feed in allFeeds) tagsSet.addAll(feed.tags.filter { it != TAG_ROOT })
-    if (!appAttribsFlow!!.value.feedTagSet.containsAll(tagsSet)) upsertBlk(appAttribsFlow!!.value) { it.feedTagSet.addAll(tagsSet) }
+    runOnIOScope { if (!appAttribsFlow!!.value.feedTagSet.containsAll(tagsSet)) upsert(appAttribsFlow!!.value) { it.feedTagSet.addAll(tagsSet) } }
 }
 
 private var feedMonitorJob: Job? = null
@@ -189,7 +189,7 @@ suspend fun shelveToFeed(episodes: List<Episode>, toFeed: Feed, removeChecked: B
     }
     val eps = realm.query(Episode::class).query("feedId == ${toFeed.id}").find()
     val dur = eps.sumOf { it.duration }
-    val feed_ = upsertBlk(toFeed) {
+    val feed_ = upsert(toFeed) {
         it.episodesCount = eps.size
         it.totleDuration = dur.toLong()
     }
@@ -223,7 +223,7 @@ suspend fun addToFeed(episode: Episode, toFeed: Feed, log: ShareLog? = null) {
     else {
         episode.id = getEntityId()
         episode.feedId = toFeed.id
-        upsertBlk(episode) {}
+        upsert(episode) {}
         sumup(toFeed)
         EventFlow.postStickyEvent(FlowEvent.FeedUpdatingEvent(false))
         ShareLog.Status.SUCCESS.code

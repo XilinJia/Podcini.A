@@ -3,6 +3,8 @@ package ac.mdiq.podcini.ui.compose
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.toastMessagesFlow
@@ -567,15 +569,19 @@ fun TagSettingDialog(tagType: TagType, existingTags: Set<String>, multiples: Boo
                     cb(tags)
                     if (tagType == TagType.Feed) {
                         val tagsSet = appAttribs.feedTagSet.toMutableSet() + tags
-                        upsertBlk(appAttribs) {
-                            it.feedTagSet.clear()
-                            it.feedTagSet.addAll(tagsSet)
+                        runOnIOScope {
+                            upsert(appAttribs) {
+                                it.feedTagSet.clear()
+                                it.feedTagSet.addAll(tagsSet)
+                            }
                         }
                     } else {
                         val tagsSet = appAttribs.episodeTagSet.toMutableSet() + tags
-                        upsertBlk(appAttribs) {
-                            it.episodeTagSet.clear()
-                            it.episodeTagSet.addAll(tagsSet)
+                        runOnIOScope {
+                            upsert(appAttribs) {
+                                it.episodeTagSet.clear()
+                                it.episodeTagSet.addAll(tagsSet)
+                            }
                         }
                     }
                     onDismiss()

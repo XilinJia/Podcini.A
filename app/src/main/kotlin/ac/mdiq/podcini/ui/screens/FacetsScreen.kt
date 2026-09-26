@@ -175,7 +175,7 @@ class FacetsVM(modeName_: String): ViewModel() {
         get() = _sortOrder.value
         set(s) {
             _sortOrder.value = s
-            upsertBlk(facetsPrefs) { it.sortCodesMap[facetsMode.name] = s.code }
+            runOnIOScope { upsert(facetsPrefs) { it.sortCodesMap[facetsMode.name] = s.code } }
         }
 
     var filterChanged by mutableIntStateOf(0)
@@ -408,7 +408,7 @@ class FacetsVM(modeName_: String): ViewModel() {
             eList = listOf()
             mediaDir.listChildren().forEach { file -> traverse(file) }
             Logd(TAG) { "reconcile: end, episodes missing file: ${nameEpisodeMap.size}" }
-            if (nameEpisodeMap.isNotEmpty()) for (e in nameEpisodeMap.values) { upsertBlk(e) { it.fileUrl = null } }
+            if (nameEpisodeMap.isNotEmpty()) for (e in nameEpisodeMap.values) { upsert(e) { it.fileUrl = null } }
             val count = nameEpisodeMap.size
             nameEpisodeMap.clear()
             Logt(TAG, "Episodes reconciled: $count\nFiles removed: ${filesRemoved.size}")
@@ -472,7 +472,7 @@ class FacetsVM(modeName_: String): ViewModel() {
                     curIndex = facetsPrefs.prefFacetsCurIndex
                     facetsMode = QuickAccess.valueOf(spinnerTexts[curIndex])
                 }
-                upsertBlk(facetsPrefs) { it.screenMode = facetsMode.name }
+                runOnIOScope { upsert(facetsPrefs) { it.screenMode = facetsMode.name } }
                 filter = EpisodeFilter(facetsPrefs.filtersMap[facetsMode.name] ?: "")
             }
             else -> curIndex = QuickAccess.Custom.ordinal
@@ -627,9 +627,11 @@ fun FacetsScreen(modeName: String = "") {
                                     vm.curIndex = index
                                     facetsMode = QuickAccess.valueOf(vm.spinnerTexts[vm.curIndex])
                                     vm.tag = TAG + QuickAccess.entries[vm.curIndex]
-                                    upsertBlk(vm.facetsPrefs) {
-                                        it.prefFacetsCurIndex = index
-                                        it.screenMode = facetsMode.name
+                                    runOnIOScope {
+                                        upsert(vm.facetsPrefs) {
+                                            it.prefFacetsCurIndex = index
+                                            it.screenMode = facetsMode.name
+                                        }
                                     }
                                     actionButtonType = if (facetsMode == QuickAccess.Downloaded) ButtonTypes.DELETE else null
                                     resetSwipes()

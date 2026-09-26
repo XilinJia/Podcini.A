@@ -88,7 +88,7 @@ suspend fun loadChapters(episode: Episode, forceReload: Boolean) {
     Logd(TAG) { "loadChapters chaptersLoaded: ${episode.chaptersLoaded} forceReload: $forceReload" }
     if (episode.chaptersLoaded && !forceReload) return
     val chapters = fetchChapters(episode)
-    Logd(TAG) { "loadChapters chapters size: ${chapters.size} ${episode.getEpisodeTitle()}" }
+    Logd(TAG) { "loadChapters chapters size: ${chapters.size} ${episode.titleOrIdv()}" }
     upsert(episode) { it.setChapters(chapters) }
 }
 

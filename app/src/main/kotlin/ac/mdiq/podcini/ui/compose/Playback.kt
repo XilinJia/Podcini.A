@@ -15,9 +15,11 @@ import ac.mdiq.podcini.storage.database.fallbackSpeed
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
 import ac.mdiq.podcini.storage.database.rewindSecs
+import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.skipforwardSpeed
 import ac.mdiq.podcini.storage.database.sleepPrefs
 import ac.mdiq.podcini.storage.database.speedforwardSpeed
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.CurrentState.Companion.SPEED_USE_GLOBAL
 import ac.mdiq.podcini.storage.model.Episode
@@ -206,7 +208,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
     fun setPlaybackSpeedArray(speeds: List<Float>) {
         val jsonArray = JSONArray()
         for (speed in speeds) jsonArray.put(formatNumberKmp(speed.toDouble()))
-        upsertBlk(appPrefsFlow!!.value) { it.playbackSpeedArray = jsonArray.toString()}
+        runOnIOScope { upsert(appPrefsFlow!!.value) { it.playbackSpeedArray = jsonArray.toString()} }
     }
     val player_ by theatres[playerId].mPlayerFlow.collectAsStateWithLifecycle()
     val player = player_ ?: return
@@ -282,13 +284,15 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                 if (playbackService != null) {
                                     player.isSpeedForward = false
                                     player.isFallbackSpeed = false
-                                    if (forGlobal) upsertBlk(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
-                                    if (forPodcast && player.curMediaFlow.value?.feed != null) upsertBlk(player.curMediaFlow.value!!.feed!!) { it.playSpeed = chipSpeed }
+                                    runOnIOScope {
+                                        if (forGlobal) upsert(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
+                                        if (forPodcast && player.curMediaFlow.value?.feed != null) upsert(player.curMediaFlow.value!!.feed!!) { it.playSpeed = chipSpeed }
+                                    }
                                     if (forCurrent) {
                                         player.curSpeed = chipSpeed
                                         player.setPlaybackParams(chipSpeed)
                                     }
-                                } else upsertBlk(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
+                                } else runOnIOScope { upsert(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed } }
                                 onDismiss()
                             },
                             trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon", modifier = Modifier.size(30.dp).padding(start = 3.dp).clickable {
@@ -335,8 +339,10 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                     player.curPitch = pitch
                                     player.setPlaybackParams(player.curSpeed, pitch)
                                 }
-                                if (feedPitch) upsertBlk(player.curMediaFlow.value!!.feed!!) { it.playPitch = pitch }
-                                if (glPitch) upsertBlk(appPrefsFlow!!.value) { it.playbackPitch = pitch }
+                                runOnIOScope {
+                                    if (feedPitch) upsert(player.curMediaFlow.value!!.feed!!) { it.playPitch = pitch }
+                                    if (glPitch) upsert(appPrefsFlow!!.value) { it.playbackPitch = pitch }
+                                }
                             }) }
                         )
                         Checkbox(checked = unit == "Hz", onCheckedChange = { unit = "Hz" })
@@ -360,7 +366,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         Spacer(Modifier.weight(1f))
                         Checkbox(checked = feedChecked, onCheckedChange = { isChecked ->
                             feedChecked = isChecked
-                            if (player.curMediaFlow.value?.feed != null) upsertBlk(player.curMediaFlow.value!!.feed!!) { it.skipSilence = isChecked }
+                            if (player.curMediaFlow.value?.feed != null) runOnIOScope { upsert(player.curMediaFlow.value!!.feed!!) { it.skipSilence = isChecked } }
                         })
                         Text(stringResource(R.string.current_podcast))
                         Spacer(Modifier.weight(1f))
@@ -474,7 +480,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                         val time = if (!toEnd) etxtTime.toLong() else (max(((player0!!.curMediaFlow.value!!.duration) - (player0!!.curMediaFlow.value!!.position)), 0) / player0!!.curPlayerSpeedFlow.value).toLong().milliseconds.inWholeMinutes // ms to minutes
                         Logd("SleepTimerDialog") { "Sleep timer set: $time" }
                         if (time > 0L) {
-                            upsertBlk(sleepPrefs) { it.LastValue = time }
+                            runOnIOScope { upsert(sleepPrefs) { it.LastValue = time } }
                             sleepManager?.setTimer(time.minutes.inWholeMilliseconds)
                             showTimeSetup = false
                             showTimeDisplay = true
@@ -494,7 +500,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp)) {
                     Checkbox(checked = cbShakeToReset, onCheckedChange = { it0 ->
                         cbShakeToReset = it0
-                        upsertBlk(sleepPrefs) { it.ShakeToReset = it0 }
+                        runOnIOScope { upsert(sleepPrefs) { it.ShakeToReset = it0 } }
                     })
                     Text(stringResource(R.string.shake_to_reset_label), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 10.dp))
                 }
@@ -502,7 +508,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp)) {
                     Checkbox(checked = cbVibrate, onCheckedChange = { it0 ->
                         cbVibrate = it0
-                        upsertBlk(sleepPrefs) { it.Vibrate = it0 }
+                        runOnIOScope { upsert(sleepPrefs) { it.Vibrate = it0 } }
                     })
                     Text(stringResource(R.string.timer_vibration_label), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 10.dp))
                 }
@@ -511,7 +517,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp)) {
                     Checkbox(checked = chAutoEnable, onCheckedChange = { it0 ->
                         chAutoEnable = it0
-                        upsertBlk(sleepPrefs) { it.AutoEnable = it0 }
+                        runOnIOScope { upsert(sleepPrefs) { it.AutoEnable = it0 } }
                         enableChangeTime = it0
                     })
                     Text(stringResource(R.string.auto_enable_label), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 10.dp))
@@ -526,9 +532,11 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                         TextField(value = to, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("To") }, singleLine = true, modifier = Modifier.weight(1f).padding(end = 8.dp),
                             onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) to = it })
                         IconButton(onClick = {
-                            upsertBlk(sleepPrefs) {
-                                it.AutoEnableFrom = from.toInt()
-                                it.AutoEnableTo = to.toInt()
+                            runOnIOScope {
+                                upsert(sleepPrefs) {
+                                    it.AutoEnableFrom = from.toInt()
+                                    it.AutoEnableTo = to.toInt()
+                                }
                             }
                         }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_settings), contentDescription = "setting") }
                     }

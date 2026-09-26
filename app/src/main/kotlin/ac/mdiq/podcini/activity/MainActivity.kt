@@ -251,7 +251,7 @@ class MainActivity : BaseActivity() {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    if (dontAskAgain) upsertBlk(appPrefsFlow!!.value) { it.dont_ask_again_unrestricted_background = true }
+                    if (dontAskAgain) runOnIOScope { upsertBlk(appPrefsFlow!!.value) { it.dont_ask_again_unrestricted_background = true } }
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = "package:$packageName".toUri() }
                     this@MainActivity.startActivity(intent)
                     onDismiss()

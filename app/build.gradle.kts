@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 127
-        versionName = "12.13.0"
+        versionCode = 128
+        versionName = "12.13.1"
 
         ndkVersion = "30.0.16248370"
 
@@ -227,17 +227,17 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.2")
 
-    implementation("androidx.navigation3:navigation3-runtime:1.1.7")
-    implementation("androidx.navigation3:navigation3-ui:1.1.7")
+    implementation("androidx.navigation3:navigation3-runtime:1.2.0")
+    implementation("androidx.navigation3:navigation3-ui:1.2.0")
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.11.0")
 
-    implementation("androidx.annotation:annotation:1.10.0")
-    implementation("androidx.core:core-ktx:1.19.0")
+    implementation("androidx.annotation:annotation:1.11.0")
+    implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.documentfile:documentfile:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
-    implementation("androidx.webkit:webkit:1.17.0")
-    implementation("androidx.work:work-runtime:2.11.2")
+    implementation("androidx.webkit:webkit:1.17.1")
+    implementation("androidx.work:work-runtime:2.12.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.3.0")
 
     implementation("androidx.car.app:app:1.7.0")

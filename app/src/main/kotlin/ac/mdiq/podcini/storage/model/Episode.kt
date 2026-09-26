@@ -80,7 +80,7 @@ class Episode : RealmObject {
         get() = MediaType.fromMimeType(mimeType)
 
     /**
-     * The id/guid that can be found in the rss/atom feed. Might not be set, especially in youtube feeds
+     * The id/guid that can be found in the rss/atom feed. Might not be set, especially in feeds from an external source
      */
     var identifier: String? = null
 
@@ -270,20 +270,23 @@ class Episode : RealmObject {
 
     fun updateFromOther(other: Episode, includeState: Boolean = false, includeDuration: Boolean = true) {
 //        Logd(TAG) { "updateFromOther ${other.viewCount} ${other.title} $title" }
-        if (other.images.isNotEmpty()) this.images = other.images
+        if (other.images.isNotEmpty()) images = other.images
         if (other.title != null) title = other.title
-        if (other.description != null) description = other.description
         if (other.link != null) link = other.link
         if (other.pubDate != 0L && other.pubDate != pubDate) pubDate = other.pubDate
-
         this.downloadUrl = other.downloadUrl
+
+        setDescriptionIfLonger(other.description)
+
+        if (other.transcriptMetas.isNotEmpty()) this.transcriptMetas = other.transcriptMetas
+        this.aiContent = other.aiContent
 
         if (other.size > 0) size = other.size
         // Do not overwrite duration that we measured after downloading
         if (includeDuration && other.duration > 0 && duration <= 0) duration = other.duration
         if (other.mimeType != null) mimeType = other.mimeType
 
-        if (other.paymentLink != null) paymentLink = other.paymentLink
+        if (!other.paymentLink.isNullOrBlank()) paymentLink = other.paymentLink
         if (other.chapters.isNotEmpty()) {
             chapters.clear()
             chapters.addAll(other.chapters)
@@ -293,15 +296,15 @@ class Episode : RealmObject {
         if (other.likeCount > 0) likeCount = other.likeCount
 
         if (includeState) {
-            this.rating = other.rating
-            this.playState = other.playState
-            this.playStateSetTime = other.playStateSetTime
-            this.position = other.position
-            this.playbackCompletionTime = other.playbackCompletionTime
-            this.playedDuration = other.playedDuration
-            this.hasEmbeddedPicture = other.hasEmbeddedPicture
-            this.lastPlayedTime = other.lastPlayedTime
-            this.isAutoDownloadEnabled = other.isAutoDownloadEnabled
+            rating = other.rating
+            playState = other.playState
+            playStateSetTime = other.playStateSetTime
+            position = other.position
+            playbackCompletionTime = other.playbackCompletionTime
+            playedDuration = other.playedDuration
+            hasEmbeddedPicture = other.hasEmbeddedPicture
+            lastPlayedTime = other.lastPlayedTime
+            isAutoDownloadEnabled = other.isAutoDownloadEnabled
         }
     }
 
@@ -338,16 +341,16 @@ class Episode : RealmObject {
     fun setDescriptionIfLonger(newDescription: String?) {
         if (newDescription.isNullOrEmpty()) return
         when {
-            this.description == null -> this.description = newDescription
-            description!!.length < newDescription.length -> this.description = newDescription
+            description == null -> description = newDescription
+            description!!.length < newDescription.length -> description = newDescription
         }
     }
 
     fun setTranscriptIfLonger(newTranscript: String?) {
         if (newTranscript.isNullOrEmpty()) return
         when {
-            this.transcript == null -> this.transcript = newTranscript
-            transcript!!.length < newTranscript.length -> this.transcript = newTranscript
+            transcript == null -> transcript = newTranscript
+            transcript!!.length < newTranscript.length -> transcript = newTranscript
         }
     }
 
@@ -372,23 +375,6 @@ class Episode : RealmObject {
 //        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE)
 //    }
 
-    fun fillMedia(duration: Int, position: Int,
-                  size: Long, mimeType: String?, fileUrl: String?, downloadUrl: String?,
-                  downloaded: Boolean, playbackCompletionTime: Long, playedDuration: Int,
-                  lastPlayedTime: Long) {
-        this.duration = duration
-        this.position = position
-        this.playedDuration = playedDuration
-        this.playedDurationWhenStarted = playedDuration
-        this.size = size
-        this.mimeType = mimeType
-        this.playbackCompletionTime =  playbackCompletionTime
-        this.lastPlayedTime = lastPlayedTime
-        this.fileUrl = fileUrl
-        this.downloadUrl = downloadUrl
-        this.downloaded = downloaded
-    }
-
     fun fillMedia(downloadUrl: String?, size: Long, mimeType: String?) {
         this.size = size
         this.mimeType = mimeType
@@ -397,8 +383,8 @@ class Episode : RealmObject {
 //        Logd(TAG) { "fillMedia downloadUrl: $downloadUrl" }
     }
 
-    suspend fun getMediaFileUriString(): String {
-        val fileName = getMediafilename()
+    suspend fun mediaFileUriString(): String {
+        val fileName = mediafilename()
         Logd(TAG) { "getMediaFileUriString: filename: $fileName" }
         val subDirectoryName = generateFileName(feed?.title ?: "NoFeed")
         var subDirectory = mediaDir.listChildren().find { it.name == subDirectoryName }
@@ -415,7 +401,7 @@ class Episode : RealmObject {
         return fileUri
     }
 
-    fun getMediafilename(): String {
+    fun mediafilename(): String {
         val titleBaseFilename = if (title != null) generateFileName(title!!) else ""
         val urlBaseFilename = if (!downloadUrl.isNullOrBlank()) guessFileName(downloadUrl!!, null, mimeType) else ""
         var baseFilename = if (titleBaseFilename != "") titleBaseFilename else urlBaseFilename
@@ -472,7 +458,7 @@ class Episode : RealmObject {
 
     fun isSizeSetUnknown(): Boolean = (size == CHECKED_ON_SIZE_BUT_UNKNOWN.toLong())
 
-    fun getEpisodeTitle(): String = title ?: identifyingValue ?: "No title"
+    fun titleOrIdv(): String = title ?: identifyingValue ?: "No title"
 
     /**
      * This method should be called every time playback starts on this object.
@@ -535,7 +521,7 @@ class Episode : RealmObject {
 
     fun captionIndexAt(positionMs: Long, actIndex: Int): Int {
         val cues = captionCues
-        fun indexAt(positionMs: Long): Int {
+        fun binarySearch(positionMs: Long): Int {
             var low = 0
             var high = cues.lastIndex
             while (low <= high) {
@@ -546,11 +532,12 @@ class Episode : RealmObject {
             return high
         }
         if (cues.isEmpty()) return -1
-        if (actIndex < 0 || positionMs < cues[actIndex].startMs) return indexAt(positionMs)
-        else {
-            while (actIndex + 1 < cues.size && positionMs >= cues[actIndex + 1].startMs) { return actIndex+1 }
+        if (actIndex in cues.indices && positionMs >= cues[actIndex].startMs) {
+            var index = actIndex
+            while (index + 1 < cues.size && positionMs >= cues[index + 1].startMs) index++
+            return index
         }
-        return actIndex
+        return binarySearch(positionMs)
     }
 
     fun setChapters(chapters_: List<Chapter>) {
@@ -560,7 +547,7 @@ class Episode : RealmObject {
         chaptersLoaded = true
     }
 
-    fun getCurrentChapterIndex(position: Int): Int {
+    fun chapterIndexAt(position: Int): Int {
         if (chapters.isEmpty()) return -1
         for (i in chapters.indices) if (chapters[i].start > position) return i - 1
         return chapters.size - 1

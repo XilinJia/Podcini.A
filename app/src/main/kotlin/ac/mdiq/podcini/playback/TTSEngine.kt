@@ -172,7 +172,7 @@ object TTSEngine {
                 }
 
                 var engineIndex = 0
-                val mediaFile = mediaDir / generateFileName(item.feed?.title ?: "") / item.getMediafilename()
+                val mediaFile = mediaDir / generateFileName(item.feed?.title ?: "") / item.mediafilename()
                 tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {}
                     override fun onDone(utteranceId: String?) { engineIndex++ }

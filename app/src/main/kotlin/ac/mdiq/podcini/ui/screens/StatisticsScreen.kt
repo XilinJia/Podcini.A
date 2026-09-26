@@ -11,6 +11,8 @@ import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.durationStringShort
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.DatesFilterDialog
 import ac.mdiq.podcini.ui.compose.EpisodeLazyColumn
@@ -154,9 +156,11 @@ class StatisticsVM: ViewModel() {
     internal fun setTimeFilter(timeFilterFrom_: Long, timeFilterTo_: Long) {
         timeFilterFrom = timeFilterFrom_
         timeFilterTo = timeFilterTo_
-        upsertBlk(appAttribsFlow!!.value) {
-            it.statisticsFrom = timeFilterFrom_
-            it.statisticsUntil = timeFilterTo_
+        runOnIOScope {
+            upsert(appAttribsFlow!!.value) {
+                it.statisticsFrom = timeFilterFrom_
+                it.statisticsUntil = timeFilterTo_
+            }
         }
     }
 

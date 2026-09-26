@@ -119,6 +119,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -171,6 +172,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -181,6 +184,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import io.github.xilinjia.krdb.ext.realmListOf
 import io.github.xilinjia.krdb.query.Sort
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -265,7 +269,7 @@ fun ShareDialog(item: Episode, onDismiss: () -> Unit) {
                         var pos = 0
                         if (withPosition) {
                             text += """
-                
+
                             ${context.getString(R.string.share_starting_position_label)}: ${durationStringFull(pos)}
                             """.trimIndent()
                             pos = item.position
@@ -273,15 +277,15 @@ fun ShareDialog(item: Episode, onDismiss: () -> Unit) {
                         val link = item.linkOrFeedlink
                         if (link != null) {
                             text += """
-                
-                
+
+
                             ${context.getString(R.string.share_dialog_episode_website_label)}: $link
                             """.trimIndent()
                         }
                         if (item.downloadUrl != null) {
                             text += """
-                
-                
+
+
                             ${context.getString(R.string.share_dialog_media_file_label)}: ${item.downloadUrl}
                             """.trimIndent()
                             if (withPosition) text += "#t=" + pos / 1000
@@ -320,8 +324,8 @@ fun Context.findActivity(): Activity? = when (this) {
 }
 
 @Composable
-fun TranscriptDialog(episode: Episode, player:  BasePlayer? = null, cueIndex: Int = -1, onDismiss: () -> Unit) {
-    Dialog(properties = DialogProperties(usePlatformDefaultWidth = false), onDismissRequest = onDismiss) {
+fun TranscriptPopup(episode: Episode, player:  BasePlayer? = null, cueIndex: Int = -1, onDismiss: () -> Unit) {
+    Popup(alignment = Alignment.Center, onDismissRequest = {  }, properties = PopupProperties(focusable = false, dismissOnClickOutside = false)) {
         var isExpanded by remember { mutableStateOf(false) }
         val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
         dialogWindowProvider?.window?.setGravity(if (isExpanded) Gravity.TOP else Gravity.CENTER)
@@ -333,6 +337,8 @@ fun TranscriptDialog(episode: Episode, player:  BasePlayer? = null, cueIndex: In
             Column(Modifier.fillMaxWidth().padding(horizontal = 5.dp)) {
                 var letScroll by remember { mutableStateOf(player != null) }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Close, contentDescription = "close", modifier = Modifier.padding(7.dp).clickable { onDismiss() })
+                    Spacer(Modifier.weight(1f))
                     if (player != null) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_center_focus_strong_24), tint = if (letScroll) Color.Green else Color.Red, contentDescription = "center", modifier = Modifier.padding(start = 10.dp).clickable { letScroll = !letScroll })
                     Spacer(Modifier.weight(1f))
                     Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_expansion_panels_24), tint = textColor, contentDescription = "expand", modifier = Modifier.padding(end = 10.dp).clickable { isExpanded = !isExpanded })
@@ -454,7 +460,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
     val playerLogs = remember(episode.id) { sessionLogs.filter { it.contains(episode.id.toString()) } }
     val dlLogs = remember(episode.id) { realm.query(DownloadResult::class).query("feedfileId == ${episode.id} AND feedfileType == ${RequestType.FEEDMEDIA.code}").sort("completionTime",  Sort.DESCENDING).find() }
 
-    LaunchedEffect(episode) {
+    LaunchedEffect(episode.id) {
         Logd(TAG) { "LaunchedEffect(episode, episodeId)" }
         suspend fun buildCleanedNotes(curItem: Episode, shownotesCleaner: ShownotesCleaner?): Pair<Episode, String?> {
             var curItem_ = curItem
@@ -466,9 +472,10 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 try {
                     val desc = client.withProvider { it.getEpisodeDescription(url) }
                     cleanedNotes = if (!desc.isNullOrBlank()) {
-                        curItem_ = upsertBlk(curItem_) { it.description = desc }
+                        curItem_ = upsert(curItem_) { it.description = desc }
                         shownotesCleaner?.processShownotes(desc, curItem_.duration)
                     } else shownotesCleaner?.processShownotes(curItem_.description ?: "", curItem_.duration)
+                } catch (e: CancellationException) { Logd(TAG) { "StreamInfo error ${e.message}" }
                 } catch (e: Exception) { Loge(TAG, e, "StreamInfo error") }
             } else cleanedNotes = shownotesCleaner?.processShownotes(curItem_.description ?: "", curItem_.duration)
             return Pair(curItem_, cleanedNotes)
@@ -477,14 +484,13 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             webviewData = webDataCache[episode.id]
             if (webviewData.isNullOrBlank()) {
 //                Logd(TAG) { "description: ${episode.description}" }
-                withContext(Dispatchers.IO) {
-                    episode.let {
-                        webviewData = buildCleanedNotes(episode, ShownotesCleaner()).second
-                        if (!webviewData.isNullOrBlank()) webDataCache.put(it.id, webviewData!!)
-                    }
-                }
+                webviewData = withContext(Dispatchers.IO) { buildCleanedNotes(episode, ShownotesCleaner()).second }
+                if (!webviewData.isNullOrBlank()) webDataCache.put(episode.id, webviewData!!)
             }
         }
+    }
+
+    LaunchedEffect(episode.clips.size) {
         if (episode.clips.isNotEmpty()) {
             if (playerLocal == null) playerLocal = ExoPlayer.Builder(getAppContext()).build()
         } else {
@@ -492,7 +498,6 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             playerLocal = null
         }
     }
-
     LaunchedEffect(Unit) {
         if (episode.transcriptMetas.isNotEmpty() && isExtFeed(episode.feed)) {
             val url = episode.transcriptMetas[0].url
@@ -556,7 +561,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                                 showTodoDialog = true
                             })
                             Spacer(Modifier.weight(1f))
-                            Icon(ImageVector.vectorResource(id = R.drawable.ic_delete), contentDescription = "delete", modifier = Modifier.padding(end = 15.dp).clickable { upsertBlk(episode) { it.todos.remove(todo) } })
+                            Icon(ImageVector.vectorResource(id = R.drawable.ic_delete), contentDescription = "delete", modifier = Modifier.padding(end = 15.dp).clickable { runOnIOScope { upsert(episode) { it.todos.remove(todo) } } })
                         }
                         Row {
                             if (todo.dueTime > 0) {
@@ -581,7 +586,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             if (markToRemove != 0L) {
                 AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { markToRemove = 0L }, text = { Text(stringResource(R.string.ask_remove_mark, markToRemove)) }, confirmButton = {
                     TextButton(onClick = {
-                        upsertBlk(episode) { it.marks.remove(markToRemove) }
+                        runOnIOScope { upsert(episode) { it.marks.remove(markToRemove) } }
                         markToRemove = 0L
                     }) { Text(stringResource(R.string.confirm_label)) }
                 }, dismissButton = { TextButton(onClick = { markToRemove = 0L }) { Text(stringResource(R.string.cancel_label)) } })
@@ -1012,7 +1017,7 @@ fun EpisodeTimetableDialog(episode: Episode, onDismiss: () -> Unit, cb: (Timer)-
                     Spacer(Modifier.width(100.dp))
                     Icon(imageVector = Icons.Filled.Delete, contentDescription = "delete", modifier = Modifier.clickable {
                         cancel(timer)
-                        upsertBlk(appAttribsFlow!!.value) { it.timetable.remove(timer) }
+                        runOnIOScope { upsert(appAttribsFlow!!.value) { it.timetable.remove(timer) } }
                         onDismiss()
                     })
                 }
@@ -1076,7 +1081,7 @@ fun IgnoreEpisodesDialog(selected: List<Episode>, onDismiss: () -> Unit) {
     CommonPopupCard(onDismiss = onDismiss) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             val message = stringResource(R.string.ignore_episodes_confirmation_msg)
-            
+
             var textState by remember { mutableStateOf(TextFieldValue("")) }
             Text(message + ": ${selected.size}")
             Text(stringResource(R.string.reason_to_delete_msg))
@@ -1574,7 +1579,7 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
         },
         confirmButton = {
             if (sendJobs.isEmpty() && receivers.isNotEmpty()) TextButton(onClick = {
-                if (udpPort != appAttribs.udpPort) upsertBlk(appAttribs) { it.udpPort = udpPort }
+                if (udpPort != appAttribs.udpPort) runOnIOScope { upsert(appAttribs) { it.udpPort = udpPort } }
                 for (r in receivers) {
                     val job = sendEpisodes(r.ip, r.port, synthName, selected) {
                         sendJobs[r.ip]?.let { j ->

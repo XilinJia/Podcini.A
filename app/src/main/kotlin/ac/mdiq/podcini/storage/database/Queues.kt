@@ -214,7 +214,7 @@ suspend fun smartRemoveFromQueues(item_: Episode, queues_: List<PlayQueue> = lis
         val curMediaId1 = theatres[1].mPlayerFlow.value?.curMediaFlow?.value?.id
         curIndexInActQueue = qes.indexOfFirst { it.episodeId == curMediaId0 || it.episodeId == curMediaId1 }
         if (actQueueFlow.value.size() > 0 && actQueueFlow.value.contains(item)) removeFromQueue(actQueueFlow.value, listOf(item))
-        else upsertBlk(actQueueFlow.value) { it.update() }
+        else upsert(actQueueFlow.value) { it.update() }
     }
 }
 

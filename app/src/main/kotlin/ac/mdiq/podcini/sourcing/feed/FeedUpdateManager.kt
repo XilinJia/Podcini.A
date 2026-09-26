@@ -5,16 +5,14 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.config.NotificationIds
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.createNotification
-import ac.mdiq.podcini.utils.NetworkUtils.isFeedRefreshAllowed
-import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowFeedRefresh
-import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
+import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.createNotification
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.upsertBlk
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.commonConfirms
@@ -24,6 +22,9 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.NetworkUtils.isFeedRefreshAllowed
+import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowFeedRefresh
+import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import android.Manifest
 import android.content.Context
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
@@ -94,7 +95,7 @@ object FeedUpdateManager {
         }
         var policy = ExistingWorkPolicy.KEEP
         if (replace) {
-            upsertBlk(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() }
+            runOnIOScope { upsert(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() } }
             policy = ExistingWorkPolicy.REPLACE
         }
         if (!mobileAllowFeedRefresh && !force) {
@@ -213,7 +214,7 @@ object FeedUpdateManager {
             if (attemptCount > 0) Logt(TAG, "Running backoff refresh due to prior errors")
 
             val isPeriodic = inputData.getBoolean(KEY_IS_PERIODIC, false)
-            if (isPeriodic) upsertBlk(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() }
+            if (isPeriodic) runOnIOScope { upsert(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() } }
             when {
                 !networkMonitor.isConnected -> {
                     EventFlow.postEvent(FlowEvent.MessageEvent(applicationContext.getString(R.string.download_error_no_connection)))
@@ -248,7 +249,7 @@ object FeedUpdateManager {
                 Logs(TAG, e,"Some errors occurred during refresh, will retry")
                 if (isPeriodic) {
                     if (attemptCount >= MAX_BACKOFF_ATTEMPTS) {
-                        upsertBlk(appAttribsFlow!!.value) { it.feedIdsToRefresh.clear() }
+                        runOnIOScope { upsert(appAttribsFlow!!.value) { it.feedIdsToRefresh.clear() } }
                         rescheduleUpdateTaskOnce()
                         return Result.success()
                     }

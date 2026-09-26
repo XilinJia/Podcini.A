@@ -115,7 +115,7 @@ fun ChooseRatingDialog(selected: List<Feed>, onDismiss: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             for (rating in Rating.entries.reversed()) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp).clickable {
-                    for (item in selected) upsertBlk(item) { it.rating = rating.code }
+                    runOnIOScope { for (item in selected) upsert(item) { it.rating = rating.code } }
                     onDismiss()
                 }) {
                     Icon(imageVector = ImageVector.vectorResource(id = rating.res), "")
@@ -442,7 +442,7 @@ fun SendToDevice(onDismiss: ()->Unit, cb: (String, Int)->Job?) {
         },
         confirmButton = {
             if (sendJob == null && host.isNotEmpty()) TextButton(onClick = {
-                if (udpPort != appAttribs.udpPort) upsertBlk(appAttribs) { it.udpPort = udpPort }
+                if (udpPort != appAttribs.udpPort) runOnIOScope { upsert(appAttribs) { it.udpPort = udpPort } }
                 sendJob = cb(host, port)
             }) { Text(stringResource(R.string.send)) }
         },

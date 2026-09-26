@@ -582,7 +582,7 @@ class PlaybackService : MediaLibraryService() {
                     if (e.id == theatres[i].mPlayerFlow.value?.curMediaFlow?.value?.id) {
                         val player = theatres[i].mPlayerFlow.value
                         Logd(TAG) { "onQueueEvent: queue event removed ${e.title}" }
-                        player?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = player!!.isPlaying)
+                        player?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = player.isPlaying)
                         break
                     }
                 }
@@ -591,7 +591,7 @@ class PlaybackService : MediaLibraryService() {
             mediaLibrarySession?.notifyChildrenChanged("ActQueue", 0, null)
             for (i in 0..1) {
                 val player = theatres[i].mPlayerFlow.value
-                player?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = player!!.isPlaying)
+                player?.endPlayback(hasEnded = false, wasSkipped = true, shouldContinue = player.isPlaying)
             }
         }
     }

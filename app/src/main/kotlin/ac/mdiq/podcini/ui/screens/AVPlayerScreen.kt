@@ -42,7 +42,7 @@ import ac.mdiq.podcini.ui.compose.EpisodeDetails
 import ac.mdiq.podcini.ui.compose.PlaybackSpeedFullDialog
 import ac.mdiq.podcini.ui.compose.ShareDialog
 import ac.mdiq.podcini.ui.compose.SleepTimerDialog
-import ac.mdiq.podcini.ui.compose.TranscriptDialog
+import ac.mdiq.podcini.ui.compose.TranscriptPopup
 import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.distinctColorOf
@@ -270,7 +270,6 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
 
     var showPlayButton by mutableStateOf(true)
 
-    //    private var posJob: Job? = null
     private var curIdJob: Job? = null
     private var curStateJob: Job? = null
 
@@ -279,14 +278,6 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
     fun start() {
         timeIt("$TAG start of init vm $playerId")
 
-//        posJob = viewModelScope.launch { theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.curMediaFlow?.map { media -> player to media } ?: flowOf(null) }
-//            .distinctUntilChanged().collect { playerAndMedia ->
-//                if (showPlayButton) {
-//                    val (player, media) = playerAndMedia ?: (null to null)
-//                    showPlayButton = player?.isCurrentlyPlaying(media) != true
-//                }
-//            }
-//        }
         curIdJob = viewModelScope.launch {
             theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.curMediaFlow?.map { media -> player to media } ?: flowOf(null) }
                 .distinctUntilChanged { old, new -> old?.second?.id == new?.second?.id }
@@ -298,13 +289,9 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
                     forceVideo = false
                 }
         }
-//        curStateJob = viewModelScope.launch { theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.statusSimpleFlow ?: flowOf(null) }.collect {
-//            showPlayButton = it != PlayerStatusSimple.PLAYING
-//            Logd(TAG) { "curPlayerStatus changed playerId: $playerId showPlayButton $showPlayButton" }
-//        } }
         curStateJob = viewModelScope.launch {
             theatres[playerId].mPlayerFlow.flatMapLatest { player -> if (player == null) flowOf(null) else combine(player.statusSimpleFlow, player.curMediaFlow) { status, media -> Triple(player, status, media) } }
-                .distinctUntilChanged().collect { value ->
+                .distinctUntilChanged { old, new -> old?.first == new?.first && old?.second == new?.second && old?.third?.id == new?.third?.id }.collect { value ->
                     val (_, status, media) = value ?: Triple(null, null, null)
                     showPlayButton = status != PlayerStatusSimple.PLAYING && isPlaying(media, playerId) != true
                     Logd(TAG) { "playerId: $playerId status=$status showPlayButton=$showPlayButton" }
@@ -318,8 +305,6 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
     }
 
     fun stop() {
-//        posJob?.cancel()
-//        posJob = null
         curIdJob?.cancel()
         curIdJob = null
         curStateJob?.cancel()
@@ -507,7 +492,6 @@ fun ControlUI(vm: AVPlayerVM) {
             onClick = {
                 Logd(TAG) { "onClick Play/Pause: vm.playerId: ${vm.playerId}" }
                 if (episode != null) {
-//                    vm.showPlayButton = !vm.showPlayButton
                     if (vm.showPlayButton && recordingStartTime != null) {
                         player?.recordClip(recordingStartTime!!, (player.getPosition()).toLong())
                         recordingStartTime = null
@@ -549,7 +533,6 @@ fun ControlUI(vm: AVPlayerVM) {
                     if (speedForward > 0.1f) player.speedForward(speedForward)
                 } },
             onLongClick = {
-                //                    context.sendBroadcast(MediaButtonReceiver.createIntent(context, KeyEvent.KEYCODE_MEDIA_NEXT))
                 if (player?.isPlaying == true || player?.isPaused == true) player.skip()
             })) {
             if (skipforwardSpeed > 0.1f) Text(formatNumberKmp(skipforwardSpeed), color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.TopCenter))
@@ -687,7 +670,7 @@ fun AVPlayerScreen() {
     LaunchedEffect(actPlayerId, curMedia?.position) {
         curMedia?.let {
             if (psState == PSState.Expanded) {
-                chapterIndex = it.getCurrentChapterIndex(it.position)
+                chapterIndex = it.chapterIndexAt(it.position)
                 displayedChapterIndex = if (it.position > it.duration || chapterIndex >= it.chapters.size - 1) it.chapters.size - 1 else chapterIndex
                 Logd(TAG) { "LaunchedEffect(curEpisode?.position) chapterIndex $chapterIndex $displayedChapterIndex" }
             }
@@ -738,7 +721,7 @@ fun AVPlayerScreen() {
 
     var cueIndex by remember { mutableIntStateOf(-1) }
     var showTransDialog by remember { mutableStateOf(false) }
-    if (showTransDialog && curMedia != null) TranscriptDialog(curMedia, player = player, cueIndex = cueIndex) { showTransDialog = false }
+    if (showTransDialog && curMedia != null) TranscriptPopup(curMedia, player = player, cueIndex = cueIndex) { showTransDialog = false }
 
     var showCaption by remember { mutableStateOf(false) }
 
@@ -1277,26 +1260,12 @@ fun AVPlayerScreen() {
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     useController = true
-//                    findViewById<View>(androidx.media3.ui.R.id.exo_settings)?.visibility = View.GONE
                     layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 }
             },
             update = { playerView -> playerView.player = theatres[vm.playerId].mPlayerFlow.value?.castPlayer },
             onRelease = { view -> view.player = null }
         )
-//        var aspectRatio by remember { mutableFloatStateOf(16f / 9f) }
-//        DisposableEffect(player, curMedia?.id) {
-//            val listener = object : Player.Listener {
-//                override fun onVideoSizeChanged(videoSize: VideoSize) {
-//                    if (videoSize.width > 0 && videoSize.height > 0) {
-//                        aspectRatio = videoSize.width.toFloat() / videoSize.height.toFloat()
-//                    }
-//                }
-//            }
-//            player?.castPlayer?.addListener(listener)
-//            onDispose { player?.castPlayer?.removeListener(listener) }
-//        }
-//        PlayerSurface(player = player?.castPlayer, modifier = Modifier.fillMaxWidth().aspectRatio(aspectRatio))
     }
 
 //    Logd(TAG) { "landscape: ${vm.landscape}" }
@@ -1308,7 +1277,7 @@ fun AVPlayerScreen() {
         }
     } else Box(modifier = Modifier.fillMaxWidth().then(if (psState == PSState.PartiallyExpanded) Modifier.windowInsetsPadding(WindowInsets.navigationBars) else Modifier.statusBarsPadding().navigationBarsPadding())) {
         Column(Modifier.align(if (psState == PSState.PartiallyExpanded) Alignment.TopCenter else Alignment.BottomCenter).zIndex(1f)) {
-            Logd(TAG) { "activeTheatres: $theatresCount playerMinHeight: $playerMinHeight" }
+//            Logd(TAG) { "activeTheatres: $theatresCount playerMinHeight: $playerMinHeight" }
             if (theatresCount == 2) {
                 PlayerUI(vms[1], Modifier)
                 var sliderValue by remember { mutableFloatStateOf(0.5f) }

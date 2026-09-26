@@ -224,7 +224,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
             showEditTimerDialog = true
         }
 
-        if (showTransDialog) TranscriptDialog(episode, player, cueIndex) { showTransDialog = false }
+        if (showTransDialog) TranscriptPopup(episode, player, cueIndex) { showTransDialog = false }
         if (showTransMetaDialog) CommonPopupCard(onDismiss = { showTransMetaDialog = false }) {
             if (client == null) {
                 Logt(TAG, "can not find service app for episode")

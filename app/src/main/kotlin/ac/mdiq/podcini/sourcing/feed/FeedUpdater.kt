@@ -6,18 +6,15 @@ import ac.mdiq.podcini.automation.AutoDownloadAlgorithm
 import ac.mdiq.podcini.automation.AutoEnqueueAlgorithm
 import ac.mdiq.podcini.config.CHANNEL_ID
 import ac.mdiq.podcini.config.NotificationIds
+import ac.mdiq.podcini.shared.EpisodeIPC
+import ac.mdiq.podcini.shared.getEntityId
+import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.sourcing.EPISODE_BATCH_SIZE
 import ac.mdiq.podcini.sourcing.download.DownloadError
 import ac.mdiq.podcini.sourcing.download.DownloadRequest
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
 import ac.mdiq.podcini.sourcing.feed.PodcastHandler.FeedHandlerResult
-import ac.mdiq.podcini.utils.NetworkUtils.isFeedRefreshAllowed
-import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowFeedRefresh
-import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
-import ac.mdiq.podcini.shared.EpisodeIPC
-import ac.mdiq.podcini.shared.getEntityId
-import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sourcing.EPISODE_BATCH_SIZE
 import ac.mdiq.podcini.sourcing.typeClientMap
 import ac.mdiq.podcini.storage.database.FeedAssistant
 import ac.mdiq.podcini.storage.database.addNewFeed
@@ -35,7 +32,6 @@ import ac.mdiq.podcini.storage.database.sumup
 import ac.mdiq.podcini.storage.database.trimEpisodes
 import ac.mdiq.podcini.storage.database.unmanaged
 import ac.mdiq.podcini.storage.database.upsert
-import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Episode
@@ -61,6 +57,9 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.NetworkUtils.isFeedRefreshAllowed
+import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowFeedRefresh
+import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import android.Manifest
 import android.app.Notification
 import android.content.pm.PackageManager
@@ -174,7 +173,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
             } catch (e: Exception) { onFail(feed, "refresh: update failed ${feed.title} ${e.message}") }
             titles.removeAt(0)
             feedIdsToRefresh.removeAt(0)
-            upsertBlk(appAttribsFlow!!.value) { it.feedIdsToRefresh = feedIdsToRefresh.toRealmSet() }
+            upsert(appAttribsFlow!!.value) { it.feedIdsToRefresh = feedIdsToRefresh.toRealmSet() }
         }
         // TODO: not sure these need to be here
         compileLanguages()
@@ -263,10 +262,10 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
             if (isSuccessful) downloadResult = DownloadResult(feedRaw, DownloadError.SUCCESS, true, "")
 
             if (!request.source.isNullOrEmpty()) {
-                fun updateFeedDownloadURL(original: String, updated: String) {
+                suspend fun updateFeedDownloadURL(original: String, updated: String) {
                     Logd(TAG) { "updateFeedDownloadURL(original: $original, updated: $updated)" }
                     val feed = realm.query(Feed::class).query("downloadUrl == $0", original).first().find()
-                    if (feed != null) upsertBlk(feed) { it.downloadUrl = updated }
+                    if (feed != null) upsert(feed) { it.downloadUrl = updated }
                 }
                 val redirectUrl: String? = feedHandlerResult?.redirectUrl
                 when {
@@ -415,7 +414,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                         }
                     }
                     nUpdated++
-                    upsertBlk(oldItems[0]) { it.updateFromOther(episode, includeState = overwriteStates, includeDuration = it.playState < EpisodeState.PROGRESS.code ) }
+                    upsert(oldItems[0]) { it.updateFromOther(episode, includeState = overwriteStates, includeDuration = it.playState < EpisodeState.PROGRESS.code ) }
                 } else {
                     Logd(TAG) { "updateFeedFull Found new episode: ${episode.pubDate} ${episode.title}" }
                     nNew++
@@ -427,8 +426,8 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                     val pubDate = episode.pubDate
                     if (priorMostRecentDate == null || priorMostRecentDate < pubDate || priorMostRecentDate == pubDate) {
                         Logd(TAG) { "updateFeedFull Marking episode published on $pubDate new, prior most recent date = $priorMostRecentDate" }
-                        episode = upsertBlk(episode) { it.setPlayState(EpisodeState.NEW) }
-                    } else upsertBlk(episode) {}
+                        episode = upsert(episode) { it.setPlayState(EpisodeState.NEW) }
+                    } else upsert(episode) {}
                 }
                 if (idx % 50 == 0) Logd(TAG) { "updateFeedFull processing item $idx / ${newFeed.episodes.size} " }
             }

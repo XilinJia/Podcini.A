@@ -5,6 +5,8 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.storage.database.appAttribsFlow
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.OnlineFeedItem
@@ -289,7 +291,7 @@ fun TopChartScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     if (vm.countryNameCodeMap.containsKey(vm.selectedCountry)) vm.countryCode = vm.countryNameCodeMap[vm.selectedCountry]!!
-                    upsertBlk(appAttribsFlow!!.value) { it.topChartCountryCode = vm.countryCode }
+                    runOnIOScope { upsert(appAttribsFlow!!.value) { it.topChartCountryCode = vm.countryCode } }
 //                    EventFlow.postEvent(FlowEvent.DiscoveryDefaultUpdateEvent())
                     vm.loadToplist(vm.countryCode)
                     onDismiss()

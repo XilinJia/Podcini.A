@@ -17,7 +17,6 @@ import ac.mdiq.podcini.storage.database.rewindSecs
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.streamingCacheSizeMB
 import ac.mdiq.podcini.storage.database.upsert
-import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.toIPC
 import ac.mdiq.podcini.storage.model.toTranscriptMeta
@@ -257,16 +256,22 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                     }
                     if (events.contains(Player.EVENT_TIMELINE_CHANGED) || events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) {
                         val duration = player.duration
-                        val curDuration = curMediaFlow.value?.duration
-                        if (duration != C.TIME_UNSET && duration > 0 && curDuration != null && abs(duration - curDuration) > 5000) {
-                            runOnIOScope { upsert(curMediaFlow.value!!) { it.duration = duration.toInt() } }
-                            Logt(TAG, "Media duration adjusted to : ${durationStringFull(duration.toInt())}")
+                        curMediaFlow.value?.let { media->
+                            val curDuration = media.duration
+                            if (duration != C.TIME_UNSET && duration > 0 && abs(duration - curDuration) > 5000) {
+                                runOnIOScope { upsert(media) { it.duration = duration.toInt() } }
+                                Logt(TAG, "Media duration adjusted to : ${durationStringFull(duration.toInt())}")
+                            }
                         }
                     }
                     if (events.contains(Player.EVENT_IS_LOADING_CHANGED) || events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED)) {
                         bufferedPercentFlow.value = player.bufferedPercentage
                         Logd(TAG) { "onEvents buffered: ${bufferedPercentFlow.value}" }
-                        if (bufferedPercentFlow.value == 100 && curMediaFlow.value != null && curMediaFlow.value!!.duration <= 0 && getDuration() > 0) upsertBlk(curMediaFlow.value!!) { it.duration = getDuration() }
+                        curMediaFlow.value?.let { media->
+                            val dur = getDuration()
+                            if (bufferedPercentFlow.value == 100 && media.duration <= 0 && dur > 0) runOnIOScope { upsert(media) { it.duration = dur } }
+                        }
+
                     }
                 }
                 override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
@@ -293,6 +298,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                     if (isPlaying) {
                         hasStarted = true
                         wasPlayingBeforeSeek = true
+                        setPlaybackParams()
                         media?.let { onPlaybackStart(it, it.position) }
                     } else {
                         wasPlayingBeforeSeek = false
@@ -302,6 +308,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 }
                 override fun onPlayerError(error: PlaybackException) {
                     fun handleTerminalError(message: String) {
+                        curMediaFlow.value?.let { clearSpecs(it) }
                         LogeFor(TAG, curMediaFlow.value?.id, message)
                         castPlayer?.stop()
                         castPlayer?.clearMediaItems()
@@ -380,6 +387,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                                 }
                                 error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND || (cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 404) -> handleTerminalError("onPlayerError Episode not found on server (404).")
                                 cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 403 -> {
+                                    curMediaFlow.value?.let { clearSpecs(it) }
                                     Loge(TAG, "onPlayerError Access denied (403). Check your subscription. headers=${cause.headerFields} ")
                                     Logd(TAG) { "onPlayerError Access denied (403) url: ${cause.dataSpec.uri}" }
 //                                    handleTerminalError("Access denied (403). Check your subscription.")
@@ -821,7 +829,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
             mediaItem?.let { deferredMediaItem?.complete(it) }
         } catch (e: Throwable) {
             LogsFor(TAG, media.id, "prepareDataSource: ${e.message}")
-            runOnIOScope { upsertBlk(media) { it.setPlayState(EpisodeState.ERROR) } }
+            runOnIOScope { upsert(media) { it.setPlayState(EpisodeState.ERROR) } }
             throw e
         }
     }
@@ -878,7 +886,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         if (!isAutoController || true) castPlayer?.prepare()
     }
 
-    override fun setPlaybackParams() {
+    private fun setPlaybackParams() {
         castPlayer?.playbackParameters = playbackParameters
         curPlayerSpeedFlow.value = playbackParameters.speed
     }

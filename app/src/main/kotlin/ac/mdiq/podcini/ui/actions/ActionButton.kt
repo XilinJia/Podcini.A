@@ -27,6 +27,7 @@ import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
 import ac.mdiq.podcini.storage.database.isMediaDownloadable
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -149,7 +150,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             ButtonTypes.CANCEL -> {
                 if (typeToCancel == ButtonTypes.DOWNLOAD) {
                     runBlocking { EpisodeAdrDLManager.manager.cancel(item) }
-                    if (appPrefsFlow!!.value.enableAutoDl) upsertBlk(item) { it.isAutoDownloadEnabled = false }
+                    if (appPrefsFlow!!.value.enableAutoDl) runOnIOScope { upsert(item) { it.isAutoDownloadEnabled = false } }
                     type = ButtonTypes.DOWNLOAD
                 } else if (typeToCancel == ButtonTypes.TTS) {
                     runOnIOScope { for (p in ttsTmpFiles) p.toUF().delete() }

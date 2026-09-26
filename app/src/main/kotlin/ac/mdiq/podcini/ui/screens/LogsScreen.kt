@@ -11,6 +11,7 @@ import ac.mdiq.podcini.sourcing.feed.FeedUpdater
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.Episode
@@ -250,9 +251,11 @@ fun LogsScreen() {
                         }
                         Row(modifier = Modifier.align(Alignment.BottomEnd)) {
                             Button(modifier = Modifier.padding(end = 20.dp), onClick = {
-                                if (theLog != null) upsertBlk(theLog!!) {
-                                    it.details = "share log cleared"
-                                    it.status = ShareLog.Status.SUCCESS.code
+                                if (theLog != null) runOnIOScope {
+                                    upsert(theLog!!) {
+                                        it.details = "share log cleared"
+                                        it.status = ShareLog.Status.SUCCESS.code
+                                    }
                                 }
                                 sharedUrl = ""
                             }) { Text(stringResource(R.string.clear_log)) }

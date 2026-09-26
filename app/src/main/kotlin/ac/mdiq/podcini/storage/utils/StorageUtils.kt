@@ -2,6 +2,7 @@ package ac.mdiq.podcini.storage.utils
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.storage.database.appPrefsFlow
+import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.utils.Logd
@@ -68,10 +69,12 @@ val mediaDir: UnifiedFile
                 return d
             } else {
                 Loge(TAG, "The chosen custom media folder is not valid: ${appPrefsFlow!!.value.customMediaUri}. Reset!")
-                upsertBlk(appPrefsFlow!!.value) {
-                    it.useCustomMediaFolder = false
-                    it.customMediaUri = ""
-                    it.customFolderUnavailable = true
+                runOnIOScope {
+                    upsert(appPrefsFlow!!.value) {
+                        it.useCustomMediaFolder = false
+                        it.customMediaUri = ""
+                        it.customFolderUnavailable = true
+                    }
                 }
             }
         }

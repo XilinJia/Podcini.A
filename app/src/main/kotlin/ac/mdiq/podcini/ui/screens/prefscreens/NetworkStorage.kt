@@ -24,6 +24,7 @@ import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.proxyConfig
+import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.utils.deleteDirectoryRecursively
@@ -358,7 +359,7 @@ fun NetworkStorageScreen() {
                     },
                     trailingIcon = {
                         if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings", modifier = Modifier.size(30.dp).clickable {
-                            upsertBlk(appAttribs) { it.name = name }
+                            runOnIOScope { upsert(appAttribs) { it.name = name } }
                             showIcon =  false })
                 })
             }
@@ -374,7 +375,7 @@ fun NetworkStorageScreen() {
                 NumberEditor(refreshInterval.toInt(), stringResource(R.string.time_minutes), nz = false, modifier = Modifier.weight(0.6f)) {
                     refreshInterval = it.toString()
                     Logd("DownloadsSetting") { "refreshInterval: $refreshInterval" }
-                    upsertBlk(appPrefs) { p-> p.autoUpdateInterval = it }
+                    runOnIOScope { upsert(appPrefs) { p-> p.autoUpdateInterval = it } }
                     checkAndScheduleUpdateTaskOnce(replace = true, force = it > 0)
                 }
             }
@@ -392,10 +393,10 @@ fun NetworkStorageScreen() {
             if (refreshInterval != "0") Text(stringResource(R.string.feed_next_refresh_time) + " " + nextRefreshTime, color = textColor, style = MaterialTheme.typography.bodySmall)
         }
         TitleSummarySwitchRow(R.string.pref_fetch_media_size, R.string.pref_fetch_media_size_sum, appPrefs.fetchmediaSizes) {
-            upsertBlk(appPrefs) { p-> p.fetchmediaSizes = it}
+            runOnIOScope {  upsert(appPrefs) { p-> p.fetchmediaSizes = it} }
         }
         TitleSummarySwitchRow(R.string.pref_watch_storage_title, R.string.pref_watch_storage_sum, appPrefs.checkAvailableSpace) {
-            upsertBlk(appPrefs) { p-> p.checkAvailableSpace = it}
+            runOnIOScope { upsert(appPrefs) { p-> p.checkAvailableSpace = it} }
         }
         var showResetCustomFolderDialog by remember { mutableStateOf(false) }
         if (showResetCustomFolderDialog) {
@@ -455,14 +456,14 @@ fun NetworkStorageScreen() {
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.onTertiaryContainer, thickness = 1.dp)
         TitleSummarySwitchRow(R.string.pref_automatic_download_title, R.string.pref_automatic_download_sum, appPrefs.enableAutoDl) {
-            upsertBlk(appPrefs) { p -> p.enableAutoDl = it }
+            runOnIOScope { upsert(appPrefs) { p -> p.enableAutoDl = it } }
         }
         if (appPrefs.enableAutoDl) {
             Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.pref_episode_cache_title), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     NumberEditor(appPrefs.episodeCacheSize, label = "integer", nz = false, modifier = Modifier.weight(0.5f)) {
-                        upsertBlk(appPrefs) { p-> p.episodeCacheSize = it}
+                        runOnIOScope { upsert(appPrefs) { p-> p.episodeCacheSize = it} }
                     }
                 }
                 Text(stringResource(R.string.pref_episode_cache_summary), color = textColor, style = MaterialTheme.typography.bodySmall)
@@ -493,7 +494,7 @@ fun NetworkStorageScreen() {
                         TextButton(onClick = {
                             var num = if (tempCleanupOption == EpisodeCleanupOptions.LimitBy.num.toString()) interval else tempCleanupOption
                             if (num.toIntOrNull() == null) num = EpisodeCleanupOptions.Never.num.toString()
-                            upsertBlk(appPrefs) { it.episodeCleanup = num}
+                            runOnIOScope { upsert(appPrefs) { it.episodeCleanup = num} }
                             showCleanupOptions = false
                         }) { Text(text = "OK") }
                     },
@@ -501,7 +502,7 @@ fun NetworkStorageScreen() {
                 )
             }
             TitleSummarySwitchRow(R.string.pref_automatic_download_on_battery_title, R.string.pref_automatic_download_on_battery_sum, appPrefs.enableAutoDownloadOnBattery) {
-                upsertBlk(appPrefs) { p-> p.enableAutoDownloadOnBattery = it}
+                runOnIOScope { upsert(appPrefs) { p-> p.enableAutoDownloadOnBattery = it} }
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.onTertiaryContainer, thickness = 1.dp)
@@ -536,7 +537,7 @@ fun NetworkStorageScreen() {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        upsertBlk(appPrefs) { it.mobileUpdateTypes = tempSelectedOptions.toRealmSet() }
+                        runOnIOScope { upsert(appPrefs) { it.mobileUpdateTypes = tempSelectedOptions.toRealmSet() } }
                         val optionsDiff = (tempSelectedOptions - appPrefs.mobileUpdateTypes) + (appPrefs.mobileUpdateTypes - tempSelectedOptions)
                         if (optionsDiff.contains(MobileUpdateOptions.feed_refresh.name) || optionsDiff.contains(MobileUpdateOptions.auto_download.name))
                             checkAndScheduleUpdateTaskOnce(replace = true, force = true)
@@ -619,7 +620,7 @@ fun SynchronizationScreen() {
             },
             confirmButton = {
                 if (showChooseHost) TextButton(onClick = {
-                    upsertBlk(appPrefsFlow!!.value) { it.nextcloud_server_address = serverUrlText}
+                    runOnIOScope { upsert(appPrefsFlow!!.value) { it.nextcloud_server_address = serverUrlText} }
                     nextcloudLoginFlow = NextcloudLoginFlow(getKtorClient(), serverUrlText, getAppContext(), nextCloudAuthCallback)
                     errorText = ""
                     showChooseHost = false

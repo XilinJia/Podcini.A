@@ -3,6 +3,8 @@ package ac.mdiq.podcini.ui.screens.prefscreens
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
+import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.ui.compose.AppThemes
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
@@ -83,14 +85,14 @@ fun UserInterfaceScreen() {
             Spacer(Modifier.weight(1f))
         }
         TitleSummarySwitchRow(R.string.pref_dynamic_theme_title, R.string.pref_dynamic_theme_message, appPrefs.useDynamicThemes) {
-            upsertBlk(appPrefs) { p-> p.useDynamicThemes = it } }
+            runOnIOScope { upsert(appPrefs) { p-> p.useDynamicThemes = it } } }
         if (themeIndex != 1) TitleSummarySwitchRow(R.string.pref_black_theme_title, R.string.pref_black_theme_message, appPrefs.themeBlack) {
-            upsertBlk(appPrefs) { p-> p.themeBlack = it } }
+            runOnIOScope { upsert(appPrefs) { p-> p.themeBlack = it } } }
         TitleSummarySwitchRow(R.string.pref_episode_cover_title, R.string.pref_episode_cover_summary, appPrefs.useEpisodeCover) {
-            upsertBlk(appPrefs) { p-> p.useEpisodeCover = it } }
+            runOnIOScope { upsert(appPrefs) { p-> p.useEpisodeCover = it } } }
         Text(stringResource(R.string.external_elements), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 15.dp))
         TitleSummarySwitchRow(R.string.pref_show_notification_skip_title, R.string.pref_show_notification_skip_sum, appPrefs.showSkip) {
-            upsertBlk(appPrefs) { p-> p.showSkip = it } }
+            runOnIOScope { upsert(appPrefs) { p-> p.showSkip = it } } }
         Text(stringResource(R.string.behavior), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 15.dp))
         var showDefaultPageOptions by remember { mutableStateOf(false) }
         TitleSummaryActionColumn(R.string.pref_default_page, R.string.pref_default_page_sum) { showDefaultPageOptions = true }
@@ -115,8 +117,10 @@ fun UserInterfaceScreen() {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        upsertBlk(appPrefs) { it.defaultPage = tempSelectedOption }
-                        upsertBlk(appAttribsFlow!!.value) { it.restoreLastScreen = restore }
+                        runOnIOScope {
+                            upsert(appPrefs) { it.defaultPage = tempSelectedOption }
+                            upsert(appAttribsFlow!!.value) { it.restoreLastScreen = restore }
+                        }
                         showDefaultPageOptions = false
                     }) { Text(text = "OK") }
                 },
@@ -124,7 +128,7 @@ fun UserInterfaceScreen() {
             )
         }
         TitleSummarySwitchRow(R.string.pref_back_button_opens_drawer, R.string.pref_back_button_opens_drawer_summary, appPrefs.backButtonOpensDrawer) {
-            upsertBlk(appPrefs) { p-> p.backButtonOpensDrawer = it } }
+            runOnIOScope { upsert(appPrefs) { p-> p.backButtonOpensDrawer = it } } }
 
         Text(stringResource(R.string.pref_show_log_level), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold,  modifier = Modifier.padding(start = 16.dp, top = 10.dp))
         SingleChoiceSegmentedButtonRow {
@@ -133,7 +137,7 @@ fun UserInterfaceScreen() {
                 SegmentedButton(shape = SegmentedButtonDefaults.itemShape(index = index, count = LogLevel.entries.size),  selected = level.code == selected,
                     onClick = {
                         selected = level.code
-                        upsertBlk(appPrefs) { p-> p.showLogLevel = level.code }
+                        runOnIOScope { upsert(appPrefs) { p-> p.showLogLevel = level.code } }
                     }
                 ) { Text(level.name, maxLines = 1) }
             }
@@ -141,6 +145,6 @@ fun UserInterfaceScreen() {
         Text(stringResource(R.string.pref_show_log_level_sum), color = textColor, style = MaterialTheme.typography.bodySmall,  modifier = Modifier.fillMaxWidth().padding(start = 16.dp))
 
         TitleSummarySwitchRow(R.string.pref_dont_ask_restricted, R.string.pref_dont_ask_restricted_sum, appPrefs.dont_ask_again_unrestricted_background) {
-            upsertBlk(appPrefs) { p-> p.dont_ask_again_unrestricted_background = it } }
+            runOnIOScope { upsert(appPrefs) { p-> p.dont_ask_again_unrestricted_background = it } } }
     }
 }

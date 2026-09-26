@@ -109,7 +109,7 @@ class ShareReceiverActivity : ComponentActivity() {
 
         runOnIOScope {
             var log = ShareLog(text)
-            log = upsertBlk(log) {}
+            log = upsert(log) {}
             handleShared(text, this, true, log) { c, ex ->
                 client = c
                 existing = ex
@@ -140,7 +140,7 @@ class ShareReceiverActivity : ComponentActivity() {
             when {
 //            plain text
                 sharedText.matches(Regex("^[^<>/]+$")) -> {
-                    if (log != null)  upsertBlk(log) {it.type = ShareLog.ShareType.Text.name }
+                    log?.let { l-> runOnIOScope { upsert(l) {it.type = ShareLog.ShareType.Text.name } } }
                     Logd(TAG) { "receiveShared Activity is started with text $sharedText" }
                     val intent = Intent(getAppContext(), MainActivity::class.java).apply {
                         putExtra(Extras.search_string.name, sharedText)
@@ -151,7 +151,7 @@ class ShareReceiverActivity : ComponentActivity() {
                 }
                 else -> {
                     fun openAsFeed(source: String?) {
-                        if (log != null) upsertBlk(log) { it.type = ShareLog.ShareType.Feed.name }
+                        log?.let { l-> runOnIOScope { upsert(l) { it.type = ShareLog.ShareType.Feed.name } } }
                         Logd(TAG) { "openAsFeed Activity is started with url $sharedText" }
                         val intent = Intent(getAppContext(), MainActivity::class.java).apply {
                             putExtra(Extras.feed_url.name, sharedText)
@@ -170,7 +170,7 @@ class ShareReceiverActivity : ComponentActivity() {
                         if (episode == null) openAsFeed(client.feedSearcher?.name)
                         else {
                             val existing = realm.query(Episode::class).query("title == $0", episode.title).find()
-                            if (log != null) upsertBlk(log) { it.type = ShareLog.ShareType.Media.name }
+                            log?.let { l-> runOnIOScope { upsert(l) { it.type = ShareLog.ShareType.Media.name } } }
                             extMediaCB(client, existing)
                         }
                         return
@@ -180,7 +180,7 @@ class ShareReceiverActivity : ComponentActivity() {
                     for (client in clients) {
                         val episode = client.withProviderBlocking { it.buildEpisode(sharedText)?.toEpisode() } ?: continue
                         val existing = realm.query(Episode::class).query("title == $0", episode.title).find()
-                        if (log != null) upsertBlk(log) { it.type = ShareLog.ShareType.Media.name }
+                        log?.let { l-> runOnIOScope { upsert(l) { it.type = ShareLog.ShareType.Media.name } } }
                         extMediaCB(client, existing)
                         return
                     }
