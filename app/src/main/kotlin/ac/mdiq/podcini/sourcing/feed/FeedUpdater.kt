@@ -47,14 +47,12 @@ import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
 import ac.mdiq.podcini.sync.model.EpisodeAction
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
-import ac.mdiq.podcini.ui.compose.commonConfirms
+import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.ui.compose.feedOperationText
-import ac.mdiq.podcini.utils.EventFlow
-import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.LogFor
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
+import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.NetworkUtils.isFeedRefreshAllowed
@@ -105,11 +103,10 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         Logd(TAG) { "start allLocalFeeds: $allLocalFeeds" }
         when {
             allLocalFeeds -> runOnIOScope { refresh() }
-            !networkMonitor.isConnected -> EventFlow.postEvent(FlowEvent.MessageEvent(context.getString(R.string.download_error_no_connection)))
+            !networkMonitor.isConnected -> Logm(TAG, context.getString(R.string.download_error_no_connection))
             isFeedRefreshAllowed -> runOnIOScope { refresh() }
             else -> {
-                commonConfirms.add(CommonConfirmAttrib(
-                    title = context.getString(R.string.feed_refresh_title),
+                confirm(title = context.getString(R.string.feed_refresh_title),
                     message = context.getString(if (networkMonitor.isNetworkRestricted && networkMonitor.isVpnOverWifi) R.string.confirm_mobile_feed_refresh_dialog_message_vpn else R.string.confirm_mobile_feed_refresh_dialog_message),
                     confirmRes = R.string.confirm_mobile_streaming_button_once,
                     cancelRes = R.string.no,
@@ -118,7 +115,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                     onNeutral = {
                         mobileAllowFeedRefresh = true
                         runOnIOScope { refresh() }
-                    }))
+                    })
             }
         }
     }
@@ -207,12 +204,11 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         val downloader = downloaderFor(request) ?: throw Exception("Unable to create downloader")
         var downloadResult: DownloadResult? = null
         var isSuccessful = true
-        var feedRaw = Feed()
         var reason: DownloadError? = null
         var reasonDetailed: String? = null
         var feedHandlerResult: FeedHandlerResult? = null
         downloader.download { source ->
-            feedRaw = Feed(request.source, request.lastModified)
+            val feedRaw = Feed(request.source, request.lastModified)
             feedRaw.id = request.feedfileId
             feedRaw.limitEpisodesCount = feed.limitEpisodesCount
             feedRaw.fillPreferences(false, Feed.AutoDeleteAction.GLOBAL, VolumeAdaptionSetting.OFF, request.username, request.password)

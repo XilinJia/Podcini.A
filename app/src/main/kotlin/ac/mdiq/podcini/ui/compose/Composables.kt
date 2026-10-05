@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.compose
 
+import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
@@ -15,7 +16,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -96,6 +96,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -324,36 +325,42 @@ data class CommonConfirmAttrib(
     val message: String,
     val confirmRes: Int,
     val onConfirm: ()->Unit,
-    val cancelRes: Int,
+    val cancelRes: Int = 0,
     val onCancel: ()->Unit = {  },
     val neutralRes: Int = 0,
     val onNeutral: (()->Unit)? = null
 )
 
+fun confirm(title: String, message: String, confirmRes: Int, onConfirm: ()->Unit, cancelRes: Int = 0, onCancel: ()->Unit = {  }, neutralRes: Int = 0, onNeutral: (()->Unit)? = null) {
+    appMainScope.launch { commonConfirms.add(CommonConfirmAttrib(title = title, message = message, confirmRes = confirmRes, onConfirm = onConfirm, cancelRes = cancelRes, onCancel = onCancel, neutralRes = neutralRes, onNeutral = onNeutral)) }
+}
+
 @Composable
 fun CommonConfirmDialog(c: CommonConfirmAttrib) {
-    AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { commonConfirms.remove(c) },
-        title = { Text(c.title) },
-        text = {
-            Column {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) { Text(c.message) }
+    CommonDialogSurface(onDismiss = { commonConfirms.remove(c) }) {
+        Column {
+            Text(c.title, style = MaterialTheme.typography.titleMedium)
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) { Text(c.message) }
+            Row {
+                Spacer(Modifier.weight(0.2f))
+                if (c.cancelRes > 0) TextButton(onClick = {
+                    commonConfirms.remove(c)
+                    c.onCancel()
+                }) { Text(stringResource(c.cancelRes)) }
+                Spacer(Modifier.weight(0.2f))
                 if (c.neutralRes > 0) TextButton(onClick = {
                     commonConfirms.remove(c)
                     c.onNeutral?.invoke()
                 }) { Text(stringResource(c.neutralRes)) }
+                Spacer(Modifier.weight(0.2f))
+                TextButton(onClick = {
+                    commonConfirms.remove(c)
+                    c.onConfirm()
+                }) { Text(stringResource(c.confirmRes)) }
+                Spacer(Modifier.weight(0.2f))
             }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                commonConfirms.remove(c)
-                c.onConfirm()
-            }) { Text(stringResource(c.confirmRes)) }
-        },
-        dismissButton = { TextButton(onClick = {
-            commonConfirms.remove(c)
-            c.onCancel()
-        }) { Text(stringResource(c.cancelRes)) } }
-    )
+        }
+    }
 }
 
 var commonMessage by mutableStateOf<CommonMessageAttrib?>(null)
@@ -517,7 +524,7 @@ fun SelectLowerAllUpper(selectedList: MutableList<MutableState<Boolean>>, lowerC
 
 enum class TagType { Feed, Episode }
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TagSettingDialog(tagType: TagType, existingTags: Set<String>, multiples: Boolean = false, onDismiss: () -> Unit, cb: (List<String>)->Unit) {
     val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()

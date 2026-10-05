@@ -2,11 +2,13 @@ package ac.mdiq.podcini.playback
 
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
+import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.sleepPrefs
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
+import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.Logt
 import android.annotation.SuppressLint
 import android.content.Context.SENSOR_SERVICE
@@ -205,11 +207,10 @@ class SleepManager {
             val toSetting = autoEnableTo
             if (fromSetting != toSetting) autoEnableByTime = isInTimeRange(fromSetting, toSetting, Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour)
             if (sleepPrefs.AutoEnable && autoEnableByTime && sleepManager?.isActive != true) {
+                val context = getAppContext()
                 sleepManager?.setTimer(lastTimerValue.minutes.inWholeMilliseconds)
-                // TODO: what to do?
-                //                    EventFlow.postEvent(FlowEvent.MessageEvent(context.getString(R.string.sleep_timer_enabled_label), { sleepManager?.disableSleepTimer() }, context.getString(R.string.undo)))
+                Logm(TAG, context.getString(R.string.sleeptimer_enabled), context.getString(R.string.undo)) { sleepManager?.disable() }
             }
-
         }
     }
 }

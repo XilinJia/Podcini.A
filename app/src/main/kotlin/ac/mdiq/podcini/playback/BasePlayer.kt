@@ -843,7 +843,7 @@ abstract class BasePlayer {
         }
 
         if (useABPS > 0) {
-            val audioSpec = asl.filter { it.averageBitrate == useABPS }.filter { if (useCodex != "Any") it.codec == useCodex else true }.firstOrNull { if (useLocale != null) it.audioLocale == useLocale else true }
+            val audioSpec = asl.filter { it.averageBitrate == useABPS }.filter { useCodex == "Any" || it.codec == useCodex }.firstOrNull { useLocale == null || it.audioLocale == useLocale }
             if (audioSpec != null) {
                 bitrateFlow.value = audioSpec.bitrate
                 return audioSpec

@@ -126,9 +126,9 @@ class PlaybackStarter(private val media: Episode) {
                 forcePlaybackReset = false
 
                 if (!isAutoController && (media_.forceVideo || (media_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && media_.mediaType == MediaType.VIDEO))) {
-                    player?.playingVideoFlow?.value = true
+                    player.playingVideoFlow.value = true
                     psState = PSState.Expanded
-                } else player?.playingVideoFlow?.value = false
+                } else player.playingVideoFlow.value = false
             }
 
             aCtrlFuture?.let { future ->

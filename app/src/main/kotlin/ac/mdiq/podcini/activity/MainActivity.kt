@@ -9,7 +9,6 @@ import ac.mdiq.podcini.playback.TTSEngine.closeTTS
 import ac.mdiq.podcini.playback.cast.BaseActivity
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
-
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.scheduleUpdateTaskOnce
@@ -25,9 +24,8 @@ import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.autoBackup
 import ac.mdiq.podcini.sync.SyncService
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.PodciniTheme
-import ac.mdiq.podcini.ui.compose.commonConfirms
+import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.ui.screens.Facets
 import ac.mdiq.podcini.ui.screens.FeedDetails
 import ac.mdiq.podcini.ui.screens.FindFeeds
@@ -63,8 +61,8 @@ import android.os.PowerManager
 import android.os.StrictMode
 import android.provider.Settings
 import android.view.View
-import android.view.Window
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.border
@@ -76,7 +74,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -93,22 +90,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import androidx.core.view.WindowCompat.enableEdgeToEdge
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : BaseActivity() {
     private var intentState by mutableStateOf<Intent?>(null)
 
@@ -118,37 +110,33 @@ class MainActivity : BaseActivity() {
             checkAndRequestUnrestrictedBackgroundActivity()
             return@registerForActivityResult
         }
-        commonConfirms.add(CommonConfirmAttrib(
-            title = getString(R.string.notification_check_permission),
+        confirm(title = getString(R.string.notification_check_permission),
             message = getString(R.string.notification_permission_text),
             confirmRes = android.R.string.ok,
             cancelRes = R.string.cancel_label,
             onConfirm = { checkAndRequestUnrestrictedBackgroundActivity() },
-            onCancel = { checkAndRequestUnrestrictedBackgroundActivity() }))
+            onCancel = { checkAndRequestUnrestrictedBackgroundActivity() })
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun postForNotificationPermission() {
-        commonConfirms.add(CommonConfirmAttrib(
-            title = getString(R.string.notification_check_permission),
+        confirm(title = getString(R.string.notification_check_permission),
             message = getString(R.string.notification_permission_text),
             confirmRes = android.R.string.ok,
             cancelRes = R.string.cancel_label,
             onConfirm = { requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
-            onCancel = { checkAndRequestUnrestrictedBackgroundActivity() }))
+            onCancel = { checkAndRequestUnrestrictedBackgroundActivity() })
     }
 
     private var showUnrestrictedBackgroundPermissionDialog by mutableStateOf(false)
 
     private var hasFeedUpdateObserverStarted = false
 
-    private var hasInitialized = mutableStateOf(false)
+//    private var hasInitialized = mutableStateOf(false)
 
 
     public override fun onCreate(savedInstanceState: Bundle?) {
-        window.requestFeature(Window.FEATURE_ACTION_MODE_OVERLAY)
-        enableEdgeToEdge(window)
-
+        enableEdgeToEdge()
         if (BuildConfig.DEBUG) {
             val builder = StrictMode.ThreadPolicy.Builder()
                 .detectAll()  // Enable all detections
@@ -156,7 +144,6 @@ class MainActivity : BaseActivity() {
                 .penaltyDropBox()
             StrictMode.setThreadPolicy(builder.build())
         }
-
         super.onCreate(savedInstanceState)
 
         timeIt("$TAG after handleNavIntent")
@@ -277,7 +264,7 @@ class MainActivity : BaseActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(Extras.generated_view_id.name, View.generateViewId())
-        outState.putBoolean(INIT_KEY, hasInitialized.value)
+//        outState.putBoolean(INIT_KEY, hasInitialized.value)
     }
 
     override fun onDestroy() {
@@ -316,19 +303,11 @@ class MainActivity : BaseActivity() {
             runOnIOScope {
                 val count = realm.query(Episode::class).query("playState == ${EpisodeState.AGAIN.code} OR playState == ${EpisodeState.FOREVER.code}").query("repeatTime <= $curTime").count().find()
                 upsert(appPrefsFlow!!.value) { it.postRepeatsTime = curTime }
-                if (count > 0) withContext(Dispatchers.Main) {
-                    commonConfirms.add(CommonConfirmAttrib(title = getString(R.string.repeats_past_due), message = getString(R.string.repeats_past_due_sum, count), confirmRes = R.string.OK, cancelRes = R.string.no,
-                        onConfirm = { navTo(Facets(modeName = QuickAccess.Due.name)) }))
-                }
+                if (count > 0) confirm(title = getString(R.string.repeats_past_due), message = getString(R.string.repeats_past_due_sum, count), confirmRes = R.string.OK, cancelRes = R.string.no,
+                        onConfirm = { navTo(Facets(modeName = QuickAccess.Due.name)) })
             }
 
         timeIt("$TAG end of onResume")
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-//        lastTheme = getNoTitleTheme(this) // Don't recreate activity when a result is pending
     }
 
     private var eventSink: Job?     = null
@@ -339,28 +318,10 @@ class MainActivity : BaseActivity() {
         eventStickySink?.cancel()
         eventStickySink = null
     }
+    // TODO: not needed
     private fun procFlowEvents() {
-        if (eventSink == null) eventSink = lifecycleScope.launch {
-            EventFlow.events.collectLatest { event ->
-                Logd(TAG) { "Received event: ${event.TAG}" }
-                when (event) {
-                    is FlowEvent.MessageEvent -> {
-                        if (event.action != null)
-                            commonConfirms.add(CommonConfirmAttrib(
-                                title = event.message,
-                                message = event.actionText ?: "",
-                                confirmRes = R.string.confirm_label,
-                                cancelRes = R.string.no,
-                                onConfirm = { event.action(this@MainActivity) }))
-                        else Logt(TAG, event.message)
-                    }
-                    else -> {}
-                }
-            }
-        }
-        if (eventStickySink == null) eventStickySink = lifecycleScope.launch {
-            EventFlow.stickyEvents.collectLatest { event -> Logd(TAG) { "Received sticky event: ${event.TAG}" } }
-        }
+        if (eventSink == null) eventSink = lifecycleScope.launch { EventFlow.events.collectLatest { event -> Logd(TAG) { "Received event: ${event.TAG}" } } }
+        if (eventStickySink == null) eventStickySink = lifecycleScope.launch { EventFlow.stickyEvents.collectLatest { event -> Logd(TAG) { "Received sticky event: ${event.TAG}" } } }
     }
 
     private fun handleNavIntent() {
@@ -465,7 +426,7 @@ class MainActivity : BaseActivity() {
     companion object {
         private val TAG: String = MainActivity::class.simpleName ?: "Anonymous"  // have to keep, otherwise release build may fail?!
 
-        private const val INIT_KEY = "app_init_state"
+//        private const val INIT_KEY = "app_init_state"
 
         fun Context.findActivity(): Activity? {
             var context = this

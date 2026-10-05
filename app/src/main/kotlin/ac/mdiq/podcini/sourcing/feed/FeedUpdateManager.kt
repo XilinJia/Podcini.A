@@ -14,12 +14,10 @@ import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Feed
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
-import ac.mdiq.podcini.ui.compose.commonConfirms
-import ac.mdiq.podcini.utils.EventFlow
-import ac.mdiq.podcini.utils.FlowEvent
+import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
+import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.NetworkUtils.isFeedRefreshAllowed
@@ -115,13 +113,9 @@ object FeedUpdateManager {
             return
         }
         when {
-            !networkMonitor.isConnected -> {
-                Logt(TAG, "checkAndscheduleUpdateTaskOnce network not available")
-                EventFlow.postEvent(FlowEvent.MessageEvent(context.getString(R.string.download_error_no_connection)))
-            }
+            !networkMonitor.isConnected -> Logm(TAG, context.getString(R.string.download_error_no_connection))
             !isFeedRefreshAllowed -> {
-                commonConfirms.add(CommonConfirmAttrib(
-                    title = context.getString(R.string.feed_refresh_title),
+                confirm(title = context.getString(R.string.feed_refresh_title),
                     message = context.getString(if (networkMonitor.isNetworkRestricted && networkMonitor.isVpnOverWifi) R.string.confirm_mobile_feed_refresh_dialog_message_vpn else R.string.confirm_mobile_feed_refresh_dialog_message),
                     confirmRes = R.string.confirm_mobile_streaming_button_once,
                     cancelRes = R.string.no,
@@ -130,7 +124,7 @@ object FeedUpdateManager {
                     onNeutral = {
                         mobileAllowFeedRefresh = true
                         scheduleUpdateTaskOnce(replace, force)
-                    }))
+                    })
             }
             else -> scheduleUpdateTaskOnce(replace, force)
         }
@@ -162,11 +156,10 @@ object FeedUpdateManager {
         Logd(TAG) { "Run auto update immediately in background." }
         when {
 //            feeds.isNotEmpty() && feed.isLocal -> runOnce(context, feeds, fullUpdate = fullUpdate)    // TODO
-            !networkMonitor.isConnected -> EventFlow.postEvent(FlowEvent.MessageEvent(context.getString(R.string.download_error_no_connection)))
+            !networkMonitor.isConnected -> Logm(TAG, context.getString(R.string.download_error_no_connection))
             isFeedRefreshAllowed -> runOnce(feeds, fullUpdate = fullUpdate, doItWanyway = doItWanyway)
             else -> {
-                commonConfirms.add(CommonConfirmAttrib(
-                    title = context.getString(R.string.feed_refresh_title),
+                confirm(title = context.getString(R.string.feed_refresh_title),
                     message = context.getString(if (networkMonitor.isNetworkRestricted && networkMonitor.isVpnOverWifi) R.string.confirm_mobile_feed_refresh_dialog_message_vpn else R.string.confirm_mobile_feed_refresh_dialog_message),
                     confirmRes = R.string.confirm_mobile_streaming_button_once,
                     cancelRes = R.string.no,
@@ -175,7 +168,7 @@ object FeedUpdateManager {
                     onNeutral = {
                         mobileAllowFeedRefresh = true
                         runOnce(feeds, fullUpdate = fullUpdate, doItWanyway = doItWanyway, removeUnlisted = removeUnlisted)
-                    }))
+                    })
             }
         }
     }
@@ -218,7 +211,7 @@ object FeedUpdateManager {
             if (isPeriodic) runOnIOScope { upsert(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() } }
             when {
                 !networkMonitor.isConnected -> {
-                    EventFlow.postEvent(FlowEvent.MessageEvent(applicationContext.getString(R.string.download_error_no_connection)))
+                    Logm(TAG, applicationContext.getString(R.string.download_error_no_connection))
                     return if (isPeriodic) Result.retry() else Result.success()
                 }
                 else -> {}

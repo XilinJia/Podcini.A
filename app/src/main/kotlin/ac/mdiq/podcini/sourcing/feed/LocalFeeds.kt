@@ -46,7 +46,6 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import okio.buffer
 import kotlin.use
-import kotlin.uuid.ExperimentalUuidApi
 
 private const val TAG = "LocalFeeds"
 
@@ -129,17 +128,15 @@ suspend fun loadLocalFolder(uri: Uri, feedsExist: List<Feed> = listOf()) {
     }
 }
 
-@OptIn(ExperimentalUuidApi::class)
 suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) {
     data class DocFile(val name: String, val type: String, val uri: Uri, val length: Long, val lastModified: Long)
 
     fun getImageUrl(files: List<DocFile>, folderUri: Uri): String {
         for (iconLocation in arrayOf("folder.jpg", "Folder.jpg", "folder.png", "Folder.png")) {
-            for (file in files) if (iconLocation == file.name) return file.uri.toString()
+            for ((name, _, uri) in files) if (iconLocation == name) return uri.toString()
         }
-        for (file in files) {
-            val mime = file.type
-            if (mime.startsWith("image/jpeg") || mime.startsWith("image/png")) return file.uri.toString()
+        for ((_, mime, uri) in files) {
+            if (mime.startsWith("image/jpeg") || mime.startsWith("image/png")) return uri.toString()
         }
         return folderUri.toString()
     }

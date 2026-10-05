@@ -5,12 +5,10 @@ import ac.mdiq.podcini.storage.utils.durationStringFull
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
-import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.copyToClipboard
 import ac.mdiq.podcini.utils.isCallable
 import ac.mdiq.podcini.utils.openInSystemDefault
 import ac.mdiq.podcini.utils.shareText
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -25,7 +23,6 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.annotation.StringRes
-import androidx.core.content.ContextCompat
 import androidx.core.view.get
 import androidx.core.view.size
 import kotlin.math.max
@@ -94,9 +91,7 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
             }
             HitTestResult.EMAIL_TYPE -> {
                 Logd(TAG) { "E-Mail of webview was long-pressed. Extra: " + r.extra }
-                ContextCompat.getSystemService(context, ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Podcini", r.extra))
-                // TODO: is checking SDK_INT <= 32 necessary?
-                Logt(TAG, context.getString(R.string.copied_to_clipboard))
+                r.extra?.let { copyToClipboard("Podcini", it) }
                 return true
             }
             else -> {
@@ -112,12 +107,7 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
         when (itemId) {
             ContextAction.OPEN_IN_BROWSER.id -> openInSystemDefault(selectedUrl!!)
             ContextAction.SHARE_URL.id -> context.shareText(selectedUrl!!, R.string.share_url_label)
-            ContextAction.COPY_URL.id -> {
-                val clipData: ClipData = ClipData.newPlainText(selectedUrl, selectedUrl)
-                val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(clipData)
-                Logt(TAG, context.getString(R.string.copied_to_clipboard))
-            }
+            ContextAction.COPY_URL.id -> selectedUrl?.let { copyToClipboard(it, it) }
             ContextAction.GOTO.id -> {
                 if ((ShownotesCleaner.isTimecodeLink(selectedUrl) || ShownotesCleaner.isHTTPTimecodeLink(selectedUrl)) && timecodeSelectedListener != null)
                     timecodeSelectedListener!!(ShownotesCleaner.getTimecodeLinkTime(selectedUrl))

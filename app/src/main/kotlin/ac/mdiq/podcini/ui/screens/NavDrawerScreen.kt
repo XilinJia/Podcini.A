@@ -126,17 +126,17 @@ fun NavDrawerScreen() {
     ModalDrawerSheet(modifier = Modifier.width(drawerWidth).border(1.dp, MaterialTheme.colorScheme.tertiary, myShape),
         drawerContainerColor = MaterialTheme.colorScheme.surface, drawerTonalElevation = 0.dp, drawerShape = myShape, windowInsets = WindowInsets.systemBars) {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(start = 10.dp, end = 5.dp, top = 10.dp, bottom = 10.dp).verticalScroll(rememberScrollState())) {
-            for (nav in navMap.entries) {
+            for ((key, value) in navMap) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 15.dp).clickable {
-                    Logd(TAG) { "nav.key: ${nav.key}" }
-                    if (nav.key == Screens.Library.name) feedIdsToUse = listOf()
-                    navTo(nav.value.navKey, PopMode.Clear)
+                    Logd(TAG) { "nav.key: $key" }
+                    if (key == Screens.Library.name) feedIdsToUse = listOf()
+                    navTo(value.navKey, PopMode.Clear)
                     drawerCtrl?.close()
                 }) {
-                    Icon(imageVector = ImageVector.vectorResource(nav.value.iconRes), tint = textColor, contentDescription = nav.key, modifier = Modifier.padding(start = 10.dp))
-                    Text(stringResource(nav.value.nameRes), color = textColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 20.dp))
+                    Icon(imageVector = ImageVector.vectorResource(value.iconRes), tint = textColor, contentDescription = key, modifier = Modifier.padding(start = 10.dp))
+                    Text(stringResource(value.nameRes), color = textColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 20.dp))
                     Spacer(Modifier.weight(1f))
-                    if (nav.value.count > 0) Text(nav.value.count.toString(), color = textColor, modifier = Modifier.padding(end = 10.dp))
+                    if (value.count > 0) Text(value.count.toString(), color = textColor, modifier = Modifier.padding(end = 10.dp))
                 }
             }
             HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
@@ -160,14 +160,14 @@ fun NavDrawerScreen() {
                 Spacer(Modifier.width(10.dp))
             }
             HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
-            for (f in feedBriefs) {
+            for ((id, title, imageUrl) in feedBriefs) {
                 Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp).clickable {
-                    navTo(FeedDetails(feedId=f.id))
+                    navTo(FeedDetails(feedId= id))
                     drawerCtrl?.close()
                     psState = PSState.PartiallyExpanded
                 }) {
-                    AsyncImage(model = f.imageUrl, imageLoader = imageLoader, contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(40.dp).height(40.dp))
-                    Text(f.title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 10.dp))
+                    AsyncImage(model = imageUrl, imageLoader = imageLoader, contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(40.dp).height(40.dp))
+                    Text(title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 10.dp))
                 }
             }
             if (psState == PSState.Hidden) {

@@ -3,7 +3,6 @@ package ac.mdiq.podcini.utils
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.shared.nowInMillis
-import android.content.Context
 import android.view.KeyEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +51,7 @@ sealed class FlowEvent {
     // TODO: this is only used in SyncService
     data class FeedUpdatingEvent(val isRunning: Boolean) : FlowEvent()
 
-    data class MessageEvent(val message: String, val action: ((Context)->Unit)? = null, val actionText: String? = null) : FlowEvent()
+//    data class MessageEvent(val message: String, val action: ((Context)->Unit)? = null, val actionText: String? = null) : FlowEvent()
 
     data class SyncServiceEvent(val messageResId: Int, val message: String = "") : FlowEvent()
 

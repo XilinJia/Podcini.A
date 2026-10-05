@@ -109,7 +109,7 @@ fun MainScreen() {
     }
 
     val sheetState = rememberBottomSheetScaffoldState(bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded,
-        confirmValueChange = { targetValue -> if (targetValue == SheetValue.Hidden) allowSheetHide else true }, skipHiddenState = false))
+        confirmValueChange = { targetValue -> targetValue != SheetValue.Hidden || allowSheetHide }, skipHiddenState = false))
     val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
     val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 

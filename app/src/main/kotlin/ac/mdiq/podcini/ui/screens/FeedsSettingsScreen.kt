@@ -58,7 +58,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -519,7 +518,7 @@ fun FeedsSettingsScreen() {
                                     for (f in feedsToSet) {
                                         if (f.hasVideoMedia) findLatest(f)?.let {
                                             it.videoModePolicy = mode
-                                            it.useMuxedVideo = if (mode == VideoMode.AUDIO_ONLY) false else muxed
+                                            it.useMuxedVideo = mode != VideoMode.AUDIO_ONLY && muxed
                                         }
                                     }
                                 }
@@ -1052,7 +1051,6 @@ fun FeedsSettingsScreen() {
                         }
                     }
                     if (selectedPolicy != AutoDLEQPolicy.FILTER_SORT) {
-                        @OptIn(ExperimentalLayoutApi::class)
                         @Composable
                         fun AutoDownloadFilterDialog(filter: FeedAutoDLEQFilter, inexcl: ADLIncExc, onDismiss: () -> Unit, onConfirmed: (FeedAutoDLEQFilter) -> Unit) {
                             fun toFilterString(words: List<String>): String {

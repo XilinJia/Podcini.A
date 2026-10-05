@@ -12,7 +12,6 @@ import ac.mdiq.podcini.storage.database.streamingCacheSizeMB
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.specs.AVQuality
 import ac.mdiq.podcini.storage.specs.VideoMode
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.NumberEditor
@@ -20,7 +19,7 @@ import ac.mdiq.podcini.ui.compose.SetAVQuality
 import ac.mdiq.podcini.ui.compose.TitleSummaryActionColumn
 import ac.mdiq.podcini.ui.compose.TitleSummarySwitchRow
 import ac.mdiq.podcini.ui.compose.VideoModeDialog
-import ac.mdiq.podcini.ui.compose.commonConfirms
+import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.compose.trackAsTextField
 import ac.mdiq.podcini.utils.Logd
@@ -316,8 +315,7 @@ fun PlaybackScreen() {
         var blockAutoDeleteLocal by remember { mutableStateOf(true) }
         TitleSummarySwitchRow(R.string.pref_auto_local_delete_title, R.string.pref_auto_local_delete_sum, appPrefs.autoDeleteLocal) {
             if (blockAutoDeleteLocal && it) {
-                commonConfirms.add(CommonConfirmAttrib(
-                    title = "",
+                confirm(title = "",
                     message = context.getString(R.string.pref_auto_local_delete_dialog_body),
                     confirmRes = R.string.yes,
                     cancelRes = R.string.cancel_label,
@@ -325,7 +323,7 @@ fun PlaybackScreen() {
                         blockAutoDeleteLocal = false
                         runOnIOScope { upsert(appPrefs) { p-> p.autoDeleteLocal = it } }
                         blockAutoDeleteLocal = true
-                    }))
+                    })
             }
         }
         TitleSummarySwitchRow(R.string.pref_keeps_important_episodes_title, R.string.pref_keeps_important_episodes_sum, appPrefs.favoriteKeepsEpisode) {

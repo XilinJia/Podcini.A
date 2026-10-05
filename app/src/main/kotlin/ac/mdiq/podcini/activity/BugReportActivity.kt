@@ -14,20 +14,18 @@ import ac.mdiq.podcini.ui.compose.PodciniTheme
 import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.CrashReportWriter
-import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.copyToClipboard
 import ac.mdiq.podcini.utils.openInSystemDefault
 import ac.mdiq.podcini.utils.shareFile
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -62,7 +60,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import androidx.core.view.WindowCompat.enableEdgeToEdge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -84,12 +81,9 @@ class BugReportActivity : ComponentActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
         initialize()
-
-        window.requestFeature(Window.FEATURE_ACTION_MODE_OVERLAY)
-        enableEdgeToEdge(window)
 
         var stacktrace = "No crash report recorded"
         val crashFile = CrashReportWriter.crashLogFile
@@ -114,13 +108,7 @@ class BugReportActivity : ComponentActivity() {
                     showConfirmExport.value = false
                 }
                 Button(modifier = Modifier.fillMaxWidth(), onClick = { openInSystemDefault("${githubAddress}/issues") }) { Text(stringResource(R.string.open_bug_tracker)) }
-                Button(modifier = Modifier.fillMaxWidth(), onClick = {
-                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText(getString(R.string.bug_report_title), crashDetailsTextView)
-                    clipboard.setPrimaryClip(clip)
-                    Logd(TAG) { "Build.VERSION.SDK_INT: ${Build.VERSION.SDK_INT}" }
-                    Logt(TAG, getString(R.string.copied_to_clipboard))
-                }) { Text(stringResource(R.string.copy_to_clipboard)) }
+                Button(modifier = Modifier.fillMaxWidth(), onClick = { copyToClipboard(getString(R.string.bug_report_title), crashDetailsTextView) }) { Text(stringResource(R.string.copy_to_clipboard)) }
                 Button(modifier = Modifier.fillMaxWidth(), onClick = { sendEmail() }) { Text(stringResource(R.string.email_developer)) }
                 Text(crashDetailsTextView, color = textColor)
             }
@@ -130,7 +118,6 @@ class BugReportActivity : ComponentActivity() {
     @Composable
     fun MyTopAppBar() {
         var expanded by remember { mutableStateOf(false) }
-        
         Box {
             TopAppBar(title = { Text(stringResource(R.string.bug_report_title)) }, navigationIcon = { Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "", modifier = Modifier.padding(7.dp).clickable { finish() })  },
                 actions = {

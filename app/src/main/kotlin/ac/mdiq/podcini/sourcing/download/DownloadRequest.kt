@@ -74,10 +74,10 @@ class DownloadRequest private constructor(
     override fun hashCode(): Int {
         var result = destination.hashCode()
         result = 31 * result + source.hashCode()
-        result = 31 * result + (title?.hashCode() ?: 0)
-        result = 31 * result + (username?.hashCode() ?: 0)
-        result = 31 * result + (password?.hashCode() ?: 0)
-        result = 31 * result + (lastModified?.hashCode() ?: 0)
+        result = 31 * result + title.hashCode()
+        result = 31 * result + username.hashCode()
+        result = 31 * result + password.hashCode()
+        result = 31 * result + lastModified.hashCode()
         result = 31 * result + (feedfileId xor (feedfileId ushr 32)).toInt()
         result = 31 * result + feedfileType
         result = 31 * result + arguments.hashCode()

@@ -83,8 +83,7 @@ object NetworkUtils {
         get() = mobileAllowFeedRefresh || !networkMonitor.isNetworkRestricted
 
     fun isNetworkUrl(source: String?): Boolean {
-        if (source.isNullOrBlank()) return false
-        return try {
+        return !source.isNullOrBlank() && try {
             val url = Url(source)
             url.protocol == URLProtocol.HTTP || url.protocol == URLProtocol.HTTPS
         } catch (e: Exception) {
@@ -262,10 +261,7 @@ object NetworkUtils {
                     isNetworkRestricted = isMetered || isCellular
                     networkAllowAutoDownload = when {
                         nc == null -> false
-                        nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
-                            if (nc.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)) true
-                            else mobileAllowAutoDownload
-                        }
+                        nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> nc.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) || mobileAllowAutoDownload
                         nc.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
                         else -> mobileAllowAutoDownload || nc.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
                     }

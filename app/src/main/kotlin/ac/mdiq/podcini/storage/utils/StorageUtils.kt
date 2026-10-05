@@ -4,7 +4,6 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
-import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
@@ -303,8 +302,7 @@ class ContentUriFile(
     override val absPath: String = uri.toString()
 
     override suspend fun exists(): Boolean {
-        if (isTreeRoot) return true
-        return try {
+        return isTreeRoot || try {
             val df = if (DocumentsContract.isDocumentUri(context, uri)) DocumentFile.fromSingleUri(context, uri) else DocumentFile.fromTreeUri(context, uri)
             df?.exists() == true
         } catch (e: FileNotFoundException) { false } catch (e: IllegalArgumentException) { false }
@@ -388,7 +386,7 @@ class ContentUriFile(
 
     override suspend fun createDirectory(name: String): UnifiedFile {
         Logd(TAG) { "createDirectory $name $uri" }
-        val rootUri: Uri? = findSavedRoot() ?: uri
+        val rootUri = findSavedRoot() ?: uri
         val parentDocId: String = if (rootUri == uri) DocumentsContract.getTreeDocumentId(rootUri) else DocumentsContract.getDocumentId(uri)
         val parentUri: Uri = DocumentsContract.buildDocumentUriUsingTree(uri, parentDocId)
         val newUri = DocumentsContract.createDocument(context.contentResolver, parentUri, DocumentsContract.Document.MIME_TYPE_DIR, name) ?: throw IOException("error creating directory $name under $uri")

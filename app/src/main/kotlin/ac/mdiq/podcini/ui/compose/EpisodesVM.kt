@@ -631,14 +631,13 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             onSelected()
                             if (mobileAllowEpisodeDownload || !networkMonitor.isNetworkRestricted) EpisodeAdrDLManager.manager.downloadNow(selected, true)
                             else {
-                                commonConfirms.add(CommonConfirmAttrib(
-                                    title = context.getString(R.string.confirm_mobile_download_dialog_title),
+                                confirm(title = context.getString(R.string.confirm_mobile_download_dialog_title),
                                     message = context.getString(if (networkMonitor.isNetworkRestricted && networkMonitor.isVpnOverWifi) R.string.confirm_mobile_download_dialog_message_vpn else R.string.confirm_mobile_download_dialog_message),
                                     confirmRes = R.string.confirm_mobile_download_dialog_download_later,
                                     cancelRes = R.string.cancel_label,
                                     neutralRes = R.string.confirm_mobile_download_dialog_allow_this_time,
                                     onConfirm = { EpisodeAdrDLManager.manager.download(selected) },
-                                    onNeutral = { EpisodeAdrDLManager.manager.downloadNow(selected, true) }))
+                                    onNeutral = { EpisodeAdrDLManager.manager.downloadNow(selected, true) })
                             }
                         }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_download), contentDescription = "Download")

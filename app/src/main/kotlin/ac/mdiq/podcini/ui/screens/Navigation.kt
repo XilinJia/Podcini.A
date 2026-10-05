@@ -126,7 +126,6 @@ enum class DefaultPages(val res: Int) {
     Statistics(R.string.statistics_label);
 
     companion object {
-        @Suppress("RemoveRedundantQualifierName")
         fun toNavKey(p: String): NavKey {
             return when (p) {
                 Library.name -> ac.mdiq.podcini.ui.screens.Library

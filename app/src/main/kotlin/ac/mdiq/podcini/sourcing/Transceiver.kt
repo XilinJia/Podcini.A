@@ -58,6 +58,7 @@ import kotlinx.io.readString
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okio.buffer
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "Transceiver"
 val socketSelector = SelectorManager(Dispatchers.IO)
@@ -92,7 +93,7 @@ suspend fun broadcastPresence(udpPort: Int, tcpPort: Int) = withContext(Dispatch
         while (isActive) {
             listOf("255.255.255.255", mask).forEach { socket.send(Datagram(buildPacket { writeText(message) }, InetSocketAddress(it, udpPort))) }
             Logd(TAG) { "broadcastPresence send to udp port: $udpPort $message" }
-            delay(2000)
+            delay(2000.milliseconds)
         }
     } catch (e: CancellationException) {
         Logd(TAG) { "listener socket is canceled" }
@@ -120,7 +121,7 @@ suspend fun listenForUDPBroadcasts(udpPort: Int, onReceiversUpdated: (List<Disco
 
         while (isActive) {
             try {
-                val datagram = withTimeoutOrNull(10_000) { socket.receive() } ?: continue
+                val datagram = withTimeoutOrNull(10_000.milliseconds) { socket.receive() } ?: continue
                 val message = datagram.packet.readString()
 
                 if (message.isBlank()) continue

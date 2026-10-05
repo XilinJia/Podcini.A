@@ -349,7 +349,7 @@ suspend fun importPA(uri: Uri, importDb: Boolean, importDirectory: Boolean, onDi
         }
 
         unzipDir = internalDir / "UnzippedFiles"
-        if (unzipDir!!.exists()) deleteDirectory(unzipDir!!)
+        if (unzipDir?.exists() == true) deleteDirectory(unzipDir!!)
         unzipDir = internalDir.createDirectory("UnzippedFiles")
 
         val unzipPath = unzipDir!!

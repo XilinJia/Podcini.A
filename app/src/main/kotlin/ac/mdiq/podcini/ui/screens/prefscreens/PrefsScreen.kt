@@ -6,8 +6,8 @@ import ac.mdiq.podcini.activity.BugReportActivity
 import ac.mdiq.podcini.config.settings.developerEmail
 import ac.mdiq.podcini.config.settings.getCopyrightNoticeText
 import ac.mdiq.podcini.config.settings.githubAddress
-import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
+import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.IconTitleSummaryActionRow
 import ac.mdiq.podcini.ui.compose.textColor
@@ -17,12 +17,9 @@ import ac.mdiq.podcini.ui.screens.defaultNavKey
 import ac.mdiq.podcini.ui.screens.navTo
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.copyToClipboard
 import ac.mdiq.podcini.utils.openInSystemDefault
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context.CLIPBOARD_SERVICE
 import android.content.Intent
-import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -125,7 +122,6 @@ object PFNav {
     data object Licenses : PFNavKey()
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 val pfEntryProvider = entryProvider {
     entry<PFNav.Portal>{ PrefPortalScreen() }
     entry<PFNav.Interface>{ UserInterfaceScreen() }
@@ -166,7 +162,6 @@ fun PrefPortalScreen() {
 
     @Composable
     fun IconTitleSummaryScreenRow(vecRes: Int, titleRes: Int, summaryRes: Int, screen: PFNavKey) {
-        
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 10.dp)) {
             Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
             Column(modifier = Modifier.weight(1f).clickable { pfBackStack.add(screen) }) {
@@ -177,7 +172,6 @@ fun PrefPortalScreen() {
     }
     @Composable
     fun IconTitleActionRow(vecRes: Int, titleRes: Int, callback: ()-> Unit) {
-        
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 10.dp)) {
             Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
             Column(modifier = Modifier.weight(1f).clickable { callback() }) {
@@ -219,13 +213,7 @@ fun AboutScreen() {
         Image(painter = painterResource(R.drawable.teaser), contentDescription = "")
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp, top = 5.dp, bottom = 5.dp)) {
             Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_star), contentDescription = "", tint = textColor)
-            Column(Modifier.padding(start = 10.dp).clickable {
-                val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                val versionText = "Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
-                val clip = ClipData.newPlainText(context.getString(R.string.bug_report_title), versionText)
-                clipboard.setPrimaryClip(clip)
-                if (Build.VERSION.SDK_INT <= 32) Logt(TAG, context.getString(R.string.copied_to_clipboard))
-            }) {
+            Column(Modifier.padding(start = 10.dp).clickable { copyToClipboard(context.getString(R.string.bug_report_title), "Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})") }) {
                 Text(stringResource(R.string.podcini_version), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
                 Text(BuildConfig.VERSION_NAME, color = textColor)
             }

@@ -36,14 +36,13 @@ import ac.mdiq.podcini.storage.utils.toAndroidUri
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.ui.compose.ConfirmDialog
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.NumberEditor
 import ac.mdiq.podcini.ui.compose.OpmlImportSelectionDialog
 import ac.mdiq.podcini.ui.compose.TitleSummaryActionColumn
 import ac.mdiq.podcini.ui.compose.TitleSummarySwitchRow
-import ac.mdiq.podcini.ui.compose.commonConfirms
+import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.compose.trackAsTextField
 import ac.mdiq.podcini.utils.Logd
@@ -143,15 +142,14 @@ fun ImportExportScreen() {
         return fileName.contains(backupDirName, ignoreCase = true) || fileName.contains(autoBackupDirName, ignoreCase = true)
     }
     fun showExportSuccess(uri: Uri?, mimeType: String?) {
-        commonConfirms.add(CommonConfirmAttrib(
-            title = context.getString(R.string.export_success_title),
+        confirm(title = context.getString(R.string.export_success_title),
             message = "",
             confirmRes = R.string.share_label,
             cancelRes = R.string.no,
             onConfirm = {
                 if (uri != null) context.shareFile(uri, mimeType?:"", R.string.share_file_label)
                 else Loge(TAG, "Share file failed: uri is null")
-            }))
+            })
     }
     val showImporSuccessDialog = remember { mutableStateOf(false) }
     ConfirmDialog(titleRes = R.string.successful_import_label, message = stringResource(R.string.press_to_restart), showDialog = showImporSuccessDialog, cancellable = false) { forceRestart() }

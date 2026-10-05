@@ -193,11 +193,11 @@ fun parseJsonCaptions(json: String): List<CaptionCue> {
     val transcript = Json.decodeFromString<TranscriptJson>(json)
     val cues = mutableListOf<CaptionCue>()
     var current: CaptionCue? = null
-    for (segment in transcript.segments) {
-        val startMs = (segment.startTime * 1000).toLong()
-        val endMs = ((segment.endTime ?: segment.startTime) * 1000).toLong()
-        val speaker = segment.speaker.orEmpty()
-        val text = segment.body.trim()
+    for ((speaker1, startTime, endTime, body) in transcript.segments) {
+        val startMs = (startTime * 1000).toLong()
+        val endMs = ((endTime ?: startTime) * 1000).toLong()
+        val speaker = speaker1.orEmpty()
+        val text = body.trim()
         if (text.isEmpty()) continue
 
         val cue = current

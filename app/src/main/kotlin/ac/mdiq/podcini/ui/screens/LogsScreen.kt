@@ -30,20 +30,17 @@ import ac.mdiq.podcini.ui.compose.LayoutMode
 import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.episodeForInfo
 import ac.mdiq.podcini.ui.compose.textColor
-import ac.mdiq.podcini.utils.EventFlow
-import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.copyToClipboard
 import ac.mdiq.podcini.utils.formatDateTimeFlex
+import ac.mdiq.podcini.utils.openInSystemDefault
 import ac.mdiq.podcini.utils.sessionLogsFlow
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,7 +49,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
@@ -98,7 +94,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
@@ -206,13 +201,6 @@ fun LogsScreen() {
         }
     }
 
-    fun copyToClipboard(message: String) {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText(context.getString(R.string.download_error_details), message)
-        clipboard.setPrimaryClip(clip)
-        if (Build.VERSION.SDK_INT < 32) EventFlow.postEvent(FlowEvent.MessageEvent(context.getString(R.string.copied_to_clipboard)))
-    }
-
     @Composable
     fun SharedDetailDialog(status: ShareLog, onDismiss: () -> Unit) {
         val message = when (status.status) {
@@ -227,7 +215,7 @@ fun LogsScreen() {
                 Text(message, color = textColor)
                 Row(Modifier.padding(top = 10.dp)) {
                     Spacer(Modifier.weight(0.5f))
-                    Text(stringResource(R.string.copy_to_clipboard), color = textColor, modifier = Modifier.clickable { copyToClipboard(message) })
+                    Text(stringResource(R.string.copy_to_clipboard), color = textColor, modifier = Modifier.clickable { copyToClipboard("Shared status", message) })
                     Spacer(Modifier.weight(0.3f))
                     Text("OK", color = textColor, modifier = Modifier.clickable { onDismiss() })
                     Spacer(Modifier.weight(0.2f))
@@ -343,7 +331,7 @@ fun LogsScreen() {
                         Icon(if (log.status == ShareLog.Status.SUCCESS.code) Icons.Filled.Info else Icons.Filled.Warning, "Info", tint = if (log.status == ShareLog.Status.SUCCESS.code) Color.Green else Color.Yellow, modifier = Modifier.padding(end = 2.dp))
                         Text(formatDateTimeFlex(log.id), color = textColor)
                         Spacer(Modifier.weight(1f))
-                        if (log.status < ShareLog.Status.SUCCESS.code) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_delete), tint = textColor, contentDescription = null, modifier = Modifier.width(25.dp).height(25.dp).clickable {
+                        if (log.status != ShareLog.Status.SUCCESS.code) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_delete), tint = textColor, contentDescription = null, modifier = Modifier.width(25.dp).height(25.dp).clickable {
                             toDelete = log
                             deleteLogDialog.value = true
                         })
@@ -373,7 +361,10 @@ fun LogsScreen() {
                 Text(stringResource(R.string.description_label), color = textColor,  style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text(log.description?:"None", color = textColor, modifier = Modifier.padding(bottom = 5.dp))
                 Text("URL:", color = textColor,  style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(log.url ?:"None", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 5.dp))
+                Text(log.url ?:"None", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 5.dp).combinedClickable(
+                    onClick = { log.url?.let { openInSystemDefault(it) } },
+                    onLongClick = { log.url?.let { copyToClipboard("url", it) } }
+                ))
                 Text("Link:", color = textColor,  style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text(log.link ?: "None", color = textColor, style = MaterialTheme.typography.bodySmall)
                 Row(Modifier.padding(top = 10.dp)) {
@@ -390,7 +381,6 @@ fun LogsScreen() {
         val lazyListState = rememberLazyListState()
         var dialogParam by remember { mutableStateOf<SubscriptionLog?>(null) }
         if (dialogParam != null) DeletionDetailDialog(log = dialogParam!!, onDismiss = { dialogParam = null })
-
         LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(vm.deletionLogs) { log ->
                 Row (verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp, end = 10.dp).clickable { dialogParam = log }) {
@@ -412,10 +402,7 @@ fun LogsScreen() {
         val logs = remember(sessionLogs, vm.showSuccessLogs) { sessionLogs.reversed().filter { vm.showSuccessLogs == !it.contains("Error", ignoreCase = true) } }
         vm.count = logs.size
         LazyColumn(state = lazyListState, modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(logs) { log -> Text(log, color = if (log.contains("Error", ignoreCase = true)) Color.Red else textColor, modifier = Modifier.clickable {
-                ContextCompat.getSystemService(context, ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Podcini", log))
-                Logt(TAG, "log copied to clipboard")
-            }) }
+            items(logs) { log -> Text(log, color = if (log.contains("Error", ignoreCase = true)) Color.Red else textColor, modifier = Modifier.clickable { copyToClipboard("Podcini session log", log) }) }
         }
     }
 
@@ -450,7 +437,7 @@ fun LogsScreen() {
                 Row(Modifier.padding(top = 10.dp)) {
                     Spacer(Modifier.weight(0.2f))
                     val message = stringResource(status.reason?.res ?: R.string.download_error_error_unknown) + "\n" + status.reasonDetailed + "\n" + url
-                    Text(stringResource(R.string.copy_to_clipboard), color = textColor, modifier = Modifier.clickable { copyToClipboard(message) })
+                    Text(stringResource(R.string.copy_to_clipboard), color = textColor, modifier = Modifier.clickable { copyToClipboard(context.getString(R.string.download_error_details), message) })
                     Spacer(Modifier.weight(0.3f))
                     if (!status.isSuccessful) Text(stringResource(R.string.retry), color = textColor, modifier = Modifier.clickable {
                         if (feed != null) runOnIOScope { FeedUpdater(listOf(feed!!)).start() }

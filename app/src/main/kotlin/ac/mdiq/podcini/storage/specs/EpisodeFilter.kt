@@ -195,19 +195,15 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
     }
 
     fun extractText(): String {
-        val tqs = propertySet.filter { it.startsWith(States.text.name) }
-            .mapNotNull { it.removePrefix("${States.text.name} ").takeIf(String::isNotBlank) }
+        val tqs = propertySet.filter { it.startsWith(States.text.name) }.mapNotNull { it.removePrefix("${States.text.name} ").takeIf(String::isNotBlank) }
         if (tqs.isEmpty()) return ""
 
         val regex = Regex("""(?i)(\bNOT\b)?\s*\(?\s*[^()]*?\bcontains\[[^\]]*]\s*'([^']+)'""")
         val termPositivity = LinkedHashMap<String, Boolean>()
-
         for (m in regex.findAll(tqs[0])) {
             val notGroup = m.groups[1]?.value
             val value = m.groups[2]!!.value.trim()
-            val isNegated = notGroup != null && notGroup.isNotBlank()
-            val isPositive = !isNegated
-
+            val isPositive = notGroup.isNullOrBlank()
             val prev = termPositivity[value]
             termPositivity[value] = when {
                 prev == null -> isPositive
@@ -215,7 +211,6 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
                 else -> isPositive
             }
         }
-
         return termPositivity.map { (term, positive) -> if (positive) term else "-$term" }.joinToString(", ")
     }
 

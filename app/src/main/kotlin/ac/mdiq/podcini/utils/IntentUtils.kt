@@ -5,10 +5,13 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.core.content.getSystemService
 
 
 private const val TAG: String = "IntentUtils"
@@ -49,4 +52,10 @@ fun Context.shareFile(uri: Uri, mimeType: String, titleRes: Int? = null) {
     }
     val chooserIntent = Intent.createChooser(sendIntent, titleRes?.let { getString(it) } ?: "").apply { if (this@shareFile !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
     startActivity(chooserIntent)
+}
+
+fun copyToClipboard(label: String, message: String) {
+    val context = getAppContext()
+    context.getSystemService<ClipboardManager>()?.setPrimaryClip(ClipData.newPlainText(label, message))
+    Logt(TAG, context.getString(R.string.copied_to_clipboard))
 }

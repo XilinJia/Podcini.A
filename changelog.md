@@ -1,3 +1,12 @@
+# 12.14.4
+
+* fixed deleting timestamp marks
+* in Logs screen
+	* in DeletionLog popup click on the url opens the page and long-click copies it to clipboard
+	* all shared logs other than Success are individually deletable
+* in Player, added force reset on some errors
+* some code refactoring and cleaning
+
 # 12.14.3
 
 * amended external clients connections/reconnections, avoid race conditions

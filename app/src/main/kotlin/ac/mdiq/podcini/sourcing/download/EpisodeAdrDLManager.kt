@@ -25,10 +25,9 @@ import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.takeCodePoints
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.quietlyDeleteFile
 import ac.mdiq.podcini.storage.utils.toSafeUri
-import ac.mdiq.podcini.utils.EventFlow
-import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
+import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import android.app.Notification
@@ -246,14 +245,9 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
             var episodeTitle = episodeTitle_
             val retrying = !isLastRunAttempt && !isImmediateFail
             if (episodeTitle.length > 20) episodeTitle = episodeTitle.takeCodePoints(19) + "…"
-
-            // TODO: the action may need to be changed
-            EventFlow.postEvent(FlowEvent.MessageEvent(
-                applicationContext.getString(if (retrying) R.string.download_error_retrying else R.string.download_error_not_retrying, episodeTitle),
-                { ctx: Context -> {
-                    //                    mainNavController.navigate(Screens.Logs.name)
-                } },
-                applicationContext.getString(R.string.download_error_details)))
+            Logm(TAG, applicationContext.getString(if (retrying) R.string.download_error_retrying else R.string.download_error_not_retrying, episodeTitle), applicationContext.getString(R.string.download_error_details)) {
+                //                    mainNavController.navigate(Screens.Logs.name)
+            }
         }
         Logd(TAG) { "starting downloader" }
         try { downloader!!.download()

@@ -319,6 +319,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 }
                 override fun onPlayerError(error: PlaybackException) {
                     fun handleTerminalError(message: String) {
+                        forcePlaybackReset = true
                         curMediaFlow.value?.let { clearSpecs(it) }
                         LogeFor(TAG, curMediaFlow.value?.id, message)
                         castPlayer?.stop()
@@ -349,6 +350,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                             castPlayer?.play()
                         }
                         PlaybackException.ERROR_CODE_IO_UNSPECIFIED -> {
+                            forcePlaybackReset = true
                             val cause = error.cause
 //                            LogtFor(TAG, curMediaFlow.value?.id, "Caught Source Error 2000 (NPE). Attempting a clean recovery...")
                             LogeFor(TAG, curMediaFlow.value?.id,
@@ -404,7 +406,10 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
 //                                    handleTerminalError("Access denied (403). Check your subscription.")
                                     forcePlaybackReset = true
                                 }
-                                else -> Loge(TAG, "onPlayerError error code: ${error.errorCode} cause: ${cause?.localizedMessage} ${cause?.message}")
+                                else -> {
+                                    Loge(TAG, "onPlayerError error code: ${error.errorCode} cause: ${cause?.localizedMessage} ${cause?.message}")
+                                    forcePlaybackReset = true
+                                }
                             }
                         }
                     }

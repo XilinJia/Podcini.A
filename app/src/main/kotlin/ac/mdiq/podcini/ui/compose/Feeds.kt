@@ -160,7 +160,7 @@ fun RemoveFeedDialog(feeds: List<Feed>, onDismiss: () -> Unit, callback: ()->Uni
                                     it.cancelDate = nowInMillis()
                                 }
                             }
-                            val preserve = if (saveImportant) f.worthyEpisodes.isNotEmpty() else false
+                            val preserve = saveImportant && f.worthyEpisodes.isNotEmpty()
                             deleteFeed(f.id, preserve)
                         }
                         feedLogsMap = null

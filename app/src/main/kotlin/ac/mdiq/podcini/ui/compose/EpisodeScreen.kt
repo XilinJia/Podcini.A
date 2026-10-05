@@ -77,7 +77,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -137,7 +136,6 @@ private val notesCache = LruCache<Long, String>(10)
 
 var episodeForInfo by mutableStateOf<Episode?>(null)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = MutableStateFlow(emptyList()), allowOpenFeed: Boolean = false, showClose: Boolean = true) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -377,7 +375,6 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EpisodeWebView(episode: Episode) {
     val lifecycleOwner = LocalLifecycleOwner.current

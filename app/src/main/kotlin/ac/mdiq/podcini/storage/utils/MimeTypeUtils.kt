@@ -12,8 +12,7 @@ fun getMimeType(type: String?, filename: String?): String? {
 }
 
 fun isMediaFile(type: String?): Boolean {
-    return if (type == null) false
-    else type.startsWith("audio/") || type.startsWith("video/") || type == "application/ogg" || type == "application/octet-stream"
+    return type != null && (type.startsWith("audio/") || type.startsWith("video/") || type == "application/ogg" || type == "application/octet-stream")
 }
 
 fun isImageFile(type: String?): Boolean {

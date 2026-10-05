@@ -21,7 +21,7 @@ class AppleMediaSearcher : MediaSearcher {
 
     override val name: String = "Apple"
 
-    open suspend fun fromItunes(json: JSONObject): EpisodeIPC {
+    fun fromItunes(json: JSONObject): EpisodeIPC {
         val e = EpisodeIPC()
         e.link = json.optString("trackViewUrl", "")
         e.title = json.optString("trackName", "")

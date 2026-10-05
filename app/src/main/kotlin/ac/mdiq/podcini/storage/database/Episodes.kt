@@ -23,8 +23,7 @@ import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.DATE_DESC
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.durationStringShort
 import ac.mdiq.podcini.storage.utils.toUF
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
-import ac.mdiq.podcini.ui.compose.commonConfirms
+import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
@@ -34,10 +33,8 @@ import ac.mdiq.podcini.utils.fullDateTimeString
 import androidx.core.app.NotificationManagerCompat
 import io.github.xilinjia.krdb.notifications.ResultsChange
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -138,34 +135,26 @@ suspend fun deleteEpisodesWarnLocalRepeat(items: Iterable<Episode>) {
 
     val userDone = CompletableDeferred<Unit>()
     if (localItems.isNotEmpty()) {
-        withContext(Dispatchers.Main) {
-            commonConfirms.add(CommonConfirmAttrib(
-                title = context.getString(R.string.delete_episode_label),
-                message = context.getString(R.string.delete_local_feed_warning_body),
-                confirmRes = R.string.delete_label,
-                cancelRes = R.string.cancel_label,
-                onConfirm = {
-                   runOnIOScope {
-                       deleteItems(localItems)
-                       userDone.complete(Unit)
-                   }
-                },
-                onNeutral = { userDone.complete(Unit)},
-                onCancel = { userDone.complete(Unit)}))
-        }
+        confirm(title = context.getString(R.string.delete_episode_label),
+            message = context.getString(R.string.delete_local_feed_warning_body),
+            confirmRes = R.string.delete_label,
+            cancelRes = R.string.cancel_label,
+            onConfirm = {
+                runOnIOScope {
+                    deleteItems(localItems)
+                    userDone.complete(Unit)
+                }
+            },
+            onNeutral = { userDone.complete(Unit)},
+            onCancel = { userDone.complete(Unit)})
         userDone.await()
     }
     if (repeatItems.isNotEmpty()) {
-        withContext(Dispatchers.Main) {
-            commonConfirms.add(CommonConfirmAttrib(
-                title = context.getString(R.string.delete_episode_label),
-                message = context.getString(R.string.delete_repeat_warning_msg),
-                confirmRes = R.string.delete_label,
-                cancelRes = R.string.cancel_label,
-                onConfirm = {
-                    runOnIOScope { deleteItems(repeatItems) }
-                }))
-        }
+        confirm(title = context.getString(R.string.delete_episode_label),
+            message = context.getString(R.string.delete_repeat_warning_msg),
+            confirmRes = R.string.delete_label,
+            cancelRes = R.string.cancel_label,
+            onConfirm = { runOnIOScope { deleteItems(repeatItems) } })
     }
 }
 

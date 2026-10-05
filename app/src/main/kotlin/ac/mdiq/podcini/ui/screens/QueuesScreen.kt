@@ -33,7 +33,6 @@ import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.ui.actions.ButtonTypes
 import ac.mdiq.podcini.ui.actions.SwipeActions
 import ac.mdiq.podcini.ui.compose.AssociatedFeedsGrid
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
@@ -47,7 +46,7 @@ import ac.mdiq.podcini.ui.compose.TitleSummaryActionColumn
 import ac.mdiq.podcini.ui.compose.TitleSummarySwitchRow
 import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.buttonColor
-import ac.mdiq.podcini.ui.compose.commonConfirms
+import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.ui.compose.episodeForInfo
 import ac.mdiq.podcini.ui.compose.feedOperationText
 import ac.mdiq.podcini.ui.compose.filterChipBorder
@@ -647,8 +646,7 @@ fun QueuesScreen(id: Long = -1L) {
             if (showRename) {
                 HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 80.dp))
                 TitleSummaryActionColumn(R.string.remove_queue, R.string.remove_queue_sum) {
-                    commonConfirms.add(CommonConfirmAttrib(
-                        title = context.getString(R.string.remove_queue) + "?",
+                    confirm(title = context.getString(R.string.remove_queue) + "?",
                         message = "",
                         confirmRes = R.string.confirm_label,
                         cancelRes = R.string.cancel_label,
@@ -668,7 +666,7 @@ fun QueuesScreen(id: Long = -1L) {
                                     vm.queuesMode = QueuesScreenMode.Queue
                                 }
                             }
-                        }))
+                        })
                 }
             }
         }
@@ -758,13 +756,13 @@ fun QueuesScreen(id: Long = -1L) {
                             }
 //                            Logd(TAG) { "Scaffold scrollToOnStart: $scrollToOnStart $curQueuePosition" }
                             EpisodeLazyColumn(episodes, curQueue = curQueue, swipeActions = swipeActions, lazyListState = lazyListState, scrollToOnStart = scrollToOnStart, refreshCB = {
-                                commonConfirms.add(CommonConfirmAttrib(title = context.getString(R.string.refresh_associates) + "?", message = "", cancelRes = R.string.cancel_label, confirmRes = R.string.enqueue, onConfirm = {
+                                confirm(title = context.getString(R.string.refresh_associates) + "?", message = "", cancelRes = R.string.cancel_label, confirmRes = R.string.enqueue, onConfirm = {
                                     CoroutineScope(Dispatchers.IO).launch {
                                         val feeds = curQueue.normalFeeds
                                         AutoEnqueueAlgorithm().run(feeds, true)
                                         if (curQueue.launchAutoEQDlWhenEmpty && appPrefsFlow!!.value.enableAutoDl) AutoDownloadAlgorithm().run(feeds, false, noRefreshing = true)
                                     }
-                                }, neutralRes = R.string.refresh_label, onNeutral = { runOnceOrAsk(feeds = curQueue.normalFeeds) }))
+                                }, neutralRes = R.string.refresh_label, onNeutral = { runOnceOrAsk(feeds = curQueue.normalFeeds) })
                             }, actionButtonCB = { _, type ->
                                 if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM) && actQueue.id != curQueue.id) queuesLive.find { it.id == curQueue.id }?.let { actQueueFlow.value = it }
                             })

@@ -18,7 +18,6 @@ import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.ui.compose.ChooseRatingDialog
 import ac.mdiq.podcini.ui.compose.CommentEditingDialog
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.EditTimerDialog
@@ -31,7 +30,7 @@ import ac.mdiq.podcini.ui.compose.ShelveDialog
 import ac.mdiq.podcini.ui.compose.TagSettingDialog
 import ac.mdiq.podcini.ui.compose.TagType
 import ac.mdiq.podcini.ui.compose.TodoDialog
-import ac.mdiq.podcini.ui.compose.commonConfirms
+import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.ui.compose.trackAsTextField
 import ac.mdiq.podcini.ui.screens.Search
 import ac.mdiq.podcini.ui.screens.navTo
@@ -574,12 +573,11 @@ class RemoveFromHistory : EpisodeAction() {
         }
 
         setHistoryDates()
-        commonConfirms.add(CommonConfirmAttrib(
-            title = getAppContext().getString(R.string.removed_history_label),
+        confirm(title = getAppContext().getString(R.string.removed_history_label),
             message = "",
             confirmRes = R.string.undo,
             cancelRes = R.string.no,
-            onConfirm = {  if (e.playbackCompletionTime > 0L) setHistoryDates(e.lastPlayedTime, e.playbackCompletionTime) }))
+            onConfirm = {  if (e.playbackCompletionTime > 0L) setHistoryDates(e.lastPlayedTime, e.playbackCompletionTime) })
     }
 }
 

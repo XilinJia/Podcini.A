@@ -351,7 +351,6 @@ fun VolumeDialog(vm: AVPlayerVM, onDismiss: () -> Unit) {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ControlUI(vm: AVPlayerVM) {
     val scope = rememberCoroutineScope()
@@ -577,7 +576,6 @@ fun ProgressBar(vm: AVPlayerVM) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AVPlayerScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current

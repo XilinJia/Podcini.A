@@ -843,6 +843,7 @@
 
     <!-- Sleep timer -->
     <string name="set_sleeptimer_label">Set sleep timer</string>
+    <string name="sleeptimer_enabled">Sleep timer enabled</string>
     <string name="disable_sleeptimer_label">Disable sleep timer</string>
     <string name="extend_sleep_timer_label">+%d min</string>
     <string name="end_episode">To end of episode</string>

@@ -114,11 +114,10 @@ suspend fun persistOrdered(episodes: List<Episode>, queueEntries: List<QueueEntr
 suspend fun addToAssQueue(episodes: List<Episode>) {
     Logd(TAG) { "addToAssQueue( ... ) called" }
     val mapByFeed = episodes.groupBy { it.feedId }
-    for (en in mapByFeed.entries) {
-        val fid = en.key ?: continue
+    for ((key, _) in mapByFeed) {
+        val fid = key ?: continue
         val f = feedsMap[fid] ?: continue
         val q = f.queue ?: continue
-        val episodes = en.value
         addToQueue(episodes, q)
     }
 }

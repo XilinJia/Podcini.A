@@ -5,11 +5,9 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.utils.UnifiedFile
 import ac.mdiq.podcini.storage.utils.toUF
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
-
-import ac.mdiq.podcini.ui.compose.commonConfirms
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
+import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.Logs
 import android.Manifest
 import android.content.pm.PackageManager
@@ -202,12 +200,7 @@ class OpmlTransporter {
                             """.trimIndent()
                         val errorMessage = SpannableString(total)
                         errorMessage.setSpan(ForegroundColorSpan(-0x77777778), userReadable.length, total.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                        commonConfirms.add(CommonConfirmAttrib(
-                            title = getAppContext().getString(R.string.error_label),
-                            message = errorMessage.toString(),
-                            confirmRes = android.R.string.ok,
-                            cancelRes = R.string.cancel_label,
-                            onConfirm = {}))
+                        Logm(TAG, getAppContext().getString(R.string.error_label), errorMessage.toString())
                         CB(listOf())
                     }
                 }

@@ -5,6 +5,7 @@ package ac.mdiq.podcini.utils
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.PodciniApp
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
+import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.download.DownloadError
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -12,6 +13,7 @@ import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Feed
+import ac.mdiq.podcini.ui.compose.confirm
 import android.app.Application
 import android.os.Build
 import android.util.Log
@@ -132,6 +134,10 @@ fun LogFor(t: String, feed: Feed, success: Boolean, message: String, reason:  Do
     runOnIOScope { logDownloadResult(DownloadResult(feed, reason, success, message)) }
     if (toastAnyway && success) Logt(t, "Feed operation: success=$success, $message: ${feed.title}")
     if (!success) Loge(t, "Feed operation: success=$success, $message: ${feed.title}")
+}
+
+fun Logm(t: String, title: String, message: String? = null, action: (()->Unit)? = null) {
+    confirm(title = title, message = message?:"", confirmRes = R.string.OK, cancelRes = R.string.cancel_label, onConfirm = { action?.invoke() })
 }
 
 fun showStackTrace() {

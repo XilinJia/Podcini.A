@@ -6,8 +6,8 @@ import ac.mdiq.podcini.automation.cancel
 import ac.mdiq.podcini.automation.cancelTimer
 import ac.mdiq.podcini.automation.playEpisodeAtTime
 import ac.mdiq.podcini.automation.reset
-import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.BasePlayer
+import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.getEntityId
@@ -71,6 +71,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.copyToClipboard
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.fullDateTimeString
 import ac.mdiq.podcini.utils.nowInSeconds
@@ -79,8 +80,6 @@ import ac.mdiq.podcini.utils.shareFile
 import ac.mdiq.podcini.utils.shareText
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.view.Gravity
@@ -176,7 +175,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.core.text.HtmlCompat
@@ -483,10 +481,7 @@ fun TranscriptMeta(episode: Episode) {
                 Spacer(Modifier.width(20.dp))
                 Text(text = t.rel ?: "", style = MaterialTheme.typography.bodyMedium)
             }
-            Text(text = t.url ?: "No url", style = MaterialTheme.typography.bodySmall, maxLines = 1, modifier = Modifier.clickable {
-                ContextCompat.getSystemService(context, ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Podcini", t.url ?: "No url"))
-                Logt(TAG, "url copied to clipboard")
-            })
+            t.url?.let { Text(text = it, style = MaterialTheme.typography.bodySmall, maxLines = 1, modifier = Modifier.clickable {copyToClipboard("Podcini", it) }) }
         }
     }
 }
@@ -651,7 +646,8 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             if (markToRemove != 0L) {
                 AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { markToRemove = 0L }, text = { Text(stringResource(R.string.ask_remove_mark, markToRemove)) }, confirmButton = {
                     TextButton(onClick = {
-                        runOnIOScope { upsert(episode) { it.marks.remove(markToRemove) } }
+                        val m = markToRemove
+                        runOnIOScope { upsert(episode) { it.marks.remove(m) } }
                         markToRemove = 0L
                     }) { Text(stringResource(R.string.confirm_label)) }
                 }, dismissButton = { TextButton(onClick = { markToRemove = 0L }) { Text(stringResource(R.string.cancel_label)) } })
@@ -839,7 +835,7 @@ fun PlayStateDialog(selected: List<Episode>, onDismiss: () -> Unit, futureCB: (E
                                         }
                                         EpisodeState.PLAYED -> {
                                             if (hasAlmostEnded) item_ = upsertBlk(item_) { it.playbackCompletionTime = nowInMillis() }
-                                            val shouldAutoDelete = if (item_.feed == null) false else allowForAutoDelete(item_.feed!!)
+                                            val shouldAutoDelete = item_.feed != null && allowForAutoDelete(item_.feed!!)
                                             if (hasAlmostEnded && shouldAutoDelete) {
                                                 item_ = deleteMedia(item_)
                                                 if (appPrefs.deleteRemovesFromQueue) removeFromAllQueues(listOf(item_))
@@ -851,7 +847,7 @@ fun PlayStateDialog(selected: List<Episode>, onDismiss: () -> Unit, futureCB: (E
                                         }
                                         EpisodeState.QUEUE -> if (item_.feed?.queue != null) addToAssQueue(listOf(e))
                                         EpisodeState.PASSED, EpisodeState.SKIPPED -> {
-                                            val shouldAutoDelete = if (item_.feed == null) false else allowForAutoDelete(item_.feed!!)
+                                            val shouldAutoDelete = item_.feed != null && allowForAutoDelete(item_.feed!!)
                                             if (shouldAutoDelete) {
                                                 item_ = deleteMedia(item_)
                                                 if (appPrefs.deleteRemovesFromQueue) removeFromAllQueues(listOf(item_))
@@ -1156,7 +1152,7 @@ fun IgnoreEpisodesDialog(selected: List<Episode>, onDismiss: () -> Unit) {
                             }
                         }
                         for (e in selected) {
-                            val shouldAutoDelete = if (e.feed == null) false else allowForAutoDelete(e.feed!!)
+                            val shouldAutoDelete = e.feed != null && allowForAutoDelete(e.feed!!)
                             if (shouldAutoDelete) {
                                 val e_ = deleteMedia(e)
                                 if (appPrefsFlow!!.value.deleteRemovesFromQueue) removeFromAllQueues(listOf(e_))
@@ -1628,7 +1624,7 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
                 Text(stringResource(R.string.send_to_device_sum))
                 TextField(value = udpPort.toString(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.broadcast_port)) }, singleLine = true, modifier = Modifier.trackAsTextField().padding(end = 8.dp), onValueChange = { udpPort = it.toIntOrNull() ?: 0 })
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
-                    for (receiver in receivers) FilterChip(label = { Text(receiver.name) }, selected = false, onClick = {})
+                    for ((_, _, name) in receivers) FilterChip(label = { Text(name) }, selected = false, onClick = {})
                 }
                 TextField(value = synthName, label = { Text("in " + stringResource(R.string.synthetic)) }, singleLine = true, modifier = Modifier.trackAsTextField().padding(end = 8.dp), onValueChange = { synthName = it })
             }
@@ -1636,15 +1632,15 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
         confirmButton = {
             if (sendJobs.isEmpty() && receivers.isNotEmpty()) TextButton(onClick = {
                 if (udpPort != appAttribs.udpPort) runOnIOScope { upsert(appAttribs) { it.udpPort = udpPort } }
-                for (r in receivers) {
-                    val job = sendEpisodes(r.ip, r.port, synthName, selected) {
-                        sendJobs[r.ip]?.let { j ->
-                            Logd(TAG) { "closing job: ${r.ip} ${sendJobs.size}" }
+                for ((ip, port) in receivers) {
+                    val job = sendEpisodes(ip, port, synthName, selected) {
+                        sendJobs[ip]?.let { j ->
+                            Logd(TAG) { "closing job: $ip ${sendJobs.size}" }
                             j.cancel()
-                            sendJobs.remove(r.ip)
+                            sendJobs.remove(ip)
                         }
                     }
-                    sendJobs[r.ip] = job
+                    sendJobs[ip] = job
                 }
             }) { Text(stringResource(R.string.send)) }
         },

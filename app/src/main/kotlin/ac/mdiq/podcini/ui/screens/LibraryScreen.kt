@@ -46,7 +46,6 @@ import ac.mdiq.podcini.storage.utils.findRootForUri
 import ac.mdiq.podcini.storage.utils.persistedTrees
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.ui.compose.AmendSyntheticFeed
-import ac.mdiq.podcini.ui.compose.CommonConfirmAttrib
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.PutToQueueDialog
@@ -59,8 +58,8 @@ import ac.mdiq.podcini.ui.compose.TagSettingDialog
 import ac.mdiq.podcini.ui.compose.TagType
 import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.buttonColor
-import ac.mdiq.podcini.ui.compose.commonConfirms
 import ac.mdiq.podcini.ui.compose.complementaryColorOf
+import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.ui.compose.filterChipBorder
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.compose.trackAsTextField
@@ -1727,8 +1726,7 @@ fun LibraryScreen() {
                         Icon(imageVector = Icons.Filled.Edit, "edit volume")
                         Text(stringResource(id = R.string.edit_volume)) }
                     if (volumeToOperate != null && volumeToOperate!!.id >= 0L) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
-                        commonConfirms.add(CommonConfirmAttrib(
-                            title = context.getString(R.string.remove_volume) + "?",
+                        confirm(title = context.getString(R.string.remove_volume) + "?",
                             message = context.getString(R.string.remove_volume_msg) + "\n" + volumeToOperate?.name,
                             confirmRes = R.string.confirm_label,
                             cancelRes = R.string.cancel_label,
@@ -1740,20 +1738,19 @@ fun LibraryScreen() {
                                     feedOperationText = ""
                                     onDismiss()
                                 }
-                            }))
+                            })
                     }) {
                         Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_delete), "remove volume")
                         Text(stringResource(id = R.string.remove_volume)) }
                     if (volumeToOperate?.isLocal == true) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
-                        commonConfirms.add(CommonConfirmAttrib(
-                            title = context.getString(R.string.reconnect_local_folder) + "?",
+                        confirm(title = context.getString(R.string.reconnect_local_folder) + "?",
                             message = volumeToOperate?.name + "\n" + context.getString(R.string.reconnect_local_folder_warning),
                             confirmRes = R.string.confirm_label,
                             cancelRes = R.string.cancel_label,
                             onConfirm = {
                                 Logd(TAG) { "reconnecting folder: ${volumeToOperate?.name}" }
                                 try { connectLocalFolderLauncher.launch(null) } catch (e: ActivityNotFoundException) { Logs(TAG, e, "No activity found. Should never happen...") }
-                            }))
+                            })
                     }) {
                         Icon(imageVector = ImageVector.vectorResource(id = R.drawable.rounded_books_movies_and_music_24), "reconnect folder", modifier = Modifier.size(24.dp))
                         Text(stringResource(id = R.string.reconnect_local_folder)) }
@@ -1841,15 +1838,14 @@ fun LibraryScreen() {
 
         PullToRefreshBox(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface), isRefreshing = refreshing, indicator = {}, onRefresh = {
             refreshing = true
-            commonConfirms.add(CommonConfirmAttrib(
-                title = context.getString(R.string.feed_refresh_title) + "?",
+            confirm(title = context.getString(R.string.feed_refresh_title) + "?",
                 message = "",
                 confirmRes = R.string.confirm_label,
                 cancelRes = R.string.cancel_label,
                 onConfirm = {
                     if (vm.curVolume == null) checkAndScheduleUpdateTaskOnce(replace = true, force = true)
                     else runOnce(vm.curVolume!!.allFeeds, doItWanyway = vm.curVolume!!.isNormal)
-                }))
+                })
             refreshing = false
         }) {
             if (subPrefs.prefFeedGridLayout) {

@@ -139,7 +139,7 @@ private fun group(s: String, sep: Char): String {
     if (s.length <= 3) return s
     val sb = StringBuilder()
     val firstLen = s.length % 3
-    var i = 0
+    var i: Int
     if (firstLen != 0) {
         sb.append(s.substring(0, firstLen))
         i = firstLen

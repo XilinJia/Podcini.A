@@ -79,8 +79,7 @@ fun clientBySearcher(name: String?): SourceGatewayClient? {
 }
 
 fun isExtFeed(feed: Feed?): Boolean {
-    if (feed?.type.isNullOrBlank()) return false
-    return typeClientMap[feed.type!!] != null
+    return !feed?.type.isNullOrBlank() && typeClientMap[feed.type!!] != null
 }
 
 fun clientsHaveMultiQ(): Boolean {
@@ -234,7 +233,7 @@ object AppGatewayRegistry {
                                     mutex.withLock { clients.add(newClient) }
                                     return@launch
                                 }
-                                delay(delayMs)
+                                delay(delayMs.milliseconds)
                                 delayMs = (delayMs * 2).coerceAtMost(30_000L)
                             }
                             Logd(TAG) { "Unable to reconnect gateway $component" }
