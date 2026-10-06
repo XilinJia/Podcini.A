@@ -12,7 +12,6 @@ import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.removeFromAllQueues
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -232,13 +231,10 @@ private suspend fun assembleCandidates(feeds_: List<Feed>?, candidates: MutableS
             episodes.clear()
             Logd(TAG) { "assembleFeedsCandidates ${f.title} candidate size: ${candidates.size}" }
 
-            runOnIOScope {
-                val eInQ = realm.query(Episode::class, "feedId == ${f.id} AND playState == ${EpisodeState.QUEUE.code}").find()
-                val q = f.queue
-                if (q != null) {
-                    val toAdd = eInQ.filter { it.id !in eIdsAllQueues }
-                    if (toAdd.isNotEmpty()) addToAssQueue(toAdd)
-                }
+            val eInQ = realm.query(Episode::class, "feedId == ${f.id} AND playState == ${EpisodeState.QUEUE.code}").find()
+            if (f.queue != null) {
+                val toAdd = eInQ.filter { it.id !in eIdsAllQueues }
+                if (toAdd.isNotEmpty()) addToAssQueue(toAdd)
             }
 
             realm.write {

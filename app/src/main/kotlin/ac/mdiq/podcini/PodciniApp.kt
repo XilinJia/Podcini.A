@@ -25,6 +25,7 @@ class PodciniApp : Application() {
         Log.d("PodciniApp", "PodciniApp onCreate")
 
         Thread.setDefaultUncaughtExceptionHandler(CrashReportWriter())
+
         if (BuildConfig.DEBUG) {
             val builder: StrictMode.VmPolicy.Builder = StrictMode.VmPolicy.Builder().detectAll().penaltyLog().penaltyDropBox()
             StrictMode.setVmPolicy(builder.build())

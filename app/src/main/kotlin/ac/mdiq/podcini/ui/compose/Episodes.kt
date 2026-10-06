@@ -499,7 +499,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
     var showTodoDialog by remember { mutableStateOf(false) }
     var onTodo by remember { mutableStateOf<Todo?>(null) }
 
-    LaunchedEffect(Unit) { if (fetchChapters) withContext(Dispatchers.IO) { loadChapters(episode, false) }}  // TODO: test
+    LaunchedEffect(Unit) { if (fetchChapters) withContext(Dispatchers.IO) { loadChapters(episode, false) }}
 
     if (showEditComment) {
         var commentText by remember { mutableStateOf(TextFieldValue(episode.compileCommentText())) }

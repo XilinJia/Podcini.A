@@ -1,3 +1,9 @@
+# 12.14.5
+
+* likely fixed misbehavior of auto-enqueue
+* amended crash report writer
+* R8 full mode is on
+
 # 12.14.4
 
 * fixed deleting timestamp marks

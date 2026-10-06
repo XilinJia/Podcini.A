@@ -7,6 +7,7 @@
 -keepattributes SourceFile,LineNumberTable
 -keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
 -keepattributes Signature, InnerClasses, EnclosingMethod
+-renamesourcefileattribute SourceFile
 
 # -keep class ac.mdiq.podcini.** { *; }
 # -keepclassmembers class ac.mdiq.podcini** {*;}

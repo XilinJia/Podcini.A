@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 135
-        versionName = "12.14.4"
+        versionCode = 136
+        versionName = "12.14.5"
 
         ndkVersion = "30.0.16248370"
 
@@ -121,10 +121,8 @@ configure<ApplicationExtension> {
     lint {
         checkReleaseBuilds = strictLint
         checkDependencies = strictLint
-
         warningsAsErrors = strictLint
         abortOnError = strictLint
-
         disable += listOf(
             "UnsafeOptInUsageError",
             "TypographyDashes",
@@ -184,13 +182,12 @@ androidComponents {
         val capitalized = variantName.replaceFirstChar { it.uppercase() }
         val rawFlavor = variant.flavorName ?: ""
         val formattedFlavor = rawFlavor.replace("Legacy", "-legacy")
-
         if (rawFlavor.endsWith("Legacy")) {
             variant.packaging.jniLibs.useLegacyPackaging.set(true)
             variant.packaging.dex.useLegacyPackaging.set(true)
         }
-
         val copyTask = tasks.register<Copy>("export${capitalized}Apks") {
+            description = "copy apks to export dir"
             from(variant.artifacts.get(SingleArtifact.APK)) {
                 include("**/*.apk")
                 rename { filename ->
@@ -298,6 +295,7 @@ dependencies {
 }
 
  val copyLicenseTask = tasks.register<Copy>("copyLicense") {
+     description = ""
      from("../LICENSE")
      into("src/main/assets/")
      rename { "$it.txt" }
