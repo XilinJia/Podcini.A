@@ -499,7 +499,7 @@ fun QueuesScreen(id: Long = -1L) {
                     Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                         IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                         DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.settings_label)) }, onClick = {
+                            if (vm.queuesMode != QueuesScreenMode.Settings) DropdownMenuItem(text = { Text(stringResource(R.string.settings_label)) }, onClick = {
                                 vm.queuesMode = QueuesScreenMode.Settings
                                 runOnIOScope { upsert(appAttribs) { it.queuesMode = vm.queuesMode.name } }
                                 expanded = false

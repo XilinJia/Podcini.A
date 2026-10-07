@@ -237,8 +237,8 @@ private suspend fun assembleCandidates(feeds_: List<Feed>?, candidates: MutableS
                 if (toAdd.isNotEmpty()) addToAssQueue(toAdd)
             }
 
-            realm.write {
-                if (!noRefreshing) {
+            if (!noRefreshing) {
+                realm.write {
                     for (dleq in f.autoDLEQs) {
                         if (dleq.autoDownloadFilter?.markExcludedPlayed == true) {
                             val qStr = dleq.autoDownloadFilter!!.queryExcludeString()

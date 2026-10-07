@@ -1,3 +1,7 @@
+# 12.14.6
+
+* fixed misbehavior of auto-enqueue: episodes were added to all queues involved
+
 # 12.14.5
 
 * likely fixed misbehavior of auto-enqueue

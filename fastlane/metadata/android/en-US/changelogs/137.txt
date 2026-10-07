@@ -1,0 +1,1 @@
+* fixed misbehavior of auto-enqueue: episodes were added to all queues involved
