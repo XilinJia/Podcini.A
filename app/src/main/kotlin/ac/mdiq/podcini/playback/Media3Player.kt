@@ -401,7 +401,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                                 error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND || (cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 404) -> handleTerminalError("onPlayerError Episode not found on server (404).")
                                 cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 403 -> {
                                     curMediaFlow.value?.let { clearSpecs(it) }
-                                    Loge(TAG, "onPlayerError Access denied (403). Try again or check your subscription. headers=${cause.headerFields} ")
+                                    Loge(TAG, "onPlayerError Access denied (403). Try playing it again. headers=${cause.headerFields} ")
                                     Logd(TAG) { "onPlayerError Access denied (403) url: ${cause.dataSpec.uri}" }
 //                                    handleTerminalError("Access denied (403). Check your subscription.")
                                     forcePlaybackReset = true

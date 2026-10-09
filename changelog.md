@@ -1,10 +1,10 @@
 # 12.15.0
 
 * in episode actions
-	* Remove from queues are shown only applicable
+	* Remove from queues are shown only when applicable
 	* removed "Remove from history"
-* in episode lists, multi-select options Set Related, Download, Delete Media, and Remove From queues are shown only applicable
-* added "Delete captions" in episode actions and multi-select menu, shown only applicable
+* in episode lists, some multi-select options are shown only when applicable
+* added "Delete captions" in episode actions and multi-select menu, shown only when applicable
 * in transcript selections, check box is replaced with Download icon
 * in Feed settings, added "Trim episodes by (order)", default to "Publish date descending", can be set to current sort order
 * if "Limit episode" is set to nonzero in the feed

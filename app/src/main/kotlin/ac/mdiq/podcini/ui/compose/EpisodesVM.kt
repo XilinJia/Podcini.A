@@ -561,19 +561,28 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
             var areDownloadable by remember { mutableStateOf(false) }
             var areDeletable by remember { mutableStateOf(false) }
             var areInAnyQueue by remember { mutableStateOf(false) }
+            var canAddToAssQueue by remember { mutableStateOf(false) }
+            var canAddToActQueue by remember { mutableStateOf(false) }
             var haveCaptions by remember { mutableStateOf(false) }
             val isdInQueues = remember { inQueueEpisodeIdSet() }
             LaunchedEffect(selected.size) {
                 areDownloadable = false
                 areDeletable = false
                 areInAnyQueue = false
+                haveCaptions = false
+                canAddToAssQueue = false
+                canAddToActQueue = false
                 for (e in selected) {
+                    val f = e.feed
                     if (!e.fileUrl.isNullOrBlank()) areDeletable = true
                     if (e.id in isdInQueues) areInAnyQueue = true
                     if (e.captionCues.isNotEmpty()) haveCaptions = true
+                    if (!actQueueFlow.value.contains(e)) canAddToActQueue = true
+                    val assQ = f?.queue
+                    if (assQ != null && !assQ.contains(e)) canAddToAssQueue = true
                     val client = clientByEpisode(e)
-                    if (e.fileUrl.isNullOrBlank() && e.feed?.isLocal != true && (client == null || client.attributes?.supportDownload == true)) areDownloadable = true
-                    if (areDownloadable && areDeletable && areInAnyQueue && haveCaptions) break
+                    if (e.fileUrl.isNullOrBlank() && f?.isLocal != true && (client == null || client.attributes?.supportDownload == true)) areDownloadable = true
+                    if (areDownloadable && areDeletable && areInAnyQueue && haveCaptions && canAddToAssQueue && canAddToActQueue) break
                 }
             }
             Row(modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.tertiaryContainer), horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
