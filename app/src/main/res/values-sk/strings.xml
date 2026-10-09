@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Max episodes allowed</string>
     <string name="new_namee">New name</string>
     <string name="feed_settings_label">Nastavenia podcastu</string>
-    <string name="rename_feed_label">Premenovať podcast</string>
-    <string name="remove_feed_label">Odstrániť podcast</string>
+
+
     <string name="share_label">Zdieľanie</string>
     <string name="share_file_label">Zdielať súbor</string>
     <string name="share_notes_label">Share notes</string>
@@ -144,11 +144,11 @@
     <string name="play_label">Prehrať</string>
     <string name="pause_label">Pozastaviť</string>
     <string name="stream_label">Streamovať</string>
-    <string name="erase_episodes_label">Erase episodes</string>
-    <string name="reserve_episodes_label">Reserve episodes</string>
+    <string name="erase_episodes">Erase episodes</string>
+    <string name="reserve_episodes">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Zmazať</string>
-    <string name="delete_episode_label">Zmazať epizódu</string>
+    <string name="delete_episode_media">Zmazať epizódu</string>
     <string name="no_action_label">No action</string>
 
 

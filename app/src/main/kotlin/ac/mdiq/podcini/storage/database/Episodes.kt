@@ -135,7 +135,7 @@ suspend fun deleteEpisodesWarnLocalRepeat(items: Iterable<Episode>) {
 
     val userDone = CompletableDeferred<Unit>()
     if (localItems.isNotEmpty()) {
-        confirm(title = context.getString(R.string.delete_episode_label),
+        confirm(title = context.getString(R.string.delete_episode_media),
             message = context.getString(R.string.delete_local_feed_warning_body),
             confirmRes = R.string.delete_label,
             cancelRes = R.string.cancel_label,
@@ -150,7 +150,7 @@ suspend fun deleteEpisodesWarnLocalRepeat(items: Iterable<Episode>) {
         userDone.await()
     }
     if (repeatItems.isNotEmpty()) {
-        confirm(title = context.getString(R.string.delete_episode_label),
+        confirm(title = context.getString(R.string.delete_episode_media),
             message = context.getString(R.string.delete_repeat_warning_msg),
             confirmRes = R.string.delete_label,
             cancelRes = R.string.cancel_label,

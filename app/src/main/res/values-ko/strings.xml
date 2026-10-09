@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Max episodes allowed</string>
     <string name="new_namee">New name</string>
     <string name="feed_settings_label">팟캐스트 설정</string>
-    <string name="rename_feed_label">팟캐스트 이름 바꾸기</string>
-    <string name="remove_feed_label">팟캐스트 제거</string>
+
+
     <string name="share_label">공유</string>
     <string name="share_file_label">파일 공유</string>
     <string name="share_notes_label">Share notes</string>
@@ -141,11 +141,11 @@
     <string name="play_label">재생</string>
     <string name="pause_label">일시 중지</string>
     <string name="stream_label">스트리밍</string>
-    <string name="erase_episodes_label">Erase episodes</string>
-    <string name="reserve_episodes_label">Reserve episodes</string>
+    <string name="erase_episodes">Erase episodes</string>
+    <string name="reserve_episodes">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">삭제</string>
-    <string name="delete_episode_label">에피소드 삭제</string>
+    <string name="delete_episode_media">에피소드 삭제</string>
     <string name="no_action_label">No action</string>
 
 

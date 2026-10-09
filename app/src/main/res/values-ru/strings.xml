@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Максимальное количество разрешенных эпизодов</string>
     <string name="new_namee">Новое имя</string>
     <string name="feed_settings_label">Настройки подкаста</string>
-    <string name="rename_feed_label">Переименовать подкаст</string>
-    <string name="remove_feed_label">Удалить подкаст</string>
+
+
     <string name="share_label">Поделиться</string>
     <string name="share_file_label">Поделиться файлом</string>
     <string name="share_notes_label">Поделиться заметками</string>
@@ -144,11 +144,11 @@
     <string name="play_label">Воспроизвести</string>
     <string name="pause_label">Пауза</string>
     <string name="stream_label">Воспроизвести из сети</string>
-    <string name="erase_episodes_label">Очистить эпизоды</string>
-    <string name="reserve_episodes_label">Зарезервировать эпизоды</string>
+    <string name="erase_episodes">Очистить эпизоды</string>
+    <string name="reserve_episodes">Зарезервировать эпизоды</string>
     <string name="null_label">Пустой</string>
     <string name="delete_label">Удалить</string>
-    <string name="delete_episode_label">Удалить выпуск</string>
+    <string name="delete_episode_media">Удалить выпуск</string>
     <string name="no_action_label">Без действий</string>
 
 

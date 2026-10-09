@@ -63,11 +63,9 @@ class SwipeActions(private val tag: String, private val isSubscribed: Boolean = 
     @Composable
     fun SwipeActionsSettingDialog(onDismiss: () -> Unit) {
         val context by rememberUpdatedState(LocalContext.current)
-
         val leftAction = remember { mutableStateOf(left) }
         val rightAction = remember { mutableStateOf(right) }
         var keys by remember { mutableStateOf(if (isSubscribed) episodeActions else episodeActions.filter { !it.subscribedOnly }) }
-
         var direction by remember { mutableIntStateOf(0) }
         var showPickerDialog by remember { mutableStateOf(false) }
         if (showPickerDialog) {
@@ -98,14 +96,8 @@ class SwipeActions(private val tag: String, private val isSubscribed: Boolean = 
                         Screens.Facets.name -> context.getString(R.string.facets)
                         Screens.OnlineFeed.name -> context.getString(R.string.online_episodes_label)
                         Screens.Search.name -> context.getString(R.string.search_label)
-                        Screens.FeedDetails.name -> {
-                            keys = keys.filter { a: EpisodeAction -> a !is RemoveFromHistory }
-                            context.getString(R.string.subscription)
-                        }
-                        Screens.Queues.name -> {
-                            keys = keys.filter { a: EpisodeAction -> (a !is AddToActiveQueue && a !is RemoveFromHistory) }
-                            context.getString(R.string.queue_label)
-                        }
+                        Screens.FeedDetails.name -> context.getString(R.string.subscription)
+                        Screens.Queues.name -> context.getString(R.string.queue_label)
                         else -> { tag }
                     } }
                 Text(stringResource(R.string.swipeactions_label) + " - " + forScreen)

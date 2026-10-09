@@ -248,7 +248,7 @@ fun OnlineFeedItem(result: FeedSearchResult, log: SubscriptionLog? = null) {
 fun AmendSyntheticFeed(feed_: Feed? = null, name_: String? = null, volume: Volume? = null, onDismiss: () -> Unit, cb: (Feed)->Unit) {
     CommonPopupCard(onDismiss = { onDismiss() }) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            Text(stringResource(R.string.rename_feed_label), color = textColor, style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
             var name by remember { mutableStateOf(feed_?.title ?: name_ ?: "") }
             TextField(value = name,  singleLine = true, onValueChange = { name = it }, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_namee)) })
             var hasVideo by remember { mutableStateOf(true) }

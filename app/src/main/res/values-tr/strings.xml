@@ -163,8 +163,8 @@
     <string name="max_episodes_cache">İzin verilen maksimum bölüm sayısı</string>
     <string name="new_namee">Yeni isim</string>
     <string name="feed_settings_label">Podcast ayarları</string>
-    <string name="rename_feed_label">Podcast\'i yeniden adlandır</string>
-    <string name="remove_feed_label">Podcast\'i kaldır</string>
+
+
     <string name="share_label">Paylaş</string>
     <string name="share_file_label">Dosyayı paylaş</string>
     <string name="share_notes_label">Notları paylaş</string>
@@ -201,12 +201,12 @@
     <string name="play_label">Oynat</string>
     <string name="pause_label">Duraklat</string>
     <string name="stream_label">Akış</string>
-    <string name="erase_episodes_label">Bölümleri sil</string>
-    <string name="reserve_episodes_label">Bölümleri ayır</string>
+    <string name="erase_episodes">Bölümleri sil</string>
+    <string name="reserve_episodes">Bölümleri ayır</string>
     <string name="null_label">Boş</string>
     <string name="delete_label">Sil</string>
 
-    <string name="delete_episode_label">Bölüm medyasını sil</string>
+    <string name="delete_episode_media">Bölüm medyasını sil</string>
 
     <string name="no_action_label">Eylem yok</string>
 
@@ -693,8 +693,6 @@
     <string name="statistics_space_used">Kullanılan alan:</string>
     <string name="statistics_episodes_started_total">Başlatılan/toplam bölümler:</string>
 
-    <string name="this_podcast">Bu podcast</string>
-    <string name="all_podcasts">Tüm podcast\'ler</string>
     <string name="feeds_related_to_author">Yazarla ilişkili olabilecek beslemeler »</string>
     <string name="edit_url_menu">Besleme URL\'sini düzenle</string>
     <string name="edit_url_confirmation_msg">RSS adresini değiştirmek, oynatma durumunu ve bölüm listelerini kolayca bozabilir. Bunu değiştirmenizi ÖNERMİYORUZ ve bir şeyler ters giderse destek SAĞLAMAYACAĞIZ. Bu işlem geri alınamaz. Bozuk abonelik, adresi geri değiştirerek ONARILAMAZ. Devam etmeden önce yedekleme yapmanızı öneririz.</string>

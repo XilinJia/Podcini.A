@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Max antal avsnitt tillåtna</string>
     <string name="new_namee">Nytt namn</string>
     <string name="feed_settings_label">Podcastinställningar</string>
-    <string name="rename_feed_label">Byt namn på podcast</string>
-    <string name="remove_feed_label">Ta bort podcast</string>
+
+
     <string name="share_label">Dela</string>
     <string name="share_file_label">Dela fil</string>
     <string name="share_notes_label">Dela anteckningar</string>
@@ -142,11 +142,11 @@
     <string name="play_label">Spela</string>
     <string name="pause_label">Pausa</string>
     <string name="stream_label">Strömma</string>
-    <string name="erase_episodes_label">Radera avsnitt</string>
-    <string name="reserve_episodes_label">Reservera avsnitt</string>
+    <string name="erase_episodes">Radera avsnitt</string>
+    <string name="reserve_episodes">Reservera avsnitt</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Ta bort</string>
-    <string name="delete_episode_label">Radera episod</string>
+    <string name="delete_episode_media">Radera episod</string>
     <string name="no_action_label">Ingen åtgärd</string>
 
 

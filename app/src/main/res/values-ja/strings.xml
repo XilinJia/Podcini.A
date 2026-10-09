@@ -114,8 +114,8 @@
     <string name="max_episodes_cache">最大エピソードを許可</string>
     <string name="new_namee">新しい名前</string>
     <string name="feed_settings_label">ポッドキャスト設定</string>
-    <string name="rename_feed_label">ポッドキャスト名を変更</string>
-    <string name="remove_feed_label">ポッドキャストを削除</string>
+
+
     <string name="share_label">共有</string>
     <string name="share_file_label">ファイルを共有</string>
     <string name="share_notes_label">メモを共有</string>
@@ -143,11 +143,11 @@
     <string name="play_label">再生</string>
     <string name="pause_label">一時停止</string>
     <string name="stream_label">ストリーム</string>
-    <string name="erase_episodes_label">エピソードを消去</string>
-    <string name="reserve_episodes_label">エピソードを予約</string>
+    <string name="erase_episodes">エピソードを消去</string>
+    <string name="reserve_episodes">エピソードを予約</string>
     <string name="null_label">Null</string>
     <string name="delete_label">削除</string>
-    <string name="delete_episode_label">エピソードメディアの削除</string>
+    <string name="delete_episode_media">エピソードメディアの削除</string>
     <string name="no_action_label">アクションなし</string>
 
 

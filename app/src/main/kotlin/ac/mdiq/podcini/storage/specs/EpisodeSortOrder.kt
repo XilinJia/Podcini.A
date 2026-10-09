@@ -56,6 +56,10 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
     SMART_SHUFFLE_ASC(105, R.string.smart_shuffle, true),
     SMART_SHUFFLE_DESC(106, R.string.smart_shuffle, true);
 
+    fun reverseCode(): Int {
+        return if (code % 2 == 0) code - 1 else code + 1
+    }
+
     companion object {
         fun parseWithDefault(value: String, defaultValue: EpisodeSortOrder): EpisodeSortOrder {
             return try {
@@ -72,7 +76,7 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
             return EPISODE_TITLE_ASC //            throw IllegalArgumentException("Unsupported code: $code")
         }
 
-        fun fromCode(code: Int): EpisodeSortOrder = EpisodeSortOrder.entries.firstOrNull { it.code == code } ?: EPISODE_TITLE_ASC
+        fun fromCode(code: Int, default: EpisodeSortOrder = EPISODE_TITLE_ASC): EpisodeSortOrder = EpisodeSortOrder.entries.firstOrNull { it.code == code } ?: default
 
         fun toCodeString(sortOrder: EpisodeSortOrder): String = sortOrder.code.toString()
 

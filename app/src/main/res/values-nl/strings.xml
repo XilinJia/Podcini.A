@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Max afleveringen toegestaan</string>
     <string name="new_namee">Nieuwe naam</string>
     <string name="feed_settings_label">Podcastinstellingen</string>
-    <string name="rename_feed_label">Podcastnaam wijzigen</string>
-    <string name="remove_feed_label">Podcast verwijderen</string>
+
+
     <string name="share_label">Delen</string>
     <string name="share_file_label">Bestand delen</string>
     <string name="share_notes_label">Notities delen</string>
@@ -142,11 +142,11 @@
     <string name="play_label">Afspelen</string>
     <string name="pause_label">Pauzeren</string>
     <string name="stream_label">Streamen</string>
-    <string name="erase_episodes_label">Afleveringen wissen</string>
-    <string name="reserve_episodes_label">Afleveringen reserveren</string>
+    <string name="erase_episodes">Afleveringen wissen</string>
+    <string name="reserve_episodes">Afleveringen reserveren</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Verwijderen</string>
-    <string name="delete_episode_label">Aflevering verwijderen</string>
+    <string name="delete_episode_media">Aflevering verwijderen</string>
     <string name="no_action_label">Geen actie</string>
 
 

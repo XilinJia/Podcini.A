@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Максимально дозволені серії</string>
     <string name="new_namee">Нове і\'мя</string>
     <string name="feed_settings_label">Налаштування подкасту</string>
-    <string name="rename_feed_label">Перейменувати подкаст</string>
-    <string name="remove_feed_label">Видалити подкаст</string>
+
+
     <string name="share_label">Поділитися</string>
     <string name="share_file_label">Поділитися файлом</string>
     <string name="share_notes_label">Поділитися нотатками</string>
@@ -144,11 +144,11 @@
     <string name="play_label">Грати</string>
     <string name="pause_label">Пауза</string>
     <string name="stream_label">Прослухати без завантаження</string>
-    <string name="erase_episodes_label">Стерти серії</string>
-    <string name="reserve_episodes_label">Резервні серії</string>
+    <string name="erase_episodes">Стерти серії</string>
+    <string name="reserve_episodes">Резервні серії</string>
     <string name="null_label">Порожньо</string>
     <string name="delete_label">Видалити</string>
-    <string name="delete_episode_label">Видалити епізод</string>
+    <string name="delete_episode_media">Видалити епізод</string>
     <string name="no_action_label">Дія не потрібна</string>
 
 

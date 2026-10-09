@@ -9,7 +9,6 @@ import io.github.xilinjia.krdb.types.EmbeddedRealmObject
 import io.github.xilinjia.krdb.types.annotations.Ignore
 
 class AutoDLEQ: EmbeddedRealmObject {
-
     @Ignore
     var episodeFilterADL: EpisodeFilter = EpisodeFilter()
         get() {
@@ -29,10 +28,9 @@ class AutoDLEQ: EmbeddedRealmObject {
     var durationCeilingADL: Int = Int.MAX_VALUE
 
     @Ignore
-    var episodesSortOrderADL: EpisodeSortOrder? = null
+    var episodesSortOrderADL: EpisodeSortOrder = EpisodeSortOrder.DATE_DESC
         get() = fromCode(sortOrderCodeADL)
         set(value) {
-            if (value == null) return
             field = value
             sortOrderCodeADL = value.code
         }
@@ -103,8 +101,8 @@ class AutoDLEQ: EmbeddedRealmObject {
         result = 31 * result + autoDLPolicyCode
         result = 31 * result + autoDLPolicyReplace.hashCode()
         result = 31 * result + filterStringADL.hashCode()
-        result = 31 * result + (autoDLInclude?.hashCode() ?: 0)
-        result = 31 * result + (autoDLExclude?.hashCode() ?: 0)
+        result = 31 * result + autoDLInclude.hashCode()
+        result = 31 * result + autoDLExclude.hashCode()
         return result
     }
 }

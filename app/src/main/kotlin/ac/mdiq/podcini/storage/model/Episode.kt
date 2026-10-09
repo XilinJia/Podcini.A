@@ -210,6 +210,7 @@ class Episode : RealmObject {
         }
     var fileUrl: String? = null
     var downloadTime: Long = 0
+        private set
 
     var lastPlayedTime: Long = 0 // Last time this media was played (in ms)
 
@@ -328,6 +329,11 @@ class Episode : RealmObject {
             if (playState == EpisodeState.PLAYED.code) EpisodeState.UNPLAYED.code
             else EpisodeState.PLAYED.code
         }
+        // not sure if this is proper
+        //        if (playState == EpisodeState.UNPLAYED.code) {
+        //            lastPlayedTime = 0L
+        //            playbackCompletionTime = 0L
+        //        }
         if (resetPosition || playState in listOf(EpisodeState.PLAYED.code, EpisodeState.IGNORED.code)) position = 0
         if (state in listOf(EpisodeState.QUEUE, EpisodeState.SKIPPED, EpisodeState.PLAYED, EpisodeState.PASSED, EpisodeState.IGNORED)) isAutoDownloadEnabled = false
         playStateSetTime = if (setTime > 0L) setTime else nowInMillis()
@@ -649,7 +655,7 @@ class Episode : RealmObject {
         var result = id.hashCode()
         result = 31 * result + pubDate.hashCode()
         result = 31 * result + trackNumber.hashCode()
-        result = 31 * result + (feedId?.hashCode() ?: 0)
+        result = 31 * result + feedId.hashCode()
         result = 31 * result + images.size
         result = 31 * result + playState
         result = 31 * result + playStateSetTime.hashCode()
@@ -672,12 +678,12 @@ class Episode : RealmObject {
         result = 31 * result + timeSpent.hashCode()
         result = 31 * result + size.hashCode()
         result = 31 * result + playbackCompletionTime.hashCode()
-        result = 31 * result + (hasEmbeddedPicture?.hashCode() ?: 0)
+        result = 31 * result + hasEmbeddedPicture.hashCode()
         result = 31 * result + forceVideo.hashCode()
         result = 31 * result + repeatTime.hashCode()
-        result = 31 * result + (identifier?.hashCode() ?: 0)
-        result = 31 * result + (title?.hashCode() ?: 0)
-        result = 31 * result + (parentTitle?.hashCode() ?: 0)
+        result = 31 * result + identifier.hashCode()
+        result = 31 * result + title.hashCode()
+        result = 31 * result + parentTitle.hashCode()
         result = 31 * result + chapters.size
         result = 31 * result + transcriptIndex
         result = 31 * result + transcriptStartPos
@@ -690,9 +696,9 @@ class Episode : RealmObject {
         result = 31 * result + marks.size
         result = 31 * result + comment.hashCode()
         result = 31 * result + todos.hashCode()
-        result = 31 * result + (fileUrl?.hashCode() ?: 0)
-        result = 31 * result + (mimeType?.hashCode() ?: 0)
-        result = 31 * result + (origFeedTitle?.hashCode() ?: 0)
+        result = 31 * result + fileUrl.hashCode()
+        result = 31 * result + mimeType.hashCode()
+        result = 31 * result + origFeedTitle.hashCode()
         return result
     }
 

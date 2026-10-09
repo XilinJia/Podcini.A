@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Episoade maxime permise</string>
     <string name="new_namee">Nume nou</string>
     <string name="feed_settings_label">Setări podcast</string>
-    <string name="rename_feed_label">Redenumire podcast</string>
-    <string name="remove_feed_label">Sterge podcast</string>
+
+
     <string name="share_label">Trimiteți</string>
     <string name="share_file_label">Trimite fișier</string>
     <string name="share_notes_label">Partajează notițe</string>
@@ -143,11 +143,11 @@
     <string name="play_label">Redare</string>
     <string name="pause_label">Pauză</string>
     <string name="stream_label">Flux</string>
-    <string name="erase_episodes_label">Ștergeți episoadele</string>
-    <string name="reserve_episodes_label">Episoade de rezervă</string>
+    <string name="erase_episodes">Ștergeți episoadele</string>
+    <string name="reserve_episodes">Episoade de rezervă</string>
     <string name="null_label">Nul</string>
     <string name="delete_label">Șterge</string>
-    <string name="delete_episode_label">Șterge episod</string>
+    <string name="delete_episode_media">Șterge episod</string>
     <string name="no_action_label">Nicio acțiune</string>
 
 

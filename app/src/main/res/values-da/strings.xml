@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Maks. antal episoder tilladt</string>
     <string name="new_namee">Nyt navn</string>
     <string name="feed_settings_label">Podcast-indstillinger</string>
-    <string name="rename_feed_label">Omdøb podcast</string>
-    <string name="remove_feed_label">Fjern podcast</string>
+
+
     <string name="share_label">Del</string>
     <string name="share_file_label">Del fil</string>
     <string name="share_notes_label">Del noter</string>
@@ -142,11 +142,11 @@
     <string name="play_label">Afspil</string>
     <string name="pause_label">Sæt på pause</string>
     <string name="stream_label">Stream</string>
-    <string name="erase_episodes_label">Slet episoder</string>
-    <string name="reserve_episodes_label">Reserver episoder</string>
+    <string name="erase_episodes">Slet episoder</string>
+    <string name="reserve_episodes">Reserver episoder</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Slet</string>
-    <string name="delete_episode_label">Slet afsnit</string>
+    <string name="delete_episode_media">Slet afsnit</string>
     <string name="no_action_label">Ingen handling</string>
 
 

@@ -73,7 +73,7 @@ class ShortcutsActivity : ComponentActivity() {
                         val lazyListState = rememberLazyListState()
                         when {
                             addFeed -> {
-                                Text(stringResource(R.string.select_podcast), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp))
+                                Text(stringResource(R.string.select_feed), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp))
                                 var checkedIndex by remember { mutableIntStateOf(-1) }
                                 LazyColumn(state = lazyListState, modifier = Modifier.weight(1f).fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     itemsIndexed(feedItems) { index, item ->

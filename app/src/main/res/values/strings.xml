@@ -178,7 +178,10 @@
     <string name="auto_download_sum">Enabling auto-download downloads qualified episodes and adds them to the associated queue (not set to None) on refreshing.</string>
 
     <string name="limit_episodes_to">Limit episodes to</string>
-    <string name="limit_episodes_to_sum">Suggest a maximum number of episodes to maintain. When exceeded, older episodes are erased. Specially marked episodes will be kept though.</string>
+    <string name="limit_episodes_to_sum">Suggest a maximum number of episodes to maintain. When exceeded, episodes at the end of the trim order are erased on next refresh. If trim order is changed, a full refresh is needed to update the trimmed list. Specially marked episodes will be kept though.</string>
+    <string name="Use_current_order">Use current order</string>
+    <string name="trim_episodes_by">Trim episodes by</string>
+
     <string name="skip_first_hint">Skip first (seconds)</string>
     <string name="skip_last_hint">Skip last (seconds)</string>
 
@@ -231,8 +234,9 @@
     <string name="new_namee">New name</string>
     <string name="feed_settings_label">Podcast settings</string>
     <string name="full_settings">Full settings</string>
-    <string name="rename_feed_label">Rename podcast</string>
-    <string name="remove_feed_label">Remove podcast</string>
+    <string name="rename_feed">Rename feed</string>
+    <string name="remove_feed">Remove feed</string>
+
     <string name="share_label">Share</string>
     <string name="share_file_label">Share file</string>
     <string name="share_notes_label">Share notes</string>
@@ -245,6 +249,8 @@
     <string name="feed_delete_confirmation_msg">Please confirm that you want to delete the podcast \"%1$s\", ALL its episodes (including downloaded episodes), and its statistics.</string>
     <string name="feed_delete_confirmation_msg_batch">Please confirm that you want to remove the selected podcasts, ALL their episodes (including downloaded episodes), and its statistics.</string>
     <string name="feed_delete_confirmation_local_msg">Please confirm that you want to remove the podcast \"%1$s\" and its statistics. The files in the local source folder will not be deleted.</string>
+
+    <string name="delete_captions_confirmation">Please confirm that you want to delete captions of the episodes.</string>
 
     <string name="not_erase_message">Only episodes from synthetic feeds can be erased.</string>
     <string name="reason_to_delete_msg">For future reference, you can record a reason here:</string>
@@ -287,9 +293,9 @@
     <string name="stream_label">Stream</string>
     <string name="stream_one">Stream one</string>
     <string name="stream_repeat">Stream repeat</string>
-    <string name="erase_episodes_label">Erase episodes</string>
-    <string name="alarm_episodes_label">Play episodes at time</string>
-    <string name="reserve_episodes_label">Reserve episodes</string>
+    <string name="erase_episodes">Erase episodes</string>
+    <string name="play_episode_at_time">Play episodes at time</string>
+    <string name="reserve_episodes">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Delete</string>
 
@@ -297,8 +303,9 @@
     <string name="the_default">Default</string>
     <string name="secondary">Secondary</string>
 
+    <string name="delete_captions">Delete captions</string>
 
-    <string name="delete_episode_label">Delete episode media</string>
+    <string name="delete_episode_media">Delete episode media</string>
 
     <string name="set_related">Set episodes related</string>
 
@@ -682,10 +689,13 @@
     <string name="pref_feed_skip_ending_toast">Skipped last %d seconds</string>
     <string name="pref_feed_skip_intro_toast">Skipped first %d seconds</string>
 
+    <string name="set_associated_queue">Set associated queue</string>
+
     <string name="multiple_podcasts">Multiple podcasts</string>
 
     <string name="pref_parent_volume">Parent volume</string>
     <string name="pref_parent_volume_sum">The volume to which the feed belongs</string>
+    <string name="set_parent_volume">Set parent volume</string>
 
     <string name="pref_fallback_speed">Fallback speed</string>
     <string name="pref_speed_forward">Fast forward speed</string>
@@ -776,7 +786,7 @@
     <string name="search_hint">delimit by , prefix with - to exclude</string>
     <string name="no_results_for_query">No results were found for \"%1$s\"</string>
 
-    <string name="search_captions_hint"></string>
+    <string name="search_captions_hint">search case sensitive</string>
 
     <string name="feeds_online">Feeds online</string>
     <string name="remote_searchers">Remote searchers</string>
@@ -957,8 +967,6 @@
     <string name="statistics_episodes_started_total">Episodes started/total:</string>
 
 
-    <string name="this_podcast">This podcast</string>
-    <string name="all_podcasts">All podcasts</string>
     <string name="feeds_related_to_author">Feeds likely related to the author »</string>
     <string name="edit_url_menu">Edit feed URL</string>
     <string name="edit_url_confirmation_msg">Changing the RSS address can easily break the playback state and episode listings of the podcast. We do NOT recommend changing it and will NOT provide support if anything goes wrong. This cannot be undone. The broken subscription CANNOT be repaired by simply changing the address back. We suggest creating a backup before continuing.</string>
@@ -1117,11 +1125,9 @@
     <!-- Widget settings -->
 
     <!-- On-Demand configuration -->
-
-    <string name="podcast">Podcast</string>
     <string name="queue">Queue</string>
 
-    <string name="select_podcast">Select podcast</string>
+    <string name="select_feed">Select feed</string>
     <string name="select_queue">Select queue</string>
     <string name="select_facet">Select facet</string>
 

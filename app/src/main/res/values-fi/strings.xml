@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Jaksojen enimmäismäärä sallittu</string>
     <string name="new_namee">Uusi nimi</string>
     <string name="feed_settings_label">Podcastin asetukset</string>
-    <string name="rename_feed_label">Uudelleennimeä podcast </string>
-    <string name="remove_feed_label">Poista podcast</string>
+
+
     <string name="share_label">Jaa</string>
     <string name="share_file_label">Jaa tietodosto</string>
     <string name="share_notes_label">Jaa muistiinpanot</string>
@@ -142,11 +142,11 @@
     <string name="play_label">Toista</string>
     <string name="pause_label">Tauko</string>
     <string name="stream_label">Suoratoista</string>
-    <string name="erase_episodes_label">Pyyhi jaksot</string>
-    <string name="reserve_episodes_label">Varaa jaksot</string>
+    <string name="erase_episodes">Pyyhi jaksot</string>
+    <string name="reserve_episodes">Varaa jaksot</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Poista</string>
-    <string name="delete_episode_label">Poista jakso</string>
+    <string name="delete_episode_media">Poista jakso</string>
     <string name="no_action_label">Ei toimintoa</string>
 
 

@@ -511,7 +511,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                                     runOnIOScope { FeedUpdater(listOf(feed!!), fullUpdate = true, doItAnyway = true, removeUnlisted = true).start() }
                                     expanded = false
                                 })
-                                DropdownMenuItem(text = { Text(stringResource(R.string.remove_feed_label)) }, onClick = {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.remove_feed)) }, onClick = {
                                     showRemoveFeedDialog = true
                                     expanded = false
                                 })

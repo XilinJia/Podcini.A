@@ -684,13 +684,13 @@ fun LibraryScreen() {
             exitSelectMode()
         }) {
             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_play), "associated queue")
-            Text(stringResource(id = R.string.pref_feed_associated_queue)) } },
+            Text(stringResource(id = R.string.set_associated_queue)) } },
         "ParentVolume" to { Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
             showToVolumeDialog = true
             exitSelectMode()
         }) {
             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.rounded_books_movies_and_music_24), "set parent volume", modifier = Modifier.height(24.dp))
-            Text(stringResource(id = R.string.pref_parent_volume)) } },
+            Text(stringResource(id = R.string.set_parent_volume)) } },
         "FullSettings" to { Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
             feedsToSet = feedsSelected
             navTo(FeedsSettings)
@@ -709,7 +709,7 @@ fun LibraryScreen() {
             exitSelectMode()
         }) {
             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_delete), "remove feed")
-            Text(stringResource(id = R.string.remove_feed_label)) } },
+            Text(stringResource(id = R.string.remove_feed)) } },
         "OPMLExport" to { Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
             exitSelectMode()
             val exportType = ExportTypes.OPML_SELECTED
@@ -754,10 +754,8 @@ fun LibraryScreen() {
     ) }
 
     val subPrefs by vm.prefsFlow.collectAsStateWithLifecycle()
-
     val feedList by vm.feedsFlow.collectAsStateWithLifecycle()
     val volumes by vm.subVolumesFlow.collectAsStateWithLifecycle()
-
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             Logd(TAG) { "DisposableEffect Lifecycle.Event: $event" }
@@ -1531,7 +1529,7 @@ fun LibraryScreen() {
         fun CreateVolume(parent: Volume?, onDismiss: () -> Unit) {
             CommonPopupCard(onDismiss = { onDismiss() }) {
                 Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text(stringResource(R.string.rename_feed_label), color = textColor, style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
                     var name by remember { mutableStateOf("") }
                     TextField(value = name, singleLine = true, onValueChange = { name = it }, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_namee)) })
                     Row {
@@ -1784,7 +1782,7 @@ fun LibraryScreen() {
         fun EditVolume(volume: Volume, onDismiss: () -> Unit) {
             CommonPopupCard(onDismiss = { onDismiss() }) {
                 Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text(stringResource(R.string.rename_feed_label), color = textColor, style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
                     var name by remember { mutableStateOf(volume.name) }
                     TextField(value = name, singleLine = true, onValueChange = { name = it }, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.rename)) })
                     var parent by remember { mutableStateOf<Volume?>(null) }

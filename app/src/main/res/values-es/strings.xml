@@ -114,8 +114,8 @@
     <string name="max_episodes_cache">Máximos episodios permitidos</string>
     <string name="new_namee">Nuevo nombre</string>
     <string name="feed_settings_label">Configuración del pódcast</string>
-    <string name="rename_feed_label">Cambiar nombre del pódcast</string>
-    <string name="remove_feed_label">Eliminar el pódcast</string>
+
+
     <string name="share_label">Compartir</string>
     <string name="share_file_label">Compartir el archivo</string>
     <string name="share_notes_label">Compartir notas</string>
@@ -144,11 +144,11 @@
     <string name="play_label">Reproducir</string>
     <string name="pause_label">Pausar</string>
     <string name="stream_label">Escuchar en directo</string>
-    <string name="erase_episodes_label">Borrar episodios</string>
-    <string name="reserve_episodes_label">Reservar episodios</string>
+    <string name="erase_episodes">Borrar episodios</string>
+    <string name="reserve_episodes">Reservar episodios</string>
     <string name="null_label">Nulo</string>
     <string name="delete_label">Borrar</string>
-    <string name="delete_episode_label">Borrar episodio</string>
+    <string name="delete_episode_media">Borrar episodio</string>
     <string name="no_action_label">Ninguna acción</string>
 
 

@@ -94,8 +94,8 @@
 
 
   <string name="feed_settings_label">Podkastinnstillinger</string>
-  <string name="rename_feed_label">Gi nytt navn til podkast</string>
-  <string name="remove_feed_label">Fjern podkast</string>
+
+
   <string name="share_label">Del</string>
   <string name="share_file_label">Del fil</string>
 
@@ -122,7 +122,7 @@
   <string name="stream_label">Strøm</string>
   <string name="delete_label">Slett</string>
 
-  <string name="delete_episode_label">Slett episode</string>
+  <string name="delete_episode_media">Slett episode</string>
 
 
     <string name="add_to_active_queue">Legg til i kø</string>

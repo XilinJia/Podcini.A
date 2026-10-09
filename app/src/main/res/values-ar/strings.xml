@@ -113,8 +113,8 @@
     <string name="max_episodes_cache">الحد الأقصى للحلقات المسموح بها</string>
     <string name="new_namee">اسم جديد</string>
     <string name="feed_settings_label">إعدادات البودكاست</string>
-    <string name="rename_feed_label">تغيير اسم البودكاست</string>
-    <string name="remove_feed_label">ازل البودكاست</string>
+
+
     <string name="share_label">مشاركة</string>
     <string name="share_file_label">مشاركة ملف</string>
     <string name="share_notes_label">مشاركة الملاحظات</string>
@@ -147,11 +147,11 @@
     <string name="play_label">تشغيل</string>
     <string name="pause_label">ايقاف مؤقت</string>
     <string name="stream_label">البث التدفقي</string>
-    <string name="erase_episodes_label">مسح الحلقات</string>
-    <string name="reserve_episodes_label">حجز الحلقات</string>
+    <string name="erase_episodes">مسح الحلقات</string>
+    <string name="reserve_episodes">حجز الحلقات</string>
     <string name="null_label">فارغ</string>
     <string name="delete_label">مسح</string>
-    <string name="delete_episode_label">مسح الحلقة</string>
+    <string name="delete_episode_media">مسح الحلقة</string>
     <string name="no_action_label">لا يوجد إجراء</string>
 
 

@@ -26,6 +26,7 @@ import ac.mdiq.podcini.storage.model.Todo
 import ac.mdiq.podcini.storage.model.TranscriptMeta
 import ac.mdiq.podcini.storage.model.Volume
 import ac.mdiq.podcini.storage.model.FeedFunding
+import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
 import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
@@ -79,7 +80,7 @@ val config: RealmConfiguration by lazy {
         FacetsPrefs::class,
         SleepPrefs::class,
         SyncPrefs::class,
-    )).name("Podcini.realm").schemaVersion(168)
+    )).name("Podcini.realm").schemaVersion(169)
         .migration({ mContext ->
             val oldRealm = mContext.oldRealm // old realm using the previous schema
             val newRealm = mContext.newRealm // new realm using the new schema

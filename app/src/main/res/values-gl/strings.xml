@@ -103,8 +103,8 @@
 
 
   <string name="feed_settings_label">Axustes do podcast</string>
-  <string name="rename_feed_label">Mudar nome do podcast</string>
-  <string name="remove_feed_label">Eliminar o podcast</string>
+
+
   <string name="share_label">Compartir</string>
   <string name="share_file_label">Compartir ficheiro</string>
 
@@ -132,7 +132,7 @@
   <string name="stream_label">Difundir</string>
   <string name="delete_label">Borrar</string>
 
-    <string name="delete_episode_label">Eliminar episodio</string>
+    <string name="delete_episode_media">Eliminar episodio</string>
 
 
     <string name="add_to_active_queue">Engadir á cola</string>

@@ -91,6 +91,16 @@ class Feed : RealmObject {
 
     var limitEpisodesCount: Int = 0
 
+    @Ignore
+    var sortForTrim: EpisodeSortOrder = EpisodeSortOrder.DATE_DESC
+        get() = fromCode(sortCodeForTrim, default = EpisodeSortOrder.DATE_DESC)
+        set(value) {
+            field = value
+            sortCodeForTrim = value.code
+        }
+    var sortCodeForTrim: Int = EpisodeSortOrder.DATE_DESC.code
+        private set
+
     // recorded when an episode starts playing when FeedDetails is open
     var lastPlayed: Long = 0
 
@@ -153,11 +163,15 @@ class Feed : RealmObject {
             durationCeiling = value.durationCeiling
         }
     var filterString: String = ""
+        private set
     var titleFilterText: String = ""
+        private set
     var durationFloor: Int = 0
+        private set
     var durationCeiling: Int = Int.MAX_VALUE
-
+        private set
     var filterAndOr: String = "AND"
+        private set
 
     @Ignore
     var episodeSortOrder: EpisodeSortOrder = EpisodeSortOrder.DATE_DESC
@@ -167,6 +181,7 @@ class Feed : RealmObject {
             sortOrderCode = value.code
         }
     var sortOrderCode: Int = 2     // in EpisodeSortOrder
+        private set
 
     var sortValue: Long = 0L
 
@@ -204,6 +219,7 @@ class Feed : RealmObject {
             videoMode = field.code
         }
     var videoMode: Int = VideoMode.DEFAULT.code
+        private set
 
     var useMuxedVideo: Boolean = false
 
@@ -227,6 +243,7 @@ class Feed : RealmObject {
             autoDelete = field.code
         }
     var autoDelete: Int = AutoDeleteAction.GLOBAL.code
+        private set
 
     @Ignore
     var audioTypeSetting: AudioType = AudioType.SPEECH
@@ -245,6 +262,7 @@ class Feed : RealmObject {
             volumeAdaption = field.value
         }
     var volumeAdaption: Int = VolumeAdaptionSetting.OFF.value
+        private set
 
     @Ignore
     var audioQualitySetting: AVQuality = AVQuality.GLOBAL
@@ -301,7 +319,6 @@ class Feed : RealmObject {
     @Ignore
     val queueText: String
         get() = if (queueId >= 0) queue?.name ?: "Default" else "None"
-
     var queueId: Long = 0L
         private set
     // ============= Queue ==============
@@ -469,6 +486,7 @@ class Feed : RealmObject {
         if (scoreCount != other.scoreCount) return false
         if (scoreUpdated != other.scoreUpdated) return false
         if (limitEpisodesCount != other.limitEpisodesCount) return false
+        if (sortCodeForTrim != other.sortCodeForTrim) return false
         if (lastPlayed != other.lastPlayed) return false
         if (lastUpdateTime != other.lastUpdateTime) return false
         if (lastFullUpdateTime != other.lastFullUpdateTime) return false
@@ -544,6 +562,7 @@ class Feed : RealmObject {
         result = 31 * result + scoreCount
         result = 31 * result + scoreUpdated.hashCode()
         result = 31 * result + limitEpisodesCount
+        result = 31 * result + sortCodeForTrim
         result = 31 * result + lastPlayed.hashCode()
         result = 31 * result + lastUpdateTime.hashCode()
         result = 31 * result + lastFullUpdateTime.hashCode()
@@ -564,7 +583,7 @@ class Feed : RealmObject {
         result = 31 * result + videoMode
         result = 31 * result + useMuxedVideo.hashCode()
         result = 31 * result + playSpeed.hashCode()
-        result = 31 * result + (skipSilence?.hashCode() ?: 0)
+        result = 31 * result + skipSilence.hashCode()
         result = 31 * result + introSkip
         result = 31 * result + endingSkip
         result = 31 * result + transcriptStartPos
@@ -582,24 +601,24 @@ class Feed : RealmObject {
         result = 31 * result + autoDownload.hashCode()
         result = 31 * result + autoEnqueue.hashCode()
         result = 31 * result + queueId.hashCode()
-        result = 31 * result + (identifier?.hashCode() ?: 0)
-        result = 31 * result + (eigenTitle?.hashCode() ?: 0)
-        result = 31 * result + (customTitle?.hashCode() ?: 0)
-        result = 31 * result + (link?.hashCode() ?: 0)
-        result = 31 * result + (downloadUrl?.hashCode() ?: 0)
+        result = 31 * result + identifier.hashCode()
+        result = 31 * result + eigenTitle.hashCode()
+        result = 31 * result + customTitle.hashCode()
+        result = 31 * result + link.hashCode()
+        result = 31 * result + downloadUrl.hashCode()
         result = 31 * result + langSet.size
-        result = 31 * result + (author?.hashCode() ?: 0)
-        result = 31 * result + (type?.hashCode() ?: 0)
-        result = 31 * result + (prefActionType?.hashCode() ?: 0)
-        result = 31 * result + (nextPageLink?.hashCode() ?: 0)
-        result = 31 * result + (lastUpdate?.hashCode() ?: 0)
+        result = 31 * result + author.hashCode()
+        result = 31 * result + type.hashCode()
+        result = 31 * result + prefActionType.hashCode()
+        result = 31 * result + nextPageLink.hashCode()
+        result = 31 * result + lastUpdate.hashCode()
         result = 31 * result + comment.hashCode()
         result = 31 * result + filterString.hashCode()
         result = 31 * result + titleFilterText.hashCode()
         result = 31 * result + filterAndOr.hashCode()
         result = 31 * result + sortInfo.hashCode()
-        result = 31 * result + (username?.hashCode() ?: 0)
-        result = 31 * result + (password?.hashCode() ?: 0)
+        result = 31 * result + username.hashCode()
+        result = 31 * result + password.hashCode()
         result = 31 * result + tags.size
         result = 31 * result + repeatIntervals.size
         result = 31 * result + preferredLnaguages.size

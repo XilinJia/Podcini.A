@@ -115,8 +115,8 @@
     <string name="max_episodes_cache">Max episodi consentiti</string>
     <string name="new_namee">Nuovo nome</string>
     <string name="feed_settings_label">Impostazioni podcast</string>
-    <string name="rename_feed_label">Rinomina podcast</string>
-    <string name="remove_feed_label">Rimuovi podcast</string>
+
+
     <string name="share_label">Condividi</string>
     <string name="share_file_label">Condividi il file</string>
     <string name="share_notes_label">Condividi note</string>
@@ -145,11 +145,11 @@
     <string name="play_label">Riproduci</string>
     <string name="pause_label">Pausa</string>
     <string name="stream_label">Stream</string>
-    <string name="erase_episodes_label">Cancella episodi</string>
-    <string name="reserve_episodes_label">Episodi di riserva</string>
+    <string name="erase_episodes">Cancella episodi</string>
+    <string name="reserve_episodes">Episodi di riserva</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Elimina</string>
-    <string name="delete_episode_label">Elimina episodio</string>
+    <string name="delete_episode_media">Elimina episodio</string>
     <string name="no_action_label">Nessuna azione</string>
 
 

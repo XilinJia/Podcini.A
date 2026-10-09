@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Max episodes allowed</string>
     <string name="new_namee">New name</string>
     <string name="feed_settings_label">Nastavitve podkastov</string>
-    <string name="rename_feed_label">Preimenuj podkast</string>
-    <string name="remove_feed_label">Odstrani podkast</string>
+
+
     <string name="share_label">Deli</string>
     <string name="share_file_label">Share file</string>
     <string name="share_notes_label">Share notes</string>
@@ -144,11 +144,11 @@
     <string name="play_label">Predvajaj</string>
     <string name="pause_label">Pavza</string>
     <string name="stream_label">Tok</string>
-    <string name="erase_episodes_label">Erase episodes</string>
-    <string name="reserve_episodes_label">Reserve episodes</string>
+    <string name="erase_episodes">Erase episodes</string>
+    <string name="reserve_episodes">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Briši</string>
-    <string name="delete_episode_label">Delete episode media</string>
+    <string name="delete_episode_media">Delete episode media</string>
     <string name="no_action_label">No action</string>
 
 

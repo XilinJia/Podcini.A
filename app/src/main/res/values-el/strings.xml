@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Επιτρέπονται μέγιστα επεισόδια</string>
     <string name="new_namee">Νέο όνομα</string>
     <string name="feed_settings_label">Ρυθμίσεις Podcast</string>
-    <string name="rename_feed_label">Μετονομασία podcast</string>
-    <string name="remove_feed_label">Αφαίρεση podcast</string>
+
+
     <string name="share_label">Κοινοποίηση</string>
     <string name="share_file_label">Κοινή χρήση αρχείου</string>
     <string name="share_notes_label">Κοινή χρήση σημειώσεων</string>
@@ -142,11 +142,11 @@
     <string name="play_label">Αναπαραγωγή</string>
     <string name="pause_label">Παύση</string>
     <string name="stream_label">Ροή</string>
-    <string name="erase_episodes_label">Σβήστε τα επεισόδια</string>
-    <string name="reserve_episodes_label">Απόθεμα επεισοδίων</string>
+    <string name="erase_episodes">Σβήστε τα επεισόδια</string>
+    <string name="reserve_episodes">Απόθεμα επεισοδίων</string>
     <string name="null_label">Κενό</string>
     <string name="delete_label">Διαγραφή</string>
-    <string name="delete_episode_label">Διαγραφή επεισοδίων πολυμέσων</string>
+    <string name="delete_episode_media">Διαγραφή επεισοδίων πολυμέσων</string>
     <string name="no_action_label">Καμία ενέργεια</string>
 
 

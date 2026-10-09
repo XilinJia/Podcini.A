@@ -199,7 +199,7 @@ private suspend fun assembleCandidates(feeds_: List<Feed>?, candidates: MutableS
                             val es = q.find().toMutableList()
                             Logd(TAG) { "assembleFeedsCandidates Filter-sort queryString: [${es.size}] $queryString" }
                             if (es.isNotEmpty()) {
-                                val sortOrder = dleq.episodesSortOrderADL ?: EpisodeSortOrder.DATE_DESC
+                                val sortOrder = dleq.episodesSortOrderADL
                                 Logd(TAG) { "FILTER_SORT sortOrder: $sortOrder" }
                                 es.reorderWith(sortOrder)
                                 episodes1.addAll(if (es.size > allowedDLCount) es.subList(0, allowedDLCount) else es)

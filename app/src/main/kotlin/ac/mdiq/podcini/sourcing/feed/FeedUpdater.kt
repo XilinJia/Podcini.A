@@ -39,6 +39,7 @@ import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.Feed.Companion.EPISODES_LIMIT
 import ac.mdiq.podcini.storage.model.Image
 import ac.mdiq.podcini.storage.model.toFeed
+import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.storage.specs.MediaType
@@ -210,10 +211,9 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         downloader.download { source ->
             val feedRaw = Feed(request.source, request.lastModified)
             feedRaw.id = request.feedfileId
-            feedRaw.limitEpisodesCount = feed.limitEpisodesCount
+            feedRaw.limitEpisodesCount = if (!fullUpdate || feed.sortForTrim == EpisodeSortOrder.DATE_DESC) feed.limitEpisodesCount else 0
             feedRaw.fillPreferences(false, Feed.AutoDeleteAction.GLOBAL, VolumeAdaptionSetting.OFF, request.username, request.password)
             request.arguments?.let { feedRaw.pageNr = it.getInt(DownloadRequest.REQUEST_ARG_PAGE_NR, 0) }
-
             try {
                 feedHandlerResult = PodcastHandler.parseFeed(source, feedRaw)
                 Logd(TAG) { "downloadFeed Parsed ${feedRaw.title}" }
@@ -309,7 +309,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                                     eList.addAll(eps)
                                 }
                                 val numEpisodes = eList.size
-                                if (feed.limitEpisodesCount in 1..<numEpisodes || numEpisodes > EPISODES_LIMIT || episodes.size < EPISODE_BATCH_SIZE) break
+                                if (((!fullUpdate || feed.sortForTrim == EpisodeSortOrder.DATE_DESC) && feed.limitEpisodesCount in 1..<numEpisodes) || numEpisodes > EPISODES_LIMIT || episodes.size < EPISODE_BATCH_SIZE) break
                                 Logd(TAG) { "Subscribing eList: ${eList.size}" }
                                 episodes = client.withProvider { it.getEpisodes(EPISODE_BATCH_SIZE, if (fullUpdate) 0L else feed.lastUpdateTime) } ?: listOf()
                             }

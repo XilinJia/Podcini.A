@@ -11,6 +11,9 @@ import ac.mdiq.podcini.storage.model.Feed.Companion.MAX_SYNTHETIC_ID
 import ac.mdiq.podcini.storage.model.Feed.Companion.TAG_ROOT
 import ac.mdiq.podcini.storage.model.QueueEntry
 import ac.mdiq.podcini.storage.model.ShareLog
+import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
+import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.fromCode
+import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.reorderWith
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.storage.specs.Rating
@@ -303,7 +306,8 @@ suspend fun trimEpisodes(feed_: Feed): Int {
         if (count > feed_.limitEpisodesCount + 5) {
             val f = feedByIdentityOrID(feed_, true) ?: return n
             val dc = count - f.limitEpisodesCount
-            val episodes = realm.query(Episode::class).query("feedId == ${feed_.id} SORT (pubDate ASC)").find()
+            val episodes = realm.query(Episode::class).query("feedId == ${feed_.id} SORT (pubDate ASC)").find().toMutableList()
+            if (f.sortForTrim != EpisodeSortOrder.DATE_DESC) episodes.reorderWith(fromCode(f.sortForTrim.reverseCode()))
             realm.write {
                 for (e_ in episodes) {
                     val qes = query(QueueEntry::class).query("episodeId == ${e_.id}").find()
@@ -321,9 +325,8 @@ suspend fun trimEpisodes(feed_: Feed): Int {
     return n
 }
 
-suspend fun sumup(feed_: Feed) {
-    var feed = feed_
-    val episodes = getEpisodes(null, null, feedId=feed.id, copy = false)
+suspend fun sumup(feed: Feed) {
+    val episodes = getEpisodes(null, null, feedId= feed.id, copy = false)
     Logd(TAG) { "sumup feed: ${feed.title} episodes: ${episodes.size}" }
     var durTotal = 0L
     val cTime = nowInMillis()
@@ -338,14 +341,13 @@ suspend fun sumup(feed_: Feed) {
             else if (e.playState in listOf(EpisodeState.AGAIN.code, EpisodeState.FOREVER.code)) sumR += 0.5
         }
     }
-    feed = upsert(feed) {
+    upsert(feed) {
         it.episodesCount = episodes.size
         it.totleDuration = durTotal
         it.scoreCount = scoreCount
         it.score = if (scoreCount > 0) (100 * sumR / scoreCount / Rating.SUPER.code).toInt() else -1000
         it.scoreUpdated = cTime
     }
-    Logd(TAG) { "sumup ${feed.id} episodesCount: ${feed.episodesCount} ${feed.totleDuration}" }
 }
 
 // savedFeedId == 0L means saved feed

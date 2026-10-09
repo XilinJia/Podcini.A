@@ -34,10 +34,10 @@ class TranscriptMeta: EmbeddedRealmObject {
     }
 
     override fun hashCode(): Int {
-        var result = url?.hashCode() ?: 0
-        result = 31 * result + (type?.hashCode() ?: 0)
-        result = 31 * result + (language?.hashCode() ?: 0)
-        result = 31 * result + (rel?.hashCode() ?: 0)
+        var result = url.hashCode()
+        result = 31 * result + type.hashCode()
+        result = 31 * result + language.hashCode()
+        result = 31 * result + rel.hashCode()
         return result
     }
 }

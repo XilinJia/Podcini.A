@@ -1,6 +1,20 @@
+# 12.15.0
+
+* in episode actions
+	* Remove from queues are shown only applicable
+	* removed "Remove from history"
+* in episode lists, multi-select options Set Related, Download, Delete Media, and Remove From queues are shown only applicable
+* added "Delete captions" in episode actions and multi-select menu, shown only applicable
+* in transcript selections, check box is replaced with Download icon
+* in Feed settings, added "Trim episodes by (order)", default to "Publish date descending", can be set to current sort order
+* if "Limit episode" is set to nonzero in the feed
+	* if trim order is not "Publish date descending", full refresh fetches all the episodes
+	* episodes are trimmed using the trim order on refresh or full refresh
+* some code refactoring
+
 # 12.14.6
 
-* fixed misbehavior of auto-enqueue: episodes were added to all queues involved
+* fixed misbehavior of auto-enqueue: episodes added to all queues involved, introduced in 12.14.4
 
 # 12.14.5
 

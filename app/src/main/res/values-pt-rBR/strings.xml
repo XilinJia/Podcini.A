@@ -98,8 +98,8 @@
 
 
   <string name="feed_settings_label">Configurações do podcast</string>
-  <string name="rename_feed_label">Renomear podcast</string>
-  <string name="remove_feed_label">Remover podcast</string>
+
+
   <string name="share_label">Compartilhar</string>
   <string name="share_file_label">Compartilhar arquivo</string>
 
@@ -127,7 +127,7 @@
   <string name="stream_label">Stream</string>
   <string name="delete_label">Excluir</string>
 
-  <string name="delete_episode_label">Excluir o episódio</string>
+  <string name="delete_episode_media">Excluir o episódio</string>
 
 
     <string name="add_to_active_queue">Adicionar à fila</string>

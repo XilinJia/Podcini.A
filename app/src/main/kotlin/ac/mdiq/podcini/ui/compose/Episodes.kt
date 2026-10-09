@@ -469,9 +469,9 @@ fun TranscriptMeta(episode: Episode) {
         val t = episode.transcriptMetas[i]
         Column(modifier = Modifier.padding(start = 20.dp).fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = transIndex == i, onCheckedChange = {
-                    transIndex = if (transIndex != i) i else -1
-                    if (transIndex >= 0 && (transIndex != episode.transcriptIndex || episode.captionCues.isEmpty())) runOnIOScope { episode.fetchCaption(transIndex) }
+                Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_download), tint = textColor, contentDescription = "download", modifier = Modifier.padding(end = 10.dp).clickable {
+                    transIndex = i
+                    if (transIndex != episode.transcriptIndex || episode.captionCues.isEmpty()) runOnIOScope { episode.fetchCaption(transIndex) }
                     Logt(TAG, context.getString(R.string.transcript_fetched))
                 })
                 Spacer(Modifier.width(20.dp))
@@ -958,6 +958,21 @@ fun EraseEpisodesDialog(selected: List<Episode>, feed: Feed?, onDismiss: () -> U
             BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().height(100.dp).padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             Button(onClick = {
                 CoroutineScope(Dispatchers.IO).launch { eraseEpisodes(selected, textState.text) }
+                onDismiss()
+            }) { Text(stringResource(R.string.confirm_label)) }
+        }
+    }
+}
+
+@Composable
+fun DeleteCaptionsDialog(selected: List<Episode>, onDismiss: () -> Unit) {
+    CommonPopupCard(onDismiss = onDismiss) {
+        val message = stringResource(R.string.delete_captions_confirmation)
+        var textState by remember { mutableStateOf(TextFieldValue("")) }
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(message + ": ${selected.size}")
+            Button(onClick = {
+                CoroutineScope(Dispatchers.IO).launch { realm.write { for (e in selected) findLatest(e)?.let { it.captionCues = realmListOf() } } }
                 onDismiss()
             }) { Text(stringResource(R.string.confirm_label)) }
         }

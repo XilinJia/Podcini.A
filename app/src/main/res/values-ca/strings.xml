@@ -94,8 +94,8 @@
 
 
   <string name="feed_settings_label">Configuració del podcast</string>
-  <string name="rename_feed_label">Canvia el nom al podcast</string>
-  <string name="remove_feed_label">Suprimeix podcast</string>
+
+
   <string name="share_label">Comparteix</string>
   <string name="share_file_label">Comparteix l\'arxiu</string>
 
@@ -122,7 +122,7 @@
   <string name="stream_label">Reprodueix sense baixar</string>
   <string name="delete_label">Esborra</string>
 
-  <string name="delete_episode_label">Esborrar episodi</string>
+  <string name="delete_episode_media">Esborrar episodi</string>
 
 
     <string name="add_to_active_queue">Afegeix a la cua</string>

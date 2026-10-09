@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Max episodes allowed</string>
     <string name="new_namee">New name</string>
     <string name="feed_settings_label">Pengaturan podcast</string>
-    <string name="rename_feed_label">Ubah nama podcast</string>
-    <string name="remove_feed_label">Hapus podcast</string>
+
+
     <string name="share_label">Bagikan</string>
     <string name="share_file_label">Share file</string>
     <string name="share_notes_label">Share notes</string>
@@ -141,11 +141,11 @@
     <string name="play_label">Putar</string>
     <string name="pause_label">Jeda</string>
     <string name="stream_label">Streaming</string>
-    <string name="erase_episodes_label">Erase episodes</string>
-    <string name="reserve_episodes_label">Reserve episodes</string>
+    <string name="erase_episodes">Erase episodes</string>
+    <string name="reserve_episodes">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Hapus</string>
-    <string name="delete_episode_label">Delete episode media</string>
+    <string name="delete_episode_media">Delete episode media</string>
     <string name="no_action_label">No action</string>
 
 

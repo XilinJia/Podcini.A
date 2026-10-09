@@ -444,23 +444,22 @@ val streamActions = listOf(ButtonTypes.STREAM, ButtonTypes.STREAM_REPEAT, Button
 val playActions = listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_REPEAT, ButtonTypes.PLAY_ONE)
 
 enum class ButtonTypes(val labelRes: Int, val drawable: Int) {
-    WEBSITE(R.string.visit_website_label, R.drawable.ic_web),
-    CANCEL(R.string.cancel_download_label, R.drawable.ic_cancel),
-    PLAY(R.string.play_label, R.drawable.ic_play_24dp),
-    STREAM(R.string.stream_label, R.drawable.ic_stream),
-    PLAY_ONE(R.string.play_one, R.drawable.outline_play_pause_24),
-    STREAM_ONE(R.string.stream_one, R.drawable.play_stream_svgrepo_com),
-
-    PLAY_REPEAT(R.string.play_repeat, R.drawable.outline_autoplay_24),
-
-    REPEAT_THIS(R.string.repeat_this, R.drawable.baseline_repeat_one_24),
-    STREAM_REPEAT(R.string.stream_repeat, R.drawable.outline_repeat_24),
-
-    DELETE(R.string.delete_label, R.drawable.ic_delete),
     NULL(R.string.null_label, R.drawable.ic_questionmark),
+    PLAY(R.string.play_label, R.drawable.ic_play_24dp),
+    PLAY_ONE(R.string.play_one, R.drawable.outline_play_pause_24),
+    PLAY_REPEAT(R.string.play_repeat, R.drawable.outline_autoplay_24),
+    STREAM(R.string.stream_label, R.drawable.ic_stream),
+    STREAM_ONE(R.string.stream_one, R.drawable.play_stream_svgrepo_com),
+    STREAM_REPEAT(R.string.stream_repeat, R.drawable.outline_repeat_24),
+    PLAY_LOCAL(R.string.play_label, R.drawable.ic_play_24dp),
+    REPEAT_THIS(R.string.repeat_this, R.drawable.baseline_repeat_one_24),
+
     PAUSE(R.string.pause_label, R.drawable.ic_pause),
     DOWNLOAD(R.string.download_label, R.drawable.ic_download),
+    CANCEL(R.string.cancel_download_label, R.drawable.ic_cancel),
+    DELETE(R.string.delete_label, R.drawable.ic_delete),
     TTS(R.string.TTS_label, R.drawable.text_to_speech),
     TTS_NOW(R.string.TTS_now, R.drawable.text_to_speech_svgrepo_com),
-    PLAY_LOCAL(R.string.play_label, R.drawable.ic_play_24dp)
+    WEBSITE(R.string.visit_website_label, R.drawable.ic_web),
+
 }

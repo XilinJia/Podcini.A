@@ -85,8 +85,8 @@
 
 
   <string name="feed_settings_label">Taskuhäälingu seaded</string>
-  <string name="rename_feed_label">Muuda taskuhäälingu nime</string>
-  <string name="remove_feed_label">Eemalda taskuhääling</string>
+
+
   <string name="share_label">Jaga</string>
   <string name="share_file_label">Jaga faili</string>
   <string name="feed_delete_confirmation_msg">Palun kinnita, et tahad kustutada taskuhäälingu \"%1$s\", KÕIK selle saated (ka allalaaditud saated) ja statistika.</string>
@@ -104,7 +104,7 @@
   <string name="stream_label">Voogedastusena</string>
   <string name="delete_label">Kustuta</string>
 
-  <string name="delete_episode_label">Kustuta saade</string>
+  <string name="delete_episode_media">Kustuta saade</string>
 
 
     <string name="add_to_active_queue">Lisa järjekorda</string>

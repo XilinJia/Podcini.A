@@ -274,24 +274,23 @@ class AppPrefs: RealmObject {
         result = 31 * result + defaultPage.hashCode()
         result = 31 * result + hardwareForwardButton.hashCode()
         result = 31 * result + hardwarePreviousButton.hashCode()
-        result = 31 * result + (autoBackupFolder?.hashCode() ?: 0)
+        result = 31 * result + autoBackupFolder.hashCode()
         result = 31 * result + customMediaUri.hashCode()
-        result = 31 * result + (playbackSpeedArray?.hashCode() ?: 0)
-        result = 31 * result + (ringToneName?.hashCode() ?: 0)
-        result = 31 * result + (ringToneUriString?.hashCode() ?: 0)
+        result = 31 * result + playbackSpeedArray.hashCode()
+        result = 31 * result + ringToneName.hashCode()
+        result = 31 * result + ringToneUriString.hashCode()
         result = 31 * result + mobileUpdateTypes.size
         result = 31 * result + episodeCleanup.hashCode()
         result = 31 * result + proxyType.hashCode()
-        result = 31 * result + (proxyHost?.hashCode() ?: 0)
-        result = 31 * result + (proxyUser?.hashCode() ?: 0)
-        result = 31 * result + (proxyPassword?.hashCode() ?: 0)
+        result = 31 * result + proxyHost.hashCode()
+        result = 31 * result + proxyUser.hashCode()
+        result = 31 * result + proxyPassword.hashCode()
         result = 31 * result + nextcloud_server_address.hashCode()
-        result = 31 * result + (content_country?.hashCode() ?: 0)
+        result = 31 * result + content_country.hashCode()
 
         result = 31 * result + loadExternalApp.hashCode()
         result = 31 * result + audioQuality
         result = 31 * result + videoQuality
         return result
     }
-
 }

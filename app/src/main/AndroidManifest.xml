@@ -223,7 +223,7 @@
         <activity-alias
             android:name=".FeedAlias"
             android:targetActivity=".activity.ShortcutsActivity"
-            android:label="@string/podcast"
+            android:label="@string/feed"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.CREATE_SHORTCUT" />

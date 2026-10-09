@@ -117,7 +117,6 @@
     <string name="auto_enqueue_sum1">自动排队需要关联的队列不设置为零。</string>
     <string name="auto_download_sum">启用自动下载合格剧集并将其添加到相关队列(当它没有设置为无自动刷新时)。</string>
     <string name="limit_episodes_to">将剧集限制为</string>
-    <string name="limit_episodes_to_sum">建议保留最大数量的剧集。如果超过，旧剧集将被擦除。特别标记的剧集将被保留。</string>
     <string name="skip_first_hint">跳过第一个(秒)</string>
     <string name="skip_last_hint">跳过最后一次(秒)</string>
     <string name="include_in_auto_downloads">包含在自动下载中</string>
@@ -158,8 +157,8 @@
     <string name="new_namee">新名称</string>
     <string name="feed_settings_label">播客设置</string>
     <string name="full_settings">完整设置</string>
-    <string name="rename_feed_label">重命名播客</string>
-    <string name="remove_feed_label">移除播客</string>
+
+
     <string name="share_label">分享</string>
     <string name="share_file_label">共享文件</string>
     <string name="share_notes_label">分享笔记</string>
@@ -195,15 +194,15 @@
     <string name="stream_label">串流</string>
     <string name="stream_one">串流一条</string>
     <string name="stream_repeat">重复串流</string>
-    <string name="erase_episodes_label">擦除剧集</string>
-    <string name="alarm_episodes_label">定时播放剧集</string>
-    <string name="reserve_episodes_label">预订剧集</string>
+    <string name="erase_episodes">擦除剧集</string>
+    <string name="play_episode_at_time">定时播放剧集</string>
+    <string name="reserve_episodes">预订剧集</string>
     <string name="null_label">无</string>
     <string name="delete_label">删除</string>
     <string name="select_player">选择播放器</string>
     <string name="the_default">默认</string>
     <string name="secondary">次要的</string>
-    <string name="delete_episode_label">删除剧集媒体</string>
+    <string name="delete_episode_media">删除剧集媒体</string>
     <string name="set_related">设置相关剧集</string>
     <string name="comments">备注</string>
     <string name="add_comments">添加备注</string>
@@ -703,8 +702,6 @@
     <string name="statistics_episodes_on_device">设备上的集：</string>
     <string name="statistics_space_used">使用的空间：</string>
     <string name="statistics_episodes_started_total">剧集开始/总计：</string>
-    <string name="this_podcast">这个播客</string>
-    <string name="all_podcasts">所有播客</string>
     <string name="feeds_related_to_author">可能与作者相关的Feeds »</string>
     <string name="edit_url_menu">编辑新闻源URL</string>
     <string name="edit_url_confirmation_msg">更改 RSS 地址可以轻松地破坏播客的播放状态和剧集列表。 我们不建议更改它，如果有任何错误，我们将不会提供支持。 此操作无法撤销。已损坏的订阅无法修复，只需更改地址就无法修复。我们建议在继续之前先创建一个备份。</string>
@@ -823,9 +820,8 @@
     <string name="notification_channel_sync_error_description">当gpoder 同步失败时显示。</string>
     <!-- Widget settings -->
     <!-- On-Demand configuration -->
-    <string name="podcast">播客</string>
     <string name="queue">队列</string>
-    <string name="select_podcast">选择播客</string>
+    <string name="select_feed">选择播客</string>
     <string name="select_queue">选择队列</string>
     <string name="select_facet">选择单集</string>
     <string name="add_shortcut">添加快捷方式</string>

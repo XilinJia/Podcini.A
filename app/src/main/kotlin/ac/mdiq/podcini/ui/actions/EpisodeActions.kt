@@ -10,7 +10,6 @@ import ac.mdiq.podcini.storage.database.addToQueue
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
 import ac.mdiq.podcini.storage.database.queuesLive
-import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.smartRemoveFromQueues
 import ac.mdiq.podcini.storage.database.upsert
@@ -20,6 +19,7 @@ import ac.mdiq.podcini.ui.compose.ChooseRatingDialog
 import ac.mdiq.podcini.ui.compose.CommentEditingDialog
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
+import ac.mdiq.podcini.ui.compose.DeleteCaptionsDialog
 import ac.mdiq.podcini.ui.compose.EditTimerDialog
 import ac.mdiq.podcini.ui.compose.EraseEpisodesDialog
 import ac.mdiq.podcini.ui.compose.FutureStateDialog
@@ -30,7 +30,6 @@ import ac.mdiq.podcini.ui.compose.ShelveDialog
 import ac.mdiq.podcini.ui.compose.TagSettingDialog
 import ac.mdiq.podcini.ui.compose.TagType
 import ac.mdiq.podcini.ui.compose.TodoDialog
-import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.ui.compose.trackAsTextField
 import ac.mdiq.podcini.ui.screens.Search
 import ac.mdiq.podcini.ui.screens.navTo
@@ -110,7 +109,7 @@ val episodeActions: List<EpisodeAction> = listOf(
     Shelve(),
 
     Delete(),
-    RemoveFromHistory(),
+    DeleteCaptions(),
     Erase(),
 
     Timer())
@@ -164,7 +163,6 @@ class Combo : EpisodeAction() {
         }
     }
 }
-
 
 class SetPlaybackState : EpisodeAction() {
     override val id: String
@@ -286,7 +284,10 @@ class RemoveFromAllQueues : EpisodeAction() {
 
     override fun enabled(): Boolean {
         val media = onEpisode ?: return false
-        for (q in queuesLive) if (q.contains(media)) return true
+        for (q in queuesLive) {
+            if (q.id == appAttribsFlow!!.value.curQueueId) continue
+            if (q.contains(media)) return true
+        }
         return false
     }
 
@@ -305,7 +306,11 @@ class RemoveFromCurQueue : EpisodeAction() {
     override val iconRes:  Int = R.drawable.outline_remove_from_queue_24
     override val color: Color = Color(0xFFDD77FF)
 
-//    override fun enabled(): Boolean = onEpisode != null && actQueueFlow.value.contains(onEpisode!!)
+    override fun enabled(): Boolean {
+        val e = onEpisode ?: return false
+        val curQueue = queuesLive.find { it.id == appAttribsFlow!!.value.curQueueId } ?: return false
+        return curQueue.contains(e)
+    }
 
     override fun performAction(e: Episode) {
         super.performAction(e)
@@ -517,7 +522,7 @@ class Delete : EpisodeAction() {
     override val id: String
         get() = "DELETE"
     override val title: String
-        get() = getAppContext().getString(R.string.delete_episode_label)
+        get() = getAppContext().getString(R.string.delete_episode_media)
 
     override val iconRes:  Int = R.drawable.ic_delete
     override val color: Color = Color(0xFFFF3388)
@@ -537,47 +542,7 @@ class Delete : EpisodeAction() {
                 }
             }
             deleteEpisodesWarnLocalRepeat(listOf(item_))
-            //                withContext(Dispatchers.Main) {
-            ////                    vm.actionButton.update(vm.episode)
-            //                }
         }
-    }
-}
-
-class RemoveFromHistory : EpisodeAction() {
-    override val id: String
-        get() = "REMOVE_FROM_HISTORY"
-    val TAG = this::class.simpleName ?: "Anonymous"
-
-    override val title: String
-        get() = getAppContext().getString(R.string.remove_history_label)
-
-    override val iconRes:  Int = R.drawable.ic_history_remove
-    override val color: Color = Color(0xFFFF55FF)
-
-    override fun enabled(): Boolean = (onEpisode?.lastPlayedTime ?: 0L) > 0L || (onEpisode?.playbackCompletionTime ?: 0L) > 0L
-
-    override fun performAction(e: Episode) {
-        super.performAction(e)
-
-        fun setHistoryDates(lastPlayed: Long = 0, completed: Long = 0L) {
-            runOnIOScope {
-                val episode_ = realm.query(Episode::class).query("id == $0", e.id).first().find()
-                if (episode_ != null) {
-                    upsert(episode_) {
-                        it.lastPlayedTime = lastPlayed
-                        it.playbackCompletionTime = completed
-                    }
-                }
-            }
-        }
-
-        setHistoryDates()
-        confirm(title = getAppContext().getString(R.string.removed_history_label),
-            message = "",
-            confirmRes = R.string.undo,
-            cancelRes = R.string.no,
-            onConfirm = {  if (e.playbackCompletionTime > 0L) setHistoryDates(e.lastPlayedTime, e.playbackCompletionTime) })
     }
 }
 
@@ -586,7 +551,7 @@ class Erase : EpisodeAction() {
         get() = "ERASE"
     private var showEraseDialog by mutableStateOf(false)
     override val title: String
-        get() = getAppContext().getString(R.string.erase_episodes_label)
+        get() = getAppContext().getString(R.string.erase_episodes)
 
     override val iconRes: Int = R.drawable.baseline_delete_forever_24
     override val color: Color = Color(0xFFFF0099)
@@ -607,7 +572,7 @@ class Timer : EpisodeAction() {
         get() = "Timer"
     private var showTimerDialog by mutableStateOf(false)
     override val title: String
-        get() = getAppContext().getString(R.string.alarm_episodes_label)
+        get() = getAppContext().getString(R.string.play_episode_at_time)
 
     override val iconRes:  Int = R.drawable.baseline_access_alarms_24
     override val color: Color = Color(0xFFB9BE33)
@@ -619,5 +584,28 @@ class Timer : EpisodeAction() {
     @Composable
     override fun ActionOptions() {
         if (showTimerDialog && onEpisode != null) EditTimerDialog(episode = onEpisode!!) { showTimerDialog = false }
+    }
+}
+
+class DeleteCaptions : EpisodeAction() {
+    override val id: String
+        get() = "DELETE_CAPTIONS"
+    private var showDeleteCaptionsDialog by mutableStateOf(false)
+    override val title: String
+        get() = getAppContext().getString(R.string.delete_captions)
+
+    override val iconRes: Int = R.drawable.baseline_delete_forever_24
+    override val color: Color = Color(0xFFAA0099)
+
+    override fun enabled(): Boolean = !onEpisode?.captionCues.isNullOrEmpty()
+
+    override fun performAction(e: Episode) {
+        super.performAction(e)
+        showDeleteCaptionsDialog = true
+    }
+
+    @Composable
+    override fun ActionOptions() {
+        if (showDeleteCaptionsDialog && onEpisode != null) DeleteCaptionsDialog(listOf(onEpisode!!)) { showDeleteCaptionsDialog = false }
     }
 }

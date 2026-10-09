@@ -112,8 +112,8 @@
     <string name="max_episodes_cache">Max episodes allowed</string>
     <string name="new_namee">New name</string>
     <string name="feed_settings_label">Podcast beállítások</string>
-    <string name="rename_feed_label">Podcast átnevezése</string>
-    <string name="remove_feed_label">Podcast eltávolítása</string>
+
+
     <string name="share_label">Megosztás</string>
     <string name="share_file_label">Fájl megosztása</string>
     <string name="share_notes_label">Share notes</string>
@@ -142,11 +142,11 @@
     <string name="play_label">Lejátszás</string>
     <string name="pause_label">Szüneteltetés</string>
     <string name="stream_label">Közvetítés</string>
-    <string name="erase_episodes_label">Erase episodes</string>
-    <string name="reserve_episodes_label">Reserve episodes</string>
+    <string name="erase_episodes">Erase episodes</string>
+    <string name="reserve_episodes">Reserve episodes</string>
     <string name="null_label">Null</string>
     <string name="delete_label">Törlés</string>
-    <string name="delete_episode_label">Epizód törlése</string>
+    <string name="delete_episode_media">Epizód törlése</string>
     <string name="no_action_label">No action</string>
 
 

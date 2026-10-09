@@ -100,8 +100,8 @@
 
 
   <string name="feed_settings_label">Podcastaren ezarpenak</string>
-  <string name="rename_feed_label">Berrizendatu podcasta</string>
-  <string name="remove_feed_label">Kendu podcasta</string>
+
+
   <string name="share_label">Partekatu</string>
   <string name="share_file_label">Partekatu fitxategia</string>
 
@@ -125,7 +125,7 @@
   <string name="stream_label">Entzun zuzenean</string>
   <string name="delete_label">Ezabatu</string>
 
-  <string name="delete_episode_label">Ezabatu saioa</string>
+  <string name="delete_episode_media">Ezabatu saioa</string>
 
 
     <string name="add_to_active_queue">Gehitu ilaran</string>

@@ -815,6 +815,7 @@ fun FeedsSettingsScreen() {
             HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
             //                    max episodes
             if (feedToSet.id > MAX_SYNTHETIC_ID || feedsToSet.size > 1) {
+                var episodesLimit by remember { mutableIntStateOf(feedToSet.limitEpisodesCount) }
                 Column {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Icon(ImageVector.vectorResource(id = R.drawable.ic_refresh), "", tint = textColor)
@@ -822,10 +823,23 @@ fun FeedsSettingsScreen() {
                         Text(text = stringResource(R.string.limit_episodes_to), style = CustomTextStyles.titleCustom, color = textColor)
                         Spacer(modifier = Modifier.weight(1f))
                         NumberEditor(feedToSet.limitEpisodesCount, label = "0 = unlimited", nz = false, modifier = Modifier.width(150.dp)) {
+                            episodesLimit = it
                             runOnIOScope { realm.write { for (f in feedsToSet) if (f.id > MAX_SYNTHETIC_ID) findLatest(f)?.limitEpisodesCount = it } }
                         }
                     }
                     Text(text = stringResource(R.string.limit_episodes_to_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
+                }
+                if (episodesLimit > 0) {
+                    var trimOrder by remember { mutableStateOf(feedToSet.sortForTrim) }
+                    val ad = remember(trimOrder) { (trimOrder.code % 2).let { if (it == 0) "Desc" else "Asc" } }
+                    Text(text = "${stringResource(R.string.trim_episodes_by)}: ${stringResource(trimOrder.res)} $ad", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = (trimOrder != EpisodeSortOrder.DATE_DESC), onCheckedChange = { checked->
+                            trimOrder = if (checked) feedToSet.episodeSortOrder else EpisodeSortOrder.DATE_DESC
+                            runOnIOScope { realm.write { for (f in feedsToSet) findLatest(f)?.let { it.sortForTrim = trimOrder } } }
+                        })
+                        Text(text = stringResource(R.string.Use_current_order), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
+                    }
                 }
             }
 
@@ -1187,7 +1201,7 @@ fun FeedsSettingsScreen() {
                         }
                     } else {
                         Column(modifier = Modifier.padding(start = 20.dp, bottom = 5.dp)) {
-                            Text("Sorted by: " + stringResource(episodesSortOrder?.res ?: 0), modifier = Modifier.padding(start = 10.dp))
+                            Text("Sorted by: " + stringResource(episodesSortOrder.res), modifier = Modifier.padding(start = 10.dp))
                             Text("Filtered by: ", modifier = Modifier.padding(start = 10.dp))
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.padding(start = 20.dp)) {
                                 episodeFilter.propertySet.forEach { FilterChip(onClick = { }, label = { Text(it) }, selected = false) }
