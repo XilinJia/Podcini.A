@@ -8,7 +8,7 @@ import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.DownloadStatus
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
-import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
+import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
 import ac.mdiq.podcini.storage.database.addRemoteToMiscSyndicate
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.addToQueue
@@ -495,14 +495,10 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                 if (showActionButtons) {
                                     val dlStats = downloadStates[episode.downloadUrl]
                                     if (dlStats != null) {
-                                        //                                        Logd(TAG) { "${episode.id} dlStats: ${dlStats.progress} ${dlStats.state}" }
-                                        actionButton.processing.intValue = dlStats.progress
-                                        when (dlStats.state) {
-                                            DownloadStatus.State.COMPLETED.code -> {
-                                                //                                                actionButton.update(episode)
-                                            }
-                                            DownloadStatus.State.INCOMPLETE.code -> actionButton.type = ButtonTypes.DOWNLOAD
-                                            else -> {}
+                                        actionButton.processing.intValue = -1
+                                        if (dlStats is DownloadStatus.Running) {
+                                            actionButton.type = ButtonTypes.CANCEL
+                                            actionButton.processing.intValue = dlStats.progress
                                         }
                                     }
                                     LaunchedEffect(episode.fileUrl) { actionButton.update(episode) }
@@ -581,7 +577,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                     val assQ = f?.queue
                     if (assQ != null && !assQ.contains(e)) canAddToAssQueue = true
                     val client = clientByEpisode(e)
-                    if (e.fileUrl.isNullOrBlank() && f?.isLocal != true && (client == null || client.attributes?.supportDownload == true)) areDownloadable = true
+                    if (e.fileUrl.isNullOrBlank() && f?.isLocal != true && (client == null || client.supportDownload)) areDownloadable = true
                     if (areDownloadable && areDeletable && areInAnyQueue && haveCaptions && canAddToAssQueue && canAddToActQueue) break
                 }
             }
@@ -655,26 +651,26 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             Text(stringResource(id = R.string.add_comments)) } },
                         { if (!isExternal && areDownloadable) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
                             onOperation()
-                            if (mobileAllowEpisodeDownload || !networkMonitor.isNetworkRestricted) EpisodeAdrDLManager.manager.downloadNow(selected, true)
+                            if (mobileAllowEpisodeDownload || !networkMonitor.isNetworkRestricted) EpisodeDLManager.manager.downloadNow(selected, true)
                             else {
                                 confirm(title = context.getString(R.string.confirm_mobile_download_dialog_title),
                                     message = context.getString(if (networkMonitor.isNetworkRestricted && networkMonitor.isVpnOverWifi) R.string.confirm_mobile_download_dialog_message_vpn else R.string.confirm_mobile_download_dialog_message),
                                     confirmRes = R.string.confirm_mobile_download_dialog_download_later,
                                     cancelRes = R.string.cancel_label,
                                     neutralRes = R.string.confirm_mobile_download_dialog_allow_this_time,
-                                    onConfirm = { EpisodeAdrDLManager.manager.download(selected) },
-                                    onNeutral = { EpisodeAdrDLManager.manager.downloadNow(selected, true) })
+                                    onConfirm = { EpisodeDLManager.manager.download(selected) },
+                                    onNeutral = { EpisodeDLManager.manager.downloadNow(selected, true) })
                             }
                         }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_download), contentDescription = "Download")
                             Text(stringResource(id = R.string.download_label)) } },
-                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
+                        { if (!isExternal && canAddToAssQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
                             onOperation()
                             runOnIOScope { selected.forEach { addToAssQueue(listOf(it)) } }
                         }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_play), contentDescription = "Add to associated or active queue")
                             Text(stringResource(id = R.string.add_to_associated_queue)) } },
-                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
+                        { if (!isExternal && canAddToActQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
                             onOperation()
                             runOnIOScope { addToQueue(selected, actQueueFlow.value) }
                         }) {

@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 138
-        versionName = "12.15.0"
+        versionCode = 139
+        versionName = "12.16.0"
 
         ndkVersion = "30.0.16248370"
 
@@ -48,13 +48,6 @@ configure<ApplicationExtension> {
             buildConfigField("String", "PODCASTINDEX_API_SECRET", "\"Zw2NL74ht5aCtx5zFL$#MY$##qdVCX7x37jq95Sz\"")
         }
     }
-
-//       sourceSets {
-//           getByName("main") {
-//               kotlin.directories.add("../../PodciniLib/src/main/kotlin")
-//               aidl.directories.add("../../PodciniLib/src/main/aidl")
-//           }
-//       }
 
     packaging {
         resources {
@@ -263,7 +256,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.9.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
-    implementation("com.github.XilinJia:PodciniLib:1.1.5")
+    implementation("com.github.XilinJia:PodciniLib:1.1.6")
     implementation("io.github.xilinjia.krdb:library-base:${project.property("krdb_version")}")
 
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")
@@ -272,6 +265,7 @@ dependencies {
     implementation("io.ktor:ktor-http:3.6.0")
     implementation("io.ktor:ktor-client-core:3.6.0")
     implementation("io.ktor:ktor-client-okhttp:3.6.0")
+//    implementation("io.ktor:ktor-client-encoding:3.6.0")
     implementation("io.ktor:ktor-utils:3.6.0")
 
     implementation("com.fleeksoft.ksoup:ksoup:0.2.6")

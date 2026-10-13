@@ -9,7 +9,7 @@
 -keepattributes Signature, InnerClasses, EnclosingMethod
 -renamesourcefileattribute SourceFile
 
-# -keep class ac.mdiq.podcini.** { *; }
+-keep class ac.mdiq.podcini.** { *; }
 # -keepclassmembers class ac.mdiq.podcini** {*;}
 
 -dontwarn com.google.re2j.Matcher

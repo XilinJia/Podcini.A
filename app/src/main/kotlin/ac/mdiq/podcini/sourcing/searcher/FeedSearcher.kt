@@ -3,6 +3,7 @@ package ac.mdiq.podcini.sourcing.searcher
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.FeedSearcher
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.USER_AGENT
 import ac.mdiq.podcini.shared.nowInMillis
@@ -59,7 +60,7 @@ class PodcastIndexSearcher : FeedSearcher {
         val formattedUrl = "https://api.podcastindex.org/api/1.0/search/byterm?q=${encodedQuery}"
         val podcasts: MutableList<FeedSearchResult> = mutableListOf()
         try {
-            val response = getKtorClient().get(formattedUrl) {
+            val response = documentKtor.get(formattedUrl) {
                 userAgent(PODCINI_USER_AGENT)
                 applyPodcastIndexAuth()
             }
@@ -115,7 +116,7 @@ open class ItunesSearcher : FeedSearcher {
         Logd(TAG) { "search formattedUrl: $formattedUrl" }
         val podcasts: MutableList<FeedSearchResult> = mutableListOf()
         try {
-            val response = getKtorClient().get(formattedUrl) {
+            val response = documentKtor.get(formattedUrl) {
                 userAgent(PODCINI_USER_AGENT)
                 header(HttpHeaders.CacheControl, "max-stale=86400")
             }
@@ -138,7 +139,7 @@ open class ItunesSearcher : FeedSearcher {
     override suspend fun lookupUrl(url: String): String {
         val lookupUrl = PATTERN_BY_ID.find(url)?.let { match -> "https://itunes.apple.com/lookup?id=${match.groups[1]?.value}" } ?: url
         val resultString = try {
-            val response = getKtorClient().get(lookupUrl) {
+            val response = documentKtor.get(lookupUrl) {
                 userAgent(PODCINI_USER_AGENT)
                 header(HttpHeaders.CacheControl, "max-stale=86400")
             }
@@ -199,7 +200,7 @@ class ItunesDeepSearcher: ItunesSearcher() {
             return url.replace("\\/", "/")
         }
         return runCatching {
-            val html = getKtorClient().get(collectionViewUrl) {
+            val html = documentKtor.get(collectionViewUrl) {
                 userAgent(PODCINI_USER_AGENT)
                 header(HttpHeaders.Accept, "application/json")
 //                header(HttpHeaders.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")

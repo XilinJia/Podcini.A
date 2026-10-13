@@ -1,3 +1,24 @@
+# 12.16.0
+
+* PodciniLib upped to 1.1.6, external apps (if used) need to be updated for compatibility
+* when binding with an external app, if rejected, ensure to continue with null
+* amended chapters loading from remote media, likely fixed abnormal timeout error
+* in EpisodeInfo, 
+	* if podcasting2.0 chapters are available, Download chapters button is shown (normally chapters are fetched at play time)
+	* clicking on a time code seeks or play-seeks the right media
+* in transcript options list, added icon to copy to clipboard, url is not shown
+* in Player, amended user agent setting, likely improved YT streaming
+* in Stream composer, added "Use muxed video" option
+* improved switching from audio-only to video
+* fixed Cancel button not cancelling download
+* reworked media downloader
+* enabled downloading media from external sources (experimental)
+	* content to download is based on settings in the feed
+	* if set for audio-only, the audio with preferred quality is downloaded
+	* if set for video, only muxed video is downloaded
+* set R8 to keep app code, fixed widget not playing, and perhaps other related issues
+* code refactoring and reorganization
+
 # 12.15.0
 
 * in episode actions

@@ -340,8 +340,8 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                             val states by downloadStatesFlow.collectAsStateWithLifecycle()
                             val dlStats = states[episode.downloadUrl]
                             if (dlStats != null) {
-                                actionButton!!.processing.intValue = dlStats.progress
-                                if (dlStats.state == DownloadStatus.State.COMPLETED.code) actionButton!!.type = ButtonTypes.PLAY
+                                actionButton!!.processing.intValue = if (dlStats is DownloadStatus.Running) dlStats.progress else -1
+                                if (dlStats == DownloadStatus.Completed) actionButton!!.type = ButtonTypes.PLAY
                             }
                             Icon(imageVector = ImageVector.vectorResource(actionButton!!.drawable), tint = buttonColor, contentDescription = null, modifier = Modifier.width(28.dp).height(32.dp).combinedClickable(onClick = { actionButton?.onClick() }, onLongClick = { showAltActionsDialog = true }))
                         }

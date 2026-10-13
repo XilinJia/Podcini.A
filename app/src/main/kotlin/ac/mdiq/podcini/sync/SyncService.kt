@@ -19,6 +19,7 @@ import ac.mdiq.podcini.utils.NetworkUtils.containsUrl
 import ac.mdiq.podcini.utils.NetworkUtils.isAllowedOnMobile
 import ac.mdiq.podcini.utils.NetworkUtils.setAllowMobileFor
 import ac.mdiq.podcini.playback.actQueueFlow
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
@@ -339,7 +340,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
 
         return when (selectedService) {
 //            SynchronizationProviderViewData.GPODDER_NET -> GpodnetService(getHttpClient(), hosturl, deviceID?:"", username?:"", password?:"")
-            SynchronizationProviderViewData.NEXTCLOUD_GPODDER -> NextcloudSyncService(getKtorClient(), hosturl, username ?: "", password ?: "")
+            SynchronizationProviderViewData.NEXTCLOUD_GPODDER -> NextcloudSyncService(documentKtor, hosturl, username ?: "", password ?: "")
         }
     }
 

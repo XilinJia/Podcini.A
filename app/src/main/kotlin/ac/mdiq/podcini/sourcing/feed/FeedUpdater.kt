@@ -198,17 +198,16 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         val nextPage = false
         //        val nextPage = (inputData.getBoolean(EXTRA_NEXT_PAGE, false) && feed.nextPageLink != null)
         if (nextPage) feed.pageNr += 1
-        val builder = requestFor(feed)
-        if (force || feed.lastUpdateFailed) builder.lastModified = null
-        if (nextPage) builder.source = feed.nextPageLink
-        val request = builder.build()
+        val request = requestFor(feed)
+        if (force || feed.lastUpdateFailed) request.lastModified = null
+        if (nextPage) request.source = feed.nextPageLink
         val downloader = downloaderFor(request) ?: throw Exception("Unable to create downloader")
         var downloadResult: DownloadResult? = null
         var isSuccessful = true
         var reason: DownloadError? = null
         var reasonDetailed: String? = null
         var feedHandlerResult: FeedHandlerResult? = null
-        downloader.download { source ->
+        downloader.downloadFeed { source ->
             val feedRaw = Feed(request.source, request.lastModified)
             feedRaw.id = request.feedfileId
             feedRaw.limitEpisodesCount = if (!fullUpdate || feed.sortForTrim == EpisodeSortOrder.DATE_DESC) feed.limitEpisodesCount else 0
@@ -265,23 +264,23 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                 }
                 val redirectUrl: String? = feedHandlerResult?.redirectUrl
                 when {
-                    !downloader.permanentRedirectUrl.isNullOrEmpty() -> updateFeedDownloadURL(request.source, downloader.permanentRedirectUrl!!)
-                    !redirectUrl.isNullOrBlank() && redirectUrl != request.source -> updateFeedDownloadURL(request.source, redirectUrl)
+                    !downloader.permanentRedirectUrl.isNullOrEmpty() -> updateFeedDownloadURL(request.source!!, downloader.permanentRedirectUrl!!)
+                    !redirectUrl.isNullOrBlank() && redirectUrl != request.source -> updateFeedDownloadURL(request.source!!, redirectUrl)
                 }
             }
             if (downloadResult?.isSuccessful != true) {
                 if (downloader.cancelled || downloader.result.reason == DownloadError.ERROR_DOWNLOAD_CANCELLED) {
                     Logd(TAG) { "downloadFeed: feed refresh cancelled, likely due to feed not changed: ${feed.title}" }
-                    return@download
+                    return@downloadFeed
                 }
                 LogFor(TAG, feed, false, "downloadFeed: feed update failed: unsuccessful. cancelled?")
                 upsert(feed) { it.lastUpdateFailed = true }
                 logDownloadResult(downloader.result)
-                return@download
+                return@downloadFeed
             }
         }
         if (!isSuccessful) {
-            onFail(feed, reasonDetailed ?: "", reason ?: DownloadError.ERROR_NOT_FOUND)
+            onFail(feed, reasonDetailed ?: "", reason ?: DownloadError.ERROR_MISC)
             return null
         }
         return feed_

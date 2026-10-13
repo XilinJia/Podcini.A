@@ -6,7 +6,7 @@ import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
 import ac.mdiq.podcini.playback.SleepManager.Companion.sleepManager
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.checkAndMarkDuplicates
-import ac.mdiq.podcini.storage.database.isMediaDownloadable
+import ac.mdiq.podcini.storage.database.isDownloadable
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.specs.MediaType
@@ -37,7 +37,7 @@ class PlaybackStarter(private val media: Episode) {
     fun shouldStreamThisTime(shouldStreamThisTime: Boolean?): PlaybackStarter {
         if (shouldStreamThisTime == null) {
             this.shouldStreamThisTime = media.feed == null || media.feedId == null || (!media.downloaded && media.feed?.isLocal != true)
-                    || !isMediaDownloadable(media) || (prefStreamOverDownload && media.feed?.prefStreamOverDownload == true)
+                    || !isDownloadable(media) || (prefStreamOverDownload && media.feed?.prefStreamOverDownload == true)
         } else this.shouldStreamThisTime = shouldStreamThisTime
         return this
     }

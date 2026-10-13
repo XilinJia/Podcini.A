@@ -8,13 +8,11 @@ import ac.mdiq.podcini.playback.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.playback.PlaybackService.Companion.serviceIOScope
 import ac.mdiq.podcini.playback.SleepManager.Companion.setIfAutoEnable
-import ac.mdiq.podcini.shared.AudioSpec
-import ac.mdiq.podcini.shared.VideoSpec
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.sourcing.AVStreams
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.allowForAutoDelete
-import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.checkAndMarkDuplicates
 import ac.mdiq.podcini.storage.database.createSynthetic
@@ -34,7 +32,6 @@ import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed.AudioType
 import ac.mdiq.podcini.storage.model.Feed.AutoDeleteAction
 import ac.mdiq.podcini.storage.model.QueueEntry
-import ac.mdiq.podcini.storage.specs.AVQuality
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.MediaType
 import ac.mdiq.podcini.storage.specs.Rating
@@ -62,7 +59,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -127,17 +124,10 @@ abstract class BasePlayer {
 
     var isStreaming = false
     var playingMuxedVideo = false
-    val curLocales = mutableSetOf<String>()
 
     var widgetId: String = ""
 
-    var audioSpecs: List<AudioSpec> = listOf()
-    var videoSpecs: List<VideoSpec> = listOf()
-    var muxedSpecs: List<VideoSpec> = listOf()
-
-    var curAudioSpec: AudioSpec? = null
-    var curVideoSpec: VideoSpec? = null
-    var curMuxedSpec: VideoSpec? = null
+    var avStreams: AVStreams = AVStreams(Episode())
 
     private var prevPosition: Int = -1
     private var samePositionCount: Int = 0
@@ -148,7 +138,7 @@ abstract class BasePlayer {
 
     internal var prevMedia: Episode? = null
 
-    var curMediaScope: CoroutineScope? = null
+    var curMediaScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     val curMediaFlow = MutableStateFlow<Episode?>(null)
 
@@ -165,8 +155,6 @@ abstract class BasePlayer {
     val bufferedPercentFlow = MutableStateFlow(0)
 
     var skipSilence: Boolean? = null
-    val bitrateFlow = MutableStateFlow(0)
-    val resolutionFlow = MutableStateFlow("")
     val mimeTypeFlow = MutableStateFlow("")
     val channelCountFlow = MutableStateFlow(0)
     val shouldRepeatFlow = MutableStateFlow(false)
@@ -176,13 +164,6 @@ abstract class BasePlayer {
 
     private var positionSaverInterval: Long = MIN_POSITION_SAVER_INTERVAL.toLong()
     private var dataSourceJob: Job? = null
-
-    var useLocales: Set<String> = setOf()
-    var useLocale: String? = null
-    var useCodex: String = "Any"
-    var useABPS: Int = 0
-    var useVCodex: String? = null
-    var useResolution: String? = null
 
     val isPlayingVideoLocally: Boolean
         get() = when {
@@ -213,7 +194,7 @@ abstract class BasePlayer {
 
     fun setAsCurMedia(episode: Episode?) {
         if (episode != null && episode.id == curMediaFlow.value?.id) return
-        curMediaScope?.cancel()
+        curMediaScope.coroutineContext.cancelChildren()
         val episode_ = if (episode != null) {
             val e = episodeById(episode.id)
             if (e == null) {
@@ -226,20 +207,16 @@ abstract class BasePlayer {
         } else null
         when {
             episode_ != null -> {
-                bitrateFlow.value = 0
-                resolutionFlow.value = ""
+                avStreams = AVStreams(episode_)
                 curMediaFlow.value = episode_
 //                curClient = clientByEpisode(episode_)
-                setAudioStream()
-                useVCodex = null
-                useResolution = null
                 playingVideoFlow.value = !isAutoController && (episode_.forceVideo || (episode_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && episode_.mediaType == MediaType.VIDEO))
                 skipSilence = null
                 shouldRepeatFlow.value = false
                 curSpeed = SPEED_USE_GLOBAL
                 Logd(TAG) { "setAsCurMedia start monitoring curMedia ${curMediaFlow.value?.title}" }
-                curMediaScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-                curMediaScope!!.launch {
+//                curMediaScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+                curMediaScope.launch {
                     realm.query(Episode::class).query("id == $0", episode_.id).asFlow().map { it.list.firstOrNull() }.collect { curMediaFlow.value = it }
                     if (!actQueueFlow.value.contains(curMediaFlow.value!!)) {
                         val qes = realm.query(QueueEntry::class).query("episodeId == ${curMediaFlow.value!!.id}").find()
@@ -515,13 +492,13 @@ abstract class BasePlayer {
     internal abstract fun setSourceToPlayer()
 
     internal fun prepareInitialized() {
-        Logd(TAG) { "prepare Preparing media player: statusFlow: $status isStartWhenPrepared: $isStartWhenPrepared" }
+        Logd(TAG) { "prepareInitialized Preparing media player: statusFlow: $status isStartWhenPrepared: $isStartWhenPrepared" }
         if (isInitialized) {
             setSourceToPlayer()
 //            if (mediaType == MediaType.VIDEO) videoSize = Pair(videoWidth, videoHeight)
             handlePlayerStatus(PlayerStatus.PREPARED, curMediaFlow.value)
             if (isStartWhenPrepared) play()
-        } else Logt(TAG, "prepare() call ignored with statusFlow: $status")
+        } else Logt(TAG, "prepareInitialized() call ignored with statusFlow: $status")
     }
 
     fun reprepareMedia() {
@@ -644,7 +621,6 @@ abstract class BasePlayer {
 
             val needStreaming = (nextMedia.feed?.isLocal != true && nextMedia.fileUrl.isNullOrBlank())
             if (needStreaming && !isStreamingCapable(nextMedia)) return@getNextMedia
-
             prepareMedia(playable = nextMedia, streaming = needStreaming, startWhenPrepared = wasPlayng, prepareImmediately = wasPlayng, doPostPlayback = false)
             if (widgetId.isNotEmpty()) notifyWidget()
         }
@@ -799,122 +775,6 @@ abstract class BasePlayer {
         it.lastPlayedTime = nowInMillis()
         if (it.playState == EpisodeState.NEW.code) it.setPlayState(EpisodeState.UNPLAYED)
         Logd(TAG) { "upsertDB ${it.startTime} timeSpent: ${it.timeSpent} playedDuration: ${it.playedDuration}" }
-    }
-
-    fun setAudioStream(locale: String? = null, codec: String = "Any", aveBitrate: Int = 0) {
-        Logd(TAG) { "setAudioStream: locale: $locale codec: $codec averageBitrate: $aveBitrate" }
-        useLocale = locale
-        useCodex = codec
-        useABPS = aveBitrate
-    }
-
-    internal fun chooseAudioSpec(audioSpecs: List<AudioSpec>, media: Episode): AudioSpec? {
-        val asl = mutableListOf<AudioSpec>()
-//        Logd(TAG) { "useLocale: $useLocale useCodex: $useCodex useABPS: $useABPS audioIndex: $audioIndex" }
-        Logd(TAG) { "chooseAudioSpec media.feed?.preferredLnaguages: [${media.feed?.preferredLnaguages?.joinToString()}]" }
-        Logd(TAG) { "chooseAudioSpec appAttribs.langsPreferred: [${appAttribsFlow!!.value.langsPreferred.joinToString()}]" }
-        useLocales = media.feed?.preferredLnaguages?.ifEmpty { appAttribsFlow!!.value.langsPreferred }?.ifEmpty { setOf("en-US", "en-GB", "en") } ?: setOf("en-US", "en-GB", "en")
-        Logd(TAG) { "chooseAudioSpec useLocales: ${useLocales.joinToString()}" }
-        curLocales.clear()
-        for (s in audioSpecs) {
-            Logd(TAG) { "chooseAudioSpec s.audioLocale [${s.audioLocale}] ${s.codec} ${s.averageBitrate}" }
-            curLocales.add(s.audioLocale ?: "")
-            if ((useLocale == null || useLocale == s.audioLocale) && (useCodex == "Any" || s.codec == useCodex) && (useABPS == 0 || s.averageBitrate == useABPS)) {
-                when {
-                    s.audioLocale == null -> asl.add(s)
-                    useLocale != null -> asl.add(s)
-                    s.audioLocale in useLocales -> asl.add(s)
-                }
-            }
-        }
-        Logd(TAG) { "chooseAudioSpec langset: [${curLocales.joinToString()}]" }
-        if (curLocales.isNotEmpty()) {
-            runOnIOScope {
-                if (media.feed != null && !media.feed!!.langSet.containsAll(curLocales)) upsert(media.feed!!) { it.langSet.addAll(curLocales) }
-                if (!appAttribsFlow!!.value.langSet.containsAll(curLocales)) upsert(appAttribsFlow!!.value) { it.langSet.addAll(curLocales) }
-            }
-        }
-        Logd(TAG) { "chooseAudioSpec asl: ${asl.size}" }
-        if (asl.isEmpty()) {
-            Loge(TAG, "chooseAudioSpec: eligible audio stream list is empty.\nAvailable languages: ${curLocales.joinToString()}.\nYou prefer: ${useLocales.joinToString()}")
-            bitrateFlow.value = 0
-            resolutionFlow.value = ""
-            return null
-        }
-
-        if (useABPS > 0) {
-            val audioSpec = asl.filter { it.averageBitrate == useABPS }.filter { useCodex == "Any" || it.codec == useCodex }.firstOrNull { useLocale == null || it.audioLocale == useLocale }
-            if (audioSpec != null) {
-                bitrateFlow.value = audioSpec.bitrate
-                return audioSpec
-            } else Logt(TAG, "chooseAudioSpec Requested audio doesn't exist ($useLocale, $useCodex, $useABPS), getting one based on settings.")
-        }
-
-        val prefLowQualityMedia: Boolean = appPrefsFlow!!.value.lowQualityOnMobile
-        val audioIndex =
-            if (networkMonitor.isNetworkRestricted && prefLowQualityMedia && media.feed?.audioQualitySetting == AVQuality.GLOBAL) 0
-            else {
-                when (media.feed?.audioQualitySetting) {
-                    AVQuality.LOW -> 0
-                    AVQuality.MEDIUM -> asl.size / 2
-                    AVQuality.HIGH -> asl.size - 1
-                    else -> {
-                        when (appPrefsFlow!!.value.audioQuality) {
-                            AVQuality.LOW.code -> 0
-                            AVQuality.MEDIUM.code -> asl.size / 2
-                            AVQuality.HIGH.code -> asl.size - 1
-                            else -> asl.size - 1
-                        }
-                    }
-                }
-            }
-
-        for (a in asl) Logd(TAG) { "chooseAudioSpec asl: bitrateFlow.value: ${a.bitrate} averageBitrate: ${a.averageBitrate} delivery: ${a.deliveryMethod}  codec: ${a.codec} audioLocale: ${a.audioLocale.toString()} id: ${a.audioTrackId} name: ${a.audioTrackName} format: ${a.format} ${a.url}" }
-
-        val audioSpec = if (audioIndex >= 0 && audioIndex < asl.size) asl[audioIndex] else null
-        bitrateFlow.value = audioSpec?.bitrate ?: 0
-        Logd(TAG) { "chooseAudioSpec use audio quality: ${audioSpec?.bitrate} forceVideo: ${media.forceVideo}" }
-        Logd(TAG) { "chooseAudioSpec: ${audioSpec?.url}" }
-        return audioSpec
-    }
-
-    internal fun chooseVideoSpec(videoSpecs: List<VideoSpec>, media: Episode): VideoSpec {
-        if (useResolution != null || useVCodex != null) {
-            val videoSpec = when {
-                useVCodex == null ->  videoSpecs.firstOrNull { it.resolution == useResolution }
-                useResolution == null -> videoSpecs.firstOrNull { it.codec == useVCodex }
-                else -> videoSpecs.firstOrNull { it.codec == useVCodex && it.resolution == useResolution }
-            }
-            if (videoSpec != null) {
-                resolutionFlow.value = videoSpec.resolution ?: ""
-                Logd(TAG) { "setVideoSpec use video quality: ${videoSpec.resolution}" }
-                return videoSpec
-            } else Logt(TAG, "setVideoSpec Requested video with ($useVCodex and $useResolution) doesn't exist, getting one based on settings")
-        }
-        val videoIndex =
-            if (networkMonitor.isNetworkRestricted && appPrefsFlow!!.value.lowQualityOnMobile && media.feed?.videoQualitySetting == AVQuality.GLOBAL) 0
-            else {
-                when (media.feed?.videoQualitySetting) {
-                    AVQuality.LOW -> 0
-                    AVQuality.MEDIUM -> videoSpecs.size / 2
-                    AVQuality.HIGH -> videoSpecs.size - 1
-                    else -> {
-                        when (appPrefsFlow!!.value.videoQuality) {
-                            AVQuality.LOW.code -> 0
-                            AVQuality.MEDIUM.code -> videoSpecs.size / 2
-                            AVQuality.HIGH.code -> videoSpecs.size - 1
-                            else -> 0
-                        }
-                    }
-                }
-            }
-
-        for (i in videoSpecs.indices) Logd(TAG) { "setVideoSpec $i ${videoSpecs[i].bitrate} ${videoSpecs[i].fps} ${videoSpecs[i].codec} ${videoSpecs[i].deliveryMethod} ${videoSpecs[i].resolution} ${videoSpecs[i].url}" }
-
-        val videoSpec = videoSpecs[videoIndex]
-        resolutionFlow.value = videoSpec.resolution ?: ""
-        Logd(TAG) { "setVideoSpec use video quality: ${videoSpec.resolution}" }
-        return videoSpec
     }
 
     abstract fun recordClip(startPositionMs: Long, endPositionMs: Long? = null)

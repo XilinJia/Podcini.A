@@ -69,8 +69,8 @@ fun clientByFeed(feed: Feed): SourceGatewayClient? {
 fun clientByEpisode(episode: Episode): SourceGatewayClient? {
     if (!episode.feedType.isNullOrBlank()) return typeClientMap[episode.feedType!!]
     if (!episode.feed?.type.isNullOrBlank()) return typeClientMap[episode.feed!!.type!!]
-    val client = sourceClients.firstOrNull { it.withProviderBlocking { p-> p.canHandleUrl(episode.downloadUrl) == 1 } == true }
-    return client
+    if (episode.downloadUrl.isNullOrBlank()) return null
+    return sourceClients.firstOrNull { it.withProviderBlocking { p-> p.canHandleUrl(episode.downloadUrl) == 1 } == true }
 }
 
 fun clientBySearcher(name: String?): SourceGatewayClient? {
@@ -266,12 +266,14 @@ object AppGatewayRegistry {
                             if (recognized) Loge(TAG, "External service ${attr.name} is not a compatible version, rejected.")
                             else Loge(TAG, "External service ${attr.name} not qualified, rejected.")
                             clients.remove(client)
+                            if (continuation.isActive) continuation.resumeWith(Result.success(null))
                             runCatching { context.unbindService(this) }
                         }
                     } catch (e: Exception) {
                         Loge(TAG, e, "External service bind error")
                         clients.remove(client)
                         typeClientMap.values.remove(client)
+                        if (continuation.isActive) continuation.resumeWith(Result.success(null))
                     }
                 }
                 override fun onServiceDisconnected(name: ComponentName?) {
@@ -340,19 +342,16 @@ object AppGatewayRegistry {
 
 class SourceGatewayClient {
     private val mutex = Mutex()
-
     var attributes: ProviderAttrs? = null
-
     var feedSearcher: FeedSearcher? = null
-
     var mediaSearcher: MediaSearcher? = null
+
+    var supportDownload: Boolean = true    // TODO: need to move somewhere else
 
     @Volatile
     var gateway: IPodciniGateway? = null
-
     @Volatile
     var connection: ServiceConnection? = null
-
     @Volatile
     private var bindDeferred: CompletableDeferred<IPodciniGateway>? = null
 

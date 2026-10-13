@@ -2,13 +2,6 @@ package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
-import ac.mdiq.podcini.sourcing.searcher.CombinedSearcher
-import ac.mdiq.podcini.sourcing.feed.FeedBuilder
-import ac.mdiq.podcini.sourcing.searcher.FeedUrlNotFoundException
-import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry
-import ac.mdiq.podcini.sourcing.feed.subscribe
-import ac.mdiq.podcini.utils.NetworkUtils.getFinalRedirectedUrl
 import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.FeedSearchResult
@@ -17,7 +10,13 @@ import ac.mdiq.podcini.shared.prepareUrl
 import ac.mdiq.podcini.sourcing.EPISODE_BATCH_SIZE
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
 import ac.mdiq.podcini.sourcing.clientBySearcher
+import ac.mdiq.podcini.sourcing.download.Downloader.Companion.isDownloading
+import ac.mdiq.podcini.sourcing.feed.FeedBuilder
+import ac.mdiq.podcini.sourcing.feed.subscribe
 import ac.mdiq.podcini.sourcing.isExtFeed
+import ac.mdiq.podcini.sourcing.searcher.CombinedSearcher
+import ac.mdiq.podcini.sourcing.searcher.FeedUrlNotFoundException
+import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry
 import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -52,6 +51,7 @@ import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.utils.HtmlToPlainText
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
+import ac.mdiq.podcini.utils.NetworkUtils.getFinalRedirectedUrl
 import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.formatAbbrev
 import ac.mdiq.podcini.utils.timeIt
@@ -402,7 +402,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
         if (preparedUrl.isBlank()) return
 
         when {
-            EpisodeAdrDLManager.manager.isDownloading(preparedUrl) -> {
+            isDownloading(preparedUrl) -> {
                 Logd(TAG) { "handleUpdatedFeedStatus isDownloading" }
                 enableSubscribe = false
                 subButTextRes = R.string.subscribe_label

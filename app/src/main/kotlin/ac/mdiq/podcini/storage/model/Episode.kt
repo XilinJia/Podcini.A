@@ -2,7 +2,9 @@ package ac.mdiq.podcini.storage.model
 
 import ac.mdiq.podcini.utils.NetworkUtils.isImageDownloadAllowed
 import ac.mdiq.podcini.shared.EpisodeIPC
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
+import ac.mdiq.podcini.shared.PodciniHttpClient.mediaKtor
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.storage.database.feedsMap
@@ -435,7 +437,7 @@ class Episode : RealmObject {
                     val url = downloadUrl
                     if (url.isNullOrEmpty()) return@withContext -1
                     try {
-                        val response = getKtorClient().head(url) {
+                        val response = mediaKtor.head(url) {
                             userAgent(PODCINI_USER_AGENT)
                             header(HttpHeaders.AcceptEncoding, "identity")
                         }
@@ -483,7 +485,7 @@ class Episode : RealmObject {
         if (trans.url.isNullOrBlank()) return
         Logd(TAG) { "fetchCaption url: ${trans.url}" }
         val text = try {
-            getKtorClient().get(trans.url!!) {
+            documentKtor.get(trans.url!!) {
                 userAgent(PODCINI_USER_AGENT)
                 expectSuccess = true
             }.bodyAsText()

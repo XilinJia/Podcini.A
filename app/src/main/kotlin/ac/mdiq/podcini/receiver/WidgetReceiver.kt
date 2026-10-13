@@ -89,8 +89,6 @@ class WidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = PodciniWidget()
 }
 
-//val episodesJson = stringPreferencesKey("episodes_json")
-
 class PodciniWidget : GlanceAppWidget() {
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
 
@@ -145,7 +143,7 @@ class PodciniWidget : GlanceAppWidget() {
                                 }
                             }
                             Image(provider = ImageProvider(R.drawable.outline_play_pause_24), contentDescription = "Play/pause", colorFilter = ColorFilter.tint(if (isMarked) textColorProvider else buttonColorProvider),
-                                modifier = GlanceModifier.size(48.dp).clickable(actionRunCallback<PlayAction>(parameters = actionParametersOf(EPISODE_ID_KEY to episode.id)), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
+                                modifier = GlanceModifier.size(48.dp).background(ImageProvider(R.drawable.widget_ripple)).clickable(actionRunCallback<PlayAction>(parameters = actionParametersOf(EPISODE_ID_KEY to episode.id)), rippleOverride = R.drawable.widget_ripple))
                         }
                     }
                 }
@@ -254,7 +252,6 @@ class PlayAction : ActionCallback {
             prefs[MARKED_EPISODE_KEY] = id
             prefs[stringPreferencesKey("update_type")] = "episode"
             Logd(TAG) { "PlayAction onAction episode: ${episode.title}" }
-
             withContext(Dispatchers.Main) { PlaybackStarter(episode).setWidgetId(glanceId.toString()).setAudioOnly().shouldStreamThisTime(null).start() }
         }
         PodciniWidget().update(context, glanceId)

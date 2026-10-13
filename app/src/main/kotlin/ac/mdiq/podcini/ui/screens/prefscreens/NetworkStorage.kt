@@ -5,6 +5,7 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.settings.MediaFilesTransporter
 import ac.mdiq.podcini.shared.PodciniHttpClient
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.resetClient
 import ac.mdiq.podcini.shared.ProxyConfig
@@ -625,7 +626,7 @@ fun SynchronizationScreen() {
             confirmButton = {
                 if (showChooseHost) TextButton(onClick = {
                     runOnIOScope { upsert(appPrefsFlow!!.value) { it.nextcloud_server_address = serverUrlText} }
-                    nextcloudLoginFlow = NextcloudLoginFlow(getKtorClient(), serverUrlText, getAppContext(), nextCloudAuthCallback)
+                    nextcloudLoginFlow = NextcloudLoginFlow(documentKtor, serverUrlText, getAppContext(), nextCloudAuthCallback)
                     errorText = ""
                     showChooseHost = false
                     nextcloudLoginFlow.start()

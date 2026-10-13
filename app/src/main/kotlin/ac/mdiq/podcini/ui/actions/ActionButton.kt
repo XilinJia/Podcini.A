@@ -17,14 +17,16 @@ import ac.mdiq.podcini.playback.activeTheatresCount
 import ac.mdiq.podcini.playback.isCurMedia
 import ac.mdiq.podcini.playback.isPlaying
 import ac.mdiq.podcini.playback.theatres
+import ac.mdiq.podcini.shared.HTTPAttribs
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
-import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
+import ac.mdiq.podcini.sourcing.download.Downloader.Companion.isDownloading
+import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
 import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
-import ac.mdiq.podcini.storage.database.isMediaDownloadable
+import ac.mdiq.podcini.storage.database.isDownloadable
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
@@ -44,6 +46,7 @@ import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.NetworkUtils
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.openInSystemDefault
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +67,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 
 class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: Boolean = false, typeInit: ButtonTypes = ButtonTypes.NULL) {
@@ -89,6 +93,8 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
 
     var label by mutableIntStateOf(typeInit.labelRes)
     var drawable by mutableIntStateOf(typeInit.drawable)
+
+    var downloadJob: Job? = null
 
     init {
         if (type == ButtonTypes.NULL) {
@@ -146,7 +152,8 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             ButtonTypes.WEBSITE -> if (!item.link.isNullOrEmpty()) openInSystemDefault(item.link!!)
             ButtonTypes.CANCEL -> {
                 if (typeToCancel == ButtonTypes.DOWNLOAD) {
-                    runBlocking { EpisodeAdrDLManager.manager.cancel(item) }
+                    downloadJob?.cancel()
+                    runBlocking { EpisodeDLManager.manager.cancel(item) }
                     if (appPrefsFlow!!.value.enableAutoDl) runOnIOScope { upsert(item) { it.isAutoDownloadEnabled = false } }
                     type = ButtonTypes.DOWNLOAD
                 } else if (typeToCancel == ButtonTypes.TTS) {
@@ -243,10 +250,12 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             }
             ButtonTypes.DOWNLOAD -> {
                 fun downloadNow() {
-                    runOnIOScope {
-                        val request = requestFor(item).build()
+                    downloadJob = runOnIOScope {
+                        val request = requestFor(item)?: return@runOnIOScope
                         val downloader = downloaderFor(request)
-                        downloader?.download()
+                        var at = HTTPAttribs()
+                        clientByEpisode(item)?.let { c-> c.withProviderBlocking { it.httpAtribsFor(request.source) }?.let { at = it } }
+                        downloader?.downloadMedia(at.useragent.takeIf { it.isNotBlank() }?: PODCINI_USER_AGENT)
                         val status = downloader?.result
                         if (status?.isSuccessful == true) updateDB(request)
                     }
@@ -256,7 +265,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                         LogeFor(TAG, item.id, "episode downloadUrl is null or blank")
                         return true
                     }
-                    val isDownloading = EpisodeAdrDLManager.manager.isDownloading(item.downloadUrl!!)
+                    val isDownloading = isDownloading(item.downloadUrl!!)
                     return isDownloading || item.downloaded
                 }
                 if (shouldNotDownload()) return
@@ -272,7 +281,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     confirmRes = R.string.confirm_mobile_download_dialog_download_later,
                     cancelRes = R.string.cancel_label,
                     neutralRes = R.string.confirm_mobile_download_dialog_allow_this_time,
-                    onConfirm = { EpisodeAdrDLManager.manager.download( listOf(item)) },
+                    onConfirm = { EpisodeDLManager.manager.download( listOf(item)) },
                     onNeutral = { downloadNow() })
             }
             ButtonTypes.TTS_NOW -> {
@@ -337,10 +346,10 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
         fun undownloadedType(): ButtonTypes {
             return when {
                 item.downloadUrl.isNullOrBlank() -> ButtonTypes.TTS
-                item.feed == null || item.feedId == null || !isMediaDownloadable(item) || (prefStreamOverDownload && item.feed?.prefStreamOverDownload == true) -> {
+                item.feed == null || item.feedId == null || !isDownloadable(item) || (prefStreamOverDownload && item.feed?.prefStreamOverDownload == true) -> {
                     if (preferSingle) ButtonTypes.STREAM_ONE else ButtonTypes.STREAM
                 }
-                EpisodeAdrDLManager.manager.isDownloading(item.downloadUrl!!) -> ButtonTypes.CANCEL
+                isDownloading(item.downloadUrl!!) -> ButtonTypes.CANCEL
                 else -> ButtonTypes.DOWNLOAD
             }
         }
@@ -351,20 +360,24 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 else -> ButtonTypes.PLAY
             }
         }
-        when (type) {
+        if (isDownloading(item.downloadUrl)) type = ButtonTypes.CANCEL
+        else when (type) {
             ButtonTypes.WEBSITE -> {}
             ButtonTypes.PLAY_LOCAL -> if (isPlaying(item, playerId)) type = ButtonTypes.PAUSE
             ButtonTypes.PLAY, ButtonTypes.PLAY_ONE, ButtonTypes.PLAY_REPEAT -> {
                 if (!item.downloaded) type = undownloadedType()
                 else if (isPlaying(item, playerId)) type = ButtonTypes.PAUSE
             }
-            ButtonTypes.STREAM, ButtonTypes.STREAM_ONE, ButtonTypes.STREAM_REPEAT -> if (isPlaying(item, playerId)) type = ButtonTypes.PAUSE
+            ButtonTypes.STREAM, ButtonTypes.STREAM_ONE, ButtonTypes.STREAM_REPEAT -> {
+                if (isPlaying(item, playerId)) type = ButtonTypes.PAUSE
+                else if (!item.fileUrl.isNullOrBlank()) type = ButtonTypes.PLAY_ONE
+            }
             ButtonTypes.PAUSE -> {
                 type = when {
                     item.feed?.isLocal == true -> ButtonTypes.PLAY_LOCAL
                     item.downloaded -> typeOfDownloaded()
                     feed?.prefActionType != null -> ButtonTypes.valueOf(feed.prefActionType!!)
-                    item.feed == null || item.feedId == null || !isMediaDownloadable(item) || (prefStreamOverDownload && item.feed?.prefStreamOverDownload == true) -> ButtonTypes.STREAM
+                    item.feed == null || item.feedId == null || !isDownloadable(item) || (prefStreamOverDownload && item.feed?.prefStreamOverDownload == true) -> ButtonTypes.STREAM
                     else -> ButtonTypes.DOWNLOAD
                 }
             }
@@ -383,7 +396,6 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
 //        Logd(TAG) { "update type: $type" }
     }
 
-    
     @Composable
     fun AltActionsDialog(onDismiss: () -> Unit) {
         CommonPopupCard(onDismiss = onDismiss) {
@@ -423,7 +435,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 }
                 if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.DELETE)) {
                     val client = clientByEpisode(item)
-                    if (client?.attributes?.supportDownload != false) OptionRow(ButtonTypes.DOWNLOAD, true)
+                    if (client?.supportDownload != false) OptionRow(ButtonTypes.DOWNLOAD, true)
                 }
                 if (type !in listOf(ButtonTypes.STREAM, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.DELETE)) OptionRow(ButtonTypes.DELETE, true)
                 if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD)) OptionRow(ButtonTypes.PLAY_REPEAT, true)

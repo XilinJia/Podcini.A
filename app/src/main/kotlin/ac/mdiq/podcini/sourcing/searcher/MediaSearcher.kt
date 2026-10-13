@@ -2,6 +2,7 @@ package ac.mdiq.podcini.sourcing.searcher
 
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.MediaSearcher
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.storage.utils.parseDate
 import ac.mdiq.podcini.utils.Logd
@@ -44,7 +45,7 @@ class AppleMediaSearcher : MediaSearcher {
         val formattedUrl = "https://itunes.apple.com/search?term=$encodedQuery&media=podcast&entity=podcastEpisode&limit=200"
         val medias: MutableList<EpisodeIPC> = mutableListOf()
         try {
-            val response = getKtorClient().get(formattedUrl) {
+            val response = documentKtor.get(formattedUrl) {
                 userAgent(PODCINI_USER_AGENT)
                 header(HttpHeaders.CacheControl, "max-stale=86400")
             }

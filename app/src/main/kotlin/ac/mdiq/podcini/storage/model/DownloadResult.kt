@@ -26,11 +26,11 @@ class DownloadResult : RealmObject {
     var isSuccessful: Boolean
 
     @Ignore
-    var reason: DownloadError? = DownloadError.ERROR_NOT_FOUND
+    var reason: DownloadError? = DownloadError.ERROR_MISC
         get() = fromCode(reasonCode)
         set(value) {
             field = value
-            reasonCode = field?.code ?: DownloadError.ERROR_NOT_FOUND.code
+            reasonCode = field?.code ?: DownloadError.ERROR_MISC.code
         }
     var reasonCode: Int = 0
 
@@ -53,7 +53,7 @@ class DownloadResult : RealmObject {
     constructor(feed: FeedIPC, reason: DownloadError?, successful: Boolean, reasonDetailed: String, completionDate: Long = nowInMillis())
             : this(feed.id, feed.title?:"no title", reason, successful, reasonDetailed, RequestType.FEED.code, completionDate)
 
-    constructor() : this(0L, "", DownloadError.ERROR_NOT_FOUND, false, "") {}
+    constructor() : this(0L, "", DownloadError.ERROR_MISC, false, "") {}
 
     override fun toString(): String {
         return ("DownloadStatus [id=$id, title=$title, reason=$reason, reasonDetailed=$reasonDetailed, successful=$isSuccessful, completionDate=$completionTime, feedfileId=$feedfileId, feedfileType=$feedfileType]")

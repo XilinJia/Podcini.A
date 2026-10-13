@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.automation
 
-import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
+import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
 import ac.mdiq.podcini.storage.database.EPISODE_CACHE_SIZE_UNLIMITED
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteMedia
@@ -148,7 +148,7 @@ abstract class EpisodeCleanupAlgorithm {
         val toDelete = if (candidates.size > numToRemove) candidates.subList(0, numToRemove) else candidates
         for (episode in toDelete) {
             if (episode.feed != null && !episode.feed!!.isLocal) {
-                EpisodeAdrDLManager.manager.cancel(episode)
+                EpisodeDLManager.manager.cancel(episode)
                 if (episode.downloaded) deleteMedia(episode)
             }
         }

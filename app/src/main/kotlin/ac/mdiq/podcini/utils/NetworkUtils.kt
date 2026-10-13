@@ -2,7 +2,8 @@ package ac.mdiq.podcini.utils
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
+import ac.mdiq.podcini.shared.PodciniHttpClient.mediaKtor
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
@@ -134,15 +135,13 @@ object NetworkUtils {
             Loge(TAG, "fetchHtmlSource urlString invalid: $urlString")
             return@withContext ""
         }
-        getKtorClient().get(url) { userAgent(PODCINI_USER_AGENT) }.bodyAsText()
+        documentKtor.get(url) { userAgent(PODCINI_USER_AGENT) }.bodyAsText()
     }
 
     fun getURIFromRequestUrl(source: String): URI {
         // try without encoding the URI
         try { return URI(source)
-        } catch (e: Exception) {
-            Logs(TAG, e, "Source is not encoded, encoding now")
-        }
+        } catch (e: Exception) { Logs(TAG, e, "Source is not encoded, encoding now") }
         try { return Url(source).toURI()
         } catch (e: Exception) {
             Logs(TAG, e, "source: $source")
@@ -152,7 +151,7 @@ object NetworkUtils {
 
     fun getFinalRedirectedUrl(url: String): String {
         return try {
-            val response = runBlocking { getKtorClient().get(url) { userAgent(PODCINI_USER_AGENT) } }
+            val response = runBlocking { documentKtor.get(url) { userAgent(PODCINI_USER_AGENT) } }
             if (response.status.isSuccess()) response.call.request.url.toString() else url
         } catch (e: Exception) { url }
     }
@@ -211,7 +210,7 @@ object NetworkUtils {
 //        }
     }
 
-    val imageLoader by lazy { ImageLoader.Builder(getAppContext()).components { add(KtorNetworkFetcherFactory(httpClient = getKtorClient())) }.build() }
+    val imageLoader by lazy { ImageLoader.Builder(getAppContext()).components { add(KtorNetworkFetcherFactory(httpClient = mediaKtor)) }.build() }
 
     val networkMonitor: NetworkMonitor by lazy { NetworkMonitor() }
 

@@ -2,53 +2,101 @@ package ac.mdiq.podcini.sourcing.download
 
 import ac.mdiq.podcini.shared.HasCredentials
 import ac.mdiq.podcini.shared.prepareUrl
+import ac.mdiq.podcini.sourcing.AVStreams
+import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
+import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.storage.utils.cacheDir
 import ac.mdiq.podcini.storage.utils.div
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
-import ac.mdiq.podcini.utils.Logs
+import ac.mdiq.podcini.utils.LogeFor
 import android.os.Bundle
 import io.ktor.util.AttributeKey
+import kotlinx.coroutines.runBlocking
 
 enum class RequestType(val code: Int) {
     FEED(0),
     FEEDMEDIA(1);
 }
 
-class DownloadRequest private constructor(
-    var destination: String,
-    val source: String?,
-    val title: String?,
-    val feedfileId: Long,
-    val feedfileType: Int,
-    var lastModified: String?,
-    username: String?,
-    password: String?,
-    private val mediaEnqueued: Boolean,
-    val arguments: Bundle?,
-    private val initiatedByUser: Boolean): HasCredentials(username, password) {
+class DownloadRequest: HasCredentials {
+    var destination: String = ""
+    var source: String? = null
+        set(value) {
+            field = value
+            urlOrig = value
+        }
+    var urlOrig: String? = null
+    var title: String? = null
+    var feedfileId: Long = 0L
+    var feedfileType: Int = 0
+    var lastModified: String? = null
+    var mediaEnqueued: Boolean = false
+    var arguments: Bundle = Bundle()
+    var initiatedByUser: Boolean = false
 
     var progressPercent: Int = 0
     var soFar: Long = 0
     var size: Long = 0
     var statusMsg = 0
 
-    private constructor(builder: Builder) : this(
-        builder.destination,
-        builder.source,
-        builder.title,
-        builder.feedfileId,
-        builder.feedfileType,
-        builder.lastModified,
-        builder.username,
-        builder.password,
-        false,
-        builder.arguments,
-        builder.initiatedByUser)
+    constructor(destination: String, media: Episode): super("", "") {
+        this.destination = destination
+        var url = media.downloadUrl
+        clientByEpisode(media)?.let { c->
+            val streams = AVStreams(media, false)
+            streams.forceFetch = true
+            if (c.attributes?.hasSeparateAVs == true) {
+                if (media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY) {
+                    runBlocking { streams.chooseVideoSpec(true) }
+                    streams.curMuxedSpec?.let { url = it.url }
+                } else {
+                    runBlocking { streams.chooseAudioSpec() }
+                    streams.curAudioSpec?.let { url = it.url }
+                }
+            } else {
+                runBlocking { streams.chooseVideoSpec(true) }
+                streams.curMuxedSpec?.let { url = it.url }
+            }
+        }
+        Logd(TAG) { "Builder: url: $url"}
+        this.source = if (!url.isNullOrBlank()) prepareUrl(url) else null
+        this.urlOrig = media.downloadUrl
+        this.title = media.title ?: media.downloadUrl
+        this.feedfileId = media.id
+        this.feedfileType = RequestType.FEEDMEDIA.code
+    }
+
+    constructor(destination: String, feed: Feed): super("", "") {
+        this.destination = destination
+        this.source = when {
+            feed.isLocal -> feed.downloadUrl
+            feed.downloadUrl != null -> prepareUrl(feed.downloadUrl!!)
+            else -> null
+        }
+        this.title = feed.textIdentifier
+        this.feedfileId = feed.id
+        this.feedfileType = RequestType.FEED.code
+        arguments.putInt(REQUEST_ARG_PAGE_NR, feed.pageNr)
+    }
+
+    fun withInitiatedByUser(initiatedByUser: Boolean): DownloadRequest {
+        this.initiatedByUser = initiatedByUser
+        return this
+    }
+    fun lastModified(lastModified: String?): DownloadRequest {
+        this.lastModified = lastModified
+        return this
+    }
+    fun withAuthentication(username: String?, password: String?): DownloadRequest {
+        this.username = username
+        this.password = password
+        return this
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -100,80 +148,33 @@ class DownloadRequest private constructor(
         destination = file.absPath
     }
 
-    class Builder {
-        internal val destination: String
-        var source: String?
-        val title: String?
-        var username: String? = null
-        var password: String? = null
-        var lastModified: String? = null
-        val feedfileId: Long
-        val feedfileType: Int
-        val arguments: Bundle = Bundle()
-        var initiatedByUser: Boolean = true
-
-        constructor(destination: String, media: Episode) {
-            this.destination = destination
-            this.source = if (media.downloadUrl != null) prepareUrl(media.downloadUrl!!) else null
-            this.title = media.title ?: media.downloadUrl
-            this.feedfileId = media.id
-            this.feedfileType = RequestType.FEEDMEDIA.code
-        }
-        constructor(destination: String, feed: Feed) {
-            this.destination = destination
-            this.source = when {
-                feed.isLocal -> feed.downloadUrl
-                feed.downloadUrl != null -> prepareUrl(feed.downloadUrl!!)
-                else -> null
-            }
-            this.title = feed.textIdentifier
-            this.feedfileId = feed.id
-            this.feedfileType = RequestType.FEED.code
-            arguments.putInt(REQUEST_ARG_PAGE_NR, feed.pageNr)
-        }
-        fun withInitiatedByUser(initiatedByUser: Boolean): Builder {
-            this.initiatedByUser = initiatedByUser
-            return this
-        }
-        fun lastModified(lastModified: String?): Builder {
-            this.lastModified = lastModified
-            return this
-        }
-        fun withAuthentication(username: String?, password: String?): Builder {
-            this.username = username
-            this.password = password
-            return this
-        }
-        fun build(): DownloadRequest = DownloadRequest(this)
-    }
-
     companion object {
         private const val TAG = "DownloadRequest"
         const val REQUEST_ARG_PAGE_NR: String = "page"
 
         val CredentialsKey = AttributeKey<HasCredentials>("Credentials")
 
-        suspend fun requestFor(feed: Feed): Builder {
+        suspend fun requestFor(feed: Feed): DownloadRequest {
             val dest = cacheDir / feed.getFeedfileName()
             if (dest.exists()) runOnIOScope { dest.delete() }
             Logd(TAG) { "requestFor download feed from url " + feed.downloadUrl }
             val username = feed.username
             val password = feed.password
-            return Builder(dest.absPath, feed).withAuthentication(username, password).lastModified(feed.lastUpdate)
+            return DownloadRequest(dest.absPath, feed).withAuthentication(username, password).lastModified(feed.lastUpdate)
         }
 
-        suspend fun requestFor(media: Episode): Builder {
+        suspend fun requestFor(media: Episode): DownloadRequest? {
             Logd(TAG) { "requestFor: ${media.fileUrl} ${media.title}" }
-            val destUriString = try { media.mediaFileUriString() } catch (e: Throwable ) {
-                Logs(TAG, e, "destUriString is invalid")
-                ""
-            }
+            val destUriString = try { media.mediaFileUriString() } catch (e: Throwable ) { "" }
             Logd(TAG) { "requestFor destUriString: $destUriString" }
-            if (destUriString.isBlank()) Loge(TAG, "destUriString is empty")
+            if (destUriString.isBlank()) {
+                LogeFor(TAG, media.id, "destUriString is invalid: [$destUriString] for media: ${media.title}")
+                return null
+            }
             val feed = media.feed
             val username = feed?.username
             val password = feed?.password
-            return Builder(destUriString, media).withAuthentication(username, password)
+            return DownloadRequest(destUriString, media).withAuthentication(username, password)
         }
     }
 }

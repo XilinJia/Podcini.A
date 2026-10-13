@@ -1,12 +1,10 @@
 package ac.mdiq.podcini.sourcing.download
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.CredentialsKey
-import ac.mdiq.podcini.utils.NetworkUtils.getURIFromRequestUrl
-import ac.mdiq.podcini.utils.NetworkUtils.isNetworkUrl
-import ac.mdiq.podcini.utils.NetworkUtils.wasDownloadBlocked
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
+import ac.mdiq.podcini.shared.PodciniHttpClient.mediaKtor
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.CredentialsKey
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.utils.freeSpaceAvailable
@@ -16,9 +14,13 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.NetworkUtils.getURIFromRequestUrl
+import ac.mdiq.podcini.utils.NetworkUtils.isNetworkUrl
+import ac.mdiq.podcini.utils.NetworkUtils.wasDownloadBlocked
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.startTiming
 import ac.mdiq.podcini.utils.timeIt
+import android.os.SystemClock
 import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.HttpTimeoutConfig
 import io.ktor.client.plugins.onDownload
@@ -37,6 +39,7 @@ import io.ktor.util.network.UnresolvedAddressException
 import io.ktor.utils.io.asSource
 import io.ktor.utils.io.readAvailable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
@@ -44,15 +47,20 @@ import kotlinx.io.IOException
 import kotlinx.io.Source
 import kotlinx.io.buffered
 import okio.buffer
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.use
 
-abstract class Downloader(val request: DownloadRequest) {
+sealed class DownloadStatus {
+    object Queued : DownloadStatus()
+    data class Running(val progress: Int) : DownloadStatus()
+    object Completed : DownloadStatus()
+    data class Failed(val reason: String? = null) : DownloadStatus()
+}
 
+open class Downloader(val request: DownloadRequest) {
     var cancelled: Boolean
-    
     var permanentRedirectUrl: String? = null
-
-    
     val result: DownloadResult
 
     protected val downloadDispatcher = Dispatchers.IO.limitedParallelism(3)
@@ -63,77 +71,7 @@ abstract class Downloader(val request: DownloadRequest) {
         this.result = DownloadResult(this.request.feedfileId, this.request.title?:"", null, false, "", this.request.feedfileType, nowInMillis())
     }
 
-    open suspend fun download() { Loge(TAG, "download() method is not implemented") }
-
-    open suspend fun download(cb: suspend (Source)->Unit) { Loge(TAG, "download(cb) method is not implemented") }
-
-    fun cancel() {
-        cancelled = true
-    }
-
-    protected fun callOnFailByResponseCode(response: HttpResponse) {
-        val statusCodeInt = response.status.value
-        val details = statusCodeInt.toString()
-        val error: DownloadError = when (response.status) {
-            HttpStatusCode.Unauthorized -> DownloadError.ERROR_UNAUTHORIZED
-            HttpStatusCode.Forbidden -> DownloadError.ERROR_FORBIDDEN
-            HttpStatusCode.NotFound, HttpStatusCode.Gone -> DownloadError.ERROR_NOT_FOUND
-            else -> DownloadError.ERROR_HTTP_DATA_ERROR
-        }
-        onFail(error, details)
-    }
-
-    protected fun checkIfRedirect(response: HttpResponse) {
-        val isRedirect = response.status.value in 300..399
-        if (!isRedirect) return
-
-        val location = response.headers["Location"] ?: return
-        val originalUrl = response.request.url.toString()
-        when {
-            response.status == HttpStatusCode.MovedPermanently -> { // 301
-                Logd(TAG) { "Detected permanent redirect from $originalUrl to $location" }
-                permanentRedirectUrl = location
-            }
-            location == originalUrl.replace("http://", "https://") -> {
-                Logd(TAG) { "Treating http->https redirect as permanent: $originalUrl" }
-                permanentRedirectUrl = location
-            }
-        }
-    }
-
-    protected fun onFail(reason: DownloadError, reasonDetailed: String?) {
-        Logs(TAG, "onFail() called with: reason = [$reason], reasonDetailed = [$reasonDetailed]")
-        result.isSuccessful = false
-        result.reason = reason
-        result.addDetail(reasonDetailed?:"")
-    }
-
-    protected fun onCancelled() {
-        Logd(TAG) { "Download was cancelled" }
-        result.isSuccessful = false
-        result.reason = DownloadError.ERROR_DOWNLOAD_CANCELLED
-        cancelled = true
-    }
-
-    companion object {
-        private val TAG: String = Downloader::class.simpleName ?: "Anonymous"
-
-        val downloadStatesFlow = MutableStateFlow<Map<String, DownloadStatus>>(emptyMap())
-
-        protected const val BUFFER_SIZE = 8 * 1024
-
-        fun downloaderFor(request: DownloadRequest): Downloader? {
-            if (!isNetworkUrl(request.source)) {
-                Loge(TAG, "Could not find appropriate downloader for " + request.source)
-                return null
-            }
-            return if (request.feedfileType == RequestType.FEED.code) FeedDownloader(request) else EpisodeDownloader(request)
-        }
-    }
-}
-
-class FeedDownloader(request: DownloadRequest): Downloader(request) {
-    override suspend fun download(cb: suspend (Source)->Unit) {
+    suspend fun downloadFeed(cb: suspend (Source)->Unit) {
         Logd(TAG) { "starting downloadFeed() source: ${request.source} dest: ${request.destination}" }
         if (request.source == null) return
 
@@ -142,8 +80,8 @@ class FeedDownloader(request: DownloadRequest): Downloader(request) {
         Logd(TAG) { "destination: ${request.destination} fileExists: $fileExists" }
 
         try {
-            val uri = getURIFromRequestUrl(request.source)
-            getKtorClient().prepareGet(uri.toString()) {
+            val uri = getURIFromRequestUrl(request.source!!)
+            documentKtor.prepareGet(uri.toString()) {
                 userAgent(PODCINI_USER_AGENT)
                 attributes.put(CredentialsKey, request)
                 header(HttpHeaders.CacheControl, "no-store")
@@ -251,207 +189,229 @@ class FeedDownloader(request: DownloadRequest): Downloader(request) {
             }
             onFail(DownloadError.ERROR_IO_ERROR, e.message)
         } catch (e: NullPointerException) { onFail(DownloadError.ERROR_CONNECTION_ERROR, request.source)
-        } catch (e: Throwable) { onFail(DownloadError.ERROR_NOT_FOUND, e.message)
+        } catch (e: Throwable) { onFail(DownloadError.ERROR_MISC, e.message)
         } finally { }
     }
 
-    companion object {
-        private val TAG: String = FeedDownloader::class.simpleName ?: "Anonymous"
+    suspend fun downloadMedia(useragent: String) {
+        if (request.source.isNullOrBlank()) return
+        try {
+            downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Running(5)) }
+            if (downloadChunked(useragent)) {
+                Logd(TAG) { "downloadChunked complete with success"}
+                result.setSuccessful()
+                request.progressPercent = 100
+            }
+        }
+        catch (e: CancellationException) {  }
+        catch (e: IllegalArgumentException) { onFail(DownloadError.ERROR_MALFORMED_URL, e.message) }
+        catch (e: SocketTimeoutException) { onFail(DownloadError.ERROR_CONNECTION_ERROR, e.message) }
+        catch (e: UnresolvedAddressException) { onFail(DownloadError.ERROR_UNKNOWN_HOST, e.message) }
+        catch (e: IOException) {
+            if (wasDownloadBlocked(e)) {
+                onFail(DownloadError.ERROR_IO_BLOCKED, e.message)
+                return
+            }
+            val message = e.message
+            if (message != null && message.contains("Trust anchor for certification path not found")) {
+                onFail(DownloadError.ERROR_CERTIFICATE, e.message)
+                return
+            }
+            onFail(DownloadError.ERROR_IO_ERROR, e.message)
+        }
+        catch (e: Exception) { onFail(DownloadError.ERROR_MISC, e.message)  }
+        finally { downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Completed) } }
     }
 
-}
+    private var lastReported = -1
 
-class EpisodeDownloader(request: DownloadRequest): Downloader(request) {
-    override suspend fun download() {
-        withContext(downloadDispatcher) {
-            Logd(TAG) { "starting downloadEpisode(): destination: ${request.destination}" }
-            if (request.source == null) return@withContext
-            startTiming()
-            downloadStatesFlow.update { it + (request.source to DownloadStatus(DownloadStatus.State.QUEUED.code, 5)) }
-            timeIt("$TAG start")
+    private fun reportProgress(total: Long?) {
+        if (total == null || total <= 0) return
+        val p = (100.0 * request.soFar / total).toInt().coerceIn(0, 99)
+        if (p == lastReported) return
+        lastReported = p
+        request.progressPercent = p
+        Logd(TAG) { "reportProgress $p"}
+        downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Running(p)) }
+    }
+
+    private suspend fun downloadChunked(useragent: String): Boolean {
+        val chunkSize: Long = 8L * 1024 * 1024
+        var reachedEnd = false
+        return withContext(downloadDispatcher) {
+            val buffer = ByteArray(64 * 1024)
+            var url = getURIFromRequestUrl(request.source!!).toString()
+            var total: Long? = null
+            var failuresInRow = 0
+
+            if (appPrefsFlow!!.value.checkAvailableSpace) {
+                val freeSpace = freeSpaceAvailable
+                Logd(TAG) { "Free space is $freeSpace" }
+                if (freeSpace < 100000000) {
+                    onFail(DownloadError.ERROR_NOT_ENOUGH_SPACE, "freeSpace is only $freeSpace bytes")
+                    return@withContext false
+                }
+            }
 
             val destFile = request.destination.toUF()
-            var startPosition = 0L
-            try {
-                val uri = getURIFromRequestUrl(request.source)
-                //            timeIt("$TAG got uri")
+            request.ensureMediaFileExists()
+            while (true) {
+                val start = destFile.size() ?: 0
+                request.soFar = start
+                Logd(TAG) { "download: start=$start total=$total"}
+                total?.let { if (start >= it) { reachedEnd = true; break} }
+                Logd(TAG) { "download: start=$start"}
 
-                suspend fun writeBody(response: HttpResponse) {
-                    Logd(TAG) { "writeBody" }
-                    val buffer = ByteArray(BUFFER_SIZE)
-                    try {
-                        destFile.sink(startPosition>0).buffer().use { out ->
-                            val channel = response.bodyAsChannel()
-                            var lastReportedProgress = -1
-                            while (true) {
-                                val read = channel.readAvailable(buffer)
-                                if (read <= 0) break
-                                out.write(buffer, 0, read)
-                                request.soFar += read
-                                request.progressPercent = (100.0 * request.soFar / request.size).toInt()
-                                val currentProgress = request.progressPercent
-                                if (currentProgress / 10 > lastReportedProgress / 10 || currentProgress == 100) {
-                                    lastReportedProgress = currentProgress
-                                    withContext(Dispatchers.Main.immediate) {
-                                        downloadStatesFlow.update { it + (request.source to DownloadStatus(if (request.progressPercent < 100) DownloadStatus.State.RUNNING.code else DownloadStatus.State.COMPLETED.code, request.progressPercent)) }
+                var received = 0L
+                var done = false
+                val t0 = SystemClock.elapsedRealtime()
+                Logd(TAG) { "chunk start=$start url=$url" }
+                try {
+                    mediaKtor.prepareGet(url) {
+                        userAgent(useragent)
+                        header(HttpHeaders.AcceptEncoding, "identity")
+                        header(HttpHeaders.Range, "bytes=$start-${start + chunkSize - 1}")
+                        timeout {
+                            connectTimeoutMillis = 5_000
+                            socketTimeoutMillis = 30_000
+                            requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
+                        }
+                    }.execute { resp ->
+                        Logd(TAG) { "chunk ${resp.status} ${resp.headers[HttpHeaders.ContentRange]} after ${SystemClock.elapsedRealtime() - t0}ms" }
+                        when (resp.status) {
+                            HttpStatusCode.RequestedRangeNotSatisfiable -> {
+                                val serverTotal = resp.headers[HttpHeaders.ContentRange]?.substringAfterLast('/')?.toLongOrNull()
+                                val have = destFile.size()?:0
+                                when {
+                                    serverTotal == have -> done = true
+                                    serverTotal != null && have > serverTotal -> {
+                                        destFile.delete(); request.soFar = 0
+                                        throw IOException("Restarting from 0")
+                                    }
+                                    else -> {
+                                        destFile.delete(); request.soFar = 0
+                                        throw IOException("416, restarting from 0")
                                     }
                                 }
-                                //                                Logd(TAG) { "writeBody request.soFar: ${request.soFar} progressPercent: $progressPercent" }
+                                return@execute
+                            }
+                            HttpStatusCode.PartialContent -> {}
+                            HttpStatusCode.OK -> {
+                                destFile.delete()
+                                request.soFar = 0
+                                request.size = resp.contentLength() ?: DownloadResult.SIZE_UNKNOWN.toLong()
+                                done = true
+                            }
+                            else -> throw IOException("Unexpected ${resp.status}")
+                        } // reuse the final URL so later chunks skip the redirect chain
+                        url = resp.request.url.toString()
+                        resp.headers[HttpHeaders.ContentRange]?.substringAfterLast('/')?.toLongOrNull()?.let { total = it }
+                        destFile.sink(append = true).buffer().use { out ->
+                            val ch = resp.bodyAsChannel()
+                            while (true) {
+                                val n = ch.readAvailable(buffer)
+                                if (n <= 0) break
+                                out.write(buffer, 0, n)
+                                received += n.toLong()
+                                request.soFar += n
+                                reportProgress(total)
                             }
                         }
-                    } catch (e: IOException) { Logs(TAG, e, "writeBody error") }
+                    }
+                    Logd(TAG) { "before done: $done"}
+                    if (done) { reachedEnd = true; break }
+                    if (received == 0L) throw IOException("Empty chunk")   // bug fix: no silent no-progress loop
+                    failuresInRow = 0
+                    Logd(TAG) { "before received check: $total $received $chunkSize"}
+                    if (total == null && received < chunkSize) { reachedEnd = true; break }
+                    Logd(TAG) { "after received check: $received"}
+                } catch (e: UnsupportedRangeException) {
+                    throw e
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: IOException) {
+                    val dSize = destFile.size()?:0
+                    Logd(TAG) { "chunk failed: $e (progress=${dSize > start})" }
+                    url = getURIFromRequestUrl(request.source!!).toString() // retry from the original URL in case the final one expired
+                    failuresInRow = if (dSize > start) 0 else failuresInRow + 1
+                    if (failuresInRow >= 6) throw e
+                    delay((500L * failuresInRow.coerceAtLeast(1)).milliseconds)
                 }
-
-                fun isContentTypeTextAndSmallerThan100kb(response: HttpResponse): Boolean {
-                    var contentLength = -1
-                    val contentLen = response.headers[HttpHeaders.ContentLength]
-                    if (contentLen != null) try { contentLength = contentLen.toInt() } catch (e: NumberFormatException) { Logs(TAG, e) }
-                    Logd(TAG) { "content length: $contentLength" }
-                    val contentType = response.headers[HttpHeaders.ContentType]
-                    Logd(TAG) { "content type: $contentType" }
-                    return contentType != null && contentType.startsWith("text/") && contentLength < 100 * 1024
-                }
-
-                getKtorClient().prepareGet(uri.toString()) {
-                    userAgent(PODCINI_USER_AGENT)
-                    timeout {
-                        requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
-                        socketTimeoutMillis = 30_000
-                    }
-                    onDownload { bytesSentTotal, contentLength ->
-                        if ((contentLength?:0) > 0) {
-                            val progress = (100 * bytesSentTotal / contentLength!!).toInt()
-                            //                        timeIt("$TAG got progress: $progress")
-                            request.progressPercent = progress
-                            downloadStatesFlow.update { it + (request.source to DownloadStatus(if(request.progressPercent < 100) DownloadStatus.State.RUNNING.code else DownloadStatus.State.COMPLETED.code, request.progressPercent)) }
-                        }
-                    }
-                    attributes.put(CredentialsKey, request)
-                    header(HttpHeaders.CacheControl, "no-store")
-                    header(HttpHeaders.AcceptEncoding, "identity")
-                    if (uri.scheme == "http") header("Upgrade-Insecure-Requests", "1")
-
-                    val existingFileSize: Long = destFile.size() ?:0
-                    if (existingFileSize > 0) {
-                        request.soFar = existingFileSize
-                        header(HttpHeaders.Range, "bytes=${request.soFar}-")
-                        Logd(TAG) { "Adding range header: " + request.soFar}
-                    }
-                }.execute { response ->
-                    timeIt("$TAG got response")
-
-                    val contentEncodingHeader = response.headers[HttpHeaders.ContentEncoding]
-                    var isGzip = false
-                    if (!contentEncodingHeader.isNullOrEmpty()) isGzip = (contentEncodingHeader.lowercase() == "gzip")
-                    timeIt("$TAG after isGzip")
-
-                    Logd(TAG) { "Response status is " + response.status} // check if size specified in the response header is the same as the size of the
-                    // written file. This check cannot be made if compression was used
-                    //                    Logd(TAG) { "buffer: $buffer" }
-                    when {
-                        response.status == HttpStatusCode.NotModified -> {
-                            Logd(TAG) { "Feed '${request.source}' not modified" }
-                            onCancelled()
-                            return@execute
-                        }
-                        response.status == HttpStatusCode.RequestedRangeNotSatisfiable -> {
-                            val lastModified = response.headers[HttpHeaders.LastModified]
-                            if (lastModified != null) request.lastModified = lastModified
-                            else request.lastModified = response.headers[HttpHeaders.ETag]
-                            result.setSuccessful()
-                            request.progressPercent = 100
-                            return@execute
-                        }
-                        response.status == HttpStatusCode.PartialContent -> {
-                            val fileExists = destFile.exists()
-                            val contentRangeHeader = if (fileExists) response.headers[HttpHeaders.ContentRange] else null
-                            if (fileExists && response.status == HttpStatusCode.PartialContent && !contentRangeHeader.isNullOrEmpty()) {
-                                val start = contentRangeHeader.removePrefix("bytes ").substringBefore('-').toLong()
-                                if (start != request.soFar) {
-                                    Logt(TAG, "Unexpected resume offset $start, restarting download")
-                                    destFile.delete()
-                                } else {
-                                    Logd(TAG) { "Resuming download at $start" }
-                                    startPosition = start
-                                }
-                                val remaining = response.contentLength()
-                                request.size = if (remaining != null) remaining + request.soFar else DownloadResult.SIZE_UNKNOWN.toLong()
-                            }
-                        }
-                        response.status == HttpStatusCode.OK -> {
-                            destFile.delete()
-                            request.soFar = 0
-                            request.size = response.contentLength() ?: DownloadResult.SIZE_UNKNOWN.toLong()
-                        }
-                        response.status == HttpStatusCode.NoContent -> {
-                            callOnFailByResponseCode(response)
-                            return@execute
-                        }
-                        !response.status.isSuccess() -> {
-                            callOnFailByResponseCode(response)
-                            return@execute
-                        }
-                        isContentTypeTextAndSmallerThan100kb(response) -> {
-                            onFail(DownloadError.ERROR_FILE_TYPE, null)
-                            return@execute
-                        }
-                        else -> throw IOException("Unexpected HTTP status ${response.status}")
-                    }
-                    timeIt("$TAG after when")
-                    downloadStatesFlow.update { it + (request.source to DownloadStatus(DownloadStatus.State.RUNNING.code, 10)) }
-                    checkIfRedirect(response)
-                    timeIt("$TAG after checkIfRedirect")
-                    downloadStatesFlow.update { it + (request.source to DownloadStatus(DownloadStatus.State.RUNNING.code, 15)) }
-                    request.ensureMediaFileExists()
-                    timeIt("$TAG after ensureMediaFileExists")
-                    downloadStatesFlow.update { it + (request.source to DownloadStatus(DownloadStatus.State.RUNNING.code, 18)) }
-                    request.statusMsg = (R.string.download_running)
-
-                    if (appPrefsFlow!!.value.checkAvailableSpace) {
-                        val freeSpace = freeSpaceAvailable
-                        Logd(TAG) { "Free space is $freeSpace > ${request.size}" }
-                        timeIt("$TAG after freeSpace")
-                        if (request.size != DownloadResult.SIZE_UNKNOWN.toLong() && request.size > freeSpace) {
-                            onFail(DownloadError.ERROR_NOT_ENOUGH_SPACE, null)
-                            return@execute
-                        }
-                    }
-
-                    writeBody(response)
-                    timeIt("$TAG after writeBody")
-                    when {
-                        cancelled -> onCancelled()
-                        !isGzip && request.size != DownloadResult.SIZE_UNKNOWN.toLong() && request.soFar != request.size -> onFail(DownloadError.ERROR_IO_WRONG_SIZE, "Download completed but size: ${request.soFar} does not equal expected size ${request.size}")
-                        request.size > 0 && request.soFar == 0L -> onFail(DownloadError.ERROR_IO_ERROR, "Download completed, but nothing was read")
-                        else -> {
-                            val lastModified = response.headers[HttpHeaders.LastModified]
-                            if (lastModified != null) request.lastModified = lastModified
-                            else request.lastModified = response.headers[HttpHeaders.ETag]
-                            result.setSuccessful()
-                        }
-                    }
-                    timeIt("$TAG after checkResults")
-                }
-            } catch (e: IllegalArgumentException) { onFail(DownloadError.ERROR_MALFORMED_URL, e.message)
-            } catch (e: SocketTimeoutException) { onFail(DownloadError.ERROR_CONNECTION_ERROR, e.message)
-            } catch (e: UnresolvedAddressException) { onFail(DownloadError.ERROR_UNKNOWN_HOST, e.message)
-            } catch (e: IOException) {
-                if (wasDownloadBlocked(e)) {
-                    onFail(DownloadError.ERROR_IO_BLOCKED, e.message)
-                    return@withContext
-                }
-                val message = e.message
-                if (message != null && message.contains("Trust anchor for certification path not found")) {
-                    onFail(DownloadError.ERROR_CERTIFICATE, e.message)
-                    return@withContext
-                }
-                onFail(DownloadError.ERROR_IO_ERROR, e.message)
-            } catch (e: NullPointerException) { onFail(DownloadError.ERROR_CONNECTION_ERROR, request.source)    // might be thrown by connection.getInputStream()
-            } finally { }
+            }
+            Logd(TAG) { "after while loop reachedEnd=$reachedEnd"}
+            if (!reachedEnd) return@withContext false
+            val len = destFile.size()?:0
+            if (total != null && len != total) throw IOException("Size mismatch $len/$total")
+            return@withContext true
         }
     }
 
+    class UnsupportedRangeException : IOException("Server ignored Range")
+
+    fun cancel() {
+        cancelled = true
+    }
+
+    protected fun callOnFailByResponseCode(response: HttpResponse) {
+        val statusCodeInt = response.status.value
+        val details = statusCodeInt.toString()
+        val error: DownloadError = when (response.status) {
+            HttpStatusCode.Unauthorized -> DownloadError.ERROR_UNAUTHORIZED
+            HttpStatusCode.Forbidden -> DownloadError.ERROR_FORBIDDEN
+            HttpStatusCode.NotFound, HttpStatusCode.Gone -> DownloadError.ERROR_NOT_FOUND
+            else -> DownloadError.ERROR_HTTP_DATA_ERROR
+        }
+        onFail(error, details)
+    }
+
+    protected fun checkIfRedirect(response: HttpResponse) {
+        val isRedirect = response.status.value in 300..399
+        if (!isRedirect) return
+        val location = response.headers["Location"] ?: return
+        val originalUrl = response.request.url.toString()
+        when {
+            response.status == HttpStatusCode.MovedPermanently -> { // 301
+                Logd(TAG) { "Detected permanent redirect from $originalUrl to $location" }
+                permanentRedirectUrl = location
+            }
+            location == originalUrl.replace("http://", "https://") -> {
+                Logd(TAG) { "Treating http->https redirect as permanent: $originalUrl" }
+                permanentRedirectUrl = location
+            }
+        }
+    }
+
+    protected fun onFail(reason: DownloadError, reasonDetailed: String?) {
+        Logs(TAG, "onFail() called with: reason = [$reason], reasonDetailed = [$reasonDetailed]")
+        result.isSuccessful = false
+        result.reason = reason
+        result.addDetail(reasonDetailed?:"")
+    }
+
+    protected fun onCancelled() {
+        Logd(TAG) { "Download was cancelled" }
+        result.isSuccessful = false
+        result.reason = DownloadError.ERROR_DOWNLOAD_CANCELLED
+        cancelled = true
+    }
+
     companion object {
-        private val TAG: String = EpisodeDownloader::class.simpleName ?: "Anonymous"
+        private val TAG: String = Downloader::class.simpleName ?: "Anonymous"
+
+        val downloadStatesFlow = MutableStateFlow<Map<String, DownloadStatus>>(emptyMap())
+
+        fun isDownloading(url_: String?): Boolean {
+            val url = url_ ?: return false
+            val st = downloadStatesFlow.value[url] ?: return false
+            return st is DownloadStatus.Queued || st is DownloadStatus.Running
+        }
+
+        fun downloaderFor(request: DownloadRequest): Downloader? {
+            if (!isNetworkUrl(request.source)) {
+                Loge(TAG, "Could not find appropriate downloader for " + request.source)
+                return null
+            }
+            return if (request.feedfileType == RequestType.FEED.code) Downloader(request) else Downloader(request)
+        }
     }
 }

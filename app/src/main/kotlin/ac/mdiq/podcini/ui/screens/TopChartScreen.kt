@@ -4,6 +4,7 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.FeedSearchResult
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
@@ -160,7 +161,7 @@ class DiscoveryVM: ViewModel() {
                 Logd(TAG) { "loadToplist reqStr: $reqStr" }
 
                 val feedString = try {
-                    val response = getKtorClient().get(reqStr) {
+                    val response = documentKtor.get(reqStr) {
                         userAgent(PODCINI_USER_AGENT)
                         header(HttpHeaders.CacheControl, "max-stale=86400") }
                     when {

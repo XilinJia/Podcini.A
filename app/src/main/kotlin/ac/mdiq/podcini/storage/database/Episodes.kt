@@ -3,7 +3,7 @@ package ac.mdiq.podcini.storage.database
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.NotificationIds
-import ac.mdiq.podcini.sourcing.download.EpisodeAdrDLManager
+import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
 import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
 import ac.mdiq.podcini.sync.model.EpisodeAction
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
@@ -114,7 +114,7 @@ suspend fun deleteEpisodesWarnLocalRepeat(items: Iterable<Episode>) {
     suspend fun deleteItems(items_: List<Episode>) {
         for (episode in items_) {
             if (episode.feed != null && !episode.feed!!.isLocal) {
-                EpisodeAdrDLManager.manager.cancel(episode)
+                EpisodeDLManager.manager.cancel(episode)
                 if (episode.downloaded) deleteMedia(episode)
             }
         }
@@ -218,8 +218,8 @@ suspend fun deleteMedia(episode: Episode): Episode {
     return episode
 }
 
-fun isMediaDownloadable(media: Episode): Boolean {
-    return clientByEpisode(media)?.attributes?.supportDownload != false
+fun isDownloadable(media: Episode): Boolean {
+    return media.feed?.isLocal != true && clientByEpisode(media)?.supportDownload != false
 }
 
 fun canCheckMediaSize(episode: Episode): Boolean {

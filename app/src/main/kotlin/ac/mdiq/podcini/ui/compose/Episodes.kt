@@ -465,23 +465,24 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
 fun TranscriptMeta(episode: Episode) {
     val context by rememberUpdatedState(LocalContext.current)
     var transIndex by remember { mutableIntStateOf(if (episode.captionCues.isNotEmpty()) episode.transcriptIndex else -1) }
-    for (i in episode.transcriptMetas.indices) {
-        val t = episode.transcriptMetas[i]
-        Column(modifier = Modifier.padding(start = 20.dp).fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(start = 10.dp).fillMaxWidth()) {
+        for (i in episode.transcriptMetas.indices) {
+            val t = episode.transcriptMetas[i]
+            if (!t.url.isNullOrBlank()) Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_download), tint = textColor, contentDescription = "download", modifier = Modifier.padding(end = 10.dp).clickable {
                     transIndex = i
                     if (transIndex != episode.transcriptIndex || episode.captionCues.isEmpty()) runOnIOScope { episode.fetchCaption(transIndex) }
                     Logt(TAG, context.getString(R.string.transcript_fetched))
                 })
-                Spacer(Modifier.width(20.dp))
+                Spacer(Modifier.width(10.dp))
                 Text(text = t.language ?: "Unknown language", style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.width(20.dp))
+                Spacer(Modifier.weight(0.2f))
                 Text(text = t.type ?: "Unknown type", style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.width(20.dp))
+                Spacer(Modifier.weight(0.2f))
                 Text(text = t.rel ?: "", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.weight(1f))
+                Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_content_copy_24), tint = textColor, contentDescription = "copy to clipboard", modifier = Modifier.padding(end = 10.dp).clickable { copyToClipboard("Podcini", t.url?:"") })
             }
-            t.url?.let { Text(text = it, style = MaterialTheme.typography.bodySmall, maxLines = 1, modifier = Modifier.clickable {copyToClipboard("Podcini", it) }) }
         }
     }
 }
@@ -547,7 +548,6 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             }
         }
     }
-
     LaunchedEffect(episode.clips.size) {
         if (episode.clips.isNotEmpty()) {
             if (playerLocal == null) playerLocal = ExoPlayer.Builder(getAppContext()).build()
@@ -667,7 +667,6 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 }
             }
         }
-
         if (episode.clips.isNotEmpty()) {
             var cliptToRemove by remember { mutableStateOf("") }
             if (cliptToRemove.isNotBlank()) {
@@ -722,7 +721,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             Text(stringResource(R.string.related), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 10.dp, bottom = 10.dp).clickable { showRelated = true })
         }
 
-        //                    if (!episode?.chapters.isNullOrEmpty()) Text(stringResource(id = R.string.chapters_label), color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 15.dp, top = 10.dp, bottom = 5.dp).clickable(onClick = { showChaptersDialog = true }))
+        if (episode.chapters.isEmpty() && !episode.podcastIndexChapterUrl.isNullOrBlank()) Text(stringResource(id = R.string.download_chapters), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable(onClick = { runOnIOScope { loadChapters(episode = episode, false) } }))
         if (episode.chapters.isNotEmpty()) {
             val chapters = remember { episode.chapters }
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)) {
@@ -742,8 +741,9 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                                 theatres[1].mPlayerFlow.value?.seekTo(ch.start.toInt())
                             }
                             else -> {
-                                PlaybackStarter(episode).shouldStreamThisTime(episode.fileUrl == null).start(0)
-                                theatres[0].mPlayerFlow.value?.seekTo(ch.start.toInt())
+                                theatres[0].mPlayerFlow.value?.pause(false)
+                                val episode_ = upsertBlk(episode) { it.position = ch.start.toInt() }
+                                PlaybackStarter(episode_).shouldStreamThisTime(episode_.fileUrl == null).start(0)
                             }
                         }
                         curChapterIndex = index
@@ -759,7 +759,24 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
         AndroidView(modifier = Modifier.fillMaxSize(),
             factory = {
                 ShownotesWebView(activity).apply {
-                    setTimecodeSelectedListener { time: Int -> theatres[0].mPlayerFlow.value?.seekTo(time) }
+                    setTimecodeSelectedListener { time: Int ->
+                        Logd(TAG) { "setTimecodeSelectedListener time=:$time"}
+                        when {
+                            theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id == episode.id -> {
+                                if (!theatres[0].mPlayerFlow.value!!.isPlaying) theatres[0].mPlayerFlow.value?.play()
+                                theatres[0].mPlayerFlow.value?.seekTo(time)
+                            }
+                            theatres[1].mPlayerFlow.value?.curMediaFlow?.value?.id == episode.id -> {
+                                if (!theatres[1].mPlayerFlow.value!!.isPlaying) theatres[1].mPlayerFlow.value?.play()
+                                theatres[1].mPlayerFlow.value?.seekTo(time)
+                            }
+                            else -> {
+                                theatres[0].mPlayerFlow.value?.pause(false)
+                                val episode_ = upsertBlk(episode) { it.position = time }
+                                PlaybackStarter(episode_).shouldStreamThisTime(episode_.fileUrl == null).start(0)
+                            }
+                        }
+                    }
                     setPageFinishedListener { postDelayed({ }, 50) }
                 } },
             update = { view ->

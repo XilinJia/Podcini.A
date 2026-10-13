@@ -3,8 +3,8 @@ package ac.mdiq.podcini.sourcing.feed
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.Downloader
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.FeedIPC
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.shared.prepareUrl
 import ac.mdiq.podcini.storage.database.addNewFeed
 import ac.mdiq.podcini.storage.database.feedByIdentityOrID
@@ -55,7 +55,7 @@ class FeedBuilder(val showError: (String?, String)->Unit) {
                         } finally { response.cancel() }
                     }.getOrNull()
                 }
-                val client = getKtorClient()
+                val client = documentKtor
                 extractType { client.head(url) { expectSuccess = false } }?.let { return it }
                 extractType {
                     client.get(url) {
@@ -105,10 +105,10 @@ class FeedBuilder(val showError: (String?, String)->Unit) {
             }
         }
         selectedDownloadUrl = prepareUrl(url)
-        val request = requestFor(Feed(selectedDownloadUrl, null)).withAuthentication(username, password).withInitiatedByUser(true).build()
+        val request = requestFor(Feed(selectedDownloadUrl, null)).withAuthentication(username, password).withInitiatedByUser(true)
         try {
             downloader = downloaderFor(request)
-            downloader?.download { source ->
+            downloader?.downloadFeed { source ->
                 //                        Logd(TAG) { "buildPodcast destination: $destination" }
                 val feed = Feed(selectedDownloadUrl, null)
                 feed.isBuilding = true

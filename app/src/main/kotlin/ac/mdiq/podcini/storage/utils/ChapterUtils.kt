@@ -1,6 +1,8 @@
 package ac.mdiq.podcini.storage.utils
 
+import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
+import ac.mdiq.podcini.shared.PodciniHttpClient.mediaKtor
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Chapter
@@ -23,6 +25,7 @@ import io.ktor.client.request.header
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.request
 import io.ktor.http.HttpHeaders
 import io.ktor.http.decodeURLQueryComponent
 import io.ktor.http.isSuccess
@@ -69,9 +72,9 @@ suspend fun fetchChapters(episode: Episode): List<Chapter> {
         chaptersFromPodcastIndex = try {
             val url = episode.podcastIndexChapterUrl!!
             Logd(TAG) { "fetchChapters fetching from url: $url" }
-            val response = getKtorClient().get(url) {
+            val response = documentKtor.get(url) {
                 userAgent(PODCINI_USER_AGENT)
-                header(HttpHeaders.CacheControl, null)
+//                header(HttpHeaders.CacheControl, null)
             }
             if (response.status.isSuccess()) parse(response.bodyAsText()) else listOf()
         } catch (e: Exception) {
@@ -384,6 +387,7 @@ suspend fun loadChaptersFromMedia(episode: Episode): List<Chapter> {
             if (size == null || size > 0) cb(file.source().buffer(), size)
             else Loge(TAG, "Failed loading chapters for ${episode.title}: file is empty: $fileUrl")
         } else {
+            Logd(TAG) { "loadChaptersFromMedia openSource streamurl: $streamurl"}
             if (streamurl != null && (streamurl.startsWith(ContentResolver.SCHEME_CONTENT) || streamurl.startsWith(ContentResolver.SCHEME_FILE))) {
                 val file = streamurl.toUF()
                 if (!file.exists()) {
@@ -394,24 +398,31 @@ suspend fun loadChaptersFromMedia(episode: Episode): List<Chapter> {
                 cb(file.source().buffer(), size)
             } else {
                 if (streamurl.isNullOrEmpty()) throw Exception("Failed loading chapters for ${episode.title}: stream url is null of empty")
-//                Logd(TAG) { "openSource open streaming source" }
-                getKtorClient().prepareGet(streamurl) {
+                Logd(TAG) { "loadChaptersFromMedia openSource open streaming source" }
+                mediaKtor.prepareGet(streamurl) {
                     userAgent(PODCINI_USER_AGENT)
-                    header("Range", "bytes=0-131072")
-                    timeout { requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS }
+                    header(HttpHeaders.Accept, "*/*")
+                    header(HttpHeaders.Range, "bytes=0-131071")
+                    timeout { requestTimeoutMillis = 30_000 }
                 }.execute { response ->
+                    Logd(TAG) { "loadChaptersFromMedia openSource Chapter fetch: ${response.status}" }
+                    Logd(TAG) { "loadChaptersFromMedia openSource Final URL: ${response.call.response.request.url}" }
+                    Logd(TAG) { "loadChaptersFromMedia openSource Content-Range: ${response.headers[HttpHeaders.ContentRange]}" }
                     val channel: ByteReadChannel = response.body()
                     val buffer = ByteArray(8192)
                     val limit = 128 * 1024L
                     var totalRead = 0L
                     fs.sink(tempPath).buffer().use { sink ->
-                        while (!channel.isClosedForRead && totalRead < limit) {
-                            val read = channel.readAvailable(buffer, 0, minOf(buffer.size.toLong(), limit - totalRead).toInt())
-                            if (read <= 0) break
+                        while (totalRead < limit) {
+                            val count = minOf(buffer.size.toLong(), limit - totalRead).toInt()
+                            val read = channel.readAvailable(buffer, 0, count)
+                            if (read == -1) break
+                            if (read == 0) continue
                             sink.write(buffer, 0, read)
                             totalRead += read
                         }
                     }
+                    Logd(TAG) { "loadChaptersFromMedia openSource Chapter fetch read $totalRead bytes" }
                     fs.source(tempPath).buffer().use { fileSource -> cb(fileSource, null) }
                 }
             }

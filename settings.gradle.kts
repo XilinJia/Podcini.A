@@ -33,3 +33,10 @@ dependencyResolutionManagement {
 }
 
 include(":app")
+
+// includeBuild("../PodciniLib") {
+//     dependencySubstitution {
+//         substitute(module("com.github.XilinJia:PodciniLib"))
+//             .using(project(":"))
+//     }
+// }

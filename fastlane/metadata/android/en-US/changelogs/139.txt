@@ -1,0 +1,7 @@
+* in EpisodeInfo, if podcasting2.0 chapters are available, show Download chapters button
+* in transcript options list, added icon to copy to clipboard, url is not shown
+* in Stream composer, added "Use muxed video" option
+* improved switching from audio-only to video
+* fixed Cancel button not cancelling download
+* enabled downloading media from external sources (experimental)
+* set R8 to keep app code, fixed widget not playing, and perhaps other related issues

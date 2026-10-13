@@ -690,7 +690,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                             feed?.downloadUrl == null -> null
                             else -> {
                                 val client = if (feed?.type != null) typeClientMap[feed!!.type!!] else null
-                                if (client != null) ButtonTypes.STREAM.name else null
+                                if (client != null && !client.supportDownload) ButtonTypes.STREAM.name else null
                             }
                         }
                     }
