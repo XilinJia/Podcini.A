@@ -341,7 +341,7 @@ fun VideoModeDialog(initMode: VideoMode?, isDemuxed: Boolean? = null, muxed: Boo
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Column {
                 VideoMode.entries.forEach { mode ->
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (mode != VideoMode.AUDIO_ONLY || isDemuxed == true) Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = (mode == selectedOption), onCheckedChange = { if (mode != selectedOption) selectedOption = mode })
                         Text(text = mode.tag, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 16.dp))
                     }

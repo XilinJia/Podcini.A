@@ -44,8 +44,10 @@ var forcePlaybackReset: Boolean = false
     set(value) {
         field = value
         if (value) {
-            theatres[0].mPlayerFlow.value?.pause(false)
-            theatres[1].mPlayerFlow.value?.pause(false)
+            CoroutineScope(Dispatchers.Main).launch {
+                theatres[0].mPlayerFlow.value?.pause(false)
+                theatres[1].mPlayerFlow.value?.pause(false)
+            }
         }
     }
 

@@ -50,17 +50,13 @@ class DownloadRequest: HasCredentials {
         clientByEpisode(media)?.let { c->
             val streams = AVStreams(media, false)
             streams.forceFetch = true
-            if (c.attributes?.hasSeparateAVs == true) {
-                if (media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY) {
-                    runBlocking { streams.chooseVideoSpec(true) }
-                    streams.curMuxedSpec?.let { url = it.url }
-                } else {
-                    runBlocking { streams.chooseAudioSpec() }
-                    streams.curAudioSpec?.let { url = it.url }
-                }
-            } else {
+            val useVideo = if (c.attributes?.hasSeparateAVs == true) media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY else c.attributes?.hasVideo == true
+            if (useVideo) {
                 runBlocking { streams.chooseVideoSpec(true) }
                 streams.curMuxedSpec?.let { url = it.url }
+            } else {
+                runBlocking { streams.chooseAudioSpec() }
+                streams.curAudioSpec?.let { url = it.url }
             }
         }
         Logd(TAG) { "Builder: url: $url"}

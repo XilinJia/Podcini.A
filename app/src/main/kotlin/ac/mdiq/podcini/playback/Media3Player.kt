@@ -12,7 +12,6 @@ import ac.mdiq.podcini.shared.ProxyConfig
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.sourcing.clientByEpisode
-import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
@@ -108,7 +107,6 @@ import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.MergingMediaSource
-import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.source.TrackGroupArray
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.trackselection.ExoTrackSelection
@@ -383,6 +381,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                         PlaybackException.ERROR_CODE_DECODING_FAILED,
                         PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED -> handleTerminalError("onPlayerError This device cannot play this file format.")
                         PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED-> {
+                            curMediaFlow.value?.let { avStreams.clearSpecs() }
                             forcePlaybackReset = true
                             Logt(TAG, "onPlayerError: parsing unsupported. If media is served by an external app, try play again, or try toggling 'Use external apps' in Settings, and play again.")
                         }
@@ -669,10 +668,11 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
             else CronetDataSource.Factory(cronetEngine!!, networkExecutor).setConnectionTimeoutMs(8_000).setReadTimeoutMs(8_000)
         val uaFactory = ResolvingDataSource.Factory(httpDataSourceFactory) { dataSpec ->
             var at = HTTPAttribs()
+            at.useragent = PODCINI_USER_AGENT
             curClient?.let { c-> c.withProviderBlocking { it.httpAtribsFor(dataSpec.uri.toString()) }?.let { at = it } }
             Logd(TAG) { "uaFactory curClient: ${curClient!=null} ua: ${at.useragent}"}
             val headers = buildMap {
-                put("User-Agent", at.useragent.takeIf { it.isNotBlank() }?: PODCINI_USER_AGENT )
+                if (at.useragent.isNotBlank()) put("User-Agent", at.useragent )
                 if (curClient != null && dataSpec.position == 0L && dataSpec.length == C.LENGTH_UNSET.toLong()) put("Range", "bytes=0-")
             }
             dataSpec.withAdditionalHeaders(headers)
@@ -746,7 +746,6 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 mSource = vSource
                 playingVideoFlow.value = true
                 playingMuxedVideo = true
-                Logt(TAG, "Using muxed video stream")
             } else Loge(TAG, "videoStream or url is null or blank")
         }
 
@@ -761,14 +760,16 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         }
 
         Logd(TAG) { "mediaSourceFromClient audioSpecs url: ${media.downloadUrl}" }
-        var aSource: ProgressiveMediaSource? = null
+        var aSource: MediaSource? = null
         avStreams.chooseAudioSpec()
         avStreams.curAudioSpec?.let {
-            if (!it.url.isNullOrBlank()) aSource = ProgressiveMediaSource.Factory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(it.url!!.toSafeUri()).setCustomCacheKey(media.id.toString()).build())
+            Logd(TAG) { "mediaSourceFromClient deliveryMethod: ${it.deliveryMethod}" }
+            if (!it.url.isNullOrBlank()) aSource = DefaultMediaSourceFactory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(it.url!!.toSafeUri()).setCustomCacheKey(media.id.toString()).build())
             else Loge(TAG, "eligible audioStream or its url is null or blank")
         }
         if ((aSource == null || needVideo) && curClient?.attributes?.hasVideo == true) {
             if (aSource == null) {
+                Logt(TAG, "Audio stream not available, trying muxed video stream")
                 setMuxedVideo()
                 return mSource
             }
@@ -803,23 +804,24 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         val password = feed?.password
         avStreams.bitrateFlow.value = 0
         avStreams.resolutionFlow.value = ""
-        try {
+        curClient = clientByEpisode(media)
+        if (curClient != null) {
             mediaSource = mediaSourceFromClient(!isAutoController && !audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY))
             if (mediaSource != null) {
                 Logd(TAG) { "prepareDataSource setting with mediaSource" }
                 mediaItem = mediaSource!!.mediaItem
                 setSourceCredentials(user, password)
             } else {
-                curClient = null
-                Logd(TAG) { "prepareDataSource setting date source" }
-                prepareDataSource(url, user, password)
+                avStreams.clearSpecs()
+                forcePlaybackReset = true
+                throw Exception("External client failed to build media source")
             }
-            mediaItem?.let { deferredMediaItem?.complete(it) }
-        } catch (e: Throwable) {
-            LogsFor(TAG, media.id, "prepareDataSource: ${e.message}")
-            runOnIOScope { upsert(media) { it.setPlayState(EpisodeState.ERROR) } }
-            throw e
+        } else {
+            curClient = null
+            Logd(TAG) { "prepareDataSource setting date source" }
+            prepareDataSource(url, user, password)
         }
+        mediaItem?.let { deferredMediaItem?.complete(it) }
     }
 
     override fun prepareDataSource(mediaUrl: String, user: String?, password: String?) {

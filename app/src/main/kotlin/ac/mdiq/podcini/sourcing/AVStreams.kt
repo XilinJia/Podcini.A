@@ -62,8 +62,10 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
     private var useLocales: Set<String> = setOf()
     private var useLocale: String? = null
     private var useCodex: String = "Any"
+    private var useProt: String? = null
     private var useABPS: Int = 0
-    private var useVCodex: String? = null
+    private var useVCodex: String = "Any"
+    private var useVProt: String? = null
     private var useResolution: String? = null
 
     var curAudioSpec: AudioSpec? = null
@@ -79,7 +81,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
         bitrateFlow.value = 0
         resolutionFlow.value = ""
         setAudioStream()
-        useVCodex = null
+        useVCodex = "Any"
         useResolution = null
         client = clientByEpisode(media)
 //        if (client != null) specsFromCache()
@@ -88,9 +90,11 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
     private suspend fun getAVSpecs() {
         specsFromCache()
         if (!mediaSpecs.isInit) {
+            Logd(TAG) { "getAVSpecs do init"}
             if (client == null) client = clientByEpisode(media)
             client?.withProvider { it.getMediaSpecs(media.toIPC(), forceFetch) }?.let { ms->
                 mediaSpecs = ms
+                Logd(TAG) { "getAVSpecs audios: ${mediaSpecs.audioSpecs?.size} videos: ${mediaSpecs.videoSpecs?.size} muxed: ${mediaSpecs.muxedSpecs?.size}"}
                 forceFetch = false
                 if (useCache) {
                     mediaSpecs.audioSpecs?.let { audioSpecsCache.put(media.id, it) }
@@ -120,7 +124,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
         for (s in mediaSpecs.audioSpecs ?: listOf()) {
             Logd(TAG) { "chooseAudioSpec s.audioLocale [${s.audioLocale}] ${s.codec} ${s.averageBitrate}" }
             curLocales.add(s.audioLocale ?: "")
-            if ((useLocale == null || useLocale == s.audioLocale) && (useCodex == "Any" || s.codec == useCodex) && (useABPS == 0 || s.averageBitrate == useABPS)) {
+            if ((useLocale == null || useLocale == s.audioLocale) && (useProt == null || s.deliveryMethod == useProt) && (useCodex == "Any" || s.codec == useCodex) && (useABPS == 0 || s.averageBitrate == useABPS)) {
                 when {
                     s.audioLocale == null -> asl.add(s)
                     useLocale != null -> asl.add(s)
@@ -193,9 +197,9 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
             else curVideoSpec = null
             return
         }
-        if (useResolution != null || useVCodex != null) {
+        if (useResolution != null || useVCodex != "Any") {
             val videoSpec = when {
-                useVCodex == null ->  vSpecs.firstOrNull { it.resolution == useResolution }
+                useVCodex == "Any" ->  vSpecs.firstOrNull { it.resolution == useResolution }
                 useResolution == null -> vSpecs.firstOrNull { it.codec == useVCodex }
                 else -> vSpecs.firstOrNull { it.codec == useVCodex && it.resolution == useResolution }
             }
@@ -239,13 +243,16 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
         mediaSpecs.audioSpecs = audioSpecsCache[media.id]
         mediaSpecs.videoSpecs = videoSpecsCache[media.id]
         mediaSpecs.muxedSpecs = muxedSpecsCache[media.id]
+        Logd(TAG) { "specsFromCache mediaSpecs.videoSpecs: ${mediaSpecs.videoSpecs?.size}"}
         val url = if (!mediaSpecs.audioSpecs.isNullOrEmpty()) mediaSpecs.audioSpecs!![0].url else if (!mediaSpecs.muxedSpecs.isNullOrEmpty()) mediaSpecs.muxedSpecs!![0].url else null
         if (!url.isNullOrBlank()) {
             val expireTime = url.toUri().getQueryParameter("expire")?.toLongOrNull()
+            Logd(TAG) { "specsFromCache expireTime: $expireTime ${nowInSeconds()}"}
             if (expireTime != null && expireTime < nowInSeconds()) clearSpecs()
         }
     }
     fun clearSpecs() {
+        Logd(TAG) { "clearSpecs "}
         audioSpecsCache.remove(media.id)
         videoSpecsCache.remove(media.id)
         muxedSpecsCache.remove(media.id)
@@ -254,64 +261,66 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
     }
 
     @Composable
-    fun StreamChanger(needVideo: Boolean, needMuxedVideo: Boolean, onDismiss: ()->Unit, confirmCB: (Boolean, Boolean)->Unit) {
+    fun StreamChanger(needVideo: Boolean, needMuxed: Boolean, onDismiss: ()->Unit, confirmCB: (Boolean, Boolean)->Unit) {
         var reset by remember { mutableStateOf(false) }
         var useVideo by remember { mutableStateOf(needVideo) }
-        var useMuxed by remember { mutableStateOf(needMuxedVideo) }
+        var useMuxed by remember { mutableStateOf(needMuxed) }
         var locales by remember { mutableStateOf<List<String>>(listOf()) }
-        var locale by remember(media.id) { mutableStateOf(useLocale) }
+        var locale by remember(media.id) { mutableStateOf(useLocale ?: curAudioSpec?.audioLocale) }
         var codecs by remember { mutableStateOf<List<String>>(listOf()) }
         var codec by remember(media.id) { mutableStateOf(useCodex) }
+        var prots by remember { mutableStateOf<List<String>>(listOf()) }
+        var prot by remember(media.id) { mutableStateOf(useProt ?: curAudioSpec?.deliveryMethod) }
         var bitRates by remember { mutableStateOf<List<Int>>(listOf()) }
         var bitrate by remember(media.id) { mutableIntStateOf(useABPS) }
         var vcodecs by remember { mutableStateOf<List<String>>(listOf()) }
         var vcodec by remember(media.id) { mutableStateOf(useVCodex) }
-        var protocols by remember { mutableStateOf<List<String>>(listOf()) }
-        var protocol by remember(media.id) { mutableStateOf(useVCodex) }
+        var vprots by remember { mutableStateOf<List<String>>(listOf()) }
+        var vprot by remember(media.id) { mutableStateOf(useVProt ?: if (needMuxed) curMuxedSpec?.deliveryMethod else curVideoSpec?.deliveryMethod) }
         var resolutions by remember { mutableStateOf<List<String>>(listOf()) }
         var resolution by remember(media.id) { mutableStateOf(useResolution) }
         val client = remember(media.id) { clientByEpisode(media) }
 
         fun buildVCodecSet(s: VideoSpec, cSet: MutableSet<String>) {
-            when {
-                protocol == null -> cSet.add(s.codec?:"Any")
-                else -> if (s.deliveryMethod == protocol) cSet.add(s.codec?:"Any")
-            }
+            if (vprot == null || vprot == "Any" || s.deliveryMethod == vprot) cSet.add(s.codec?:"Any")
         }
         fun buildResoSet(s: VideoSpec, rSet: MutableSet<String>) {
+            Logd(TAG) { "buildResoSet vprot: $vprot vcodec: $vcodec"}
             s.resolution?.let {
-                when {
-                    vcodec == null && protocol == null -> rSet.add(it)
-                    protocol == null -> if (s.codec == vcodec) rSet.add(it)
-                    vcodec == null -> if (s.deliveryMethod == protocol) rSet.add(it)
-                    else -> if (s.deliveryMethod == protocol && s.codec == vcodec) rSet.add(it)
+                if (vprot == null || vprot == "Any" || s.deliveryMethod == vprot) {
+                    if (vcodec == "Any" || s.codec == vcodec) rSet.add(it)
                 }
             }
         }
+        fun buildProtSet(s: AudioSpec, pSet: MutableSet<String>) {
+            if (locale == null || s.audioLocale == locale) pSet.add(s.deliveryMethod ?: "Any")
+        }
         fun buildCodecSet(s: AudioSpec, cSet: MutableSet<String>) {
-            when {
-                locale == null -> cSet.add(s.codec ?: "Any")
-                else -> if (s.audioLocale == locale) cSet.add(s.codec ?: "Any")
+            if (prot == null || prot == "Any" || s.deliveryMethod == prot) {
+                if (locale == null || s.audioLocale == locale) cSet.add(s.codec ?: "Any")
             }
         }
         fun buildBRSet(s: AudioSpec, bSet: MutableSet<Int>) {
-            when {
-                locale == null && codec == "Any" -> bSet.add(s.averageBitrate)
-                locale == null -> if (s.codec == codec) bSet.add(s.averageBitrate)
-                codec == "Any" -> if (s.audioLocale == locale) bSet.add(s.averageBitrate)
-                else -> if (s.codec == codec && s.audioLocale == locale) bSet.add(s.averageBitrate)
+            Logd(TAG) { "buildBRSet prot: $prot locale: $locale codec: $codec"}
+            if (prot == null || prot == "Any" || s.deliveryMethod == prot) {
+                if (locale == null || s.audioLocale == locale) {
+                    if (codec == "Any" || s.codec == codec) bSet.add(s.averageBitrate)
+                }
             }
         }
         LaunchedEffect(media.id, useMuxed) {
             val lSet = mutableSetOf<String>()
+            val pSet = mutableSetOf<String>()
             val bSet = mutableSetOf<Int>()
             val cSet = mutableSetOf("Any")
             for (s in mediaSpecs.audioSpecs?: listOf()) {
+                pSet.add(s.deliveryMethod?:"")
                 lSet.add(s.audioLocale?:"")
                 buildBRSet(s, bSet)
                 if (s.codec != null) cSet.add(s.codec!!) else cSet.add("null")
             }
             locales = lSet.toList()
+            prots = pSet.toList()
             bitRates = bSet.toList()
             codecs = cSet.toList()
             if (locale == null && locales.isNotEmpty()) locale = locales.firstOrNull { it in useLocales }
@@ -326,7 +335,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                 s.codec?.let { vcSet.add(it) }
                 s.deliveryMethod?.let { vpSet.add(it) }
             }
-            protocols = vpSet.toList()
+            vprots = vpSet.toList()
             resolutions = rSet.toList()
             vcodecs = vcSet.toList()
         }
@@ -334,8 +343,8 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
             Card(modifier = Modifier.width(300.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
                 Column(modifier = Modifier.padding(8.dp)) {
                     Text(stringResource(R.string.stream_composer), color = textColor, style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(R.string.use_muxed), color = if (useMuxed) Color.Yellow else textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { useMuxed = !useMuxed })
-                    if (!useMuxed && client?.attributes?.hasSeparateAVs == true) {
+                    if (client?.attributes?.hasVideo == true) Text(stringResource(R.string.use_muxed), color = if (useMuxed) Color.Yellow else textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { useMuxed = !useMuxed })
+                    if (client?.attributes?.hasVideo != true || (!useMuxed && client.attributes?.hasSeparateAVs == true)) {
                         var showLocales by remember { mutableStateOf(false) }
                         Text(stringResource(R.string.audio)+":", color = textColor, style = MaterialTheme.typography.titleMedium)
                         Text(stringResource(R.string.audio_stream_set_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
@@ -345,6 +354,10 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                             for (index in langs.indices) {
                                 FilterChip(label = { Text(langs[index]) }, selected = locale==langs[index], border = filterChipBorder(locale==langs[index]), onClick = {
                                     locale = langs[index]
+                                    val pSet = mutableSetOf("Any")
+                                    for (s in mediaSpecs.audioSpecs?:listOf()) buildProtSet(s, pSet)
+                                    prots = pSet.toList()
+                                    if (prot !in prots) prot = null
                                     val cSet = mutableSetOf("Any")
                                     for (s in mediaSpecs.audioSpecs?:listOf()) buildCodecSet(s, cSet)
                                     codecs = cSet.toList()
@@ -355,6 +368,26 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                                     bitrate = 0
                                     showLocales = false
                                 })
+                            }
+                        }
+                        var showProts by remember { mutableStateOf(false) }
+                        Text("${stringResource(R.string.protocol)}: $prot", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showProts = !showProts })
+                        if (showProts && prots.size > 1) {
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
+                                for (index in prots.indices) {
+                                    FilterChip(label = { Text(prots[index]) }, selected = prot==prots[index], border = filterChipBorder(prot==prots[index]), onClick = {
+                                        prot = prots[index]
+                                        val cSet = mutableSetOf("Any")
+                                        for (s in mediaSpecs.audioSpecs?:listOf()) buildCodecSet(s, cSet)
+                                        codecs = cSet.toList()
+                                        if (codec !in codecs) codec = "Any"
+                                        val bSet = mutableSetOf<Int>()
+                                        for (s in mediaSpecs.audioSpecs?:listOf()) buildBRSet(s, bSet)
+                                        bitRates = bSet.toList()
+                                        bitrate = 0
+                                        showProts = false
+                                    })
+                                }
                             }
                         }
                         var showCodecs by remember { mutableStateOf(false) }
@@ -387,18 +420,20 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                         Text(stringResource(R.string.video)+":", color = textColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 3.dp))
                         Text(stringResource(R.string.video_stream_set_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
                         var showProts by remember { mutableStateOf(false) }
-                        Text("${stringResource(R.string.protocol)}: $protocol", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showProts = !showProts })
-                        if (showProts && protocols.size > 1) {
+                        Text("${stringResource(R.string.protocol)}: $vprot", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showProts = !showProts })
+                        if (showProts && vprots.size > 1) {
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
-                                for (index in protocols.indices) {
-                                    FilterChip(label = { Text(protocols[index]) }, selected = protocol==protocols[index], border = filterChipBorder(protocol==protocols[index]), onClick = {
-                                        protocol = protocols[index]
+                                for (index in vprots.indices) {
+                                    FilterChip(label = { Text(vprots[index]) }, selected = vprot==vprots[index], border = filterChipBorder(vprot==vprots[index]), onClick = {
+                                        vprot = vprots[index]
+                                        val vSpecs = if (useMuxed) mediaSpecs.muxedSpecs else mediaSpecs.videoSpecs
+                                        Logd(TAG) { "shoose vprot: $vprot ${vSpecs?.size}"}
                                         val cSet = mutableSetOf("Any")
-                                        for (s in mediaSpecs.videoSpecs?:listOf()) buildVCodecSet(s, cSet)
+                                        for (s in vSpecs?:listOf()) buildVCodecSet(s, cSet)
                                         vcodecs = cSet.toList()
                                         if (vcodec !in vcodecs) vcodec = "Any"
                                         val rSet = mutableSetOf<String>()
-                                        for (s in mediaSpecs.videoSpecs?:listOf()) buildResoSet(s, rSet)
+                                        for (s in vSpecs?:listOf()) buildResoSet(s, rSet)
                                         resolutions = rSet.toList()
                                         resolution = null
                                         showProts = false
@@ -436,7 +471,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                     if (reset) Button(onClick = {
                         setAudioStream(locale, codec, bitrate)
                         resolution?.let { useResolution = it }
-                        vcodec?.let { useVCodex = it }
+                        useVCodex = vcodec
                         confirmCB(useVideo, useMuxed)
                         reset = false
                         onDismiss()

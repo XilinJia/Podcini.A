@@ -18,12 +18,9 @@ import ac.mdiq.podcini.utils.NetworkUtils.getURIFromRequestUrl
 import ac.mdiq.podcini.utils.NetworkUtils.isNetworkUrl
 import ac.mdiq.podcini.utils.NetworkUtils.wasDownloadBlocked
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
-import ac.mdiq.podcini.utils.startTiming
-import ac.mdiq.podcini.utils.timeIt
 import android.os.SystemClock
 import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.HttpTimeoutConfig
-import io.ktor.client.plugins.onDownload
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.header
 import io.ktor.client.request.prepareGet
@@ -58,17 +55,17 @@ sealed class DownloadStatus {
     data class Failed(val reason: String? = null) : DownloadStatus()
 }
 
-open class Downloader(val request: DownloadRequest) {
+class Downloader(val request: DownloadRequest) {
+    private val downloadDispatcher = Dispatchers.IO.limitedParallelism(3)
+
     var cancelled: Boolean
     var permanentRedirectUrl: String? = null
     val result: DownloadResult
 
-    protected val downloadDispatcher = Dispatchers.IO.limitedParallelism(3)
-
     init {
-        this.request.statusMsg = (R.string.download_pending)
-        this.cancelled = false
-        this.result = DownloadResult(this.request.feedfileId, this.request.title?:"", null, false, "", this.request.feedfileType, nowInMillis())
+        request.statusMsg = (R.string.download_pending)
+        cancelled = false
+        result = DownloadResult(request.feedfileId, request.title?:"", null, false, "", request.feedfileType, nowInMillis())
     }
 
     suspend fun downloadFeed(cb: suspend (Source)->Unit) {
@@ -231,7 +228,7 @@ open class Downloader(val request: DownloadRequest) {
         if (p == lastReported) return
         lastReported = p
         request.progressPercent = p
-        Logd(TAG) { "reportProgress $p"}
+//        Logd(TAG) { "reportProgress $p"}
         downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Running(p)) }
     }
 
@@ -352,7 +349,7 @@ open class Downloader(val request: DownloadRequest) {
         cancelled = true
     }
 
-    protected fun callOnFailByResponseCode(response: HttpResponse) {
+    private fun callOnFailByResponseCode(response: HttpResponse) {
         val statusCodeInt = response.status.value
         val details = statusCodeInt.toString()
         val error: DownloadError = when (response.status) {
@@ -364,7 +361,7 @@ open class Downloader(val request: DownloadRequest) {
         onFail(error, details)
     }
 
-    protected fun checkIfRedirect(response: HttpResponse) {
+    private fun checkIfRedirect(response: HttpResponse) {
         val isRedirect = response.status.value in 300..399
         if (!isRedirect) return
         val location = response.headers["Location"] ?: return
@@ -381,14 +378,14 @@ open class Downloader(val request: DownloadRequest) {
         }
     }
 
-    protected fun onFail(reason: DownloadError, reasonDetailed: String?) {
+    private fun onFail(reason: DownloadError, reasonDetailed: String?) {
         Logs(TAG, "onFail() called with: reason = [$reason], reasonDetailed = [$reasonDetailed]")
         result.isSuccessful = false
         result.reason = reason
         result.addDetail(reasonDetailed?:"")
     }
 
-    protected fun onCancelled() {
+    private fun onCancelled() {
         Logd(TAG) { "Download was cancelled" }
         result.isSuccessful = false
         result.reason = DownloadError.ERROR_DOWNLOAD_CANCELLED

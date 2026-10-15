@@ -88,6 +88,11 @@ class PlaybackStarter(private val media: Episode) {
                 Logd(TAG) { "start: statusFlow: ${player.status} sameMedia: $sameMedia" }
                 player.isStreaming = shouldStreamThisTime
                 player.widgetId = widgetId
+                if (!isAutoController && (!player.isPlaying || media_.id != player.curMediaFlow.value?.id) && (media_.forceVideo || (media_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && media_.mediaType == MediaType.VIDEO))) {
+//                    player.playingVideoFlow.value = true
+                    psState = PSState.Expanded
+                }
+//                else player.playingVideoFlow.value = false
                 when {
                     player.isPlaying -> {
                         player.pause(false)
@@ -124,11 +129,6 @@ class PlaybackStarter(private val media: Episode) {
                     }
                 }
                 forcePlaybackReset = false
-
-                if (!isAutoController && (media_.forceVideo || (media_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && media_.mediaType == MediaType.VIDEO))) {
-                    player.playingVideoFlow.value = true
-                    psState = PSState.Expanded
-                } else player.playingVideoFlow.value = false
             }
 
             aCtrlFuture?.let { future ->

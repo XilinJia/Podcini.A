@@ -543,7 +543,7 @@ fun FeedsSettingsScreen() {
             val haveMultiQ = remember(feedsToSet.size) { (feedsToSet.size > 1 && clientsHaveMultiQ()) }
             if (extClient?.attributes?.hasMultiQualities == true || feedToSet.isSynthetic() || haveMultiQ) {
                 //                    audio quality
-                if ((!feedToSet.useMuxedVideo && (extClient?.attributes?.hasSeparateAVs == true || feedToSet.isSynthetic())) || haveMultiQ) Column {
+                if (extClient?.attributes?.hasVideo != true || (!feedToSet.useMuxedVideo && (extClient.attributes?.hasSeparateAVs == true || feedToSet.isSynthetic())) || haveMultiQ) Column {
                     var showDialog by remember { mutableStateOf(false) }
                     if (showDialog) SetAVQuality(selectedOption = audioQuality, onDismiss = { showDialog = false }) { type ->
                         audioQuality = type.tag
@@ -578,7 +578,7 @@ fun FeedsSettingsScreen() {
                     }
                     Text(text = stringResource(R.string.pref_feed_audio_quality_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
                 }
-                if (feedToSet.useMuxedVideo || feedToSet.videoModePolicy != VideoMode.AUDIO_ONLY || extClient?.attributes?.hasSeparateAVs == false || feedToSet.isSynthetic() || haveMultiQ) {
+                if (extClient?.attributes?.hasVideo == true && (feedToSet.useMuxedVideo || feedToSet.videoModePolicy != VideoMode.AUDIO_ONLY || extClient.attributes?.hasSeparateAVs == false || feedToSet.isSynthetic()) || haveMultiQ) {
                     //                    video quality
                     Column {
                         var showDialog by remember { mutableStateOf(false) }

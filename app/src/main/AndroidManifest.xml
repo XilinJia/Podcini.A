@@ -193,7 +193,7 @@
 
         <activity
             android:name=".activity.QueuePickerActivity"
-            android:theme="@style/Theme.Material3.DayNight.Dialog"
+            android:theme="@style/Theme.Podcini.QueuePicker"
             android:taskAffinity=""
             android:excludeFromRecents="true"
             android:exported="false" />

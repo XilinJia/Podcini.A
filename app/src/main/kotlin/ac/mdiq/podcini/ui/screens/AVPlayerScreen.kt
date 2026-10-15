@@ -477,10 +477,10 @@ fun ControlUI(vm: AVPlayerVM) {
                         recordingStartTime = null
                     }
                     Logd(TAG) { "Play button clicked: playing: ${player?.playWhenReadyFlow?.value} is ready: ${playbackService?.isServiceReady()}" }
+//                    if (episode!!.mediaType == MediaType.VIDEO && (player?.isPlaying != true || episode?.id != player.curMediaFlow.value?.id) && (vm.episodeFeed?.videoModePolicy != VideoMode.AUDIO_ONLY)) {
+//                        if (!vm.showPlayButton && psState != PSState.Expanded) psState = PSState.Expanded
+//                    }
                     PlaybackStarter(episode!!).shouldStreamThisTime(null).start(vm.playerId)
-                    if (episode?.mediaType == MediaType.VIDEO && player?.isPlaying != true && (vm.episodeFeed?.videoModePolicy != VideoMode.AUDIO_ONLY)) {
-                        if (!vm.showPlayButton && psState != PSState.Expanded) psState = PSState.Expanded
-                    }
                 }
             },
             onLongClick = {
@@ -900,7 +900,7 @@ fun AVPlayerScreen() {
             }
         }
 
-        if (showAVChooser && player != null) player.avStreams.StreamChanger(needVideo = playingVideo, needMuxedVideo = player.playingMuxedVideo, onDismiss = { showAVChooser = false}) { useVideo, useMuxed->
+        if (showAVChooser && player != null) player.avStreams.StreamChanger(needVideo = playingVideo, needMuxed = player.playingMuxedVideo, onDismiss = { showAVChooser = false}) { useVideo, useMuxed->
             appMainScope.launch {
                 Logd(TAG) { "before restart episode ${episode.forceVideo}" }
                 player.pause(false)

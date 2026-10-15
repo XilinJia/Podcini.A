@@ -433,17 +433,17 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                         Text(stringResource(ButtonTypes.TTS_NOW.labelRes))
                     }
                 }
-                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.DELETE)) {
+                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.DELETE, ButtonTypes.CANCEL)) {
                     val client = clientByEpisode(item)
                     if (client?.supportDownload != false) OptionRow(ButtonTypes.DOWNLOAD, true)
                 }
-                if (type !in listOf(ButtonTypes.STREAM, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.DELETE)) OptionRow(ButtonTypes.DELETE, true)
-                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD)) OptionRow(ButtonTypes.PLAY_REPEAT, true)
-                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD)) OptionRow(ButtonTypes.PLAY, true)
-                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD)) OptionRow(ButtonTypes.PLAY_ONE, true)
+                if (type !in listOf(ButtonTypes.STREAM, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL, ButtonTypes.DELETE)) OptionRow(ButtonTypes.DELETE, true)
+                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY_REPEAT, true)
+                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY, true)
+                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY_ONE, true)
                 if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DELETE)) OptionRow(ButtonTypes.STREAM_REPEAT, true)
-                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DELETE)) OptionRow(ButtonTypes.STREAM, true)
-                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DELETE)) OptionRow(ButtonTypes.STREAM_ONE, true)
+                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DELETE)) OptionRow(ButtonTypes.STREAM, true)
+                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.DELETE)) OptionRow(ButtonTypes.STREAM_ONE, true)
                 if (type == ButtonTypes.PAUSE) OptionRow(ButtonTypes.REPEAT_THIS)
                 if (type != ButtonTypes.WEBSITE) OptionRow(ButtonTypes.WEBSITE)
             }

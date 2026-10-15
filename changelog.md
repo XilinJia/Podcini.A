@@ -1,3 +1,20 @@
+# 12.16.1
+
+* amended action buttons alternatives
+* in Player
+	* ensure to properly handle audio protocols
+	* if external client fails to build media source, break out early
+	* toast use muxed video only on fallback status
+	* pause video doesn't re-expand PlayDetailed
+* tuned modes and quality settings in FeedSettings
+* disabled downloading SoundCloud media
+* in Stream Composer
+	* if attribute has a single option, show the option
+	* fixed setting for muxed video
+	* enabled audio streams when feed has no video
+	* added protocol selection for audio streams
+* amended layout of QueuePicker from widget
+
 # 12.16.0
 
 * PodciniLib upped to 1.1.6, external apps (if used) need to be updated for compatibility

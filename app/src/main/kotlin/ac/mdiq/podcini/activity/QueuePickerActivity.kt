@@ -51,8 +51,8 @@ class QueuePickerActivity : ComponentActivity() {
         val spinnerTexts = queuesLive.map { "${if (it.id == actQueueFlow.value.id) "> " else ""}${it.name} : ${it.size()}" }
         setContent {
             PodciniTheme(AppThemes.BLACK) {
-                Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                    Column(modifier = Modifier.padding(24.dp)) {
+                Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp, modifier = Modifier.fillMaxWidth().padding(5.dp)) {
+                    Column(modifier = Modifier.padding(5.dp)) {
                         Text(text = "Select queue", style = MaterialTheme.typography.headlineSmall)
                         Spacer(modifier = Modifier.height(16.dp))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {

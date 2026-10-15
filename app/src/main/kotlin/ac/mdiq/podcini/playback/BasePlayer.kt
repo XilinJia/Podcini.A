@@ -207,9 +207,9 @@ abstract class BasePlayer {
         } else null
         when {
             episode_ != null -> {
+                playingMuxedVideo = false
                 avStreams = AVStreams(episode_)
                 curMediaFlow.value = episode_
-//                curClient = clientByEpisode(episode_)
                 playingVideoFlow.value = !isAutoController && (episode_.forceVideo || (episode_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && episode_.mediaType == MediaType.VIDEO))
                 skipSilence = null
                 shouldRepeatFlow.value = false
@@ -449,15 +449,9 @@ abstract class BasePlayer {
                     handlePlayerStatus(PlayerStatus.INITIALIZED, curMediaFlow.value)
                     if (prepareImmediately) prepareInitialized()
                 }
-            } catch (e: IOException) {
-                LogsFor(TAG, curMediaFlow.value?.id, e, "prepareMedia failed ${e.localizedMessage ?: ""}")
-                withContext(Dispatchers.Main) { handlePlayerStatus(PlayerStatus.ERROR, curMediaFlow.value) }
-            } catch (e: IllegalStateException) {
-                LogsFor(TAG, curMediaFlow.value?.id, e, "prepareMedia failed ${e.localizedMessage ?: ""}")
-                withContext(Dispatchers.Main) { handlePlayerStatus(PlayerStatus.ERROR, curMediaFlow.value) }
             } catch (e: Throwable) {
                 withContext(Dispatchers.Main) { handlePlayerStatus(PlayerStatus.ERROR, curMediaFlow.value) }
-                LogsFor(TAG, curMediaFlow.value?.id, e, "setDataSource error: [${e.localizedMessage}]")
+                LogsFor(TAG, curMediaFlow.value?.id, e, "prepareMedia error: [${e.localizedMessage}]")
             } finally { }
         }
     }

@@ -253,6 +253,7 @@ object AppGatewayRegistry {
                         val versionMatched = attr.apiVersion == PROVIDER_API_VERSION
                         if (recognized && versionMatched) {
                             client.attributes = attr
+                            if (attr.feedType == FeedType.SoundCloud.name) client.supportDownload = false
                             client.gateway = remote
                             client.connection = this
                             val aidlSearchProvider = client.gateway?.searchProvider
