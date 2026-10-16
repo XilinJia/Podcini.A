@@ -11,7 +11,7 @@ import ac.mdiq.podcini.playback.SleepManager.Companion.setIfAutoEnable
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AVStreams
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.allowForAutoDelete
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.checkAndMarkDuplicates
@@ -19,6 +19,7 @@ import ac.mdiq.podcini.storage.database.createSynthetic
 import ac.mdiq.podcini.storage.database.curIndexInActQueue
 import ac.mdiq.podcini.storage.database.deleteMedia
 import ac.mdiq.podcini.storage.database.episodeById
+import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
@@ -199,7 +200,7 @@ abstract class BasePlayer {
             val e = episodeById(episode.id)
             if (e == null) {
                 val name = "Remote history"
-                val f = allFeeds.firstOrNull { it.title == name } ?: upsertBlk(createSynthetic(0, name, true)) {}
+                val f = feedsMap.values.firstOrNull { it.title == name } ?: upsertBlk(createSynthetic(0, name, true)) {}
                 Logd(TAG) { "adding to feed Remote history ${f.id} ${episode.id} ${episode.title}" }
                 episode.feedId = f.id
                 upsertBlk(episode) { }
@@ -704,7 +705,7 @@ abstract class BasePlayer {
         cancelPositionSaver()
 //        serviceMainScope.launch { persistCurrentPosition(position == Episode.INVALID_TIME || playable == null, playable, position) }
         Logd(TAG) { "onPlaybackPause start ${playable?.timeSpent}" }
-        playable?.let { SynchronizationQueueSink.enqueueEpisodePlayedIfSyncActive(it, false) }
+        playable?.let { SynchronizationQueueSink.enqueueSyncEpisodePlayed(it, false) }
     }
 
     private fun onPostPlayback(playable: Episode, ended: Boolean, skipped: Boolean, playingNext: Boolean) {
@@ -719,7 +720,7 @@ abstract class BasePlayer {
             autoSkipped = true
         }
         val completed = ended || smartMarkAsPlayed
-        SynchronizationQueueSink.enqueueEpisodePlayedIfSyncActive(playable, completed)
+        SynchronizationQueueSink.enqueueSyncEpisodePlayed(playable, completed)
 
         fun shouldSetPlayed(e: Episode): Boolean {
             return when (e.playState) {

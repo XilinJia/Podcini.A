@@ -6,10 +6,11 @@ import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.sourcing.download.DownloadError
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.addNewFeed
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.feedByIdentityOrID
-import ac.mdiq.podcini.storage.database.getFeed
+import ac.mdiq.podcini.storage.database.feedById
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
@@ -122,7 +123,7 @@ suspend fun loadLocalFolder(uri: Uri, feedsExist: List<Feed> = listOf()) {
         }
         if (feeds.isNotEmpty()) FeedUpdater(feeds, doItAnyway = true).start()
         Logt(TAG, "loadLocalFolder Imported ${feeds.size} local feeds in ${volumes.size} volumes")
-        for (f in allFeeds) Logd(TAG) { "loadLocalFolder feed: ${f.id} ${f.title} episodesCount: ${f.episodesCount}" }
+        for (f in feedsMap.values) Logd(TAG) { "loadLocalFolder feed: ${f.id} ${f.title} episodesCount: ${f.episodesCount}" }
     } catch (e: Throwable) {
         Logs(TAG, e, e.localizedMessage ?: "No messaage")
     }
@@ -298,7 +299,7 @@ suspend fun updateLocalFeed(feed: Feed, progressCB: ((Int, Int)->Unit)? = null) 
         val lastDownloadResult = downloadResults[downloadResults.size - 1]
         return !lastDownloadResult.isSuccessful
     }
-    getFeed(feed.id)?.let { f->
+    feedsMap[feed.id]?.let { f->
         if (mustReportDownloadSuccessful(f)) {
             DownloadResult.logDownloadResult(DownloadResult(f, DownloadError.SUCCESS, true, ""))
             upsert(f) { it.lastUpdateFailed = false }

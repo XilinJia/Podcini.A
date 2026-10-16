@@ -3,10 +3,10 @@ package ac.mdiq.podcini.storage.model
 import ac.mdiq.podcini.utils.NetworkUtils.isImageDownloadAllowed
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.mediaKtor
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.episodeById
+import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.upsert

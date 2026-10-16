@@ -3,7 +3,8 @@ package ac.mdiq.podcini.storage.model
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.FeedIPC
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.getFeed
+import ac.mdiq.podcini.storage.database.feedById
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.upsertBlk
@@ -336,26 +337,9 @@ class Feed : RealmObject {
     var autoDLEQs: RealmList<AutoDLEQ> = realmListOf()
     // ============ auto-download/enqueue ==============
 
-
-    // ========================= TODO: probably not needed
-    /**
-     * The page number that this feed is on. Only feeds with page number "0" should be stored in the
-     * database, feed objects with a higher page number only exist temporarily and should be merged
-     * into feeds with page number "0".
-     * This attribute's value is not saved in the database
-     */
     @Ignore
     var pageNr: Int = 0
-    /**
-     * True if this is a "paged feed", i.e. there exist other feed files that belong to the same
-     * logical feed.
-     */
-    var isPaged: Boolean = false
-    /**
-     * Link to the next page of this feed. If this feed object represents a logical feed (i.e. a feed
-     * that is saved in the database) this might be null while still being a paged feed.
-     */
-    var nextPageLink: String? = null
+    var nextPageLink: String? = null    // should only need the one on page 0
     // ==================================
 
     constructor() : super()
@@ -401,10 +385,10 @@ class Feed : RealmObject {
 
         // this feed's nextPage might already point to a higher page, so we only update the nextPage value
         // if this feed is not paged and the other feed is.
-        if (!isPaged && other.isPaged) {
-            isPaged = other.isPaged
-            nextPageLink = other.nextPageLink
-        }
+//        if (!isPaged && other.isPaged) {
+//            isPaged = other.isPaged
+//            nextPageLink = other.nextPageLink
+//        }
 
         if (includingPrefs) {
 //            if (preferences == null) preferences = FeedPreferences(id, false, AutoDeleteAction.GLOBAL, VolumeAdaptionSetting.OFF, "", "")
@@ -426,7 +410,6 @@ class Feed : RealmObject {
         if (other.description != null && (description == null || description != other.description)) return true
         if (other.author != null && (author == null || author != other.author)) return true
         if (other.fundings.isNotEmpty() && (fundings.isEmpty() || fundings != other.fundings)) return true
-        if (other.isPaged && !isPaged) return true
         if (other.nextPageLink != nextPageLink) return true
         return false
     }
@@ -491,7 +474,6 @@ class Feed : RealmObject {
         if (lastUpdateTime != other.lastUpdateTime) return false
         if (lastFullUpdateTime != other.lastFullUpdateTime) return false
         if (pageNr != other.pageNr) return false
-        if (isPaged != other.isPaged) return false
         if (lastUpdateFailed != other.lastUpdateFailed) return false
         if (totleDuration != other.totleDuration) return false
         if (hasVideoMedia != other.hasVideoMedia) return false
@@ -567,7 +549,6 @@ class Feed : RealmObject {
         result = 31 * result + lastUpdateTime.hashCode()
         result = 31 * result + lastFullUpdateTime.hashCode()
         result = 31 * result + pageNr
-        result = 31 * result + isPaged.hashCode()
         result = 31 * result + lastUpdateFailed.hashCode()
         result = 31 * result + totleDuration.hashCode()
         result = 31 * result + hasVideoMedia.hashCode()
@@ -731,7 +712,7 @@ fun Feed.toDTO() = FeedDTO(
 
 fun FeedDTO.toFeed(): Feed = Feed().apply {
     id = this@toFeed.id
-    val feed = getFeed(id) ?: this
+    val feed = feedsMap[id] ?: this
     return upsertBlk(feed) {
         if (it.downloadUrl == null) it.downloadUrl = this@toFeed.downloadUrl
         if (it.eigenTitle == null) it.eigenTitle = this@toFeed.eigenTitle

@@ -1,7 +1,8 @@
 package ac.mdiq.podcini.storage.model
 
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.deleteFeed
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.upsertBlk
@@ -172,7 +173,7 @@ fun Volume.allChildren(): List<Volume> {
 
 suspend fun deleteVolumeTree(volume: Volume) {
     Logd(TAG) { "deleteVolumeTree volume: ${volume.name}" }
-    val feeds_ = allFeeds.filter { it.volumeId == volume.id }
+    val feeds_ = feedsMap.values.filter { it.volumeId == volume.id }
     for (f in feeds_) {
         val worthyEps = f.worthyEpisodes
         deleteFeed(f.id, worthyEps.isNotEmpty())

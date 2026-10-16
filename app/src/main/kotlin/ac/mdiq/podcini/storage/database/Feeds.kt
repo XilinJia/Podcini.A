@@ -23,6 +23,7 @@ import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logt
 import android.app.backup.BackupManager
+import io.github.xilinjia.krdb.MutableRealm
 import io.github.xilinjia.krdb.ext.isManaged
 import io.github.xilinjia.krdb.notifications.ResultsChange
 import io.github.xilinjia.krdb.notifications.UpdatedResults
@@ -31,23 +32,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlin.collections.set
 
 private const val TAG: String = "Feeds"
 
-var allFeeds = realm.query(Feed::class).find()
-var feedsMap: Map<Long, Feed> = allFeeds.associateBy { it.id }
+var feedsMap: Map<Long, Feed> = realm.query(Feed::class).find().associateBy { it.id }
 
 val feedCountFlow = MutableStateFlow(-1)
 
 @Synchronized
 fun getFeedList(queryString: String = ""): List<Feed> {
-    return if (queryString.isEmpty()) allFeeds
+    return if (queryString.isEmpty()) feedsMap.values.toList()
     else realm.query(Feed::class, queryString).find()
 }
 
 fun compileLanguages() {
     val langsSet = mutableSetOf<String>()
-    for (feed in allFeeds) {
+    for (feed in feedsMap.values) {
         val langs = feed.langSet
         if (langs.isNotEmpty()) langsSet.addAll(langs)
         else langsSet.add("")
@@ -58,7 +59,7 @@ fun compileLanguages() {
 
 fun compileTags() {
     val tagsSet = mutableSetOf<String>()
-    for (feed in allFeeds) tagsSet.addAll(feed.tags.filter { it != TAG_ROOT })
+    for (feed in feedsMap.values) tagsSet.addAll(feed.tags.filter { it != TAG_ROOT })
     runOnIOScope { if (!appAttribsFlow!!.value.feedTagSet.containsAll(tagsSet)) upsert(appAttribsFlow!!.value) { it.feedTagSet.addAll(tagsSet) } }
 }
 
@@ -72,9 +73,8 @@ fun monitorFeeds() {
     if (feedMonitorJob != null) return
     feedMonitorJob = CoroutineScope(Dispatchers.IO).launch {
         realm.query(Feed::class).asFlow().collect { changes: ResultsChange<Feed> ->
-            allFeeds = changes.list
-            feedsMap = allFeeds.associateBy { it.id }
-            Logd(TAG) { "monitorFeedList feeds updated size: ${allFeeds.size}" }
+            feedsMap = changes.list.associateBy { it.id }
+            Logd(TAG) { "monitorFeedList feeds updated size: ${feedsMap.size}" }
             when (changes) {
                 is UpdatedResults -> {
                     when {
@@ -96,12 +96,12 @@ fun monitorFeeds() {
                 }
                 else -> Logd(TAG) { "monitorFeedList other $changes" }
             }
-            feedCountFlow.value = allFeeds.size
+            feedCountFlow.value = feedsMap.size
         }
     }
 }
 
-fun getFeed(feedId: Long, copy: Boolean = false): Feed? {
+fun feedById(feedId: Long, copy: Boolean = false): Feed? {
     val f = feedsMap[feedId]
     return if (f != null) {
         if (copy) realm.copyFromRealm(f) else f
@@ -110,14 +110,14 @@ fun getFeed(feedId: Long, copy: Boolean = false): Feed? {
 
 fun feedByIdentityOrID(feed: Feed, copy: Boolean = false): Feed? {
     Logd(TAG) { "feedByIdentityOrID isLocal: ${feed.isLocal} id: ${feed.id}" }
-    if (feed.id != 0L) return getFeed(feed.id, copy)
+    if (feed.id != 0L) return feedById(feed.id, copy)
     val feedIdv = feed.identifyingValue
     if (feed.isLocal) {
-        val f = allFeeds.firstOrNull { it.identifyingValue == feedIdv && it.volumeId == feed.volumeId }
+        val f = feedsMap.values.firstOrNull { it.identifyingValue == feedIdv && it.volumeId == feed.volumeId }
         Logd(TAG) { "feedByIdentityOrID local feed: ${f?.title}" }
         if (f != null) return if (copy) realm.copyFromRealm(f) else f
     } else {
-        val f = allFeeds.firstOrNull { it.identifyingValue == feedIdv }
+        val f = feedsMap.values.firstOrNull { it.identifyingValue == feedIdv }
         Logd(TAG) { "feedByIdentityOrID remote feed: ${f?.title}" }
         if (f != null) return if (copy) realm.copyFromRealm(f) else f
     }
@@ -239,7 +239,7 @@ suspend fun addToFeed(episode: Episode, toFeed: Feed, log: ShareLog? = null) {
 suspend fun addRemoteToMiscSyndicate(episode: Episode) {
     suspend fun getMiscSyndicate(): Feed {
         val feedId: Long = 11
-        var feed = getFeed(feedId, true)
+        var feed = feedById(feedId, true)
         if (feed != null) return feed
         feed = createSynthetic(feedId, "Misc Syndicate")
         feed.type = FeedType.RSS.name
@@ -325,6 +325,25 @@ suspend fun trimEpisodes(feed_: Feed): Int {
     return n
 }
 
+suspend fun trimEpisodes(feed_: Feed, episodes: MutableList<Episode>): Int {
+    var n = 0
+    if (feed_.limitEpisodesCount > 0) {
+        val count = realm.query(Episode::class).query("feedId == ${feed_.id} AND !(${feed_.isWorthyQuerryStr})").count().find().toInt()
+        if (count > feed_.limitEpisodesCount*1.2) {
+            val f = feedByIdentityOrID(feed_, true) ?: return n
+            val dc = count - f.limitEpisodesCount*1.2
+            if (f.sortForTrim != EpisodeSortOrder.DATE_DESC) episodes.reorderWith(fromCode(f.sortForTrim.reverseCode()))
+            val it = episodes.iterator()
+            while(it.hasNext()) {
+                it.remove()
+                if (n++ >= dc) break
+            }
+        }
+    }
+    return n
+}
+
+
 suspend fun sumup(feed: Feed) {
     val episodes = getEpisodes(null, null, feedId= feed.id, copy = false)
     Logd(TAG) { "sumup feed: ${feed.title} episodes: ${episodes.size}" }
@@ -350,126 +369,88 @@ suspend fun sumup(feed: Feed) {
     }
 }
 
-// savedFeedId == 0L means saved feed
-class FeedAssistant(val feed: Feed, savedFeedId: Long = 0L, isNew: Boolean = false) {
-    val map = mutableMapOf<String, MutableList<Episode>>()
-    val tag: String = if (savedFeedId == 0L) "Saved feed" else "New feed"
+fun MutableRealm.guessDuplicates(item: Episode, feed: Feed): List<Episode> {
+    val rq = query(Episode::class)
+    var existings: List<Episode> = listOf()
+    if (!item.identifier.isNullOrBlank()) existings = rq.query("feedId == $0 AND identifier == $1", feed.id, item.identifier).find()
+    if (existings.isEmpty() && !item.downloadUrl.isNullOrBlank()) existings = rq.query("feedId == $0 AND downloadUrl == $1", feed.id, item.downloadUrl).find()
+    if (existings.isEmpty() && !item.title.isNullOrBlank()) existings = rq.query("feedId == $0 AND title == $1", feed.id, item.title).find()
+    return existings
+}
 
-    init {
-        val iterator = if (isNew) feed.episodes.iterator() else getEpisodes(null, null, feedId=feed.id, copy = true).iterator()
-        while (iterator.hasNext()) {
-            val e = iterator.next()
-//            Logd(TAG) { "FeedAssistant init $tag ${e.title}" }
-            if (!e.identifier.isNullOrEmpty()) {
-                Logd(TAG) { "FeedAssistant init $tag identifier ${e.identifier}" }
-                if (map.containsKey(e.identifier!!)) {
-                    Logd(TAG) { "FeedAssistant init $tag identifier duplicate: ${e.identifier} ${e.title}" }
-                    map[e.identifier!!]!!.add(e)
-                } else map[e.identifier!!] = mutableListOf(e)
-            }
-            val idv = e.identifyingValue
-            if (idv != e.identifier && !idv.isNullOrEmpty()) {
-//                Logd(TAG) { "FeedAssistant init $tag identifyingValue ${e.identifyingValue}" }
-                if (map.containsKey(idv)) {
-                    Logd(TAG) { "FeedAssistant init $tag identifyingValue duplicate: $idv ${e.title}" }
-                    map[idv]!!.add(e)
-                } else map[idv] = mutableListOf(e)
-            }
-            val url = e.downloadUrl
-            if (url != idv && !url.isNullOrEmpty()) {
-                if (map.containsKey(url)) {
-                    Logd(TAG) { "FeedAssistant init $tag url duplicate: $url ${e.title}" }
-                    map[url]!!.add(e)
-                } else map[url] = mutableListOf(e)
-            }
-            val title = canonicalizeTitle(e.title)
-            if (title != idv && title.isNotEmpty()) {
-                if (map.containsKey(title)) {
-                    Logd(TAG) { "FeedAssistant init $tag title duplicate: $title ${e.title}" }
-                } else map[title] = mutableListOf(e)
-            }
+fun episodesByIdentifyingValue(item: Episode, feed:Feed): List<Episode> {
+    val rq = realm.query(Episode::class).query("feedId == ${feed.id}")
+    val q = when {
+        !item.identifier.isNullOrEmpty() -> rq.query("identifier == $0", item.identifier)
+        !item.title.isNullOrEmpty() -> rq.query("title == $0", item.title)
+        else -> rq.query("downloadUrl == $0", item.downloadUrl)
+    }
+    return q.find()
+}
+
+suspend fun cleanUp(feed: Feed) {
+    val map = mutableMapOf<String, MutableList<Long>>()
+    var iterator = getEpisodes(null, null, feedId=feed.id, copy = true).iterator()
+//    val iterator = listOf<Episode>().iterator()
+    while (iterator.hasNext()) {
+        val e = iterator.next()
+        //            Logd(TAG) { "FeedAssistant init $tag ${e.title}" }
+        if (!e.identifier.isNullOrEmpty()) {
+            Logd(TAG) { "cleanUp identifier ${e.identifier}" }
+            if (map.containsKey(e.identifier!!)) {
+                Logd(TAG) { "cleanUp identifier duplicate: ${e.identifier} ${e.title}" }
+                map[e.identifier!!]!!.add(e.id)
+            } else map[e.identifier!!] = mutableListOf(e.id)
         }
-        if (savedFeedId == 0L) {
-            for ((k, v) in map.entries) {
-                if (v.size < 2) continue
-                Logd(TAG) { "FeedAssistant removing ${v.size-1} duplicates on $k" }
-                var episode = v[0]
-                val ecs = v.sortedByDescending { it.comment.length }
-                val comment = if (ecs[0].comment.isBlank()) "" else {
-                    var c = ecs[0].comment
-                    for (i in 1..<ecs.size) if (ecs[i].comment.isNotBlank()) c += "\n" + ecs[i].comment
-                    c
-                }
-                val ers = v.sortedByDescending { it.rating }
-                if (ers[0].rating > Rating.UNRATED.code) {
-                    episode = if (ers[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(ers[0]) { it.addComment(comment) } else ers[0]
-                    runOnIOScope { realm.write { for (i in 1..<ers.size) query(Episode::class).query("id == ${ers[i].id}").first().find()?.let { delete(it) } } }
-                } else {
-                    val eps = v.sortedByDescending { it.lastPlayedTime }
-                    if (eps[0].lastPlayedTime > 0L) {
-                        episode = if (eps[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(eps[0]) { it.addComment(comment) } else eps[0]
-                        runOnIOScope { realm.write { for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) } } }
-                    } else {
-                        val eps = v.sortedByDescending { it.pubDate }
-                        episode = if (eps[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(eps[0]) { it.addComment(comment) } else eps[0]
-                        runOnIOScope { realm.write { for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) } } }
-                    }
-                }
-                map[k] = mutableListOf(episode)
-            }
+        val idv = e.identifyingValue
+        if (idv != e.identifier && !idv.isNullOrEmpty()) {
+            //                Logd(TAG) { "FeedAssistant init $tag identifyingValue ${e.identifyingValue}" }
+            if (map.containsKey(idv)) {
+                Logd(TAG) { "cleanUp identifyingValue duplicate: $idv ${e.title}" }
+                map[idv]!!.add(e.id)
+            } else map[idv] = mutableListOf(e.id)
+        }
+        val url = e.downloadUrl
+        if (url != idv && !url.isNullOrEmpty()) {
+            if (map.containsKey(url)) {
+                Logd(TAG) { "cleanUp url duplicate: $url ${e.title}" }
+                map[url]!!.add(e.id)
+            } else map[url] = mutableListOf(e.id)
+        }
+        val title = canonicalizeTitle(e.title)
+        if (title != idv && title.isNotEmpty()) {
+            if (map.containsKey(title)) {
+                Logd(TAG) { "cleanUp title duplicate: $title ${e.title}" }
+            } else map[title] = mutableListOf(e.id)
         }
     }
-    //        fun addUrlToMap(episode: Episode) {
-    //            val url = episode.downloadUrl
-    //            if (url != episode.identifyingValue && !url.isNullOrEmpty() && !map.containsKey(url)) map[url] = episode
-    //        }
-    fun addidvToMap(episode: Episode) {
-        val idv = episode.identifyingValue
-        if (idv != episode.identifier && !idv.isNullOrEmpty()) {
-            if (map.containsKey(idv)) map[idv]!!.add(episode)
-            else map[idv] = mutableListOf(episode)
+    for ((k, vi) in map.entries) {
+        if (vi.size < 2) continue
+        val v = episodesByIds(vi)
+        Logd(TAG) { "cleanUp removing ${v.size-1} duplicates on $k" }
+        var episode = v[0]
+        val ecs = v.sortedByDescending { it.comment.length }
+        val comment = if (ecs[0].comment.isBlank()) "" else {
+            var c = ecs[0].comment
+            for (i in 1..<ecs.size) if (ecs[i].comment.isNotBlank()) c += "\n" + ecs[i].comment
+            c
         }
+        val ers = v.sortedByDescending { it.rating }
+        if (ers[0].rating > Rating.UNRATED.code) {
+            episode = if (ers[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(ers[0]) { it.addComment(comment) } else ers[0]
+            runOnIOScope { realm.write { for (i in 1..<ers.size) query(Episode::class).query("id == ${ers[i].id}").first().find()?.let { delete(it) } } }
+        } else {
+            val eps = v.sortedByDescending { it.lastPlayedTime }
+            if (eps[0].lastPlayedTime > 0L) {
+                episode = if (eps[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(eps[0]) { it.addComment(comment) } else eps[0]
+                runOnIOScope { realm.write { for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) } } }
+            } else {
+                val eps = v.sortedByDescending { it.pubDate }
+                episode = if (eps[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(eps[0]) { it.addComment(comment) } else eps[0]
+                runOnIOScope { realm.write { for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) } } }
+            }
+        }
+        map[k] = mutableListOf(episode.id)
+        sumup(feed)
     }
-//    private fun addDownloadStatus(episode: Episode, possibleDuplicate: Episode) {
-//        fun duplicateEpisodeDetails(episode: Episode): String {
-//            return ("""
-//                Title: ${episode.title}
-//                ID: ${episode.identifier}
-//                """.trimIndent() + """
-//
-//                URL: ${episode.downloadUrl}
-//                """.trimIndent())
-//        }
-//        addDownloadStatus(DownloadResult(savedFeedId, episode.title ?: "", DownloadError.ERROR_PARSER_EXCEPTION_DUPLICATE, false,
-//            """
-//                The podcast host appears to have added the same episode twice. Podcini still refreshed the feed and attempted to repair it.
-//
-//                Original episode:
-//                ${duplicateEpisodeDetails(episode)}
-//
-//                Second episode that is also in the feed:
-//                ${duplicateEpisodeDetails(possibleDuplicate)}
-//                """.trimIndent()))
-//    }
-    fun getEpisodeByIdentifyingValue(item: Episode): List<Episode>? = map[item.identifyingValue]
-    fun guessDuplicate(item: Episode): List<Episode>? {
-        var episodes = map[item.identifier]
-        if (!episodes.isNullOrEmpty()) return episodes
-        val url = item.downloadUrl
-        if (!url.isNullOrEmpty()) {
-            episodes = map[url]
-            if (!episodes.isNullOrEmpty()) return episodes
-        }
-        val title = canonicalizeTitle(item.title)
-        if (title.isNotEmpty()) {
-            episodes = map[title]
-            if (!episodes.isNullOrEmpty()) return episodes
-            //                if (!episodes.isNullOrEmpty()) {
-            //                    val e = episodes[0]
-            //                    if (datesLookSimilar(e, item) && durationsLookSimilar(e, item) && mimeTypeLooksSimilar(e, item)) return e
-            //                }
-        }
-        return null
-    }
-    fun clear() = map.clear()
 }

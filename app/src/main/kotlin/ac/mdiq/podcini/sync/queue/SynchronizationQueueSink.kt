@@ -4,6 +4,7 @@ import ac.mdiq.podcini.sync.LockingAsyncExecutor
 import ac.mdiq.podcini.sync.model.EpisodeAction
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.storage.database.syncPrefs
 import ac.mdiq.podcini.sync.SynchronizationSettings
 
 object SynchronizationQueueSink {
@@ -19,7 +20,7 @@ object SynchronizationQueueSink {
     }
 
     fun syncNowIfNotSyncedRecently() {
-        if (nowInMillis() - SynchronizationSettings.lastSyncAttempt > 1000 * 60 * 10) syncNow()
+        if (nowInMillis() - syncPrefs.LAST_SYNC_ATTEMPT_TIMESTAMP > 1000 * 60 * 10) syncNow()
     }
 
     fun clearQueue() {
@@ -50,7 +51,7 @@ object SynchronizationQueueSink {
         }
     }
 
-    fun enqueueEpisodePlayedIfSyncActive(media: Episode, completed: Boolean) {
+    fun enqueueSyncEpisodePlayed(media: Episode, completed: Boolean) {
         if (!SynchronizationSettings.isSyncProviderConnected) return
         if (media.feed?.isLocal == true) return
         if (media.startPosition < 0 || (!completed && media.startPosition >= media.position)) return
@@ -59,6 +60,18 @@ object SynchronizationQueueSink {
             .started(media.startPosition / 1000)
             .position((if (completed) media.duration else media.position) / 1000)
             .total(media.duration / 1000)
+            .build()
+        enqueueEpisodeActionIfSyncActive(action)
+    }
+
+    fun enqueueSyncEpisodeDuration(media: Episode) {
+        if (!SynchronizationSettings.isSyncProviderConnected) return
+        val durs = media.duration / 1000
+        val action = EpisodeAction.Builder(media, EpisodeAction.PLAY)
+            .currentTimestamp()
+            .started(durs)
+            .position(durs)
+            .total(durs)
             .build()
         enqueueEpisodeActionIfSyncActive(action)
     }

@@ -55,8 +55,6 @@ object FeedUpdateManager {
     private const val WORK_ID_FEED_UPDATE_MANUAL = "feedUpdateManual"
     internal const val EXTRA_FEED_IDS: String = "feedIds"
 
-    // TODO: not used
-    const val EXTRA_NEXT_PAGE: String = "next_page"
     const val EXTRA_FULL_UPDATE: String = "full_update"
     const val EXTRA_UPDATE_ANYWAY: String = "update_anyway"
 
@@ -130,7 +128,7 @@ object FeedUpdateManager {
         }
     }
 
-    fun runOnce(feeds: List<Feed> = listOf(), nextPage: Boolean = false, fullUpdate: Boolean = false, doItWanyway: Boolean = false, removeUnlisted: Boolean = false) {
+    fun runOnce(feeds: List<Feed> = listOf(), fullUpdate: Boolean = false, doItWanyway: Boolean = false, removeUnlisted: Boolean = false) {
         Logd(TAG) { "runOnce feeds: ${feeds.size}" }
         val workRequest: OneTimeWorkRequest.Builder = OneTimeWorkRequest.Builder(FeedUpdateWorker::class.java)
             .setInitialDelay(0L, TimeUnit.MILLISECONDS)
@@ -143,10 +141,7 @@ object FeedUpdateManager {
         builder.putBoolean(EXTRA_FULL_UPDATE, fullUpdate)
         builder.putBoolean(EXTRA_UPDATE_ANYWAY, doItWanyway)
         builder.putBoolean(EXTRA_ERASE_UNLISTED, removeUnlisted)
-        if (feeds.isNotEmpty()) {
-            builder.putLongArray(EXTRA_FEED_IDS, feeds.map { it.id }.toLongArray())
-            builder.putBoolean(EXTRA_NEXT_PAGE, nextPage)
-        }
+        if (feeds.isNotEmpty()) builder.putLongArray(EXTRA_FEED_IDS, feeds.map { it.id }.toLongArray())
         workRequest.setInputData(builder.build())
         WorkManager.getInstance(getAppContext()).enqueueUniqueWork(WORK_ID_FEED_UPDATE_MANUAL, ExistingWorkPolicy.REPLACE, workRequest.build())
     }

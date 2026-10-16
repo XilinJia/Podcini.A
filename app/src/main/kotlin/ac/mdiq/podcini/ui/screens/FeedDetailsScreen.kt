@@ -11,8 +11,8 @@ import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.sourcing.sendFeed
 import ac.mdiq.podcini.sourcing.typeClientMap
-import ac.mdiq.podcini.storage.database.FeedAssistant
 import ac.mdiq.podcini.storage.database.buildListInfo
+import ac.mdiq.podcini.storage.database.cleanUp
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesAsListFlow
 import ac.mdiq.podcini.storage.database.getHistoryAsFlow
@@ -344,11 +344,8 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
         ConfirmDialog(0, stringResource(R.string.reconnect_local_folder_warning), showConnectLocalFolderConfirm) {
             try { connectLocalFolderLauncher.launch(null) } catch (e: ActivityNotFoundException) { Logs(TAG, e, "No activity found. Should never happen...") }
         }
-
         if (showChooseRatingDialog) ChooseRatingDialog(listOf(feed!!)) { showChooseRatingDialog = false }
-
         if (showRemoveFeedDialog) RemoveFeedDialog(listOf(feed!!), onDismiss = { showRemoveFeedDialog = false }) { navBack() }
-
         if (feed != null && showFilterDialog) {
             vm.showHeader = false
             EpisodesFilterDialog(filter_ = feed!!.episodeFilter, onDismiss = {
@@ -359,7 +356,6 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                 runOnIOScope { upsert(feed!!) { it.episodeFilter = filter } }
             }
         }
-
         if (feed != null && showSortDialog) {
             vm.showHeader = false
             EpisodeSortDialog(initOrder = feed!!.episodeSortOrder, feed = feed, onDismiss = {
@@ -370,9 +366,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                 runOnIOScope { upsert(feed!!) { it.episodeSortOrder = order ?: EpisodeSortOrder.DATE_DESC } }
             }
         }
-
         swipeActions.ActionOptionsDialog()
-
         if (showTagsSettingDialog && feed != null) TagSettingDialog(TagType.Feed, feed!!.tags, onDismiss = { showTagsSettingDialog = false }) { tags ->
             runOnIOScope {
                 upsert(feed!!) {
@@ -381,7 +375,6 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                 }
             }
         }
-
         if (showToDeviceDialog) SendToDevice(onDismiss = { showToDeviceDialog = false}) { host, port ->
             runOnIOScope { sendFeed(host, port, feed!!.id) { showToDeviceDialog =  false } }
         }
@@ -423,7 +416,6 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     fun TopHeader() {
         var expanded by remember { mutableStateOf(false) }
         val buttonAltColor = lerp(MaterialTheme.colorScheme.tertiary, Color.Green, 0.5f)
-
         Box(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
             AsyncImage(model = feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, error = painterResource(R.drawable.teaser), contentDescription = "bgImage", contentScale = ContentScale.FillBounds, modifier = Modifier.matchParentSize().blur(radiusX = 5.dp, radiusY = 5.dp))
             Box(modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)))
@@ -497,8 +489,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                                     feedOperationText = context.getString(R.string.clean_up)
                                     runOnIOScope {
                                         val f = realm.copyFromRealm(feed!!)
-                                        FeedAssistant(f).clear()
-                                        upsert(f) {}
+                                        cleanUp(f)
                                         withContext(Dispatchers.Main) { feedOperationText = "" }
                                     }
                                     expanded = false

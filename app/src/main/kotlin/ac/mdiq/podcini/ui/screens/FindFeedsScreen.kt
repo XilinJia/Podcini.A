@@ -10,10 +10,11 @@ import ac.mdiq.podcini.sourcing.feed.loadLocalFolder
 import ac.mdiq.podcini.sourcing.searcher.FeedSearchers
 import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry.searcherInfos
 import ac.mdiq.podcini.sourcing.sourceClients
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.feedCountFlow
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.SearchHistorySize
@@ -132,7 +133,7 @@ class FindFeedsVM: ViewModel() {
         showProgress = true
         searchJob = viewModelScope.launch(Dispatchers.IO) {
             fun feedId(r: FeedSearchResult): Long {
-                for (f in allFeeds) if (f.downloadUrl == r.feedUrl) return f.id
+                for (f in feedsMap.values) if (f.downloadUrl == r.feedUrl) return f.id
                 return 0L
             }
             try {

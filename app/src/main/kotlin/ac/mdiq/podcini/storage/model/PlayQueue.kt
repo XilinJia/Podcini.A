@@ -3,8 +3,9 @@ package ac.mdiq.podcini.storage.model
 import ac.mdiq.podcini.automation.AutoDownloadAlgorithm
 import ac.mdiq.podcini.automation.AutoEnqueueAlgorithm
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.appPrefsFlow
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.persistOrdered
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.specs.EnqueueLocation
@@ -88,7 +89,7 @@ class PlayQueue : RealmObject {
 
     @Ignore
     val normalFeeds: List<Feed>
-        get() = allFeeds.filter { it.queueId == id && it.inNormalVolume }
+        get() = feedsMap.values.filter { it.queueId == id && it.inNormalVolume }
 
     fun contains(episode: Episode): Boolean = realm.query(QueueEntry::class).query("queueId == $id AND episodeId == ${episode.id}").count().find() > 0
 

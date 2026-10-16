@@ -215,7 +215,7 @@ object PodcastHandler {
             state.tagstack.addLast(element)
 //            Logd(TAG) { "startElement ${state.items.size} limitEpisodesCount: ${state.feed.limitEpisodesCount}" }
             if (state.feed.limitEpisodesCount > 0 && state.items.size > 1.2*state.feed.limitEpisodesCount) {
-                state.feed.episodes.clear()
+//                state.feed.episodes.clear()   TODO: test
                 state.feed.episodes.addAll(state.items)
                 throw ParsingLimitReachedException()
             }
@@ -269,7 +269,7 @@ object PodcastHandler {
         @Throws(SAXException::class)
         override fun endDocument() {
             super.endDocument()
-            state.feed.episodes.clear()
+//            state.feed.episodes.clear()   TODO: test
             state.feed.episodes.addAll(state.items)
         }
 
@@ -407,10 +407,7 @@ object PodcastHandler {
                                     }
                                 }
                                 LINK_REL_PAYMENT -> state.feed.addPayment(FeedFunding(href, ""))
-                                LINK_REL_NEXT -> {
-                                    state.feed.isPaged = true
-                                    state.feed.nextPageLink = href
-                                }
+                                LINK_REL_NEXT -> state.feed.nextPageLink = href
                             }
                         }
                     }

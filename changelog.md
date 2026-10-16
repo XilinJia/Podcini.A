@@ -1,3 +1,11 @@
+# 12.16.2
+
+* in "refresh complete feed"
+	* now gets all pages of the feed
+	* largely enhanced performance, proper for large feeds with thousands of media
+* show progress in feed refresh
+* in OnlineFeed, after subscribe, if feed has multiple pages, toast about complete refresh
+
 # 12.16.1
 
 * amended action buttons alternatives

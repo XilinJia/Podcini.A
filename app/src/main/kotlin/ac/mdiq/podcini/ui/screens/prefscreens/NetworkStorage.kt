@@ -18,6 +18,7 @@ import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.proxyConfig
 import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.syncPrefs
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.utils.deleteDirectoryRecursively
 import ac.mdiq.podcini.storage.utils.findRootForUri
@@ -570,7 +571,7 @@ fun SynchronizationScreen() {
     val context by rememberUpdatedState(LocalContext.current)
     BackHandler(enabled = true) { pfBackStack.removeLastOrNull() }
 
-    val selectedSyncProviderKey: String = SynchronizationSettings.selectedSyncProviderKey?:""
+    val selectedSyncProviderKey: String = syncPrefs.SELECTED_SYNC_PROVIDER ?:""
     var selectedProvider by remember { mutableStateOf(SynchronizationProviderViewData.fromIdentifier(selectedSyncProviderKey)) }
     var loggedIn by remember { mutableStateOf(isSyncProviderConnected) }
 

@@ -18,10 +18,11 @@ import ac.mdiq.podcini.sourcing.searcher.CombinedSearcher
 import ac.mdiq.podcini.sourcing.searcher.FeedUrlNotFoundException
 import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry
 import ac.mdiq.podcini.sourcing.sourceClients
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getEpisodesCount
-import ac.mdiq.podcini.storage.database.getFeed
+import ac.mdiq.podcini.storage.database.feedById
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
@@ -329,12 +330,12 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
             val author1 = f.author
             return  (!title1.isNullOrBlank() && !title2.isNullOrBlank() && (title1.startsWith(title2) || title2.startsWith(title1)) && (author1.isNullOrBlank() || author2.isNullOrBlank() || author1 == author2) && d1 == d2 && ds1 == ds2)
         }
-        for (f in allFeeds) if (isSameFeed(f)) return f
+        for (f in feedsMap.values) if (isSameFeed(f)) return f
         return null
     }
 
     fun findExisting(url: String): Feed? {
-        if (url.isNotBlank()) for (f in allFeeds) {
+        if (url.isNotBlank()) for (f in feedsMap.values) {
             if (f.downloadUrl == url) {
                 Logd(TAG) { "checkExisting found existing feed: ${f.title}" }
                 return f
@@ -414,7 +415,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
                 if (subscribePress) {
                     subscribePress = false
                     runOnIOScope {
-                        val feedExisting = getFeed(feedId, true)?: return@runOnIOScope
+                        val feedExisting = feedById(feedId, true)?: return@runOnIOScope
                         Logd(TAG) { "handleUpdatedFeedStatus ${feedExisting.title} ${feedExisting.author}" }
                         if (appPrefsFlow!!.value.enableAutoDl && !isExtFeed(feedExisting)) feedExisting.autoDownload = autoDownloadChecked
                         if (!username.isNullOrBlank()) {

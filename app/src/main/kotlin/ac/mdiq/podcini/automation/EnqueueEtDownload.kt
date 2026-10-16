@@ -5,9 +5,9 @@ import ac.mdiq.podcini.playback.isCurMedia
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.EPISODE_CACHE_SIZE_UNLIMITED
 import ac.mdiq.podcini.storage.database.addToAssQueue
-import ac.mdiq.podcini.storage.database.allFeeds
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteMedia
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.realm
@@ -101,7 +101,7 @@ class AutoEnqueueAlgorithm {
 
 private suspend fun assembleCandidates(feeds_: List<Feed>?, candidates: MutableSet<Episode>, toReplace: MutableSet<Episode>, noRefreshing: Boolean, dl: Boolean = true) {
     val NM = 3
-    val feeds = (feeds_ ?: allFeeds).filter { it.inNormalVolume }
+    val feeds = (feeds_ ?: feedsMap.values).filter { it.inNormalVolume }
     val eIdsAllQueues = realm.query(QueueEntry::class).query("queueId != $VIRTUAL_QUEUE_ID").find().map { it.episodeId }.toSet()
     for (f in feeds) {
         Logd(TAG) { "assembleFeedsCandidates: autoDL: ${f.autoDownload} autoEQ: ${f.autoEnqueue} isLocal: ${f.isLocal} ${f.title}" }
@@ -254,7 +254,7 @@ private suspend fun assembleCandidates(feeds_: List<Feed>?, candidates: MutableS
                     while (true) {
                         val episodesNew = query(Episode::class, "feedId == ${f.id} AND playState == ${EpisodeState.NEW.code} LIMIT(20)").find().toList()
                         if (episodesNew.isEmpty()) break
-                        Logd(TAG) { "run episodesNew: ${episodesNew.size}" }
+//                        Logd(TAG) { "run episodesNew: ${episodesNew.size}" }
                         episodesNew.forEach { e-> e.setPlayState(EpisodeState.UNPLAYED) }
                     }
                 }

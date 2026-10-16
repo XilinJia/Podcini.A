@@ -20,14 +20,16 @@ import ac.mdiq.podcini.utils.NetworkUtils.isAllowedOnMobile
 import ac.mdiq.podcini.utils.NetworkUtils.setAllowMobileFor
 import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
-import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.removeFromQueue
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
+import ac.mdiq.podcini.storage.database.feedById
+import ac.mdiq.podcini.storage.database.feedsMap
+import ac.mdiq.podcini.storage.database.syncPrefs
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -114,12 +116,12 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
     @Throws(SyncServiceException::class)
     private suspend fun syncSubscriptions(syncServiceImpl: ISyncService) {
         Logd(TAG) { "syncSubscriptions called" }
-        val lastSync = SynchronizationSettings.lastSubscriptionSynchronizationTimestamp
+        val lastSync = syncPrefs.LAST_SUBSCRIPTION_SYNC_TIMESTAMP
         EventFlow.postStickyEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_subscriptions))
         fun getFeedListDownloadUrls(): List<String> {
             Logd(TAG) { "getFeedListDownloadUrls called" }
             val result: MutableList<String> = mutableListOf()
-            for (f in allFeeds) {
+            for (f in feedsMap.values) {
                 val url = f.downloadUrl
                 if (!url.isNullOrBlank() && !f.isLocal) result.add(url)
             }
@@ -178,7 +180,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
     private fun removeFeedWithDownloadUrl(downloadUrl: String) {
         Logd(TAG) { "removeFeedWithDownloadUrl called" }
         var feedID: Long? = null
-        for (f in allFeeds) {
+        for (f in feedsMap.values) {
             val url = f.downloadUrl
             if (!url.isNullOrBlank() && !f.isLocal) feedID = f.id
         }
@@ -204,7 +206,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
     }
 
     private fun getEpisodeActions(syncServiceImpl: ISyncService) : Pair<Long, Long> {
-        val lastSync = SynchronizationSettings.lastEpisodeActionSynchronizationTimestamp
+        val lastSync = syncPrefs.LAST_EPISODE_ACTIONS_SYNC_TIMESTAMP
         EventFlow.postStickyEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_episodes_download))
         val getResponse = syncServiceImpl.getEpisodeActionChanges(lastSync)
         val newTimeStamp = getResponse?.timestamp?:0L
@@ -334,7 +336,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
     }
 
     private fun getActiveSyncProvider(): ISyncService? {
-        val selectedSyncProviderKey = SynchronizationSettings.selectedSyncProviderKey
+        val selectedSyncProviderKey = syncPrefs.SELECTED_SYNC_PROVIDER
         val selectedService = SynchronizationProviderViewData.fromIdentifier(selectedSyncProviderKey ?: "")
         if (selectedService == null) return null
 

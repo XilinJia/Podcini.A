@@ -1,6 +1,6 @@
 package ac.mdiq.podcini.config.settings
 
-import ac.mdiq.podcini.storage.database.allFeeds
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.upsert
@@ -34,7 +34,7 @@ open class MediaFilesTransporter(val filesDirName: String) {
                 if (!subDir.exists()) subDir = uf.createDirectory(filesDirName)
                 subDir
             } else uf
-            allFeeds.forEach { f -> if (!f.title.isNullOrEmpty()) nameFeedMap[generateFileName(f.title!!)] = f }
+            feedsMap.values.forEach { f -> if (!f.title.isNullOrEmpty()) nameFeedMap[generateFileName(f.title!!)] = f }
             mediaDir.listChildren().forEach { file -> copyRecursive(file, exportSubDir, move) }
         } catch (e: IOException) {
             Logs(TAG, e)
@@ -94,7 +94,7 @@ open class MediaFilesTransporter(val filesDirName: String) {
             if (verify && !uf.name.contains(filesDirName)) return
             val fileList = uf.listChildren()
             if (fileList.isNotEmpty()) {
-                allFeeds.forEach { f -> if (!f.title.isNullOrEmpty()) nameFeedMap[generateFileName(f.title!!)] = f }
+                feedsMap.values.forEach { f -> if (!f.title.isNullOrEmpty()) nameFeedMap[generateFileName(f.title!!)] = f }
                 fileList.forEach { file -> copyRecursive(file, mediaDir, move) }
             }
         } catch (e: IOException) {
@@ -108,7 +108,7 @@ open class MediaFilesTransporter(val filesDirName: String) {
     }
     open suspend fun updateDB() {
         try {
-            allFeeds.forEach { f -> if (!f.title.isNullOrEmpty()) nameFeedMap[generateFileName(f.title!!)] = f }
+            feedsMap.values.forEach { f -> if (!f.title.isNullOrEmpty()) nameFeedMap[generateFileName(f.title!!)] = f }
             val fileList = mediaDir.listChildren()
             fileList.forEach { file -> copyRecursive(file, mediaDir, move = false, onlyUpdateDB = true) }
         } catch (e: IOException) {

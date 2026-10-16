@@ -1,11 +1,12 @@
 package ac.mdiq.podcini.sourcing
 
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.createSynthetic
 import ac.mdiq.podcini.storage.database.getEpisodes
-import ac.mdiq.podcini.storage.database.getFeed
+import ac.mdiq.podcini.storage.database.feedById
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.CATALOG_VOLUME_ID_START
@@ -278,7 +279,7 @@ class FeedReceiver(port: Int, val volumeId: Long): Receiver(port) {
 
 suspend fun sendFeed(host: String, port: Int, feedId: Long, onEnd: ()->Unit) {
     Logd(TAG) { "sendFeed host: $host port: $port" }
-    val feed = getFeed(feedId) ?: return
+    val feed = feedsMap[feedId] ?: return
     val feedDTO = feed.toDTO()
     val episodesDTO = mutableListOf<EpisodeDTO>()
     val clipsInfo = mutableListOf<ClipInfo>()
@@ -348,7 +349,7 @@ class EpisodesReceiver(port: Int, val onEnd: ()->Unit): Receiver(port) {
 
                     Logd(TAG) { "Received ${pkg.episodes.size} episodes for ${pkg.syntheticName}" }
 
-                    val f = allFeeds.find { it.eigenTitle == pkg.syntheticName } ?: run {
+                    val f = feedsMap.values.find { it.eigenTitle == pkg.syntheticName } ?: run {
                         val f_ = createSynthetic(0, pkg.syntheticName)
                         upsert(f_) {}
                     }
@@ -503,7 +504,7 @@ class CatalogReceiver(port: Int, val onEnd: ()->Unit): Receiver(port) {
 
 fun sendCatalog(host: String, port: Int, onEnd: ()->Unit): Job {
     val feedsDTO = mutableListOf<FeedDTO>()
-    for (f in allFeeds) {
+    for (f in feedsMap.values) {
         if (!f.inNormalVolume || f.isSynthetic() || f.isLocal) continue
         feedsDTO.add(f.toDTO())
     }

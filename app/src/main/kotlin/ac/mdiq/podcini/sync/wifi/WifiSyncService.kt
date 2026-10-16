@@ -21,6 +21,7 @@ import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.Rating
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.storage.database.syncPrefs
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
@@ -63,7 +64,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
             if (isGuest) {
                 delay(1000.milliseconds)
 //                TODO: not using lastSync
-                val lastSync = SynchronizationSettings.lastEpisodeActionSynchronizationTimestamp
+                val lastSync = syncPrefs.LAST_EPISODE_ACTIONS_SYNC_TIMESTAMP
                 val newTimeStamp = pushEpisodeActions(this, 0L, nowInMillis())
                 SynchronizationSettings.setLastEpisodeActionSynchronizationAttemptTimestamp(newTimeStamp)
                 EventFlow.postEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_in_progress, "50"))
@@ -96,7 +97,7 @@ class WifiSyncService(context: Context, params: WorkerParameters) : SyncService(
                 }
                 EventFlow.postEvent(FlowEvent.SyncServiceEvent(R.string.sync_status_in_progress, "50"))
                 //                TODO: not using lastSync
-                val lastSync = SynchronizationSettings.lastEpisodeActionSynchronizationTimestamp
+                val lastSync = syncPrefs.LAST_EPISODE_ACTIONS_SYNC_TIMESTAMP
                 val newTimeStamp = pushEpisodeActions(this, 0L, nowInMillis())
                 SynchronizationSettings.setLastEpisodeActionSynchronizationAttemptTimestamp(newTimeStamp)
                 sendToPeer("AllSent", "AllSent")

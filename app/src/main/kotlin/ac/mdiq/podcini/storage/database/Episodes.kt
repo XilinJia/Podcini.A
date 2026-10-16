@@ -97,6 +97,8 @@ fun episodeByGuidOrUrl(guid: String?, episodeUrl: String, copy: Boolean = true):
 
 fun episodeById(id: Long): Episode? = realm.query(Episode::class).query("id == $0", id).first().find()
 
+fun episodesByIds(ids: List<Long>): List<Episode> = realm.query(Episode::class).query("id == $0", ids).find()
+
 fun getHistoryAsFlow(feedId: Long = 0L, start: Long = 0L, end: Long = nowInMillis(), filter: EpisodeFilter? = null, sortOrder: EpisodeSortOrder = EpisodeSortOrder.PLAYED_DATE_DESC): Flow<ResultsChange<Episode>> {
     Logd(TAG) { "getHistory() called" }
     var qStr = "((playbackCompletionTime > 0) OR (lastPlayedTime > $start AND lastPlayedTime <= $end))"
@@ -181,7 +183,7 @@ suspend fun eraseEpisodes(episodes: List<Episode>, msg: String = "") {
     for (e in episodes) if (e.feed?.isLocal != true) deleteMedia(e)
     removeFromAllQueues(episodes)
     Logd(TAG) { "eraseEpisodes deleting episodes: ${episodes.size}" }
-    val feeds = allFeeds.filter { it.id in episodes.map { e-> e.feedId } }
+    val feeds = feedsMap.values.filter { it.id in episodes.map { e-> e.feedId } }
     realm.write { for (e in episodes) findLatest(e)?.let { delete(it) } }
     for (f in feeds) sumup(f)
     EventFlow.postStickyEvent(FlowEvent.FeedUpdatingEvent(false))

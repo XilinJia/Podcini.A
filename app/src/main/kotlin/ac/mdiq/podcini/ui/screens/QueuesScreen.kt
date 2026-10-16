@@ -8,10 +8,11 @@ import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.playback.PlaybackService
 import ac.mdiq.podcini.playback.PlaybackService.Companion.mediaBrowser
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.buildListInfo
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.persistOrdered
 import ac.mdiq.podcini.storage.database.queuesFlow
 import ac.mdiq.podcini.storage.database.queuesLive
@@ -338,7 +339,7 @@ fun QueuesScreen(id: Long = -1L) {
     var feedsAssociated by remember { mutableStateOf<List<Feed>>(listOf()) }
     val feedUpdated by feedQueueUpdated.collectAsStateWithLifecycle()
     LaunchedEffect(curQueue.id, feedUpdated, vm.queuesMode) {
-        if (vm.queuesMode == QueuesScreenMode.Feed) feedsAssociated = allFeeds.filter { it.queueId == curQueue.id }
+        if (vm.queuesMode == QueuesScreenMode.Feed) feedsAssociated = feedsMap.values.filter { it.queueId == curQueue.id }
     }
 
     var showSortDialog by remember { mutableStateOf(false) }
@@ -657,7 +658,7 @@ fun QueuesScreen(id: Long = -1L) {
                                 realm.write {
                                     episodes.forEach { findLatest(it)?.setPlayState(EpisodeState.UNPLAYED) }
                                     val qDef = queuesLive.find { q-> q.id == 0L }
-                                    allFeeds.filter { it.queueId == curQueue.id }.forEach { findLatest(it)?.queue = qDef }
+                                    feedsMap.values.filter { it.queueId == curQueue.id }.forEach { findLatest(it)?.queue = qDef }
                                     findLatest(curQueue)?.let { delete(it) }
                                 }
                                 upsert(appAttribs) { it.queuesMode = QueuesScreenMode.Queue.name }

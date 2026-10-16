@@ -23,12 +23,13 @@ import ac.mdiq.podcini.sourcing.listenForUDPBroadcasts
 import ac.mdiq.podcini.sourcing.sendEpisodes
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.addToQueue
-import ac.mdiq.podcini.storage.database.allFeeds
+
 import ac.mdiq.podcini.storage.database.allowForAutoDelete
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteMedia
 import ac.mdiq.podcini.storage.database.eraseEpisodes
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.removeFromAllQueues
@@ -935,7 +936,7 @@ fun PutToQueueDialog(selected: List<Episode>, onDismiss: () -> Unit) {
 
 @Composable
 fun ShelveDialog(selected: List<Episode>, onDismiss: () -> Unit) {
-    val synthetics = allFeeds.filter { it.id in 100..1000 }
+    val synthetics = feedsMap.values.filter { it.id in 100..1000 }
     CommonPopupCard(onDismiss = onDismiss) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             var removeChecked by remember { mutableStateOf(false) }
@@ -1682,7 +1683,7 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
 
 @Composable
 fun ConfirmAddToFeed(onDismiss: () -> Unit, cb: suspend (Feed)-> Unit) {
-    val synthetics = remember { allFeeds.filter { it.id in 1..1000 } }
+    val synthetics = remember { feedsMap.values.filter { it.id in 1..1000 } }
     Dialog(onDismissRequest = { onDismiss() }) {
         Card(modifier = Modifier.height(350.dp).padding(16.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
             var toFeed by remember { mutableStateOf<Feed?>(null) }

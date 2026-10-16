@@ -8,14 +8,6 @@ import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
 
 object SynchronizationSettings {
-    const val LAST_SYNC_ATTEMPT_TIMESTAMP: String = "last_sync_attempt_timestamp"
-    private const val NAME = "synchronization"
-    private const val WIFI_SYNC_ENABLED = "wifi_sync_enabled"
-    private const val SELECTED_SYNC_PROVIDER = "selected_sync_provider"
-    private const val LAST_SYNC_ATTEMPT_SUCCESS = "last_sync_attempt_success"
-    private const val LAST_EPISODE_ACTIONS_SYNC_TIMESTAMP = "last_episode_actions_sync_timestamp"
-    private const val LAST_SUBSCRIPTION_SYNC_TIMESTAMP = "last_sync_timestamp"
-
     var username: String?
         get() = syncPrefs.PREF_USERNAME
         set(username) {
@@ -56,7 +48,7 @@ object SynchronizationSettings {
     }
 
     val isSyncProviderConnected: Boolean
-        get() = selectedSyncProviderKey != null
+        get() = syncPrefs.SELECTED_SYNC_PROVIDER != null
 
     fun resetTimestamps() {
         runOnIOScope {
@@ -68,25 +60,13 @@ object SynchronizationSettings {
         }
     }
 
-    val isLastSyncSuccessful: Boolean
-        get() = syncPrefs.LAST_SYNC_ATTEMPT_SUCCESS
-
-    val lastSyncAttempt: Long
-        get() = syncPrefs.LAST_SYNC_ATTEMPT_TIMESTAMP
-
     fun setSelectedSyncProvider(provider: SynchronizationProviderViewData?) {
         runOnIOScope { upsert(syncPrefs) { it.SELECTED_SYNC_PROVIDER = provider?.identifier } }
     }
 
-    val selectedSyncProviderKey: String?
-        get() = syncPrefs.SELECTED_SYNC_PROVIDER
-
     fun setWifiSyncEnabled(stat: Boolean) {
         runOnIOScope { upsert(syncPrefs) { it.WIFI_SYNC_ENABLED = stat } }
     }
-
-    val wifiSyncEnabledKey: Boolean
-        get() = syncPrefs.WIFI_SYNC_ENABLED
 
     fun updateLastSynchronizationAttempt() {
         runOnIOScope {  upsert(syncPrefs) { it.LAST_SYNC_ATTEMPT_TIMESTAMP = nowInMillis() } }
@@ -96,15 +76,9 @@ object SynchronizationSettings {
         runOnIOScope { upsert(syncPrefs) { it.LAST_SYNC_ATTEMPT_SUCCESS = isSuccess } }
     }
 
-    val lastSubscriptionSynchronizationTimestamp: Long
-        get() = syncPrefs.LAST_SUBSCRIPTION_SYNC_TIMESTAMP
-
     fun setLastSubscriptionSynchronizationAttemptTimestamp(newTimeStamp: Long) {
         runOnIOScope { upsert(syncPrefs) { it.LAST_SUBSCRIPTION_SYNC_TIMESTAMP = newTimeStamp } }
     }
-
-    val lastEpisodeActionSynchronizationTimestamp: Long
-        get() = syncPrefs.LAST_EPISODE_ACTIONS_SYNC_TIMESTAMP
 
     fun setLastEpisodeActionSynchronizationAttemptTimestamp(timestamp: Long) {
         runOnIOScope { upsert(syncPrefs) { it.LAST_EPISODE_ACTIONS_SYNC_TIMESTAMP = timestamp } }

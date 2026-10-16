@@ -143,4 +143,5 @@ suspend fun subscribe(feed: Feed) {
     }
     if (feedByIdentityOrID(feed) == null) addNewFeed(feed)
     else Logt(TAG, "feed already exists: ${feed.title}")
+    if (!feed.nextPageLink.isNullOrBlank()) Logt(TAG, "the feed RSS has multiple pages, ensure to refresh complete feed to get all pages.")
 }

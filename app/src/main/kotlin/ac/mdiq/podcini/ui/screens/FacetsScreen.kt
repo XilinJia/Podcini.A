@@ -5,11 +5,11 @@ import ac.mdiq.podcini.config.settings.MediaFilesTransporter
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.buildListInfo
-import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesAsFlow
 import ac.mdiq.podcini.storage.database.getEpisodesAsListFlow
-import ac.mdiq.podcini.storage.database.getFeed
+import ac.mdiq.podcini.storage.database.feedById
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.getHistoryAsFlow
 import ac.mdiq.podcini.storage.database.inQueueEpisodeIdSet
@@ -389,7 +389,7 @@ class FacetsVM(modeName_: String): ViewModel() {
             while (iterator.hasNext()) {
                 val en = iterator.next()
                 if (en.key == null) continue
-                val f = getFeed(en.key!!) ?: continue
+                val f = feedsMap[en.key!!] ?: continue
                 if (f.isLocal) iterator.remove()
             }
             for (fid in feMap.keys) {
