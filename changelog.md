@@ -1,3 +1,11 @@
+# 12.16.3
+
+* improved DB performance in receive feed/episodes and feed cleanup
+* in menu of Library screen, added "Show memory usage"
+* after subscribe, if feed has multiple pages, toast confirmation
+* when renaming synthetic feed, fixed crash, ensure dialog scrollable
+* amended some small text size
+
 # 12.16.2
 
 * in "refresh complete feed"

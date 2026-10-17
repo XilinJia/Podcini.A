@@ -429,7 +429,7 @@ fun FeedsSettingsScreen() {
                         Text(stringResource(R.string.preferred_languages), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
                         var showIcon by remember { mutableStateOf(false) }
                         var newName by remember { mutableStateOf(feedToSet.preferredLnaguages.joinToString(", ")) }
-                        TextField(value = newName, singleLine = true, label = { Text("Case sensitive. Separate with ,", style = MaterialTheme.typography.bodySmall) }, modifier = Modifier.trackAsTextField(),
+                        TextField(value = newName, singleLine = true, label = { Text("Case sensitive. Separate with ,", style = MaterialTheme.typography.labelSmall) }, modifier = Modifier.trackAsTextField(),
                             onValueChange = {
                                 newName = it
                                 showIcon = true
@@ -460,7 +460,7 @@ fun FeedsSettingsScreen() {
                     }
                     val langs = remember { feedToSet.langSet.joinToString(", ") }
                     Text("Candidates: $langs", color = textColor, style = MaterialTheme.typography.bodySmall)
-                    Text(stringResource(R.string.preferred_languages_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.preferred_languages_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                 }
             }
 
@@ -809,7 +809,7 @@ fun FeedsSettingsScreen() {
                         showIcon = false
                     })
                 }
-                Text(stringResource(R.string.transcript_start_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.transcript_start_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
             }
 
             HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
@@ -957,7 +957,7 @@ fun FeedsSettingsScreen() {
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(text = stringResource(R.string.pref_auto_download_counting_played_title), style = MaterialTheme.typography.bodyMedium, color = textColor)
                                 }
-                                Text(text = stringResource(R.string.pref_auto_download_counting_played_summary), style = MaterialTheme.typography.bodySmall, color = textColor)
+                                Text(text = stringResource(R.string.pref_auto_download_counting_played_summary), style = MaterialTheme.typography.labelSmall, color = textColor)
                                 HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 5.dp))
                             }
                             Button(onClick = {
@@ -1031,7 +1031,7 @@ fun FeedsSettingsScreen() {
                                                 Text(text = stringResource(R.string.replace), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
                                             }
                                     }
-                                    if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) Text(stringResource(R.string.current_filter_sort_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                                    if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) Text(stringResource(R.string.current_filter_sort_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                                 }
                             },
                             confirmButton = {
@@ -1387,7 +1387,7 @@ fun FeedsSettingsScreen() {
                         if (showDialog) EditUrlSettingsDialog { showDialog = false }
                         IconButton(onClick = { showDialog = true }) { Icon(Icons.Default.Edit, contentDescription = "Edit url") }
                     }
-                    Text(text = feedToSet.downloadUrl ?: "", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 15.dp))
+                    Text(text = feedToSet.downloadUrl ?: "", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 15.dp))
                 }
             }
         }

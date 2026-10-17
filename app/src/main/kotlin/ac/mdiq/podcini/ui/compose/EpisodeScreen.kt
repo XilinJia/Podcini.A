@@ -364,7 +364,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 50.dp)) {
                         EpisodeDetails(episode)
                         AsyncImage(model = ImageRequest.Builder(context).data((episode.images.firstOrNull() ?: episodeFeed?.images?.firstOrNull())?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
-                        Text(episode.link ?: "Link not included", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 15.dp).combinedClickable(onClick = { if (!episode.link.isNullOrBlank()) openInSystemDefault(episode.link!!) }, onLongClick = { if (!episode.link.isNullOrBlank()) context.shareText(episode.link!!, R.string.share_url_label) }))
+                        Text(episode.link ?: "Link not included", color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(vertical = 15.dp).combinedClickable(onClick = { if (!episode.link.isNullOrBlank()) openInSystemDefault(episode.link!!) }, onLongClick = { if (!episode.link.isNullOrBlank()) context.shareText(episode.link!!, R.string.share_url_label) }))
                         Text("Time spent: " + durationStringShort(episode.timeSpent, true))
                         Text("Played duration: " + durationStringShort(episode.playedDuration.toLong(), true))
                     }

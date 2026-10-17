@@ -1,10 +1,11 @@
-@file:Suppress("FunctionName")
+@file:Suppress("FunctionName", "SimplifyBooleanWithConstants")
 
 package ac.mdiq.podcini.utils
 
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.PodciniApp
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
+import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.download.DownloadError
@@ -14,7 +15,9 @@ import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.ui.compose.confirm
+import android.app.ActivityManager
 import android.app.Application
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +37,7 @@ enum class LogLevel(val code: Int) { Debug(-5), Info(0), Error(5), None(10) }
 
 val sessionLogsFlow = MutableStateFlow<List<String>>(emptyList())
 
-private suspend fun trimSessionLogs() {
+private fun trimSessionLogs() {
     val size = sessionLogsFlow.value.size
     if (size > 120) sessionLogsFlow.update { it - sessionLogsFlow.value.subList(20, size).toSet() }
 }
@@ -174,4 +177,38 @@ fun timeIt(msg: String) {
 
 fun logProcess(tag: String, where: String) {
     Logd(tag) { "Process $where: pid=${android.os.Process.myPid()} process=${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName() else ""} app=${System.identityHashCode(PodciniApp.getApp())}" }
+}
+
+fun showMemoryUsage() {
+    val context = getAppContext()
+    val runtime = Runtime.getRuntime()
+    val usedMemInBytes = runtime.totalMemory() - runtime.freeMemory()
+    val usedMemInMB = usedMemInBytes / (1024 * 1024)
+    val maxMemInMB = runtime.maxMemory() / (1024 * 1024)
+
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    val availableMemMB = memoryInfo.availMem / (1024 * 1024)
+    val totalMemMB = memoryInfo.totalMem / (1024 * 1024)
+
+    var totalPssMb = -1
+    val pssMemoryInfo = activityManager.getProcessMemoryInfo(intArrayOf(android.os.Process.myPid()))
+    if (pssMemoryInfo.isNotEmpty()) {
+        val totalPssKb = pssMemoryInfo[0].totalPss
+        totalPssMb = totalPssKb / 1024
+    }
+
+    confirm(title = "Memory usage", message =
+        """
+            |
+            |${context.getString(R.string.runtime_memory)}: 
+            |    $usedMemInMB MB / Max: $maxMemInMB MB
+            |${context.getString(R.string.system_available)}: 
+            |    $availableMemMB MB / Total: $totalMemMB MB
+            |${context.getString(R.string.app_process_memory)}: 
+            |    $totalPssMb MB
+            |    
+        """.trimMargin(),
+        confirmRes = R.string.OK, cancelRes = R.string.cancel_label, onConfirm = {  })
 }

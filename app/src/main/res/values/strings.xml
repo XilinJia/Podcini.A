@@ -166,6 +166,12 @@
     <string name="caption_start">Caption start</string>
     <string name="transcript_start_sum">This is used to offest voice and captions mismatch. The position set here is the audio position matching with "00:00" at transcript. If such a value is set at the media, it takes precedence.</string>
 
+
+    <string name="app_process_memory">App Process Memory</string>
+    <string name="runtime_memory">Runtime Used Memory</string>
+    <string name="system_available">System Available</string>
+
+    <string name="show_memory_usage">Show memory usage</string>
     <string name="show_all_feeds">Show all feeds</string>
     <string name="show_archived">Show archived</string>
 
@@ -689,6 +695,7 @@
     <string name="pref_feed_associated_queue_sum">The queue to which episodes in the feed will e added by default</string>
     <string name="pref_feed_type">Feed type</string>
     <string name="pref_feed_type_sum">Feed type is needed for properly accessing some properties of the feed. For generic feed (not handled optimally), type is better set to null. Otherwise, all media in the feed should better be of the same type. Normally for a non-synthetic feed, this does not need to be changed. To force change, long-click on this.</string>
+    <string name="synthetic_feed_type_sum">Feed type is needed for properly accessing some properties of the feed. </string>
     <string name="pref_feed_skip_ending_toast">Skipped last %d seconds</string>
     <string name="pref_feed_skip_intro_toast">Skipped first %d seconds</string>
 
@@ -921,6 +928,7 @@
 
     <!-- Online feed view -->
     <string name="subscribe_label">Subscribe</string>
+    <string name="feed_multiple_page_note">The feed RSS has multiple pages, ensure to refresh complete feed to get all pages.</string>
 
     <!-- Content descriptions for image buttons -->
 

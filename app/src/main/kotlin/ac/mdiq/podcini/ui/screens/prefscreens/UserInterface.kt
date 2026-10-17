@@ -141,7 +141,7 @@ fun UserInterfaceScreen() {
                 ) { Text(level.name, maxLines = 1) }
             }
         }
-        Text(stringResource(R.string.pref_show_log_level_sum), color = textColor, style = MaterialTheme.typography.bodySmall,  modifier = Modifier.fillMaxWidth().padding(start = 16.dp))
+        Text(stringResource(R.string.pref_show_log_level_sum), color = textColor, style = MaterialTheme.typography.labelSmall,  modifier = Modifier.fillMaxWidth().padding(start = 16.dp))
 
         TitleSummarySwitchRow(R.string.pref_dont_ask_restricted, R.string.pref_dont_ask_restricted_sum, appPrefs.dont_ask_again_unrestricted_background) {
             runOnIOScope { upsert(appPrefs) { p-> p.dont_ask_again_unrestricted_background = it } } }

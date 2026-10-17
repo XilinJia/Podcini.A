@@ -124,11 +124,11 @@ fun feedByIdentityOrID(feed: Feed, copy: Boolean = false): Feed? {
     return null
 }
 
-fun addNewFeed(feed: Feed) {
+suspend fun addNewFeed(feed: Feed) {
     Logd(TAG) { "addNewFeeds called" }
     feed.lastUpdateTime = nowInMillis()
     feed.lastFullUpdateTime = nowInMillis()
-    realm.writeBlocking {
+    realm.write {
         feed.id = getEntityId()
         feed.totleDuration = 0
         Logd(TAG) { "feed.episodes count: ${feed.episodes.size}" }
@@ -325,7 +325,7 @@ suspend fun trimEpisodes(feed_: Feed): Int {
     return n
 }
 
-suspend fun trimEpisodes(feed_: Feed, episodes: MutableList<Episode>): Int {
+fun trimEpisodes(feed_: Feed, episodes: MutableList<Episode>): Int {
     var n = 0
     if (feed_.limitEpisodesCount > 0) {
         val count = realm.query(Episode::class).query("feedId == ${feed_.id} AND !(${feed_.isWorthyQuerryStr})").count().find().toInt()
@@ -389,8 +389,8 @@ fun episodesByIdentifyingValue(item: Episode, feed:Feed): List<Episode> {
 }
 
 suspend fun cleanUp(feed: Feed) {
-    val map = mutableMapOf<String, MutableList<Long>>()
-    var iterator = getEpisodes(null, null, feedId=feed.id, copy = true).iterator()
+    val map = mutableMapOf<String, MutableList<Episode>>()
+    val iterator = getEpisodes(null, null, feedId=feed.id, copy = true).iterator()
 //    val iterator = listOf<Episode>().iterator()
     while (iterator.hasNext()) {
         val e = iterator.next()
@@ -399,58 +399,59 @@ suspend fun cleanUp(feed: Feed) {
             Logd(TAG) { "cleanUp identifier ${e.identifier}" }
             if (map.containsKey(e.identifier!!)) {
                 Logd(TAG) { "cleanUp identifier duplicate: ${e.identifier} ${e.title}" }
-                map[e.identifier!!]!!.add(e.id)
-            } else map[e.identifier!!] = mutableListOf(e.id)
+                map[e.identifier!!]!!.add(e)
+            } else map[e.identifier!!] = mutableListOf(e)
         }
         val idv = e.identifyingValue
         if (idv != e.identifier && !idv.isNullOrEmpty()) {
             //                Logd(TAG) { "FeedAssistant init $tag identifyingValue ${e.identifyingValue}" }
             if (map.containsKey(idv)) {
                 Logd(TAG) { "cleanUp identifyingValue duplicate: $idv ${e.title}" }
-                map[idv]!!.add(e.id)
-            } else map[idv] = mutableListOf(e.id)
+                map[idv]!!.add(e)
+            } else map[idv] = mutableListOf(e)
         }
         val url = e.downloadUrl
         if (url != idv && !url.isNullOrEmpty()) {
             if (map.containsKey(url)) {
                 Logd(TAG) { "cleanUp url duplicate: $url ${e.title}" }
-                map[url]!!.add(e.id)
-            } else map[url] = mutableListOf(e.id)
+                map[url]!!.add(e)
+            } else map[url] = mutableListOf(e)
         }
         val title = canonicalizeTitle(e.title)
         if (title != idv && title.isNotEmpty()) {
             if (map.containsKey(title)) {
                 Logd(TAG) { "cleanUp title duplicate: $title ${e.title}" }
-            } else map[title] = mutableListOf(e.id)
+            } else map[title] = mutableListOf(e)
         }
     }
-    for ((k, vi) in map.entries) {
-        if (vi.size < 2) continue
-        val v = episodesByIds(vi)
-        Logd(TAG) { "cleanUp removing ${v.size-1} duplicates on $k" }
-        var episode = v[0]
-        val ecs = v.sortedByDescending { it.comment.length }
-        val comment = if (ecs[0].comment.isBlank()) "" else {
-            var c = ecs[0].comment
-            for (i in 1..<ecs.size) if (ecs[i].comment.isNotBlank()) c += "\n" + ecs[i].comment
-            c
-        }
-        val ers = v.sortedByDescending { it.rating }
-        if (ers[0].rating > Rating.UNRATED.code) {
-            episode = if (ers[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(ers[0]) { it.addComment(comment) } else ers[0]
-            runOnIOScope { realm.write { for (i in 1..<ers.size) query(Episode::class).query("id == ${ers[i].id}").first().find()?.let { delete(it) } } }
-        } else {
-            val eps = v.sortedByDescending { it.lastPlayedTime }
-            if (eps[0].lastPlayedTime > 0L) {
-                episode = if (eps[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(eps[0]) { it.addComment(comment) } else eps[0]
-                runOnIOScope { realm.write { for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) } } }
-            } else {
-                val eps = v.sortedByDescending { it.pubDate }
-                episode = if (eps[0].id != ecs[0].id && comment.isNotEmpty()) upsertBlk(eps[0]) { it.addComment(comment) } else eps[0]
-                runOnIOScope { realm.write { for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) } } }
+    realm.write {
+        for ((k, v) in map.entries) {
+            if (v.size < 2) continue
+            Logd(TAG) { "cleanUp removing ${v.size - 1} duplicates on $k" }
+            val ecs = v.sortedByDescending { it.comment.length }
+            val comment = if (ecs[0].comment.isBlank()) "" else {
+                var c = ecs[0].comment
+                for (i in 1..<ecs.size) if (ecs[i].comment.isNotBlank()) c += "\n" + ecs[i].comment
+                c
             }
+            val ers = v.sortedByDescending { it.rating }
+            val episode: Episode? = query(Episode::class).query("id == ${ers[0].id}").first().find()
+            if (ers[0].rating > Rating.UNRATED.code) {
+                if (ers[0].id != ecs[0].id && comment.isNotEmpty()) episode?.addComment(comment)
+                for (i in 1..<ers.size) query(Episode::class).query("id == ${ers[i].id}").first().find()?.let { delete(it) }
+            } else {
+                val eps = v.sortedByDescending { it.lastPlayedTime }
+                if (eps[0].lastPlayedTime > 0L) {
+                    if (eps[0].id != ecs[0].id && comment.isNotEmpty()) episode?.addComment(comment)
+                    for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) }
+                } else {
+                    val eps = v.sortedByDescending { it.pubDate }
+                    if (eps[0].id != ecs[0].id && comment.isNotEmpty()) episode?.addComment(comment)
+                    for (i in 1..<eps.size) query(Episode::class).query("id == ${eps[i].id}").first().find()?.let { delete(it) }
+                }
+            }
+            if (episode != null) map[k] = mutableListOf(episode)
         }
-        map[k] = mutableListOf(episode.id)
-        sumup(feed)
     }
+    sumup(feed)
 }

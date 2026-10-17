@@ -1,5 +1,7 @@
 package ac.mdiq.podcini.sourcing.feed
 
+import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
+import ac.mdiq.podcini.R
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.Downloader
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
@@ -12,6 +14,7 @@ import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.toFeed
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
+import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
@@ -143,5 +146,5 @@ suspend fun subscribe(feed: Feed) {
     }
     if (feedByIdentityOrID(feed) == null) addNewFeed(feed)
     else Logt(TAG, "feed already exists: ${feed.title}")
-    if (!feed.nextPageLink.isNullOrBlank()) Logt(TAG, "the feed RSS has multiple pages, ensure to refresh complete feed to get all pages.")
+    if (!feed.nextPageLink.isNullOrBlank()) Logm(TAG, getAppContext().getString(R.string.feed_multiple_page_note))
 }

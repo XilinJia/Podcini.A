@@ -436,7 +436,7 @@ fun ControlUI(vm: AVPlayerVM) {
         Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.size(50.dp).combinedClickable(onClick = { showSpeedDialog = true }, onLongClick = { showVolumeDialog = true })) {
             SpeedometerWithArc(speed = vm.curPlaybackSpeed*100, maxSpeed = 300f, trackColor = buttonColor, modifier = Modifier.width(40.dp).height(40.dp).align(Alignment.Center))
             Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_volume_adaption), tint = buttonColor1, contentDescription = "Volume adaptation", modifier = Modifier.align(Alignment.Center))
-            Text(formatNumberKmp(vm.curPlaybackSpeed.toDouble()), color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.BottomCenter))
+            Text(formatNumberKmp(vm.curPlaybackSpeed.toDouble()), color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomCenter))
         }
         Spacer(Modifier.weight(0.1f))
         val isRecording by player?.isRecordingFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(false) }
@@ -464,7 +464,7 @@ fun ControlUI(vm: AVPlayerVM) {
         Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.size(50.dp).combinedClickable(
             onClick = { player?.seekDelta(-rewindSecs * 1000) }, onLongClick = { player?.seekTo(0) })) {
             val rewindSecs = remember(rewindSecs) { formatWithGrouping(rewindSecs.toLong()) }
-            Text(rewindSecs, color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.TopCenter))
+            Text(rewindSecs, color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.TopCenter))
             Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_skip_previous_24), tint = buttonColor, contentDescription = "rewind", modifier = Modifier.size(buttonSize).align(Alignment.Center))
         }
         Spacer(Modifier.weight(0.1f))
@@ -490,7 +490,7 @@ fun ControlUI(vm: AVPlayerVM) {
                 } })) {
             val playButRes = if (vm.showPlayButton) R.drawable.ic_play_48dp else R.drawable.ic_pause
             Icon(imageVector = ImageVector.vectorResource(playButRes), tint = buttonColor, contentDescription = "play", modifier = Modifier.size(buttonSize).align(Alignment.Center))
-            if (fallbackSpeed > 0.1f) Text(fallbackSpeed.toString(), color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.BottomCenter))
+            if (fallbackSpeed > 0.1f) Text(fallbackSpeed.toString(), color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomCenter))
         }
         Spacer(Modifier.weight(0.1f))
         Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.size(50.dp).combinedClickable(
@@ -501,9 +501,9 @@ fun ControlUI(vm: AVPlayerVM) {
                 }
             })) {
             val fastForwardSecs = remember(fastForwardSecs) { formatWithGrouping(fastForwardSecs.toLong()) }
-            Text(fastForwardSecs, color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.TopCenter))
+            Text(fastForwardSecs, color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.TopCenter))
             Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_fast_forward), tint = buttonColor, contentDescription = "forward", modifier = Modifier.size(buttonSize).align(Alignment.Center))
-            if (speedforwardSpeed > 0.1f) Text(formatNumberKmp(speedforwardSpeed), color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.BottomCenter))
+            if (speedforwardSpeed > 0.1f) Text(formatNumberKmp(speedforwardSpeed), color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomCenter))
         }
         Spacer(Modifier.weight(0.1f))
         Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.size(50.dp).combinedClickable(
@@ -515,7 +515,7 @@ fun ControlUI(vm: AVPlayerVM) {
             onLongClick = {
                 if (player?.isPlaying == true || player?.isPaused == true) player.skip()
             })) {
-            if (skipforwardSpeed > 0.1f) Text(formatNumberKmp(skipforwardSpeed), color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.TopCenter))
+            if (skipforwardSpeed > 0.1f) Text(formatNumberKmp(skipforwardSpeed), color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.TopCenter))
             Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_skip_48dp), tint = buttonColor, contentDescription = "skip", modifier = Modifier.size(buttonSize).align(Alignment.Center))
         }
         Spacer(Modifier.weight(0.1f))
@@ -537,11 +537,11 @@ fun ProgressBar(vm: AVPlayerVM) {
             value = sliderValue, valueRange = 0f..( if ((episode?.duration?:0) > 0) episode?.duration?:0 else 30000).toFloat(),
             onValueChange = { sliderValue = it }, onValueChangeFinished = { player?.seekTo(sliderValue.toInt()) })
         LinearProgressIndicator(progress = { 0.01f*bufferValue }, color = distColor.copy(alpha = 0.3f), trackColor = inActColor, modifier = Modifier.height(4.dp).fillMaxWidth().align(Alignment.BottomStart))
-        Text(durationStringFull(episode?.duration?:0), color = distColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.BottomCenter))
+        Text(durationStringFull(episode?.duration?:0), color = distColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomCenter))
     }
     Row {
         val pastText = remember(episode?.position) { if (episode == null) "" else durationStringAdapt(episode!!.position) + " *" + durationStringAdapt(episode!!.timeSpent.toInt()) }
-        Text(pastText, color = textColor, style = MaterialTheme.typography.bodySmall)
+        Text(pastText, color = textColor, style = MaterialTheme.typography.labelSmall)
         Spacer(Modifier.weight(1f))
         val bitrate by player?.avStreams?.bitrateFlow?.collectAsStateWithLifecycle() ?: remember { mutableIntStateOf(0) }
         val resolution by player?.avStreams?.resolutionFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf("") }
@@ -552,7 +552,7 @@ fun ProgressBar(vm: AVPlayerVM) {
             val bitrate = if (bitrate > 0) " ${formatLargeIntegerBrief(bitrate)}bps" else ""
             "$mime$channelCount $bitrate $resolution"
         }
-        Text(info, color = textColor, style = MaterialTheme.typography.bodySmall)
+        Text(info, color = textColor, style = MaterialTheme.typography.labelSmall)
         Spacer(Modifier.weight(1f))
         val curPlayerSpeed by player?.curPlayerSpeedFlow?.collectAsStateWithLifecycle() ?: remember { mutableFloatStateOf(1f) }
         val lengthText = remember(curPlayerSpeed, episode?.position) {  run {
@@ -561,7 +561,7 @@ fun ProgressBar(vm: AVPlayerVM) {
             val onSpeed = if (curPlayerSpeed > 0 && abs(curPlayerSpeed-1f) > 0.001) (remainingTime / curPlayerSpeed).toInt() else 0
             (if (onSpeed > 0) "*" + durationStringAdapt(onSpeed) else "") + " -" + durationStringAdapt(remainingTime)
         } }
-        Text(lengthText, color = textColor, style = MaterialTheme.typography.bodySmall)
+        Text(lengthText, color = textColor, style = MaterialTheme.typography.labelSmall)
     }
 }
 
@@ -1002,7 +1002,7 @@ fun AVPlayerScreen() {
                 else EmbeddedChapterImage.getModelFor(episode, displayedChapterIndex)?.toString()
             }
             if (imgLarge != null) AsyncImage( ImageRequest.Builder(context).data(imgLarge).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), imageLoader = imageLoader, contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
-            Text(episode.link ?: "Link not included", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 15.dp).combinedClickable(
+            Text(episode.link ?: "Link not included", color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(vertical = 15.dp).combinedClickable(
                 onClick = { if (!episode.link.isNullOrBlank()) openInSystemDefault(episode.link!!) },
                 onLongClick = { if (!episode.link.isNullOrBlank()) context.shareText(episode.link!!, R.string.share_url_label) }
             ) )

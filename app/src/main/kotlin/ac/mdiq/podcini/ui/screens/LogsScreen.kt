@@ -362,12 +362,12 @@ fun LogsScreen() {
                 Text(stringResource(R.string.description_label), color = textColor,  style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text(log.description?:"None", color = textColor, modifier = Modifier.padding(bottom = 5.dp))
                 Text("URL:", color = textColor,  style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(log.url ?:"None", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 5.dp).combinedClickable(
+                Text(log.url ?:"None", color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 5.dp).combinedClickable(
                     onClick = { log.url?.let { openInSystemDefault(it) } },
                     onLongClick = { log.url?.let { copyToClipboard("url", it) } }
                 ))
                 Text("Link:", color = textColor,  style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(log.link ?: "None", color = textColor, style = MaterialTheme.typography.bodySmall)
+                Text(log.link ?: "None", color = textColor, style = MaterialTheme.typography.labelSmall)
                 Row(Modifier.padding(top = 10.dp)) {
                     Spacer(Modifier.weight(0.3f))
                     Text("OK", color = textColor, modifier = Modifier.clickable { onDismiss() })
@@ -432,7 +432,7 @@ fun LogsScreen() {
                 Text(stringResource(R.string.reason), color = textColor, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text(status.reasonDetailed, color = textColor, modifier = Modifier.padding(bottom = 5.dp))
                 Text("URL:", color = textColor, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(url, color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 5.dp))
+                Text(url, color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 5.dp))
                 if (feed == null && media == null) Text(stringResource(R.string.content_not_exist))
 
                 Row(Modifier.padding(top = 10.dp)) {

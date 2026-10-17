@@ -1,12 +1,11 @@
 package ac.mdiq.podcini.sourcing
 
 import ac.mdiq.podcini.shared.nowInMillis
-
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.createSynthetic
-import ac.mdiq.podcini.storage.database.getEpisodes
-import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
+import ac.mdiq.podcini.storage.database.getEpisodes
+import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.CATALOG_VOLUME_ID_START
@@ -24,6 +23,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.NetworkUtils
+import io.github.xilinjia.krdb.UpdatePolicy
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.BoundDatagramSocket
 import io.ktor.network.sockets.Datagram
@@ -53,6 +53,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.io.readString
@@ -201,7 +202,6 @@ abstract class Receiver(private val port: Int) {
             val metaSize = channel.readInt()
             val metaBytes = ByteArray(metaSize)
             channel.readFully(metaBytes)
-
             val media = Json.decodeFromString<ClipInfo>(metaBytes.decodeToString())
             val fileSize = channel.readLong()
             val file = media.fileName.toUF()
@@ -235,43 +235,36 @@ data class FeedPackage(
 )
 
 class FeedReceiver(port: Int, val volumeId: Long): Receiver(port) {
-    override suspend fun start() {
+    override suspend fun start() = withContext(Dispatchers.IO) {
         super.start()
-
         while (true) {
             try {
                 if (serverSocket?.isClosed == true) break
                 val clientSocket = serverSocket?.accept() ?: break
-
                 Logd(TAG) { "Client connected: ${clientSocket.remoteAddress}" }
-
                 try {
                     val channel = clientSocket.openReadChannel()
                     val size = channel.readInt()
                     val bytes = ByteArray(size)
                     channel.readFully(bytes)
-
                     val json = bytes.decodeToString()
                     val pkg = Json.decodeFromString<FeedPackage>(json)
                     val f = pkg.feed.toFeed()
                     upsert(f) { it.volumeId = volumeId }
                     Logd(TAG) { "Saved feed: ${f.title}" }
-
-                    runOnIOScope {
-                        val episodes = pkg.episodes.toList()
-                        episodes.forEach {
-                            val e = it.toEpisode()
-                            Logd(TAG) { "Saved episode: ${e.title}" }
+                    val episodes = pkg.episodes.toList()
+                    launch {
+                        realm.write {
+                            episodes.forEach {
+                                copyToRealm(it.toEpisode(), UpdatePolicy.ALL)
+                                Logd(TAG) { "Saved episode: ${it.title}" }
+                            }
                         }
                     }
-
                     receiveClips(channel)
                     Logt(TAG, "Received ${pkg.feed.eigenTitle} with ${pkg.episodes.size} episodes and ${pkg.clips.size} clips")
-                } catch (e: Exception) {
-                    Logt(TAG, "Receiving feed terminated: ${e.message}")
-                } finally {
-                    withContext(NonCancellable) { withContext(Dispatchers.IO) { clientSocket.close() } }
-                }
+                } catch (e: Exception) { Logt(TAG, "Receiving feed terminated: ${e.message}")
+                } finally { withContext(NonCancellable) { withContext(Dispatchers.IO) { clientSocket.close() } } }
             } catch (e: Throwable) { }
         }
     }
@@ -297,25 +290,21 @@ suspend fun sendFeed(host: String, port: Int, feedId: Long, onEnd: ()->Unit) {
     try {
         socket = aSocket(socketSelector).tcp().connect(host, port)
         Logd(TAG) { "got socket" }
-
         val json = Json.encodeToString(pkg)
         Logd(TAG) { "built json" }
         val bytes = json.toByteArray()
         Logd(TAG) { "(${bytes.size} bytes)" }
-
         val channel = socket.openWriteChannel()
         channel.writeInt(bytes.size)
         channel.writeByteArray(bytes)
-
         sendClips(channel, pkg.clips)
         channel.flush()
-
         upsert(feed) { it.freeze(true) }
         Logt(TAG, "Sent feed: ${pkg.feed.eigenTitle} ${pkg.episodes.size} episodes (${bytes.size} bytes)")
     } catch (e: Throwable) {
         Logt(TAG, "Sending feed terminated: ${e.message}")
     } finally {
-        socket?.close()
+        withContext(Dispatchers.IO) { socket?.close() }
         onEnd()
     }
 }
@@ -335,37 +324,31 @@ class EpisodesReceiver(port: Int, val onEnd: ()->Unit): Receiver(port) {
             try {
                 if (serverSocket?.isClosed == true) break
                 val clientSocket = serverSocket?.accept() ?: break
-
                 Logd(TAG) { "Client connected: ${clientSocket.remoteAddress}" }
-
                 try {
                     val channel = clientSocket.openReadChannel()
                     val size = channel.readInt()
                     val bytes = ByteArray(size)
                     channel.readFully(bytes)
-
                     val json = bytes.decodeToString()
                     val pkg = Json.decodeFromString<EpisodesPackage>(json)
-
                     Logd(TAG) { "Received ${pkg.episodes.size} episodes for ${pkg.syntheticName}" }
-
                     val f = feedsMap.values.find { it.eigenTitle == pkg.syntheticName } ?: run {
                         val f_ = createSynthetic(0, pkg.syntheticName)
                         upsert(f_) {}
                     }
-
                     Logd(TAG) { "Saved feed: ${f.title}" }
-                    pkg.episodes.forEach {
-                        val e = it.toEpisode()
-                        upsert(e) { e_ -> e_.feedId = f.id }
-                        Logd(TAG) { "Saved episode: ${e.title}" }
+                    realm.write {
+                        pkg.episodes.forEach {
+                            val e = it.toEpisode()
+                            e.feedId = f.id
+                            copyToRealm(e, UpdatePolicy.ALL)
+                            Logd(TAG) { "Saved episode: ${e.title}" }
+                        }
                     }
-
                     receiveClips(channel)
-
                     Logt(TAG, "Received ${pkg.episodes.size} episodes for ${pkg.syntheticName}")
-                } catch (e: Exception) {
-                    Logt(TAG, "Receiving feed terminated: ${e.message}")
+                } catch (e: Exception) { Logt(TAG, "Receiving feed terminated: ${e.message}")
                 } finally {
                     withContext(NonCancellable) { withContext(Dispatchers.IO) { clientSocket.close() } }
                     onEnd()

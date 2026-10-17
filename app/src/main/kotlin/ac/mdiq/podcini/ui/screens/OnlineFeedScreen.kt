@@ -676,7 +676,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                                     Icon(imageVector = ImageVector.vectorResource(ratingRes), tint = MaterialTheme.colorScheme.tertiary, contentDescription = null)
                                 }
                                 if (!sLog.description.isNullOrBlank()) Text(sLog.description ?: "", color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 15.dp, bottom = 5.dp))
-                                Text(sLog.url ?: "no url", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 15.dp, bottom = 5.dp))
+                                Text(sLog.url ?: "no url", color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 15.dp, bottom = 5.dp))
                                 val cancelDate = remember(sLog.id) { formatAbbrev(sLog.cancelDate) }
                                 Text(stringResource(R.string.removed_on) + ": " + cancelDate, color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 15.dp, bottom = 10.dp))
                             }

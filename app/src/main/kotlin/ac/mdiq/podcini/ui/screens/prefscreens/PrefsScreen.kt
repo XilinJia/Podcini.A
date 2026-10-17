@@ -166,7 +166,7 @@ fun PrefPortalScreen() {
             Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
             Column(modifier = Modifier.weight(1f).clickable { pfBackStack.add(screen) }) {
                 Text(stringResource(titleRes), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-                Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.labelSmall)
             }
         }
     }
@@ -286,7 +286,7 @@ fun LicensesScreen() {
                 showDialog = true
             }) {
                 Text(item.title, color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-                Text(item.subtitle, color = textColor, style = MaterialTheme.typography.bodySmall)
+                Text(item.subtitle, color = textColor, style = MaterialTheme.typography.labelSmall)
             }
         }
     }

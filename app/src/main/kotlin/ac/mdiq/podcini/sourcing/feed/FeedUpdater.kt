@@ -20,17 +20,14 @@ import ac.mdiq.podcini.storage.database.addNewFeed
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
-import ac.mdiq.podcini.storage.database.cancelMonitorFeeds
 import ac.mdiq.podcini.storage.database.compileLanguages
 import ac.mdiq.podcini.storage.database.compileTags
 import ac.mdiq.podcini.storage.database.episodesByIdentifyingValue
 import ac.mdiq.podcini.storage.database.eraseEpisodes
 import ac.mdiq.podcini.storage.database.feedByIdentityOrID
-import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.guessDuplicates
-import ac.mdiq.podcini.storage.database.monitorFeeds
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.sumup

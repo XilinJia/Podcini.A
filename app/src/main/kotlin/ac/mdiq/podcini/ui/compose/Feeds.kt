@@ -58,8 +58,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -247,19 +249,24 @@ fun OnlineFeedItem(result: FeedSearchResult, log: SubscriptionLog? = null) {
 @Composable
 fun AmendSyntheticFeed(feed_: Feed? = null, name_: String? = null, volume: Volume? = null, onDismiss: () -> Unit, cb: (Feed)->Unit) {
     CommonPopupCard(onDismiss = { onDismiss() }) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
             Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
             var name by remember { mutableStateOf(feed_?.title ?: name_ ?: "") }
             TextField(value = name,  singleLine = true, onValueChange = { name = it }, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_namee)) })
             var hasVideo by remember { mutableStateOf(true) }
-            var feedType by remember { mutableStateOf(FeedType.fromName(feed_?.type)) }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = hasVideo, onCheckedChange = { hasVideo = it })
                 Text(text = stringResource(R.string.has_video), style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
             }
             HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
-            Text(text = stringResource(R.string.pref_feed_type_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
-            for (type in FeedType.entries + listOf(null)) {
+            var showFeedType by remember { mutableStateOf(false) }
+            var feedType by remember { mutableStateOf(FeedType.fromName(feed_?.type)) }
+            Text(text = stringResource(R.string.synthetic_feed_type_sum), style = MaterialTheme.typography.labelSmall, color = textColor)
+            Row(modifier = Modifier.padding(top = 10.dp)) {
+                Text(text = stringResource(R.string.pref_feed_type), style = MaterialTheme.typography.bodyMedium, color = buttonColor, modifier = Modifier.clickable { showFeedType = !showFeedType })
+                Text(text = feedType?.name?:"null", style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
+            }
+            if (showFeedType) for (type in FeedType.entries + listOf(null)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = type == feedType, onCheckedChange = { feedType = type })
                     Text(text = type?.name?:"null", style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
@@ -270,11 +277,12 @@ fun AmendSyntheticFeed(feed_: Feed? = null, name_: String? = null, volume: Volum
                 Spacer(Modifier.weight(1f))
                 Button({
                     var feed = feed_ ?: createSynthetic(0, name, hasVideo)
-                    feed.type = feedType?.name
-                    if (hasVideo) feed.videoModePolicy = VideoMode.WINDOW
-                    if (volume != null) feed.volumeId = volume.id
-                    if (feed_ != null) feed.customTitle = if (name == feed.eigenTitle) null else name
-                    feed = upsertBlk(feed) { }
+                    feed = upsertBlk(feed) {
+                        it.type = feedType?.name
+                        if (hasVideo) it.videoModePolicy = VideoMode.WINDOW
+                        if (volume != null) it.volumeId = volume.id
+                        if (feed_ != null) it.customTitle = if (name == it.eigenTitle) null else name
+                    }
                     cb(feed)
                     onDismiss()
                 }) { Text(stringResource(R.string.confirm_label)) }
@@ -352,7 +360,7 @@ fun VideoModeDialog(initMode: VideoMode?, isDemuxed: Boolean? = null, muxed: Boo
                         Checkbox(checked = useMuxed, onCheckedChange = { useMuxed = it })
                         Text(stringResource(R.string.pref_muxed_video), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 16.dp))
                     }
-                    Text(stringResource(R.string.pref_muxed_video_sum), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 16.dp))
+                    Text(stringResource(R.string.pref_muxed_video_sum), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 16.dp))
                 }
             }
             Row {

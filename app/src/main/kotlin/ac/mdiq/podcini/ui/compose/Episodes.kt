@@ -1691,7 +1691,7 @@ fun ConfirmAddToFeed(onDismiss: () -> Unit, cb: suspend (Feed)-> Unit) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.add_to_feed), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 if (synthetics.isNotEmpty()) {
-                    Text(text = stringResource(R.string.add_to_synthetic_note), style = MaterialTheme.typography.bodySmall, color = textColor)
+                    Text(text = stringResource(R.string.add_to_synthetic_note), style = MaterialTheme.typography.labelSmall, color = textColor)
                     LazyColumn(modifier = Modifier.weight(1f).padding(start = 10.dp, end = 10.dp), verticalArrangement = Arrangement.Top) {
                         items(synthetics, key = { it.id }) { f ->
                             Row(verticalAlignment = Alignment.CenterVertically) {

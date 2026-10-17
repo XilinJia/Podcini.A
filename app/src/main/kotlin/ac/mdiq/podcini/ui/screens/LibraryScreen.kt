@@ -70,6 +70,7 @@ import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatWithGrouping
+import ac.mdiq.podcini.utils.showMemoryUsage
 import ac.mdiq.podcini.utils.timeIt
 import android.annotation.SuppressLint
 import android.app.Activity.RESULT_OK
@@ -337,7 +338,7 @@ class LibraryVM : ViewModel() {
         feedIdsToUse = listOf()
     }
 
-    suspend fun feedsRealmFlows(): Flow<RealmResults<Feed>> {
+    fun feedsRealmFlows(): Flow<RealmResults<Feed>> {
         Logd(TAG) { "feedsRealmFlows subPrefs.sortProperty: ${prefsFlow.value.sortProperty}" }
         fun languagesQS() : String {
             var qrs  = ""
@@ -664,7 +665,6 @@ fun LibraryScreen() {
     }
 
     val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
-
     val feedsSelected = remember { mutableStateListOf<Feed>() }
     val feedsOptionsMap = remember { linkedMapOf<String, @Composable ()->Unit>(
         "AddToQueue" to { Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
@@ -713,16 +713,9 @@ fun LibraryScreen() {
         "OPMLExport" to { Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
             exitSelectMode()
             val exportType = ExportTypes.OPML_SELECTED
-            val ExportDateFormat = LocalDate.Format {
-                year()
-                char('-')
-                monthNumber()
-                char('-')
-                day()
-            }
             fun getExportFileName(outputNameTemplate: String): String {
                 val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-                val dateString = today.format(ExportDateFormat)
+                val dateString = today.format(LocalDate.Format { year(); char('-'); monthNumber(); char('-'); day() })
                 return outputNameTemplate.replace("%s", dateString)
             }
             val title = getExportFileName(exportType.outputNameTemplate)
@@ -739,10 +732,7 @@ fun LibraryScreen() {
                         try {
                             Logd(TAG) { "selectedFeeds: ${feedsSelected.size}" }
                             if (uri == null) ExportWorker(OpmlWriter()).exportFile(feedsSelected)
-                            else {
-                                val worker = DocumentFileExportWorker(OpmlWriter(), uri)
-                                worker.exportFile(feedsSelected)
-                            }
+                            else DocumentFileExportWorker(OpmlWriter(), uri).exportFile(feedsSelected)
                         } catch (e: Exception) { Loge(TAG, e, "exportOPML error") }
                     }
                 }?.launch(intentPickAction)
@@ -823,16 +813,6 @@ fun LibraryScreen() {
                         expanded = false
                     })
                     if (!vm.isViewGarden) {
-                        fun toggleAllFeeds() {
-                            vm.curVolume = null
-                            vm.showAllFeeds = !vm.showAllFeeds
-                        }
-                        DropdownMenuItem(text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(stringResource(R.string.show_all_feeds))
-                                Checkbox(checked = vm.showAllFeeds, onCheckedChange = { toggleAllFeeds() })
-                            }
-                        }, onClick = { toggleAllFeeds() })
                         DropdownMenuItem(text = { Text(stringResource(R.string.new_volume_label)) }, onClick = {
                             showNewVolume = true
                             expanded = false
@@ -873,6 +853,16 @@ fun LibraryScreen() {
                         expanded = false
                     })
                     if (!vm.isViewGarden) {
+                        fun toggleAllFeeds() {
+                            vm.curVolume = null
+                            vm.showAllFeeds = !vm.showAllFeeds
+                        }
+                        DropdownMenuItem(text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(stringResource(R.string.show_all_feeds))
+                                Checkbox(checked = vm.showAllFeeds, onCheckedChange = { toggleAllFeeds() })
+                            }
+                        }, onClick = { toggleAllFeeds() })
                         fun toggleArchived() {
                             runOnIOScope { upsert(subPrefs) { it.showArchived = !it.showArchived } }
                             expanded = false
@@ -884,6 +874,10 @@ fun LibraryScreen() {
                             }
                         }, onClick = { toggleArchived() })
                     }
+                    DropdownMenuItem(text = { Text(stringResource(R.string.show_memory_usage)) }, onClick = {
+                        showMemoryUsage()
+                        expanded = false
+                    })
                 }
             }
         }
@@ -1573,7 +1567,7 @@ fun LibraryScreen() {
                 text = {
                     Column {
                         Text(appAttribs.name + " at: " + (ip ?: "address unknown"))
-                        Text(stringResource(R.string.ports_sum), style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.ports_sum), style = MaterialTheme.typography.labelSmall)
                         if (receiveJob == null) Row(modifier = Modifier.fillMaxWidth().padding(5.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             TextField(value = udpPort.toString(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.broadcast_port)) }, singleLine = true, modifier = Modifier.trackAsTextField().weight(1f), onValueChange = { udpPort = it.toIntOrNull() ?: 0 })
                             TextField(value = tcpPort.toString(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.port_label)) }, singleLine = true, modifier = Modifier.trackAsTextField().weight(1f), onValueChange = { tcpPort = it.toIntOrNull() ?: 0 })
@@ -2009,8 +2003,7 @@ fun LibraryScreen() {
                 }
             }
             if (selectMode) {
-                Row(modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.tertiaryContainer),
-                    horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.tertiaryContainer), horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_upward_24), tint = buttonColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp).padding(start = 10.dp).clickable {
                         feedsSelected.clear()
                         for (i in 0..longPressIndex) feedsSelected.add(feedList[i])
@@ -2051,7 +2044,6 @@ fun LibraryScreen() {
                 }
             }
         }
-
     }
 }
 

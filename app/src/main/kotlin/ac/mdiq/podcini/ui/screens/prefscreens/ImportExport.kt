@@ -484,7 +484,7 @@ fun ImportExportScreen() {
                 var showIcon by remember { mutableStateOf(false) }
                 val focusManager = LocalFocusManager.current
                 TextField(value = count, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true, modifier = Modifier.trackAsTextField().weight(0.4f),  label = { Text("1:9", style = MaterialTheme.typography.bodySmall) },
+                    singleLine = true, modifier = Modifier.trackAsTextField().weight(0.4f),  label = { Text("1:9", style = MaterialTheme.typography.labelSmall) },
                     onValueChange = {
                         val intVal = it.toIntOrNull()
                         if (it.isEmpty() || (intVal != null && intVal>0 && intVal<10)) {
@@ -508,7 +508,7 @@ fun ImportExportScreen() {
                 selectAutoBackupDirLauncher.launch(intent)
             }) {
                 Text(stringResource(R.string.pref_auto_backup_folder), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-                Text(appPrefs.autoBackupFolder ?: stringResource(R.string.pref_auto_backup_folder_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                Text(appPrefs.autoBackupFolder ?: stringResource(R.string.pref_auto_backup_folder_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
             }
         }
         HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 5.dp))
@@ -549,13 +549,13 @@ fun ImportExportScreen() {
                             Checkbox(checked = importPADB, onCheckedChange = { importPADB = it })
                             Text(text = stringResource(R.string.import_PA_DB_label), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 10.dp))
                         }
-                        Text(stringResource(R.string.import_PA_DB_message), color = textColor, style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.import_PA_DB_message), color = textColor, style = MaterialTheme.typography.labelSmall)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = importPADirectory, onCheckedChange = { importPADirectory = it })
                             Text(text = stringResource(R.string.import_PA_directory_label), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 10.dp))
                         }
-                        Text(stringResource(R.string.import_PA_directory_message), color = textColor, style = MaterialTheme.typography.bodySmall)
-                        Text(stringResource(R.string.import_PA_message), color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp))
+                        Text(stringResource(R.string.import_PA_directory_message), color = textColor, style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.import_PA_message), color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 10.dp))
                     }
                 },
                 confirmButton = {

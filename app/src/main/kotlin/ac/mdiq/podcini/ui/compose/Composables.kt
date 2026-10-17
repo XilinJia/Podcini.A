@@ -245,7 +245,7 @@ fun IconTitleSummaryActionRow(vecRes: Int, titleRes: Int, summaryRes: Int, callb
         Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
         Column(modifier = Modifier.weight(1f).clickable { callback() }) {
             Text(stringResource(titleRes), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-            Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.labelSmall)
         }
     }
 }
@@ -254,7 +254,7 @@ fun IconTitleSummaryActionRow(vecRes: Int, titleRes: Int, summaryRes: Int, callb
 fun TitleSummaryActionColumn(titleRes: Int, summaryRes: Int, callback: ()-> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp).clickable { callback() }) {
         if (titleRes != 0) Text(stringResource(titleRes), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-        if (summaryRes != 0) Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.bodySmall)
+        if (summaryRes != 0) Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.labelSmall)
     }
 }
 
@@ -263,7 +263,7 @@ fun TitleSummarySwitchRow(titleRes: Int, summaryRes: Int, initVal: Boolean, cb: 
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
         Column(modifier = Modifier.weight(1f)) {
             Text(stringResource(titleRes), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-            Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.labelSmall)
         }
         var isChecked by remember { mutableStateOf(initVal) }
         Switch(checked = isChecked, onCheckedChange = {
@@ -415,7 +415,7 @@ fun SearchBarRow(hintTextRes: Int, defaultText: String, modifier: Modifier = Mod
     }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         val focusManager = LocalFocusManager.current
-        TextField(value = queryText, singleLine = true, textStyle = TextStyle(fontSize = 14.sp), label = { Text(stringResource(hintTextRes), style = MaterialTheme.typography.bodySmall) }, modifier = Modifier.trackAsTextField().weight(1f),
+        TextField(value = queryText, singleLine = true, textStyle = TextStyle(fontSize = 14.sp), label = { Text(stringResource(hintTextRes), style = MaterialTheme.typography.labelSmall) }, modifier = Modifier.trackAsTextField().weight(1f),
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
             onValueChange = { queryText = it },
             keyboardActions = KeyboardActions(onDone = {
@@ -451,7 +451,7 @@ fun NumberEditor(initVal: Int, label: String = "seconds", nz: Boolean = true, in
         }
     }
     if (instant)
-        TextField(value = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.bodySmall) }, singleLine = true, modifier = modifier.trackAsTextField(),
+        TextField(value = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.labelSmall) }, singleLine = true, modifier = modifier.trackAsTextField(),
             onValueChange = {
                 if (it.isEmpty() || it.toIntOrNull() != null) inputVal = it
                 if (it.toIntOrNull() != null) showSet = true
@@ -459,7 +459,7 @@ fun NumberEditor(initVal: Int, label: String = "seconds", nz: Boolean = true, in
             },
         )
     else
-        TextField(value = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.bodySmall) }, singleLine = true, modifier = modifier.trackAsTextField(),
+        TextField(value = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.labelSmall) }, singleLine = true, modifier = modifier.trackAsTextField(),
             onValueChange = {
                 if (it.isEmpty() || it.toIntOrNull() != null) inputVal = it
                 if (it.toIntOrNull() != null) showSet = true

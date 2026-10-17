@@ -622,7 +622,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                     }
                 }
                 AsyncImage(model = feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
-                Text(text = feed?.downloadUrl ?: "", color = textColor, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 15.dp).combinedClickable(
+                Text(text = feed?.downloadUrl ?: "", color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 15.dp).combinedClickable(
                     onClick = { feed?.downloadUrl.takeIf { !it.isNullOrBlank() }?.let { openInSystemDefault(it) } },
                     onLongClick = { feed?.downloadUrl.takeIf { !it.isNullOrBlank() }?.let { copyToClipboard(it, it) } }
                 ))

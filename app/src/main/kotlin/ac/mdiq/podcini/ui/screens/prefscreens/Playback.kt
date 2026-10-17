@@ -133,7 +133,7 @@ fun PlaybackScreen() {
                 var showIcon by remember { mutableStateOf(false) }
                 var newName by remember { mutableStateOf(appAttribs.langsPreferred.joinToString(", ")) }
                 val focusManager = LocalFocusManager.current
-                TextField(value = newName, singleLine = true, modifier = Modifier.trackAsTextField(), label = { Text("Case sensitive. Separate with ,", style = MaterialTheme.typography.bodySmall) },
+                TextField(value = newName, singleLine = true, modifier = Modifier.trackAsTextField(), label = { Text("Case sensitive. Separate with ,", style = MaterialTheme.typography.labelSmall) },
                     onValueChange = {
                         newName = it
                         showIcon =  true
@@ -154,7 +154,7 @@ fun PlaybackScreen() {
                     })
                 val langs = remember { appAttribs.langSet.joinToString(", ") }
                 Text("Candidates: $langs", color = textColor, style = MaterialTheme.typography.bodySmall)
-                Text(stringResource(R.string.preferred_languages_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.preferred_languages_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
             }
         }
 
@@ -193,7 +193,7 @@ fun PlaybackScreen() {
                     showCacheChangedDialog.value = true
                 }
             }
-            Text(stringResource(R.string.pref_stream_cache_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.pref_stream_cache_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
         }
         val hasMultiQ = remember { clientsHaveMultiQ() }
         if (hasMultiQ) {

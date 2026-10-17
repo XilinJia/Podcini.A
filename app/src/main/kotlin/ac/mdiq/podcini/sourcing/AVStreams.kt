@@ -347,7 +347,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                     if (client?.attributes?.hasVideo != true || (!useMuxed && client.attributes?.hasSeparateAVs == true)) {
                         var showLocales by remember { mutableStateOf(false) }
                         Text(stringResource(R.string.audio)+":", color = textColor, style = MaterialTheme.typography.titleMedium)
-                        Text(stringResource(R.string.audio_stream_set_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.audio_stream_set_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                         Text("${stringResource(R.string.locale)}: ${locale ?: "null"}", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showLocales = !showLocales })
                         if (showLocales && locales.size > 1) FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                             val langs = remember { curLocales.toList() }
@@ -418,7 +418,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                     }
                     if (useMuxed || needVideo) {
                         Text(stringResource(R.string.video)+":", color = textColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 3.dp))
-                        Text(stringResource(R.string.video_stream_set_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.video_stream_set_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                         var showProts by remember { mutableStateOf(false) }
                         Text("${stringResource(R.string.protocol)}: $vprot", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showProts = !showProts })
                         if (showProts && vprots.size > 1) {

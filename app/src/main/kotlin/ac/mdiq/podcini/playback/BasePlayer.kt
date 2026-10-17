@@ -11,7 +11,6 @@ import ac.mdiq.podcini.playback.SleepManager.Companion.setIfAutoEnable
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AVStreams
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
-
 import ac.mdiq.podcini.storage.database.allowForAutoDelete
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.checkAndMarkDuplicates
@@ -19,7 +18,6 @@ import ac.mdiq.podcini.storage.database.createSynthetic
 import ac.mdiq.podcini.storage.database.curIndexInActQueue
 import ac.mdiq.podcini.storage.database.deleteMedia
 import ac.mdiq.podcini.storage.database.episodeById
-import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm

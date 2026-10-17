@@ -822,8 +822,8 @@ fun Episode.toBasicDTO() = EpisodeDTO(
     commentTime = this.commentTime,
 )
 
-fun EpisodeDTO.toEpisode(): Episode = Episode().apply {
-    val dto = this@toEpisode
+fun EpisodeDTO.toEpisodePersist(): Episode = Episode().apply {
+    val dto = this@toEpisodePersist
     id = dto.id
     val e = episodeById(id) ?: this
 
@@ -859,6 +859,42 @@ fun EpisodeDTO.toEpisode(): Episode = Episode().apply {
         it.lastPlayedTime = dto.lastPlayedTime
         it.repeatTime = dto.repeatTime
     }
+}
+
+fun EpisodeDTO.toEpisode(): Episode = Episode().apply {
+    val dto = this@toEpisode
+    id = dto.id
+
+    if (feedId == null) feedId = dto.feedId
+    if (downloadUrl == null) downloadUrl = dto.downloadUrl
+    if (mimeType.isNullOrBlank()) mimeType = dto.mimeType
+    if (title == null) title = dto.title
+    if (shortDescription == null) shortDescription = dto.shortDescription
+    if (description == null) description = dto.description
+    if (link == null) link = dto.link
+    if (pubDate == 0L) pubDate = dto.pubDate
+    if (images.isEmpty() && !dto.imageUrl.isNullOrBlank()) addImage(Image(dto.imageUrl))
+    if (duration == 0) duration = dto.duration
+
+    position = dto.position
+    playedDuration = dto.playedDuration
+    timeSpent = dto.timeSpent
+    playbackCompletionTime = dto.playbackCompletionTime
+
+    viewCount = dto.viewCount
+    setPlayState(EpisodeState.fromCode(dto.playState), setTime = dto.playStateSetTime)
+    isAutoDownloadEnabled = dto.isAutoDownloadEnabled
+
+    tags = dto.tags.toRealmSet()
+    marks = dto.marks.toRealmSet()
+    clips = dto.clips.toRealmSet()
+    todos.clear()
+    todos.addAll(dto.todos.map { td -> td.toTodo() })
+
+    if (dto.ratingTime > 0L || dto.rating > Rating.UNRATED.code) setRating(Rating.fromCode(dto.rating), setTime = dto.ratingTime)
+    if (dto.commentTime > 0L || dto.comment.isNotBlank()) addComment(dto.comment, addition = false, setTime = dto.commentTime)
+    lastPlayedTime = dto.lastPlayedTime
+    repeatTime = dto.repeatTime
 }
 
 fun EpisodeIPC.toEpisode(): Episode {

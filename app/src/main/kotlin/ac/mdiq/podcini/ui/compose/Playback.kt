@@ -232,7 +232,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         trailingIcon = { Icon(imageVector = Icons.Filled.Add, contentDescription = "Add icon", modifier = Modifier.size(FilterChipDefaults.IconSize)) })
                     else IconButton(onClick = { showEdit = true }) { Icon(Icons.Default.Edit, contentDescription = "Edit preset") }
                 }
-                Text(stringResource(R.string.pref_playback_speed_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.pref_playback_speed_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                 if (showEdit) Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     var sliderPosition by remember { mutableFloatStateOf(speed2Slider(if (speed == SPEED_USE_GLOBAL) 1f else speed, maxSpeed)) }
                     val stepSize = 0.05f
@@ -322,7 +322,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                     var unit by remember { mutableStateOf("Ratio") }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val focusManager = LocalFocusManager.current
-                        TextField(value = pitchStr, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("float", style = MaterialTheme.typography.bodySmall) }, singleLine = true, modifier = Modifier.trackAsTextField().width(100.dp),
+                        TextField(value = pitchStr, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("float", style = MaterialTheme.typography.labelSmall) }, singleLine = true, modifier = Modifier.trackAsTextField().width(100.dp),
                             onValueChange = {
                                 val value = it.toFloatOrNull()
                                 if (it.isEmpty() || value != null) pitchStr = it
@@ -377,19 +377,19 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         Text(stringResource(R.string.global))
                         Spacer(Modifier.weight(1f))
                     }
-                    Text(stringResource(R.string.pref_skip_silence_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.pref_skip_silence_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                     HorizontalDivider(thickness = 5.dp, modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.pref_rewind), style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         NumberEditor(rewindSecs, modifier = Modifier.weight(0.6f)) { rewindSecs = it }
                     }
-                    Text(stringResource(R.string.pref_rewind_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.pref_rewind_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                     HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.pref_fast_forward), style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         NumberEditor(fastForwardSecs, modifier = Modifier.weight(0.6f)) { fastForwardSecs = it }
                     }
-                    Text(stringResource(R.string.pref_fast_forward_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.pref_fast_forward_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                     HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Text(stringResource(R.string.pref_fallback_speed), style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
                     SpeedSetter(fallbackSpeed, maxSpeed = 3f) {
@@ -400,7 +400,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         }
                         fallbackSpeed = round(100 * speed_) / 100f
                     }
-                    Text(stringResource(R.string.pref_fallback_speed_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.pref_fallback_speed_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                     HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Text(stringResource(R.string.pref_speed_forward), style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
                     SpeedSetter(speedforwardSpeed, maxSpeed = 10f) {
@@ -411,7 +411,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         }
                         speedforwardSpeed = round(10 * speed_) / 10
                     }
-                    Text(stringResource(R.string.pref_forward_speed_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.pref_forward_speed_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                     HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Text(stringResource(R.string.pref_speed_skip), style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
                     SpeedSetter(skipforwardSpeed, maxSpeed = 10f) {
@@ -422,7 +422,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         }
                         skipforwardSpeed = round(10 * speed_) / 10
                     }
-                    Text(stringResource(R.string.pref_speed_forward_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.pref_speed_forward_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
@@ -524,7 +524,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                 if (enableChangeTime) {
                     var from by remember { mutableStateOf(autoEnableFrom.toString()) }
                     var to by remember { mutableStateOf(autoEnableTo.toString()) }
-                    Text(stringResource(R.string.auto_enable_sum), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 10.dp))
+                    Text(stringResource(R.string.auto_enable_sum), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 10.dp))
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp).fillMaxWidth()) {
                         TextField(value = from, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("From") }, singleLine = true, modifier = Modifier.trackAsTextField().weight(1f).padding(end = 8.dp),
                             onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) from = it })

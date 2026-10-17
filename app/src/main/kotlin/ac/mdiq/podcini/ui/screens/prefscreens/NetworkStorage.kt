@@ -368,7 +368,7 @@ fun NetworkStorageScreen() {
                             showIcon =  false })
                 })
             }
-            Text(stringResource(R.string.network_identifier_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.network_identifier_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
         }
         TitleSummarySwitchRow(R.string.pref_use_external_apps, R.string.pref_use_external_app_sum, appPrefs.loadExternalApp) {
             runOnIOScope { upsert(appPrefs) { p-> p.loadExternalApp = it} }
@@ -385,7 +385,7 @@ fun NetworkStorageScreen() {
                     checkAndScheduleUpdateTaskOnce(replace = true, force = it > 0)
                 }
             }
-            Text(stringResource(R.string.feed_refresh_sum), color = textColor, style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.feed_refresh_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
             fun getRefreshTime(): String {
                 val initialDelay = intervalInMillis
                 val lastUpdateTime = appAttribsFlow!!.value.prefLastFullUpdateTime
@@ -408,7 +408,7 @@ fun NetworkStorageScreen() {
         if (showResetCustomFolderDialog) {
             AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { showResetCustomFolderDialog = false },
                 title = { Text(stringResource(R.string.pref_custom_media_dir_title), style = CustomTextStyles.titleCustom) },
-                text = { Text(stringResource(R.string.pref_custom_media_dir_sum2), color = textColor, style = MaterialTheme.typography.bodySmall) },
+                text = { Text(stringResource(R.string.pref_custom_media_dir_sum2), color = textColor, style = MaterialTheme.typography.labelSmall) },
                 confirmButton = {
                     TextButton(onClick = {
                         showProgress = true
@@ -438,7 +438,7 @@ fun NetworkStorageScreen() {
             val sumTextRes = if (appPrefs.useCustomMediaFolder) R.string.pref_custom_media_dir_sum1 else R.string.pref_custom_media_dir_sum
             AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { showSetCustomFolderDialog = false },
                 title = { Text(stringResource(R.string.pref_custom_media_dir_title), style = CustomTextStyles.titleCustom) },
-                text = { Text(stringResource(sumTextRes), color = textColor, style = MaterialTheme.typography.bodySmall) },
+                text = { Text(stringResource(sumTextRes), color = textColor, style = MaterialTheme.typography.labelSmall) },
                 confirmButton = {
                     TextButton(onClick = {
                         try {
@@ -456,7 +456,7 @@ fun NetworkStorageScreen() {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
             Column(modifier = Modifier.weight(1f).clickable { showSetCustomFolderDialog = true }) {
                 Text(stringResource(R.string.pref_custom_media_dir_title), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-                Text(appPrefs.customMediaUri.ifBlank { stringResource(R.string.pref_custom_media_dir_sum) }, color = textColor, style = MaterialTheme.typography.bodySmall)
+                Text(appPrefs.customMediaUri.ifBlank { stringResource(R.string.pref_custom_media_dir_sum) }, color = textColor, style = MaterialTheme.typography.labelSmall)
             }
             if (appPrefs.useCustomMediaFolder) TextButton(onClick = { showResetCustomFolderDialog = true }) { Text(stringResource(R.string.reset)) }
         }
@@ -472,7 +472,7 @@ fun NetworkStorageScreen() {
                         runOnIOScope { upsert(appPrefs) { p-> p.episodeCacheSize = it} }
                     }
                 }
-                Text(stringResource(R.string.pref_episode_cache_summary), color = textColor, style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.pref_episode_cache_summary), color = textColor, style = MaterialTheme.typography.labelSmall)
             }
             var showCleanupOptions by remember { mutableStateOf(false) }
             TitleSummaryActionColumn(R.string.pref_episode_cleanup_title, R.string.pref_episode_cleanup_summary) { showCleanupOptions = true }
@@ -710,7 +710,7 @@ fun SynchronizationScreen() {
             title = { Text(stringResource(R.string.connect_to_peer), style = CustomTextStyles.titleCustom) },
             text = {
                 Column {
-                    Text(stringResource(R.string.wifisync_explanation_message), style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.wifisync_explanation_message), style = MaterialTheme.typography.labelSmall)
                     Row {
                         TextButton(onClick = {
                             val wifiManager = context.getSystemService(WIFI_SERVICE) as WifiManager

@@ -1,8 +1,8 @@
 package ac.mdiq.podcini.automation
 
-import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
 import ac.mdiq.podcini.playback.isCurMedia
 import ac.mdiq.podcini.shared.nowInMillis
+import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
 import ac.mdiq.podcini.storage.database.EPISODE_CACHE_SIZE_UNLIMITED
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -12,7 +12,6 @@ import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.removeFromAllQueues
-import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.PlayQueue
@@ -217,15 +216,17 @@ private suspend fun assembleCandidates(feeds_: List<Feed>?, candidates: MutableS
             if (episodes0.isNotEmpty()) episodes.addAll(episodes0)
             if (episodes.isNotEmpty()) {
                 var count = 0
-                for (e in episodes) {
-                    if (isCurMedia(e)) continue
-                    if (e.downloadUrl.isNullOrBlank()) {
-                        LogeFor(TAG, e.id, "episode downloadUrl is null or blank, skipped from auto-download")
-                        upsert(e) { it.isAutoDownloadEnabled = false }
-                        continue
+                realm.write {
+                    for (e in episodes) {
+                        if (isCurMedia(e)) continue
+                        if (e.downloadUrl.isNullOrBlank()) {
+                            LogeFor(TAG, e.id, "episode downloadUrl is null or blank, skipped from auto-download")
+                            findLatest(e)?.let { it.isAutoDownloadEnabled = false }
+                            continue
+                        }
+                        candidates.add(e)
+                        if (++count >= allowedDLCount) break
                     }
-                    candidates.add(e)
-                    if (++count >= allowedDLCount) break
                 }
             }
             episodes.clear()
