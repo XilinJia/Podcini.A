@@ -798,9 +798,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         avStreams.resolutionFlow.value = ""
         curClient = clientByEpisode(media)
         if (curClient != null) {
-            // TODO: test
-//            mediaSource = mediaSourceFromClient(!isAutoController && !audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY))
-            mediaSource = null
+            mediaSource = mediaSourceFromClient(!isAutoController && !audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY))
             if (mediaSource != null) {
                 Logd(TAG) { "prepareDataSource setting with mediaSource" }
                 mediaItem = mediaSource!!.mediaItem
