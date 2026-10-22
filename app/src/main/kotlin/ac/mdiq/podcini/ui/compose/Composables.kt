@@ -102,9 +102,18 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
-fun CommonDialogSurface(onDismiss: () -> Unit, content: @Composable (() -> Unit)) {
+fun CommonDialogWide(onDismiss: () -> Unit, content: @Composable (() -> Unit)) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor), modifier = Modifier.fillMaxWidth(0.9f)) {
+            content()
+        }
+    }
+}
+
+@Composable
+fun CommonDialog(onDismiss: () -> Unit, content: @Composable (() -> Unit)) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
             content()
         }
     }
@@ -119,7 +128,6 @@ fun CommonPopupCard(onDismiss: () -> Unit, alignment: Alignment = Alignment.TopC
         }
     }
 }
-
 
 @Composable
 fun filterChipBorder(selected: Boolean): BorderStroke {
@@ -337,7 +345,7 @@ fun confirm(title: String, message: String, confirmRes: Int, onConfirm: ()->Unit
 
 @Composable
 fun CommonConfirmDialog(c: CommonConfirmAttrib) {
-    CommonDialogSurface(onDismiss = { commonConfirms.remove(c) }) {
+    CommonDialog(onDismiss = { commonConfirms.remove(c) }) {
         Column {
             Text(c.title, style = MaterialTheme.typography.titleMedium)
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) { Text(c.message) }

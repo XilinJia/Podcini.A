@@ -99,8 +99,8 @@ abstract class BasePlayer {
         get() = status == PlayerStatus.INITIALIZED
     val isStopped: Boolean
         get() = status == PlayerStatus.STOPPED
-    val isError: Boolean
-        get() = status == PlayerStatus.ERROR
+//    val isError: Boolean
+//        get() = status == PlayerStatus.ERROR
 
     internal var isSkipping = false
 
@@ -248,15 +248,15 @@ abstract class BasePlayer {
                 if (media != null) runOnIOScope { try { loadChapters(media, false) } catch (e: Throwable) { LogsFor(TAG, media.id, e, "Error loading chapters for: ${media.title}") } }
             }
             isPaused -> saveCurState(status_ = newStatus)
-            isStopped -> {}
+            isStopped -> pause(reprepare = false)
             isPlaying -> {
                 saveCurState(status_ = newStatus)
                 if (oldStatus != null) setIfAutoEnable()
             }
-            isError -> {
-                saveCurState()
-                pause(reprepare = false)
-            }
+//            isError -> {
+//                saveCurState()
+//                pause(reprepare = false)
+//            }
             else -> {}
         }
         TileService.requestListeningState(context, ComponentName(context, QuickSettingsTileService::class.java))
@@ -449,7 +449,7 @@ abstract class BasePlayer {
                     if (prepareImmediately) prepareInitialized()
                 }
             } catch (e: Throwable) {
-                withContext(Dispatchers.Main) { handlePlayerStatus(PlayerStatus.ERROR, curMediaFlow.value) }
+                withContext(Dispatchers.Main) { handlePlayerStatus(PlayerStatus.STOPPED, curMediaFlow.value) }
                 LogsFor(TAG, curMediaFlow.value?.id, e, "prepareMedia error: [${e.localizedMessage}]")
             } finally { }
         }
@@ -811,7 +811,7 @@ abstract class BasePlayer {
     }
 
     enum class PlayerStatus(private val statusValue: Int) {
-        ERROR(-1),
+//        ERROR(-1),
         STOPPED(5),
         INITIALIZED(10), // playback service was started, data source of media player was set
         PREPARED(20),

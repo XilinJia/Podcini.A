@@ -171,7 +171,6 @@
     <string name="runtime_memory">Runtime Used Memory</string>
     <string name="system_available">System Available</string>
 
-    <string name="show_memory_usage">Show memory usage</string>
     <string name="show_all_feeds">Show all feeds</string>
     <string name="show_archived">Show archived</string>
 
@@ -884,7 +883,6 @@
     <string name="minute">Minute</string>
     <string name="second">Second</string>
     <string name="set_due_time">Set due time</string>
-    <string name="add_notes">Add notes</string>
     <string name="notify">Notify</string>
 
     <string name="show_done">Show done</string>
@@ -1083,6 +1081,18 @@
     <string name="share_dialog_media_address">Media address</string>
     <string name="share_dialog_media_file_label">Media file</string>
     <string name="share_starting_position_label">Starting from</string>
+
+    <!--    playback -->
+    <string name="error_media_not_accessible">External client failed to build media source, is the media accessible?</string>
+    <string name="stream_ended_early">Stream ended prematurely at %d ms. Resuming...</string>
+    <string name="cast_device_disconnect_early">Cast device disconnected stream early at %d ms. Remotely resuming...</string>
+    <string name="media_duration_adjusted">Media duration adjusted to: %s</string>
+    <string name="corrupted_cache_cleared">corrupted cache is cleared, try playing it again</string>
+    <string name="behind_live_window">behind live window, retrying...</string>
+    <string name="parsing_unsupported">parsing unsupported. If media is served by an external app, try play again, or try toggling \'Use external apps\' in Settings, and play again.</string>
+    <string name="can_not_handle_float_sampling">system can not handle float sampling, recreating players with float off</string>
+    <string name="access_denied">Access denied (403). Try playing it again.  </string>
+
 
     <!-- Audio controls -->
     <string name="audio_controls">Audio controls</string>

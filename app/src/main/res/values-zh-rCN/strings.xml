@@ -628,7 +628,6 @@
     <string name="hour">小时</string>
     <string name="minute">分钟</string>
     <string name="set_due_time">设定到期时间</string>
-    <string name="add_notes">添加备注</string>
     <string name="show_done">显示已完成</string>
     <string name="show">显示</string>
     <string name="auto_enable_label">按下播放时自动激活睡眠计时器</string>

@@ -7,7 +7,6 @@ import ac.mdiq.podcini.sourcing.download.RequestType
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater
 import ac.mdiq.podcini.sourcing.handleShared
 import ac.mdiq.podcini.storage.database.addToFeed
-import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -21,7 +20,7 @@ import ac.mdiq.podcini.storage.model.SubscriptionLog
 import ac.mdiq.podcini.storage.specs.Rating.Companion.fromCode
 import ac.mdiq.podcini.ui.actions.ActionButton
 import ac.mdiq.podcini.ui.actions.ButtonTypes
-import ac.mdiq.podcini.ui.compose.CommonDialogSurface
+import ac.mdiq.podcini.ui.compose.CommonDialogWide
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.ConfirmAddToFeed
 import ac.mdiq.podcini.ui.compose.ConfirmDialog
@@ -249,7 +248,7 @@ fun LogsScreen() {
                     else Loge(TAG, "Failed adding episode: null")
                     sharedUrl = ""
                 }
-                else -> CommonDialogSurface(onDismiss = { sharedUrl = "" }) {
+                else -> CommonDialogWide(onDismiss = { sharedUrl = "" }) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.existing), style = MaterialTheme.typography.titleMedium)
                         Box(modifier = Modifier.fillMaxWidth().requiredHeightIn(max = 300.dp).padding(vertical = 5.dp)) {

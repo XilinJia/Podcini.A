@@ -137,7 +137,7 @@ fun RemoveFeedDialog(feeds: List<Feed>, onDismiss: () -> Unit, callback: ()->Uni
     
     var textState by remember { mutableStateOf(TextFieldValue("")) }
 
-    CommonDialogSurface(onDismiss = onDismiss) {
+    CommonDialogWide(onDismiss = onDismiss) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(message)
             var saveImportant by remember { mutableStateOf(true) }

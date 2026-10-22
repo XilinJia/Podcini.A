@@ -617,7 +617,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                                 done = it
                                 runOnIOScope { upsertBlkEmb(todo) { todo -> todo.completed = done } }
                             })
-                            Text(text = todo.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.clickable {
+                            Text(text = todo.note, maxLines = 1, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.clickable {
                                 onTodo = todo
                                 showTodoDialog = true
                             })
@@ -703,7 +703,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
         //        Logd(TAG) { "episode.related: ${episode.related.size}" }
         if (episode.related.isNotEmpty()) {
             var showRelated by remember { mutableStateOf(false) }
-            if (showRelated) CommonDialogSurface(onDismiss = { showRelated = false }) {
+            if (showRelated) CommonDialogWide(onDismiss = { showRelated = false }) {
                 val related = remember(episode.related.size) { episode.related.toList() }
                 Box(modifier = Modifier.fillMaxWidth().requiredHeightIn(max = 300.dp)) {
                     EpisodeLazyColumn(related, layoutMode = LayoutMode.FeedTitle.code, forceFeedImage = true, showActionButtons = false, actionButtonCB = { e1, _ ->
@@ -999,15 +999,10 @@ fun DeleteCaptionsDialog(selected: List<Episode>, onDismiss: () -> Unit) {
 
 @Composable
 fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
-    CommonDialogSurface(onDismiss = onDismiss) {
+    CommonDialogWide(onDismiss = onDismiss) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            var title by remember { mutableStateOf(TextFieldValue(todo?.title ?: "")) }
-            BasicTextField(value = title, onValueChange = { title = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().height(40.dp).padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small),
-                decorationBox = { innerTextField -> Box(contentAlignment = Alignment.CenterStart) { innerTextField() } })
             var note by remember { mutableStateOf(TextFieldValue(todo?.note ?: "")) }
-            var showNote by remember { mutableStateOf(note.text.isNotBlank()) }
-            Text(text = stringResource(R.string.add_notes), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 10.dp).clickable(onClick = { showNote = !showNote}))
-            if (showNote) BasicTextField(value = note, onValueChange = { note = it }, textStyle = TextStyle(fontSize = 14.sp, color = textColor), minLines = 2, maxLines = 8, modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
+            BasicTextField(value = note, onValueChange = { note = it }, textStyle = TextStyle(fontSize = 14.sp, color = textColor), minLines = 2, maxLines = 8, modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             val sysTime = remember { nowInMillis() }
             var dueTime by remember { mutableLongStateOf(sysTime) }
             var editDueTime by remember { mutableStateOf((todo?.dueTime ?: 0) > 0) }
@@ -1042,6 +1037,7 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
                 }
             }
             Button(onClick = {
+                val notetext = note.text
                 runOnIOScope {
                     val priorDueTime = todo?.dueTime ?: 0L
                     try {
@@ -1062,15 +1058,13 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
                         if (todo == null) {
                             val todo_ = todo ?: Todo()
                             todo_.id = getEntityId()
-                            todo_.title = title.text
-                            todo_.note = note.text
+                            todo_.note = notetext
                             todo_.dueTime = 0L
                             if (setDueTime) todo_.dueTime = dueTime
                             upsert(episode) { it.todos.add(todo_) }
                         } else upsertBlkEmb(todo) { todo_ ->
-                            Logd(TAG) { "editing todo title: $title note: $note" }
-                            todo_.title = title.text
-                            todo_.note = note.text
+                            Logd(TAG) { "editing todo  note: $notetext" }
+                            todo_.note = notetext
                             todo_.dueTime = 0L
                             if (setDueTime) todo_.dueTime = dueTime
                         }
@@ -1090,8 +1084,8 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
 }
 
 @Composable
-fun EpisodeTimetableDialog(episode: Episode, onDismiss: () -> Unit, cb: (Timer)->Unit) {
-    CommonDialogSurface(onDismiss = onDismiss) {
+fun EpisodeTimersDialog(episode: Episode, onDismiss: () -> Unit, cb: (Timer)->Unit) {
+    CommonDialogWide(onDismiss = onDismiss) {
         val timers = remember { appAttribsFlow!!.value.timetable.filter { it.episodeId == episode.id } }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             for (timer in timers) {
@@ -1498,7 +1492,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
 @Composable
 fun EpisodeSortDialog(initOrder: EpisodeSortOrder, includeConditionals: List<EpisodeSortOrder> = listOf(), feed: Feed? = null, onDismiss: () -> Unit, onSelectionChanged: (EpisodeSortOrder?) -> Unit) {
     val viewCounts = remember { listOf(EpisodeSortOrder.VIEWS_ASC, EpisodeSortOrder.VIEWS_DESC, EpisodeSortOrder.VIEWS_SPEED_ASC, EpisodeSortOrder.VIEWS_SPEED_DESC) }
-    val viewSpeed = remember { listOf(EpisodeSortOrder.VIEWS_SPEED_ASC, EpisodeSortOrder.VIEWS_SPEED_DESC) }
+//    val viewSpeed = remember { listOf(EpisodeSortOrder.VIEWS_SPEED_ASC, EpisodeSortOrder.VIEWS_SPEED_DESC) }
     val likeCounts = remember { listOf(EpisodeSortOrder.LIKES_ASC, EpisodeSortOrder.LIKES_DESC) }
     val client = remember { if (feed != null) clientByFeed(feed) else null }
     val ordersOnFeed: List<EpisodeSortOrder> = remember { if (feed != null && client != null) { if (client.attributes?.hasViewCount == true) viewCounts else listOf<EpisodeSortOrder>() + if (client.attributes?.hasLikeCount == true) likeCounts else listOf() } else listOf() }

@@ -1,6 +1,7 @@
 package ac.mdiq.podcini.playback
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
+import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
 import ac.mdiq.podcini.playback.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
@@ -218,7 +219,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                             val totalDuration = exoPlayer?.duration ?: 0L
                             Logd(TAG) { "exoplayerListener onPlaybackStateChanged currentPos: $currentPos totalDuration: $totalDuration" }
                             if (totalDuration > 0 && (totalDuration - currentPos) > 5000) {
-                                Logt(TAG, "Stream ended prematurely at $currentPos ms. Resuming...")
+                                Logt(TAG, context.getString(R.string.stream_ended_early, currentPos))
 //                                exoPlayer?.stop()
 //                                val currentMediaItem = exoPlayer?.currentMediaItem
 //                                currentMediaItem?.let { item ->
@@ -252,7 +253,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                             val currentPos = player.currentPosition
                             val totalDuration = player.duration
                             if (player.playbackState == STATE_ENDED && totalDuration > 0 && (totalDuration - currentPos) > 10000) {
-                                Logt(TAG, "Cast device disconnected stream early at $currentPos ms. Remotely resuming...")
+                                Logt(TAG, context.getString(R.string.cast_device_disconnect_early, currentPos))
                                 val currentItem = player.currentMediaItem
                                 currentItem?.let { item ->
                                     player.setMediaItem(item, currentPos)
@@ -268,7 +269,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                             val curDuration = media.duration
                             if (duration != C.TIME_UNSET && duration > 0 && abs(duration - curDuration) > 5000) {
                                 runOnIOScope { upsert(media) { it.duration = duration.toInt() } }
-                                Logt(TAG, "Media duration adjusted to : ${durationStringFull(duration.toInt())}")
+                                Logt(TAG, context.getString(R.string.media_duration_adjusted, durationStringFull(duration.toInt())))
                             }
                         }
                     }
@@ -328,7 +329,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                         PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED -> {
                             exoPlayer?.stop()
                             curMediaFlow.value?.let { runOnIOScope { getCache().removeResource(it.id.toString()) } }
-                            Logt(TAG, "onPlayerError corrupted cache is cleared, try playing it again")
+                            Logt(TAG, context.getString(R.string.corrupted_cache_cleared))
                         }
                         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
                         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
@@ -341,7 +342,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                             exoPlayer?.play()
                         }
                         PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW -> {
-                            Logt(TAG, "onPlayerError behind live window, retrying...")
+                            Logt(TAG, context.getString(R.string.behind_live_window))
                             forcePlaybackReset = true
                             castPlayer?.prepare()
                             castPlayer?.play()
@@ -383,7 +384,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                         PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED-> {
                             curMediaFlow.value?.let { avStreams.clearSpecs() }
                             forcePlaybackReset = true
-                            Logt(TAG, "onPlayerError: parsing unsupported. If media is served by an external app, try play again, or try toggling 'Use external apps' in Settings, and play again.")
+                            Logt(TAG, context.getString(R.string.parsing_unsupported))
                         }
                         else -> {
                             val cause = error.cause
@@ -391,7 +392,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                             when {
                                 cause is AudioSink.InitializationException -> {
                                     if (enableFloat) {
-                                        Logt(TAG, "onPlayerError system can not handle float sampling, recreating players with float off")
+                                        Logt(TAG, context.getString(R.string.can_not_handle_float_sampling))
                                         enableFloat = false
                                         playbackService?.switchPlayersMode()
                                     }
@@ -399,7 +400,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                                 error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND || (cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 404) -> handleTerminalError("onPlayerError Episode not found on server (404).")
                                 cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 403 -> {
                                     curMediaFlow.value?.let { avStreams.clearSpecs() }
-                                    Logt(TAG, "onPlayerError Access denied (403). Try playing it again.")
+                                    Logt(TAG, context.getString(R.string.access_denied))
 //                                    Logt(TAG, "onPlayerError Access denied somehow. Retrying... ")
                                     Logd(TAG) { "onPlayerError Access denied (403) headers=${cause.headerFields} url: ${cause.dataSpec.uri}" }
 //                                    handleTerminalError("Access denied (403). Check your subscription.")
@@ -514,18 +515,13 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         }
         offloadEnabled = enabled
         Logd(TAG) { "switchOffload set audio offload $offloadEnabled" }
-
         val wasPlaying = castPlayer!!.isPlaying
         castPlayer!!.pause()
-        exoPlayer!!.trackSelectionParameters = exoPlayer!!.trackSelectionParameters
-            .buildUpon()
+        exoPlayer!!.trackSelectionParameters = exoPlayer!!.trackSelectionParameters.buildUpon()
             .setAudioOffloadPreferences(AudioOffloadPreferences.Builder()
-                .setAudioOffloadMode(if (offloadEnabled) AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED else AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED)
-                .build())
+                .setAudioOffloadMode(if (offloadEnabled) AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED else AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED).build())
             .build()
-
         needChangeOffload = false
-
         if (mediaSource != null) exoPlayer?.setMediaSource(mediaSource!!, curMediaFlow.value!!.position.toLong())
         else if (mediaItem != null) castPlayer?.setMediaItem(mediaItem!!)
 
@@ -543,11 +539,9 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         override fun queueInput(inputBuffer: ByteBuffer) {
             val encoding = inputAudioFormat.encoding
             val inChannels = inputAudioFormat.channelCount
-
             val bytesPerSample = if (encoding == C.ENCODING_PCM_FLOAT) 4 else 2
             val frameSize = bytesPerSample * inChannels
             val frameCount = inputBuffer.remaining() / frameSize
-
             val outputSize = frameCount * 2 * bytesPerSample // always stereo output
             val outputBuffer = replaceOutputBuffer(outputSize)
 
@@ -693,7 +687,6 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
             .setSeekForwardIncrementMs(fastForwardSecs * 1000L)
             .build()
         exoPlayer?.setSeekParameters(SeekParameters.DEFAULT)
-
         exoPlayer?.trackSelectionParameters = exoPlayer!!.trackSelectionParameters.buildUpon().setAudioOffloadPreferences(audioOffloadPreferences).build()
 
         Logd(TAG) { "createNativePlayer exoplayerListener == null: ${exoplayerListener == null}" }
@@ -706,7 +699,6 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
             exoPlayer?.addAudioOffloadListener(it)
         }
         castPlayer = buildCastPlayer(exoPlayer!!)
-
         timeIt("$TAG createNativePlayer end")
     }
 
@@ -806,7 +798,9 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         avStreams.resolutionFlow.value = ""
         curClient = clientByEpisode(media)
         if (curClient != null) {
-            mediaSource = mediaSourceFromClient(!isAutoController && !audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY))
+            // TODO: test
+//            mediaSource = mediaSourceFromClient(!isAutoController && !audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY))
+            mediaSource = null
             if (mediaSource != null) {
                 Logd(TAG) { "prepareDataSource setting with mediaSource" }
                 mediaItem = mediaSource!!.mediaItem
@@ -814,7 +808,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
             } else {
                 avStreams.clearSpecs()
                 forcePlaybackReset = true
-                throw Exception("External client failed to build media source")
+                throw Exception(context.getString(R.string.error_media_not_accessible))
             }
         } else {
             curClient = null

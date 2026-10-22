@@ -13,9 +13,13 @@ import ac.mdiq.podcini.storage.model.ShareLog
 import ac.mdiq.podcini.storage.model.SubscriptionLog
 import ac.mdiq.podcini.storage.specs.EpisodeFilter
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
+import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
+import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
+import ac.mdiq.podcini.utils.sessionLogsFlow
+import ac.mdiq.podcini.utils.showMemoryUsage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -106,9 +110,9 @@ fun NavDrawerScreen() {
             navMap[Screens.Queues.name]?.count = queuesLive.sumOf { it.size()}
             navMap[Screens.Library.name]?.count = feedCountFlow.value
             navMap[Screens.Facets.name]?.count = getEpisodesCount(EpisodeFilter(""))
-            navMap[Screens.Logs.name]?.count = realm.query(ShareLog::class).count().find().toInt() +
-                    realm.query(SubscriptionLog::class).count().find().toInt() +
-                    realm.query(DownloadResult::class).count().find().toInt()
+//            navMap[Screens.Logs.name]?.count = realm.query(ShareLog::class).count().find().toInt() +
+//                    realm.query(SubscriptionLog::class).count().find().toInt() +
+//                    realm.query(DownloadResult::class).count().find().toInt()
             val feeds_ = realm.query(Feed::class).sort("lastPlayed", sortOrder = Sort.DESCENDING).limit(8).find()
             withContext(Dispatchers.Main) {
                 feedBriefs.clear()
@@ -127,16 +131,25 @@ fun NavDrawerScreen() {
         drawerContainerColor = MaterialTheme.colorScheme.surface, drawerTonalElevation = 0.dp, drawerShape = myShape, windowInsets = WindowInsets.systemBars) {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(start = 10.dp, end = 5.dp, top = 10.dp, bottom = 10.dp).verticalScroll(rememberScrollState())) {
             for ((key, value) in navMap) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 15.dp).clickable {
-                    Logd(TAG) { "nav.key: $key" }
-                    if (key == Screens.Library.name) feedIdsToUse = listOf()
-                    navTo(value.navKey, PopMode.Clear)
-                    drawerCtrl?.close()
-                }) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 15.dp)) {
                     Icon(imageVector = ImageVector.vectorResource(value.iconRes), tint = textColor, contentDescription = key, modifier = Modifier.padding(start = 10.dp))
-                    Text(stringResource(value.nameRes), color = textColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 20.dp))
+                    Text(stringResource(value.nameRes), color = textColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 20.dp).clickable {
+                        Logd(TAG) { "nav.key: $key" }
+                        if (key == Screens.Library.name) feedIdsToUse = listOf()
+                        navTo(value.navKey, PopMode.Clear)
+                        drawerCtrl?.close()
+                    })
                     Spacer(Modifier.weight(1f))
                     if (value.count > 0) Text(value.count.toString(), color = textColor, modifier = Modifier.padding(end = 10.dp))
+                    else if (key == Screens.Logs.name) {
+                        Icon(imageVector = ImageVector.vectorResource(value.iconRes), tint = buttonColor, contentDescription = key, modifier = Modifier.padding(start = 10.dp).clickable {
+                            Logm(TAG, "Recent logs:", sessionLogsFlow.value.reversed().take(5).joinToString("\n"))
+                        })
+                        Spacer(Modifier.weight(0.3f))
+                        Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_memory_24), tint = buttonColor, contentDescription = key, modifier = Modifier.padding(start = 10.dp).clickable {
+                            showMemoryUsage()
+                        })
+                    }
                 }
             }
             HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))

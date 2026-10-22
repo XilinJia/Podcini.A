@@ -1,3 +1,17 @@
+# 12.16.4
+
+* confirm dialogs are no longer extra wide
+* in Todo dialog, title is extracted from the note, no longer needs separate input, DB migration is performed
+* in the drawer
+	* items clickable on the text only, not the whole row
+	* on Logs, instead of count, 2 icons are added: recent logs, and memory usage
+* "Show memory usage" is removd from Library memu
+* fixed parsing date with single digit
+* in Player
+	* if media streams are empty, set player to Stopped
+	* removed the Error status
+	* some player toasts are translatable
+
 # 12.16.3
 
 * improved DB performance in receive feed/episodes and feed cleanup

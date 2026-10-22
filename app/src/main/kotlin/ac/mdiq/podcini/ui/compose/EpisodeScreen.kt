@@ -183,7 +183,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
     var showShareDialog by remember { mutableStateOf(false) }
     var futureState by remember { mutableStateOf(EpisodeState.UNSPECIFIED) }
     var showAddTimerDialog by remember { mutableStateOf(false) }
-    var showTimetableDialog by remember { mutableStateOf(false) }
+    var showTimersDialog by remember { mutableStateOf(false) }
     var onTimer by remember { mutableStateOf(Timer()) }
     var showEditTimerDialog by remember { mutableStateOf(false) }
     var showTransDialog by remember { mutableStateOf(false) }
@@ -215,7 +215,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
 
         if (showAddTimerDialog) EditTimerDialog(episode = episode) { showAddTimerDialog = false }
 
-        if (showTimetableDialog) EpisodeTimetableDialog(episode, { showTimetableDialog = false }) {
+        if (showTimersDialog) EpisodeTimersDialog(episode, { showTimersDialog = false }) {
             onTimer = it
             showEditTimerDialog = true
         }
@@ -332,7 +332,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                         Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_timer_24), tint = if (timers.isEmpty()) buttonColor else buttonAltColor, contentDescription = "timer", modifier = Modifier.width(28.dp).height(32.dp).combinedClickable(
                             onClick = {
                                 if (timers.isEmpty()) showAddTimerDialog = true
-                                else showTimetableDialog = true
+                                else showTimersDialog = true
                             },
                             onLongClick = { showAddTimerDialog = true  }))
                         Spacer(Modifier.weight(0.5f))

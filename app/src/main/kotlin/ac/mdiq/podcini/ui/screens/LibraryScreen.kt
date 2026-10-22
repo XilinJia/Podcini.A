@@ -874,10 +874,6 @@ fun LibraryScreen() {
                             }
                         }, onClick = { toggleArchived() })
                     }
-                    DropdownMenuItem(text = { Text(stringResource(R.string.show_memory_usage)) }, onClick = {
-                        showMemoryUsage()
-                        expanded = false
-                    })
                 }
             }
         }

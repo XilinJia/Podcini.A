@@ -92,6 +92,7 @@ fun parseDate(input: String?): Instant? {
     date = date.replace(Regex("([+-]\\d\\d):(\\d\\d)$"), "$1$2")
     KnownTimeZones.forEach { (zone, offset) -> if (date.endsWith(zone)) date = date.dropLast(zone.length) + offset }
     if (date.contains(',')) date = date.substringAfter(',').trim()
+    date = date.replace(Regex("""\b(\d)\b"""), "0$1")
 
     runCatching { Instant.parse(date) }.getOrNull()?.let { return it }
 
