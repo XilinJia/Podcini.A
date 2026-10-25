@@ -61,7 +61,7 @@
     <string name="statistics_speed_not_counted">Notice: Playback speed is never taken into account.</string>
     <string name="statistics_start_month">Start month</string>
     <string name="statistics_end_month">End month</string>
-    <string name="statistics_month_year">Format: MM/YYYY</string>
+    <string name="mm_yyyy">MM/YYYY</string>
     <string name="statistics_today">Today</string>
     <string name="statistics_filter_all_time">All time</string>
     <string name="statistics_reset_data">Reset statistics data</string>
@@ -121,6 +121,7 @@
     <string name="error_msg_prefix">An error occurred:</string>
     <string name="refresh_label">Refresh</string>
     <string name="full_refresh_label">Refresh full</string>
+    <string name="full_refresh_Confirm_message">Full refresh gets new and also updates existing episodes for all feeds in the current volume. It takes longer than simple refresh (with swipe down). Continue?</string>
     <string name="clean_up">Clean up</string>
     <string name="fetch_size">Fetch size</string>
     <string name="clear_cache">Clear from cache</string>
@@ -1030,6 +1031,10 @@
     <string name="auto_downloadable_label">Auto downloadable</string>
     <string name="has_chapters">Has chapters</string>
     <string name="filename">File name</string>
+
+    <string name="older">Older</string>
+    <string name="between">Between</string>
+    <string name="newer">Newer</string>
 
     <string name="lower">Lower</string>
     <string name="middle">Middle</string>

@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">Huomio: toistonopeutta ei lasketa mukaan.</string>
     <string name="statistics_start_month">Kuukauden alku</string>
     <string name="statistics_end_month">Kuukauden loppu</string>
-    <string name="statistics_month_year">Muoto: KK/VVVV</string>
+
     <string name="statistics_today">Tänään</string>
     <string name="statistics_filter_all_time">Kaikki</string>
     <string name="statistics_reset_data">Nollaa tilastotiedot</string>

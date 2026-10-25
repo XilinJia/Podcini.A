@@ -1336,33 +1336,33 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                         }
                     }
                 }
-                for (item in EpisodesFilterGroup.entries) {
-                    if (item in disabledSet) continue
-                    if (item.properties.size == 2) {
+                for (group in EpisodesFilterGroup.entries) {
+                    if (group in disabledSet) continue
+                    if (group.properties.size == 2) {
                         Row(modifier = Modifier.padding(start = 5.dp).fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
                             var selectedIndex by remember { mutableIntStateOf(-1) }
                             if (selectNone) selectedIndex = -1
                             LaunchedEffect(Unit) {
-                                if (item.properties[0].filterId in filter.propertySet) selectedIndex = 0
-                                else if (item.properties[1].filterId in filter.propertySet) selectedIndex = 1
+                                if (group.properties[0].filterId in filter.propertySet) selectedIndex = 0
+                                else if (group.properties[1].filterId in filter.propertySet) selectedIndex = 1
                             }
-                            Text(stringResource(item.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge , color = textColor, modifier = Modifier.padding(end = 10.dp))
+                            Text(stringResource(group.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge , color = textColor, modifier = Modifier.padding(end = 10.dp))
                             Spacer(Modifier.width(30.dp))
                             OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (selectedIndex != 0) borderColor else buttonAltColor),
                                 onClick = {
                                     if (selectedIndex != 0) {
                                         selectNone = false
                                         selectedIndex = 0
-                                        filter.add(item.properties[0].filterId)
-                                        filter.remove(item.properties[1].filterId)
+                                        filter.add(group.properties[0].filterId)
+                                        filter.remove(group.properties[1].filterId)
                                     } else {
                                         selectedIndex = -1
-                                        filter.remove(item.properties[0].filterId)
+                                        filter.remove(group.properties[0].filterId)
                                     }
                                     Logd("EpisodesFilterDialog") { "selectedIndex: $selectedIndex filterValues = [${filter.propertySet}]" }
                                     onFilterChanged(filter)
                                 },
-                            ) { Text(text = stringResource(item.properties[0].displayName), color = textColor) }
+                            ) { Text(text = stringResource(group.properties[0].displayName), color = textColor) }
                             Spacer(Modifier.width(20.dp))
                             OutlinedButton(
                                 modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (selectedIndex != 1) borderColor else buttonAltColor),
@@ -1370,50 +1370,76 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                     if (selectedIndex != 1) {
                                         selectNone = false
                                         selectedIndex = 1
-                                        filter.add(item.properties[1].filterId)
-                                        filter.remove(item.properties[0].filterId)
+                                        filter.add(group.properties[1].filterId)
+                                        filter.remove(group.properties[0].filterId)
                                     } else {
                                         selectedIndex = -1
-                                        filter.remove(item.properties[1].filterId)
+                                        filter.remove(group.properties[1].filterId)
                                     }
                                     onFilterChanged(filter)
                                 },
-                            ) { Text(text = stringResource(item.properties[1].displayName), color = textColor) }
+                            ) { Text(text = stringResource(group.properties[1].displayName), color = textColor) }
                             //                            Spacer(Modifier.weight(0.5f))
                         }
                     } else {
                         Column(modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
-                            val selectedList = remember { MutableList(item.properties.size) { mutableStateOf(false)} }
+                            val selectedList = remember { MutableList(group.properties.size) { mutableStateOf(false)} }
                             var expandRow by remember { mutableStateOf(false) }
-                            when (item) {
+                            when (group) {
                                 EpisodesFilterGroup.DURATION -> {
-                                    Text(stringResource(item.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = buttonColor, modifier = Modifier.clickable { expandRow = !expandRow })
+                                    Text(stringResource(group.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = buttonColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                     if (expandRow) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             var showIcon by remember { mutableStateOf(false) }
                                             var floor by remember { mutableIntStateOf(filter.durationFloor/1000) }
                                             var ceiling by remember { mutableIntStateOf(filter.durationCeiling/1000) }
-                                            NumberEditor(floor, stringResource(R.string.floor_seconds), nz = true, instant = true, modifier = Modifier.weight(0.4f)) {
+                                            NumberEditor(floor, stringResource(R.string.floor_seconds), nz = true, instant = true, modifier = Modifier.width(150.dp)) {
                                                 floor = it
                                                 showIcon = true
                                             }
-                                            NumberEditor(ceiling, stringResource(R.string.ceiling_seconds), nz = true, instant = true, modifier = Modifier.weight(0.4f)) {
+                                            Spacer(Modifier.width(10.dp))
+                                            NumberEditor(ceiling, stringResource(R.string.ceiling_seconds), nz = true, instant = true, modifier = Modifier.width(150.dp)) {
                                                 ceiling = it
                                                 showIcon = true
                                             }
                                             if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon",
                                                 modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
-                                                    val f = floor
-                                                    val c = if (ceiling == 0) Int.MAX_VALUE else ceiling
-                                                    filter.durationFloor = f * 1000
-                                                    filter.durationCeiling = if (c < Int.MAX_VALUE) c * 1000 else c
+                                                    filter.durationFloor = floor * 1000
+                                                    filter.durationCeiling = if (ceiling == 0) Int.MAX_VALUE else ceiling * 1000
+                                                    onFilterChanged(filter)
                                                     showIcon = false
                                                 })
                                         }
                                     }
                                 }
+                                EpisodesFilterGroup.PUB_DATE -> {
+                                    Text(stringResource(group.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = buttonColor, modifier = Modifier.clickable { expandRow = !expandRow })
+                                    if (expandRow) {
+                                        var error by remember { mutableStateOf("") }
+                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                            var showIcon by remember { mutableStateOf(false) }
+                                            var timeFilterFrom by remember { mutableLongStateOf(filter.pubDateFloor) }
+                                            var timeFilterTo by remember { mutableLongStateOf(filter.pubDateCeiling) }
+                                            MonthYearInput(convertUnixTimeToMonthYear(timeFilterFrom), modifier = Modifier.width(150.dp), onError = { error = it }) { str ->
+                                                convertMonthYearToUnixTime(str)?.let { timeFilterFrom = it; error = ""; showIcon = true }
+                                            }
+                                            Spacer(Modifier.width(10.dp))
+                                            MonthYearInput(convertUnixTimeToMonthYear(timeFilterTo), modifier = Modifier.width(150.dp), onError = { error = it }) { str ->
+                                                convertMonthYearToUnixTime(str, false)?.let { timeFilterTo = it; error = ""; showIcon = true }
+                                            }
+                                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon",
+                                                modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                                                    filter.pubDateFloor = timeFilterFrom
+                                                    filter.pubDateCeiling = timeFilterTo
+                                                    onFilterChanged(filter)
+                                                    showIcon = false
+                                                })
+                                        }
+                                        if (error.isNotBlank()) Text(error)
+                                    }
+                                }
                                 EpisodesFilterGroup.TITLE_TEXT -> {
-                                    Text(stringResource(item.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = buttonColor, modifier = Modifier.clickable { expandRow = !expandRow })
+                                    Text(stringResource(group.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = buttonColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                     if (expandRow) {
                                         var showIcon by remember { mutableStateOf(false) }
                                         var titleText by remember { mutableStateOf((filter.titleText)) }
@@ -1428,6 +1454,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                                     modifier = Modifier.size(30.dp).clickable {
                                                         filter.titleText = titleText
                                                         focusManager.clearFocus()
+                                                        onFilterChanged(filter)
                                                         showIcon = false
                                                     })
                                             })
@@ -1435,12 +1462,12 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                 }
                                 else -> {
                                     Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
-                                        Text(stringResource(item.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = buttonColor, modifier = Modifier.clickable { expandRow = !expandRow })
+                                        Text(stringResource(group.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = buttonColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                         if (expandRow) {
                                             val cb = {
-                                                for (i in item.properties.indices) {
-                                                    if (selectedList[i].value) filter.add(item.properties[i].filterId)
-                                                    else filter.remove(item.properties[i].filterId)
+                                                for (i in group.properties.indices) {
+                                                    if (selectedList[i].value) filter.add(group.properties[i].filterId)
+                                                    else filter.remove(group.properties[i].filterId)
                                                 }
                                                 onFilterChanged(filter)
                                             }
@@ -1449,26 +1476,28 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                     }
                                 }
                             }
-                            if (expandRow) ScrollRowGrid(columns = 3, itemCount = item.properties.size) { index ->
+                            if (expandRow) ScrollRowGrid(columns = 3, itemCount = group.properties.size) { index ->
                                 if (selectNone) selectedList[index].value = false
-                                LaunchedEffect(Unit) { if (item.properties[index].filterId in filter.propertySet) selectedList[index].value = true }
+                                LaunchedEffect(Unit) { if (group.properties[index].filterId in filter.propertySet) selectedList[index].value = true }
                                 OutlinedButton(
                                     modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                     onClick = {
                                         selectNone = false
                                         selectedList[index].value = !selectedList[index].value
+                                        Logd(TAG) { " index: $index filter: ${filter.pubDateFloor}"}
                                         if (selectedList[index].value) {
-                                            filter.add(item.properties[index].filterId)
-                                            if (item.exclusive) for (i in selectedList.indices) {
+                                            filter.add(group.properties[index].filterId)
+                                            if (group.exclusive) for (i in selectedList.indices) {
                                                 if (i != index) {
                                                     selectedList[i].value = false
-                                                    filter.remove(item.properties[i].filterId)
+                                                    filter.remove(group.properties[i].filterId)
                                                 }
                                             }
-                                        } else filter.remove(item.properties[index].filterId)
+                                        } else filter.remove(group.properties[index].filterId)
+                                        Logd(TAG) { " index: $index filter: ${filter.pubDateFloor}"}
                                         onFilterChanged(filter)
                                     },
-                                ) { Text(text = stringResource(item.properties[index].displayName), maxLines = 1, color = textColor) }
+                                ) { Text(text = stringResource(group.properties[index].displayName), maxLines = 1, color = textColor) }
                             }
                         }
                     }
@@ -1492,10 +1521,10 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
 @Composable
 fun EpisodeSortDialog(initOrder: EpisodeSortOrder, includeConditionals: List<EpisodeSortOrder> = listOf(), feed: Feed? = null, onDismiss: () -> Unit, onSelectionChanged: (EpisodeSortOrder?) -> Unit) {
     val viewCounts = remember { listOf(EpisodeSortOrder.VIEWS_ASC, EpisodeSortOrder.VIEWS_DESC, EpisodeSortOrder.VIEWS_SPEED_ASC, EpisodeSortOrder.VIEWS_SPEED_DESC) }
-//    val viewSpeed = remember { listOf(EpisodeSortOrder.VIEWS_SPEED_ASC, EpisodeSortOrder.VIEWS_SPEED_DESC) }
     val likeCounts = remember { listOf(EpisodeSortOrder.LIKES_ASC, EpisodeSortOrder.LIKES_DESC) }
     val client = remember { if (feed != null) clientByFeed(feed) else null }
     val ordersOnFeed: List<EpisodeSortOrder> = remember { if (feed != null && client != null) { if (client.attributes?.hasViewCount == true) viewCounts else listOf<EpisodeSortOrder>() + if (client.attributes?.hasLikeCount == true) likeCounts else listOf() } else listOf() }
+    //    val viewSpeed = remember { listOf(EpisodeSortOrder.VIEWS_SPEED_ASC, EpisodeSortOrder.VIEWS_SPEED_DESC) }
     val orderList = remember { EpisodeSortOrder.entries.filterIndexed { index, order -> index % 2 != 0 && (!order.conditional || order in includeConditionals || order in ordersOnFeed || (feed == null && order in ((if (clientsHaveViewCounts()) viewCounts else listOf()) + (if (clientsHaveLikeCounts()) likeCounts else listOf())) ) ) } }
     val buttonAltColor = lerp(MaterialTheme.colorScheme.tertiary, Color.Green, 0.5f)
     Dialog(properties = DialogProperties(usePlatformDefaultWidth = false), onDismissRequest = { onDismiss() }) {
@@ -1522,55 +1551,53 @@ fun EpisodeSortDialog(initOrder: EpisodeSortOrder, includeConditionals: List<Epi
 }
 
 @Composable
-fun DatesFilterDialog(from: Long? = null, to: Long? = null, oldestDate: Long, onDismiss: ()->Unit, callback: (Long, Long) -> Unit) {
-    @Composable
-    fun MonthYearInput(default: String, onMonthYearChange: (String) -> Unit) {
-        fun formatMonthYear(input: String): String {
-            val sanitized = input.replace(Regex("[^0-9/]"), "")
-            return when {
+fun MonthYearInput(default: String, modifier: Modifier = Modifier, onError: (String)->Unit, onMonthYearChange: (String)->Unit) {
+    fun isValidMonthYear(input: String): Boolean {
+        val regex = Regex("^(0[1-9]|1[0-2])/\\d{4}$")
+        return regex.matches(input)
+    }
+    var monthYear by remember { mutableStateOf(TextFieldValue(default)) }
+    var isValid by remember { mutableStateOf(isValidMonthYear(monthYear.text)) }
+    TextField(value = monthYear, singleLine = true, label = { Text(stringResource(R.string.mm_yyyy)) },
+        onValueChange = { input ->
+            monthYear = input
+            val sanitized = monthYear.text.replace(Regex("[^0-9/]"), "")
+            val formattedInput = when {
                 sanitized.length > 7 -> sanitized.take(7)
                 else -> sanitized
             }
-        }
-        fun isValidMonthYear(input: String): Boolean {
-            val regex = Regex("^(0[1-9]|1[0-2])/\\d{4}$")
-            return regex.matches(input)
-        }
-        var monthYear by remember { mutableStateOf(TextFieldValue(default)) }
-        var isValid by remember { mutableStateOf(isValidMonthYear(monthYear.text)) }
-        Column(modifier = Modifier.padding(16.dp)) {
-            TextField(value = monthYear, label = { Text(stringResource(R.string.statistics_month_year)) },
-                onValueChange = { input ->
-                    monthYear = input
-                    val formattedInput = formatMonthYear(monthYear.text)
-                    isValid = isValidMonthYear(formattedInput)
-                    if (isValid) onMonthYearChange(formattedInput)
-                },
-                isError = !isValidMonthYear(monthYear.text),
-                modifier = Modifier.fillMaxWidth().trackAsTextField()
-            )
-            if (!isValid) Text(text = "Invalid format. Please use MM/YYYY.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-        }
+            isValid = isValidMonthYear(formattedInput)
+            if (isValid) onMonthYearChange(formattedInput)
+        },
+        isError = !isValidMonthYear(monthYear.text),
+        modifier = modifier.trackAsTextField()
+    )
+    if (!isValid) onError("Invalid format. Please use MM/YYYY.")
+}
+
+private fun convertMonthYearToUnixTime(monthYear: String, start: Boolean = true): Long? {
+    val regex = Regex("^(0[1-9]|1[0-2])/\\d{4}$")
+    if (!regex.matches(monthYear)) return null
+    val (month, year) = monthYear.split("/").map { it.toInt() }
+    val localDate = if (start) LocalDate(year, month, 1) else LocalDate(year, month, 1).plus(DatePeriod(months = 1)).minus(DatePeriod(days = 1))
+    return localDate.atTime(0, 0).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+}
+
+private fun convertUnixTimeToMonthYear(unixTime: Long): String {
+    val instant = Instant.fromEpochMilliseconds(unixTime)
+    val localDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val monthYearFormat = LocalDate.Format {
+        monthNumber()
+        char('/')
+        year()
     }
-    fun convertMonthYearToUnixTime(monthYear: String, start: Boolean = true): Long? {
-        val regex = Regex("^(0[1-9]|1[0-2])/\\d{4}$")
-        if (!regex.matches(monthYear)) return null
-        val (month, year) = monthYear.split("/").map { it.toInt() }
-        val localDate = if (start) LocalDate(year, month, 1) else LocalDate(year, month, 1).plus(DatePeriod(months = 1)).minus(DatePeriod(days = 1))
-        return localDate.atTime(0, 0).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-    }
-    fun convertUnixTimeToMonthYear(unixTime: Long): String {
-        val instant = Instant.fromEpochMilliseconds(unixTime)
-        val localDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val monthYearFormat = LocalDate.Format {
-            monthNumber()
-            char('/')
-            year()
-        }
-        return localDate.format(monthYearFormat)
-    }
-    var timeFilterFrom by remember { mutableLongStateOf(from ?: 0L) }
-    var timeFilterTo by remember { mutableLongStateOf(to ?: Long.MAX_VALUE) }
+    return localDate.format(monthYearFormat)
+}
+
+@Composable
+fun DatesFilterDialog(from: Long? = null, to: Long? = null, oldestDate: Long, onDismiss: ()->Unit, callback: (Long, Long) -> Unit) {
+    var timeFilterFrom by remember { mutableLongStateOf(from ?: oldestDate) }
+    var timeFilterTo by remember { mutableLongStateOf(to ?: nowInMillis()) }
     var useAllTime by remember { mutableStateOf((from == null || from == 0L) && (to == null || to == Long.MAX_VALUE)) }
     val timeFrom = remember(timeFilterFrom) { if (timeFilterFrom == 0L) oldestDate else timeFilterFrom }
     val timeTo = remember(timeFilterTo) { if (timeFilterTo == Long.MAX_VALUE) nowInMillis() else timeFilterTo }
@@ -1579,14 +1606,16 @@ fun DatesFilterDialog(from: Long? = null, to: Long? = null, oldestDate: Long, on
         text = {
             Column {
                 if (!useAllTime) {
+                    var error by remember { mutableStateOf("") }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.statistics_start_month))
-                        MonthYearInput(convertUnixTimeToMonthYear(timeFrom)) { timeFilterFrom = convertMonthYearToUnixTime(it) ?: timeFrom }
+                        MonthYearInput(convertUnixTimeToMonthYear(timeFrom),  onError = { error = it }) { timeFilterFrom = convertMonthYearToUnixTime(it) ?: timeFrom; error = "" }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.statistics_end_month))
-                        MonthYearInput(convertUnixTimeToMonthYear(timeTo)) { timeFilterTo = convertMonthYearToUnixTime(it, false) ?: timeTo }
+                        MonthYearInput(convertUnixTimeToMonthYear(timeTo), onError = { error = it }) { timeFilterTo = convertMonthYearToUnixTime(it, false) ?: timeTo; error = "" }
                     }
+                    if (error.isNotBlank()) Text(error)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = useAllTime, onCheckedChange = {
@@ -1607,6 +1636,7 @@ fun DatesFilterDialog(from: Long? = null, to: Long? = null, oldestDate: Long, on
                     timeFilterFrom = 0L
                     timeFilterTo = Long.MAX_VALUE
                 }
+                Logd(TAG) { "timeFilterFrom: $timeFilterFrom timeFilterTo: $timeFilterTo"}
                 callback(timeFilterFrom, timeFilterTo)
                 onDismiss()
             }) { Text(text = "OK") }

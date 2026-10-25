@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">Notă: Viteza de redare nu este luată în considerare,</string>
     <string name="statistics_start_month">Luna de inceput</string>
     <string name="statistics_end_month">Sfârșit lună</string>
-    <string name="statistics_month_year">Format: LL/AAAA</string>
+
     <string name="statistics_today">Astăzi</string>
     <string name="statistics_filter_all_time">Mereu</string>
     <string name="statistics_reset_data">Resetează datele statistice</string>

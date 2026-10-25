@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">Powiadomienie: Prędkość odtwarzania nigdy nie jest uwzględniana.</string>
     <string name="statistics_start_month">Miesiąc początkowy</string>
     <string name="statistics_end_month">Miesiąc końcowe</string>
-    <string name="statistics_month_year">Format: MM/RRRR</string>
+
     <string name="statistics_today">Dzisiaj</string>
     <string name="statistics_filter_all_time">Od początku</string>
     <string name="statistics_reset_data">Resetuj statystyki</string>

@@ -29,7 +29,6 @@
     <string name="statistics_speed_not_counted">Bemærk: Der tages aldrig hensyn til afspilningshastigheden.</string>
     <string name="statistics_start_month">Start måned</string>
     <string name="statistics_end_month">Slut måned</string>
-    <string name="statistics_month_year">Format: MM/ÅÅÅÅ</string>
     <string name="statistics_today">I dag</string>
     <string name="statistics_filter_all_time">Al tid</string>
     <string name="statistics_reset_data">Nulstil statistik</string>

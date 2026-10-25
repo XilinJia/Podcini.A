@@ -68,6 +68,8 @@ import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
+import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowFeedRefresh
+import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatWithGrouping
 import ac.mdiq.podcini.utils.showMemoryUsage
@@ -836,19 +838,30 @@ fun LibraryScreen() {
                         //                        })
                     }
                     DropdownMenuItem(text = { Text(stringResource(R.string.full_refresh_label)) }, onClick = {
-                        if (vm.curVolume == null) runOnceOrAsk(fullUpdate = true, removeUnlisted = true)
+                        if (vm.curVolume == null) {
+                            confirm(title = context.getString(R.string.full_refresh_label),
+                                message = context.getString(R.string.full_refresh_Confirm_message),
+                                confirmRes = R.string.yes,
+                                cancelRes = R.string.no,
+                                onConfirm = { runOnceOrAsk(fullUpdate = true, removeUnlisted = true) })
+                        }
                         else {
                             if (vm.curVolume!!.isLocal) {
                                 runOnIOScope {
                                     var uri = vm.curVolume!!.uriString.toSafeUri()
                                     val rootUri =  findRootForUri(uri)
                                     if (rootUri != null && uri != rootUri) {
-                                        Logt(TAG, "Loading from root folder: $rootUri")
-                                        uri = rootUri
+                                        uri = rootUri; Logt(TAG, "Loading from root folder: $rootUri")
                                     }
                                     loadLocalFolder(uri, vm.curVolume!!.allFeeds.filter { it.isLocal })
                                 }
-                            } else runOnceOrAsk(vm.curVolume!!.allFeeds, fullUpdate = true, doItWanyway = vm.curVolume!!.isNormal, removeUnlisted = true)
+                            } else {
+                                confirm(title = context.getString(R.string.full_refresh_label),
+                                    message = context.getString(R.string.full_refresh_Confirm_message),
+                                    confirmRes = R.string.yes,
+                                    cancelRes = R.string.no,
+                                    onConfirm = { runOnceOrAsk(vm.curVolume!!.allFeeds, fullUpdate = true, doItWanyway = vm.curVolume!!.isNormal, removeUnlisted = true) })
+                            }
                         }
                         expanded = false
                     })

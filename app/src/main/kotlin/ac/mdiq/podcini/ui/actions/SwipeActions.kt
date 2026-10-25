@@ -43,6 +43,7 @@ class SwipeActions(private val tag: String, private val isSubscribed: Boolean = 
     var left by mutableStateOf<EpisodeAction>(NoAction())
 
     fun initActions(actions_: String) {
+        Logd("SwipeActions") { " initActions: $actions_"}
         val actions = actions_.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         if (actions.size == 2) {
             this.right = episodeActions.firstOrNull { a: EpisodeAction -> a.id == actions[0] } ?: episodeActions[0]
@@ -88,7 +89,7 @@ class SwipeActions(private val tag: String, private val isSubscribed: Boolean = 
                 }
             }
         } else CommonPopupCard(onDismiss = { onDismiss() }) {
-            Logd("SwipeActions") { "SwipeActions tag: $tag" }
+            Logd("SwipeActions") { "SwipeActionsSettingDialog tag: $tag" }
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 val forScreen = remember(tag) {
                     if (tag != Screens.Queues.name) keys = keys.filter { a: EpisodeAction -> a !is RemoveFromAllQueues && a !is RemoveFromCurQueue }
@@ -105,8 +106,7 @@ class SwipeActions(private val tag: String, private val isSubscribed: Boolean = 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
                     Spacer(Modifier.weight(0.1f))
                     Icon(imageVector = ImageVector.vectorResource(leftAction.value.iconRes), tint = textColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp).clickable {
-                        direction = -1
-                        showPickerDialog = true
+                        direction = -1; showPickerDialog = true
                     })
                     Spacer(Modifier.weight(0.1f))
                     Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_left_alt_24), tint = textColor, contentDescription = "right_arrow", modifier = Modifier.width(50.dp).height(35.dp))
@@ -118,8 +118,7 @@ class SwipeActions(private val tag: String, private val isSubscribed: Boolean = 
                     Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_right_alt_24), tint = textColor, contentDescription = "right_arrow", modifier = Modifier.width(50.dp).height(35.dp))
                     Spacer(Modifier.weight(0.1f))
                     Icon(imageVector = ImageVector.vectorResource(rightAction.value.iconRes), tint = textColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp).clickable {
-                        direction = 1
-                        showPickerDialog = true
+                        direction = 1; showPickerDialog = true
                     })
                     Spacer(Modifier.weight(0.1f))
                 }

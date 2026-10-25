@@ -3,7 +3,6 @@ package ac.mdiq.podcini.storage.model
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.FeedIPC
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
@@ -146,30 +145,14 @@ class Feed : RealmObject {
 
     // ============ filters and sorts    ==========================
     @Ignore
-    var episodeFilter: EpisodeFilter = EpisodeFilter("")
-        get() {
-            val f = EpisodeFilter(filterString, andOr = filterAndOr)
-            f.titleText = titleFilterText
-            f.durationFloor = durationFloor
-            f.durationCeiling = durationCeiling
-            return f
-        }
+    var episodeFilter: EpisodeFilter
+        get() = EpisodeFilter(filterString, andOr = filterAndOr)
         set(value) {
-            field = value
             filterString = value.propertySet.joinToString()
             Logd(TAG) { "episodeFilter filterString: $filterString" }
             filterAndOr = value.andOr
-            titleFilterText = value.titleText
-            durationFloor = value.durationFloor
-            durationCeiling = value.durationCeiling
         }
     var filterString: String = ""
-        private set
-    var titleFilterText: String = ""
-        private set
-    var durationFloor: Int = 0
-        private set
-    var durationCeiling: Int = Int.MAX_VALUE
         private set
     var filterAndOr: String = "AND"
         private set
@@ -480,8 +463,6 @@ class Feed : RealmObject {
         if (rating != other.rating) return false
         if (commentTime != other.commentTime) return false
         if (subscriberCount != other.subscriberCount) return false
-        if (durationFloor != other.durationFloor) return false
-        if (durationCeiling != other.durationCeiling) return false
         if (sortOrderCode != other.sortOrderCode) return false
         if (sortValue != other.sortValue) return false
         if (useWideLayout != other.useWideLayout) return false
@@ -520,7 +501,6 @@ class Feed : RealmObject {
         if (lastUpdate != other.lastUpdate) return false
         if (comment != other.comment) return false
         if (filterString != other.filterString) return false
-        if (titleFilterText != other.titleFilterText) return false
         if (filterAndOr != other.filterAndOr) return false
         if (sortInfo != other.sortInfo) return false
         if (username != other.username) return false
@@ -555,8 +535,6 @@ class Feed : RealmObject {
         result = 31 * result + rating
         result = 31 * result + commentTime.hashCode()
         result = 31 * result + subscriberCount
-        result = 31 * result + durationFloor
-        result = 31 * result + durationCeiling
         result = 31 * result + sortOrderCode
         result = 31 * result + sortValue.hashCode()
         result = 31 * result + useWideLayout.hashCode()
@@ -595,7 +573,6 @@ class Feed : RealmObject {
         result = 31 * result + lastUpdate.hashCode()
         result = 31 * result + comment.hashCode()
         result = 31 * result + filterString.hashCode()
-        result = 31 * result + titleFilterText.hashCode()
         result = 31 * result + filterAndOr.hashCode()
         result = 31 * result + sortInfo.hashCode()
         result = 31 * result + username.hashCode()

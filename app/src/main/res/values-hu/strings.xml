@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">Megjegyzés: a lejátszási sebesség nem lesz beleszámítva.</string>
     <string name="statistics_start_month">Start month</string>
     <string name="statistics_end_month">End month</string>
-    <string name="statistics_month_year">Format: MM/YYYY</string>
+
     <string name="statistics_today">Ma</string>
     <string name="statistics_filter_all_time">Valaha</string>
     <string name="statistics_reset_data">Statisztikai adatok alaphelyzetbe állítása</string>

@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">Aviso: la velocidad de reproducción nunca se tiene en cuenta.</string>
     <string name="statistics_start_month">Mes de inicio</string>
     <string name="statistics_end_month">Mes final</string>
-    <string name="statistics_month_year">Formato: MM/AAAA</string>
+
     <string name="statistics_today">Hoy</string>
     <string name="statistics_filter_all_time">Todo el tiempo</string>
     <string name="statistics_reset_data">Restablecer estadísticas</string>

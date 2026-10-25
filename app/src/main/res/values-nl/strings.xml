@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">Let op: er wordt geen rekening gehouden met de afspeelsnelheid.</string>
     <string name="statistics_start_month">Start maand</string>
     <string name="statistics_end_month">Eind maand</string>
-    <string name="statistics_month_year">Formaat: MM/JJJJ</string>
+
     <string name="statistics_today">Vandaag</string>
     <string name="statistics_filter_all_time">Alles</string>
     <string name="statistics_reset_data">Statistieken op nul zetten</string>

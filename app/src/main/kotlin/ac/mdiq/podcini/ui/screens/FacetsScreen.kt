@@ -5,11 +5,10 @@ import ac.mdiq.podcini.config.settings.MediaFilesTransporter
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.buildListInfo
+import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getEpisodesAsFlow
 import ac.mdiq.podcini.storage.database.getEpisodesAsListFlow
-import ac.mdiq.podcini.storage.database.feedById
-import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.getHistoryAsFlow
 import ac.mdiq.podcini.storage.database.inQueueEpisodeIdSet
@@ -24,6 +23,7 @@ import ac.mdiq.podcini.storage.model.FROZEN_VOLUME_ID
 import ac.mdiq.podcini.storage.model.FacetsPrefs
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.specs.EpisodeFilter
+import ac.mdiq.podcini.storage.specs.EpisodeFilter.States
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.reorderWith
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.sortPairOf
@@ -48,6 +48,7 @@ import ac.mdiq.podcini.ui.compose.filterChipBorder
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.formatMMDDYY
 import ac.mdiq.podcini.utils.timeIt
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -79,6 +80,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -131,6 +133,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 enum class QuickAccess {
     New, Planned, Repeats, Due, Liked, Todos, Timers, Commented, Tagged, Recorded, Queued, Downloaded, Captions, Transcript, History, Archived, Frozen, All, Custom, None;
@@ -148,6 +158,8 @@ class FacetsVM(modeName_: String): ViewModel() {
     val modeName = modeName_
 
     var tag = TAG+QuickAccess.entries[0]
+
+    var date by mutableStateOf<LocalDate?>(null)
 
     var facetsPrefsJob: Job? by mutableStateOf(null)
     var facetsPrefs: FacetsPrefs = realm.query(FacetsPrefs::class).query("id == 0").first().find() ?: upsertBlk(FacetsPrefs()) {}
@@ -174,7 +186,7 @@ class FacetsVM(modeName_: String): ViewModel() {
         get() = _sortOrder.value
         set(s) {
             _sortOrder.value = s
-            runOnIOScope { upsert(facetsPrefs) { it.sortCodesMap[facetsMode.name] = s.code } }
+            facetsPrefs = upsertBlk(facetsPrefs) { it.sortCodesMap[facetsMode.name] = s.code }
         }
 
     var filterChanged by mutableIntStateOf(0)
@@ -208,17 +220,25 @@ class FacetsVM(modeName_: String): ViewModel() {
         val realmFlow = when (facetsMode) {
             QuickAccess.New -> {
                 listIdentity += ".${sortOrder.name}"
-                getEpisodesAsFlow(EpisodeFilter(EpisodeFilter.States.NEW.name).add(filter), sortOrder).map { it.list }
+                val f = EpisodeFilter(States.NEW.name).add(filter)
+                date?.let {
+                    val f1 = EpisodeFilter(States.between.name)
+                    f1.pubDateFloor = it.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                    f1.pubDateCeiling = it.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                    Logd(TAG) { "buildFlow New pubDateFloor: ${f1.pubDateFloor} pubDateCeiling: ${f1.pubDateCeiling}"}
+                    f.add(f1)
+                }
+                getEpisodesAsFlow(f, sortOrder).map { it.list }
             }
             QuickAccess.Planned -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.SOON.name, EpisodeFilter.States.LATER.name).add(filter), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.SOON.name, States.LATER.name).add(filter), sortOrder)
             }
             QuickAccess.Repeats -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.AGAIN.name, EpisodeFilter.States.FOREVER.name).add(filter), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.AGAIN.name, States.FOREVER.name).add(filter), sortOrder)
             }
             QuickAccess.Due -> {
                 listIdentity += ".${sortOrder.name}"
@@ -233,17 +253,17 @@ class FacetsVM(modeName_: String): ViewModel() {
             QuickAccess.Liked -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.good.name, EpisodeFilter.States.superb.name).add(filter), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.good.name, States.superb.name).add(filter), sortOrder)
             }
             QuickAccess.Commented -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_comments.name).add(filter), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.has_comments.name).add(filter), sortOrder)
             }
             QuickAccess.Tagged -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.tagged.name).add(filter), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.tagged.name).add(filter), sortOrder)
             }
             QuickAccess.Timers -> {
                 listIdentity += ".${sortOrder.name}"
@@ -260,25 +280,25 @@ class FacetsVM(modeName_: String): ViewModel() {
             QuickAccess.Todos -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_todos.name).add(filter), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.has_todos.name).add(filter), sortOrder)
             }
             QuickAccess.Recorded -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_clips.name, EpisodeFilter.States.has_marks.name, andOr = "OR"), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.has_clips.name, States.has_marks.name, andOr = "OR"), sortOrder)
             }
             QuickAccess.Captions -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_captions.name), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.has_captions.name), sortOrder)
             }
             QuickAccess.Transcript -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.has_transcript.name), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.has_transcript.name), sortOrder)
             }
             QuickAccess.Queued -> {
-                val qstr = EpisodeFilter(EpisodeFilter.States.QUEUE.name).add(filter).queryString()
+                val qstr = EpisodeFilter(States.QUEUE.name).add(filter).queryString()
                 val ids = inQueueEpisodeIdSet()
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
@@ -289,6 +309,11 @@ class FacetsVM(modeName_: String): ViewModel() {
                 }
             }
             QuickAccess.History -> {
+                date?.let {
+                    historyStartDate = it.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                    historyEndDate = it.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                }
+                Logd(TAG) { "buildFlow New historyStartDate: $historyStartDate historyEndDate: $historyEndDate"}
                 listIdentity += ".${historyStartDate}-${historyEndDate}"
                 getHistoryAsFlow(start = historyStartDate, end = historyEndDate, filter = filter).map { it.list }
             }
@@ -307,7 +332,7 @@ class FacetsVM(modeName_: String): ViewModel() {
             QuickAccess.Downloaded -> {
                 listIdentity += ".${sortOrder.name}"
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
-                getEpisodesAsListFlow(EpisodeFilter(EpisodeFilter.States.downloaded.name).add(filter), sortOrder)
+                getEpisodesAsListFlow(EpisodeFilter(States.downloaded.name).add(filter), sortOrder)
             }
             QuickAccess.Custom -> {
                 if (facetsCustomTag.isNotBlank()) {
@@ -340,24 +365,6 @@ class FacetsVM(modeName_: String): ViewModel() {
         }
     }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun clearHistory() : Job {
-        Logd(TAG) { "clearHistory called" }
-        return runOnIOScope {
-            progressing = true
-            while (realm.query(Episode::class).query("playbackCompletionTime > 0 || lastPlayedTime > 0").count().find() > 0) {
-                realm.write {
-                    val episodes_ = query(Episode::class).query("playbackCompletionTime > 0 || lastPlayedTime > 0").find()
-                    for (e in episodes_) {
-                        e.playbackCompletionTime = 0L
-                        e.lastPlayedTime = 0
-                    }
-                }
-            }
-            Logt(TAG, "History cleared")
-            withContext(Dispatchers.Main) { progressing = false }
-        }
-    }
-
     fun reconcile() {
         val nameEpisodeMap: MutableMap<String, Episode> = mutableMapOf()
         val filesRemoved: MutableList<String> = mutableListOf()
@@ -382,7 +389,7 @@ class FacetsVM(modeName_: String): ViewModel() {
             progressing = true
             nameEpisodeMap.clear()
             MediaFilesTransporter("").updateDB()    // TODO: check out, may run out of memory?
-            var eList = getEpisodes(EpisodeFilter(facetsPrefs.filtersMap[QuickAccess.Downloaded.name] ?: EpisodeFilter.States.downloaded.name), sortOrder, copy=false)
+            var eList = getEpisodes(EpisodeFilter(facetsPrefs.filtersMap[QuickAccess.Downloaded.name] ?: States.downloaded.name), sortOrder, copy=false)
             Logd(TAG) { "reconcile eList: ${eList.size}" }
             val feMap = eList.groupBy { it.feedId }.toMutableMap()
             val iterator = feMap.iterator()
@@ -443,21 +450,21 @@ class FacetsVM(modeName_: String): ViewModel() {
 
     init {
         timeIt("$TAG start of init")
-        if (facetsPrefsJob == null) {
-//            facetsPrefs = realm.query(FacetsPrefs::class).first().find() ?: upsertBlk(FacetsPrefs()) {}
-            facetsPrefsJob = viewModelScope.launch(Dispatchers.IO) {
-                val flow = realm.query(FacetsPrefs::class).first().asFlow()
-                flow.collect { changes: SingleQueryChange<FacetsPrefs> ->
-                    when (changes) {
-                        is InitialObject -> facetsPrefs = changes.obj
-                        is UpdatedObject -> facetsPrefs = changes.obj
-                        is DeletedObject -> {}
-                        is PendingObject -> {}
-                    }
-                }
-            }
-        }
-        Logd(TAG) { "facetsMode: ${facetsMode.name} ${facetsPrefs.screenMode}" }
+//        if (facetsPrefsJob == null) {
+////            facetsPrefs = realm.query(FacetsPrefs::class).first().find() ?: upsertBlk(FacetsPrefs()) {}
+//            facetsPrefsJob = viewModelScope.launch(Dispatchers.IO) {
+//                val flow = realm.query(FacetsPrefs::class).first().asFlow()
+//                flow.collect { changes: SingleQueryChange<FacetsPrefs> ->
+//                    when (changes) {
+//                        is InitialObject -> facetsPrefs = changes.obj
+//                        is UpdatedObject -> facetsPrefs = changes.obj
+//                        is DeletedObject -> {}
+//                        is PendingObject -> {}
+//                    }
+//                }
+//            }
+//        }
+        Logd(TAG) { "modeName: $modeName facetsMode: ${facetsMode.name} ${facetsPrefs.screenMode}" }
         when {
             modeName == QuickAccess.None.name -> {
                 facetsMode = QuickAccess.entries.find { it.name == facetsPrefs.screenMode } ?: QuickAccess.New
@@ -471,7 +478,9 @@ class FacetsVM(modeName_: String): ViewModel() {
                     curIndex = facetsPrefs.prefFacetsCurIndex
                     facetsMode = QuickAccess.valueOf(spinnerTexts[curIndex])
                 }
-                runOnIOScope { upsert(facetsPrefs) { it.screenMode = facetsMode.name } }
+                Logd(TAG) { "modeName: $modeName curIndex: $curIndex spinnerTexts[curIndex]: ${spinnerTexts[curIndex]} facetsMode: ${facetsMode.name}"}
+                val mName = facetsMode.name
+                facetsPrefs = upsertBlk(facetsPrefs) { it.screenMode = mName }
                 filter = EpisodeFilter(facetsPrefs.filtersMap[facetsMode.name] ?: "")
             }
             else -> curIndex = QuickAccess.Custom.ordinal
@@ -503,7 +512,6 @@ fun FacetsScreen(modeName: String = "") {
     var showFilterDialog by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
     var showDatesFilterDialog by remember { mutableStateOf(false) }
-    val showClearHistoryDialog = remember { mutableStateOf(false) }
     var showChooseMode by remember { mutableStateOf(false) }
 
     val episodes by vm.episodesFlow.collectAsStateWithLifecycle()
@@ -549,29 +557,15 @@ fun FacetsScreen(modeName: String = "") {
             IconButton(onClick = { vm.showFeeds = !vm.showFeeds }) { Icon(imageVector = ImageVector.vectorResource(feedsIconRes), contentDescription = "feeds") }
             if (facetsMode != QuickAccess.History) IconButton(onClick = { showSortDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.arrows_sort), contentDescription = "sort") }
             if (facetsMode !in listOf(QuickAccess.Recorded, QuickAccess.Due, QuickAccess.Timers, QuickAccess.Archived, QuickAccess.Frozen)) IconButton(onClick = { showFilterDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_filter), tint = if (vm.filterButtonColor.value == Color.White) textColor else vm.filterButtonColor.value, contentDescription = "filter") }
-            if (vm.showFeeds) IconButton(onClick = {
-                feedIdsToUse = feedsAssociated.map { it.id }
-                navTo(Library)
+            if (vm.showFeeds) IconButton(onClick = { feedIdsToUse = feedsAssociated.map { it.id }; navTo(Library)
             }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_subscriptions), contentDescription = "library") }
             IconButton(onClick = { navTo(Search) }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_search), contentDescription = "search") }
             if (facetsMode in listOf(QuickAccess.History, QuickAccess.Downloaded, QuickAccess.New)) {
                 Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                     DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
-                        if (episodes.isNotEmpty() && facetsMode == QuickAccess.History) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.between_dates)) }, onClick = {
-                                showDatesFilterDialog = true
-                                expanded = false
-                            })
-                            DropdownMenuItem(text = { Text(stringResource(R.string.clear_history_label)) }, onClick = {
-                                showClearHistoryDialog.value = true
-                                expanded = false
-                            })
-                        }
-                        if (facetsMode == QuickAccess.Downloaded) DropdownMenuItem(text = { Text(stringResource(R.string.reconcile_label)) }, onClick = {
-                            vm.reconcile()
-                            expanded = false
-                        })
+                        if (episodes.isNotEmpty() && facetsMode == QuickAccess.History) DropdownMenuItem(text = { Text(stringResource(R.string.between_dates)) }, onClick = { showDatesFilterDialog = true; expanded = false })
+                        if (facetsMode == QuickAccess.Downloaded) DropdownMenuItem(text = { Text(stringResource(R.string.reconcile_label)) }, onClick = { vm.reconcile(); expanded = false })
                         if (episodes.isNotEmpty() && facetsMode == QuickAccess.New) DropdownMenuItem(text = { Text(stringResource(R.string.clear_new_label)) }, onClick = {
                             vm.progressing = true
                             runOnIOScope {
@@ -595,7 +589,8 @@ fun FacetsScreen(modeName: String = "") {
             else mutableSetOf()
         }
         if (showFilterDialog) EpisodesFilterDialog(filter_ = vm.filter, disabledSet = filtersDisabled(), showAndOr = facetsMode in listOf(QuickAccess.All, QuickAccess.Custom), onDismiss = { showFilterDialog = false }) { filter ->
-            Logd(TAG) { "EpisodesFilterDialog cb: filter: ${filter.propertySet}" }
+            Logd(TAG) { "EpisodesFilterDialog cb: filter: ${filter.propertySet} ${filter.pubDateFloor}" }
+            vm.date = null
             vm.filter = filter
             vm.filterChanged++
             resetSwipes()
@@ -608,10 +603,11 @@ fun FacetsScreen(modeName: String = "") {
             }
         }
         swipeActions.ActionOptionsDialog()
-        ConfirmDialog(titleRes = R.string.clear_history_label, message = stringResource(R.string.clear_playback_history_msg), showDialog = showClearHistoryDialog) { vm.clearHistory() }
-        if (showDatesFilterDialog) DatesFilterDialog(oldestDate = 0L, onDismiss = { showDatesFilterDialog = false} ) { timeFilterFrom, timeFilterTo ->
+        if (showDatesFilterDialog) DatesFilterDialog(from = vm.historyStartDate, to = vm.historyEndDate, oldestDate = 0L, onDismiss = { showDatesFilterDialog = false} ) { timeFilterFrom, timeFilterTo ->
+            vm.date = null
             vm.historyStartDate = timeFilterFrom
             vm.historyEndDate = timeFilterTo
+            vm.filterChanged++
         }
 
         @Composable
@@ -625,11 +621,9 @@ fun FacetsScreen(modeName: String = "") {
                                     vm.curIndex = index
                                     facetsMode = QuickAccess.valueOf(vm.spinnerTexts[vm.curIndex])
                                     vm.tag = TAG + QuickAccess.entries[vm.curIndex]
-                                    runOnIOScope {
-                                        upsert(vm.facetsPrefs) {
-                                            it.prefFacetsCurIndex = index
-                                            it.screenMode = facetsMode.name
-                                        }
+                                    vm.facetsPrefs = upsertBlk(vm.facetsPrefs) {
+                                        it.prefFacetsCurIndex = index
+                                        it.screenMode = facetsMode.name
                                     }
                                     actionButtonType = if (facetsMode == QuickAccess.Downloaded) ButtonTypes.DELETE else null
                                     resetSwipes()
@@ -646,7 +640,6 @@ fun FacetsScreen(modeName: String = "") {
     OpenDialogs()
 
     val lazyListState = rememberLazyListState()
-
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(topBar = { TopBar() }) { innerPadding ->
             if (vm.showFeeds) Box(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) { AssociatedFeedsGrid(feedsAssociated) }
@@ -659,13 +652,37 @@ fun FacetsScreen(modeName: String = "") {
                         else -> StatusRowMode.Normal
                     }
                 }
-                val info = remember(vm.infoBarText, vm.progressing, facetsMode) {
-                    (if (facetsMode == QuickAccess.Custom) "$facetsCustomTag | " else "") + vm.infoBarText + (if (vm.progressing) " - ${context.getString(R.string.progressing_label)}" else "")
-                }
+                val info = remember(vm.infoBarText, vm.progressing, facetsMode) { (if (facetsMode == QuickAccess.Custom) "$facetsCustomTag | " else "") + vm.infoBarText + (if (vm.progressing) " - ${context.getString(R.string.progressing_label)}" else "") }
+                val curDate = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
                 InforBar(swipeActions) {
+                    if (facetsMode in listOf(QuickAccess.New, QuickAccess.History)) {
+                        Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_calendar_month_24), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "random", modifier = Modifier.clickable {
+                            vm.date = if (vm.date == null) curDate else null
+                            if (vm.date == null) {
+                                vm.historyStartDate = 0L
+                                vm.historyEndDate = nowInMillis()
+                            }
+                            vm.filterChanged++
+                        })
+                        Spacer(Modifier.weight(0.4f))
+                    }
                     Text(info, style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.weight(0.1f))
                     PlayRandom(episodes)
+                }
+                if (facetsMode in listOf(QuickAccess.New, QuickAccess.History) && vm.date != null) Row {
+                    Spacer(Modifier.weight(0.2f))
+                    IconButton(onClick = { vm.date = vm.date!!.minus(7, DateTimeUnit.DAY); vm.filterChanged++ }) { Text("-7", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
+                    Spacer(Modifier.weight(0.2f))
+                    IconButton(onClick = { vm.date = vm.date!!.minus(1, DateTimeUnit.DAY); vm.filterChanged++ }) { Text("-", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
+                    Spacer(Modifier.weight(0.2f))
+                    val dateText = remember(vm.date) { if (vm.date == curDate) context.getString(R.string.statistics_today) else vm.date!!.formatMMDDYY() }
+                    TextButton(onClick = { vm.date = curDate; vm.filterChanged++ }) { Text(dateText, style = MaterialTheme.typography.headlineSmall) }
+                    Spacer(Modifier.weight(0.2f))
+                    if (vm.date!! < curDate) IconButton(onClick = { vm.date = vm.date!!.plus(1, DateTimeUnit.DAY); vm.filterChanged++ }) { Text("+", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
+                    Spacer(Modifier.weight(0.2f))
+                    if (vm.date!!.plus(6, DateTimeUnit.DAY) < curDate) IconButton(onClick = { vm.date = vm.date!!.plus(7, DateTimeUnit.DAY); vm.filterChanged++ }) { Text("+7", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
+                    Spacer(Modifier.weight(1f))
                 }
                 EpisodeLazyColumn(episodes, statusRowMode = statusMode, showActionButtons = facetsMode != QuickAccess.Commented, swipeActions = swipeActions, actionButtonType = actionButtonType, lazyListState = lazyListState, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) runOnIOScope { queueToVirtual(e, episodes, vm.listIdentity, vm.sortOrder) } })
             }

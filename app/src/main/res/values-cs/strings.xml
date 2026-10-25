@@ -29,7 +29,6 @@
     <string name="statistics_speed_not_counted">Upozornění: Rychlost přehrávání se nikdy nebere v potaz.</string>
     <string name="statistics_start_month">Začátek měsíce</string>
     <string name="statistics_end_month">Konec měsíce</string>
-    <string name="statistics_month_year">Formát: MM/RRRR</string>
     <string name="statistics_today">Dnes</string>
     <string name="statistics_filter_all_time">Za celou dobu</string>
     <string name="statistics_reset_data">Vynulovat statistiky</string>

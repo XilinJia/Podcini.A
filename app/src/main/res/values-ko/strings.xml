@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">주의: 재생 속도는 고려하지 않습니다</string>
     <string name="statistics_start_month">Start month</string>
     <string name="statistics_end_month">End month</string>
-    <string name="statistics_month_year">Format: MM/YYYY</string>
+
     <string name="statistics_today">오늘</string>
     <string name="statistics_filter_all_time">전체 시각</string>
     <string name="statistics_reset_data">통계 데이터 초기화</string>

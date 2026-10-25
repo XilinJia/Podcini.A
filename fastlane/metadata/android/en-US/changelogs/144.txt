@@ -1,0 +1,11 @@
+* fixed changing swipe action not properly reflected
+* in Library, full refresh prompts for confirmation
+* added publish date filter for Episodes
+* in Facets screen,
+	* in History menu, removed clear history
+	* items in History now include more categories
+	* in infobar of New and History mdoes, added calendar icon to toggle date filter
+* in the drawer
+	* counts in Library and Queues are layered
+	* on Facets, instead of count, added 2 icons: New and History
+	* "Add feed" is merged into Search

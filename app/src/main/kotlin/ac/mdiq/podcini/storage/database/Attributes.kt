@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.net.Proxy
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private const val TAG = "AppPrefs"
@@ -39,7 +38,6 @@ var sleepPrefsJob: Job? = null
 
 var syncPrefsJob: Job? = null
 
-@OptIn(ExperimentalUuidApi::class)
 fun initAppPrefs() {
     val initialAppPrefs = realm.query(AppPrefs::class).first().find() ?: upsertBlk(AppPrefs()) {}
     if (appPrefsFlow == null) appPrefsFlow = realm.query(AppPrefs::class).query("id == 0").asFlow().map { change -> change.list.firstOrNull()?: initialAppPrefs }

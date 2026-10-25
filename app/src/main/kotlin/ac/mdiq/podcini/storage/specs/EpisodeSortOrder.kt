@@ -1,10 +1,11 @@
 package ac.mdiq.podcini.storage.specs
 
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.model.Episode
 import io.github.xilinjia.krdb.query.Sort
-import kotlin.collections.iterator
-import ac.mdiq.podcini.shared.nowInMillis
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolean = false) {
     DATE_ASC(1, R.string.publish_date),
@@ -219,8 +220,7 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
         private fun likeCount(item: Episode?): Int = item?.likeCount ?: 0
 
         // per minute
-        private fun viewSpeed(item: Episode?): Double = 60000.0 * (item?.viewCount ?: 0) / (nowInMillis() - (item?.pubDate ?: 0L))
-
+        private fun viewSpeed(item: Episode?): Double = 60.0 * (item?.viewCount ?: 0) / ((nowInMillis() - (item?.pubDate ?: 0L)).milliseconds.coerceAtLeast(1.days).inWholeSeconds)
         /**
          * Implements a reordering by pubdate that avoids consecutive episodes from the same feed in the queue.
          * A listener might want to hear episodes from any given feed in pubdate order, but would

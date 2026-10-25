@@ -1,18 +1,15 @@
 package ac.mdiq.podcini.ui.screens
 
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.playback.activeTheatresCount
 import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
+import ac.mdiq.podcini.playback.activeTheatresCount
 import ac.mdiq.podcini.storage.database.feedCountFlow
 import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.Feed
-import ac.mdiq.podcini.storage.model.ShareLog
-import ac.mdiq.podcini.storage.model.SubscriptionLog
-import ac.mdiq.podcini.storage.specs.EpisodeFilter
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
+import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
@@ -23,10 +20,12 @@ import ac.mdiq.podcini.utils.showMemoryUsage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -45,8 +44,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -107,12 +106,8 @@ fun NavDrawerScreen() {
     LaunchedEffect(drawerState.isOpen) {
         Logd(TAG) { "LaunchedEffect(drawerState.currentValue): ${drawerState.isOpen}" }
         if (drawerState.isOpen) withContext(Dispatchers.IO) {
-            navMap[Screens.Queues.name]?.count = queuesLive.sumOf { it.size()}
-            navMap[Screens.Library.name]?.count = feedCountFlow.value
-            navMap[Screens.Facets.name]?.count = getEpisodesCount(EpisodeFilter(""))
-//            navMap[Screens.Logs.name]?.count = realm.query(ShareLog::class).count().find().toInt() +
-//                    realm.query(SubscriptionLog::class).count().find().toInt() +
-//                    realm.query(DownloadResult::class).count().find().toInt()
+            navMap[Screens.Library.name]?.count = "${feedCountFlow.value}: ${getEpisodesCount(null)}"
+            navMap[Screens.Queues.name]?.count = "${queuesLive.size}: ${queuesLive.sumOf { it.size()}}"
             val feeds_ = realm.query(Feed::class).sort("lastPlayed", sortOrder = Sort.DESCENDING).limit(8).find()
             withContext(Dispatchers.Main) {
                 feedBriefs.clear()
@@ -129,7 +124,13 @@ fun NavDrawerScreen() {
 
     ModalDrawerSheet(modifier = Modifier.width(drawerWidth).border(1.dp, MaterialTheme.colorScheme.tertiary, myShape),
         drawerContainerColor = MaterialTheme.colorScheme.surface, drawerTonalElevation = 0.dp, drawerShape = myShape, windowInsets = WindowInsets.systemBars) {
-        Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(start = 10.dp, end = 5.dp, top = 10.dp, bottom = 10.dp).verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize().padding(start = 10.dp, end = 5.dp, top = 10.dp, bottom = 10.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().padding( bottom = 10.dp)) {
+                AsyncImage(model = R.drawable.teaser, imageLoader = imageLoader, contentDescription = "bgImage", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxWidth().height(30.dp))
+                Box(modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f)))
+                Text("Podcini.A", color = borderColor, style = MaterialTheme.typography.titleLarge, modifier = Modifier.align(Alignment.Center))
+            }
+//            Spacer(Modifier.width(20.dp))
             for ((key, value) in navMap) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 15.dp)) {
                     Icon(imageVector = ImageVector.vectorResource(value.iconRes), tint = textColor, contentDescription = key, modifier = Modifier.padding(start = 10.dp))
@@ -140,15 +141,34 @@ fun NavDrawerScreen() {
                         drawerCtrl?.close()
                     })
                     Spacer(Modifier.weight(1f))
-                    if (value.count > 0) Text(value.count.toString(), color = textColor, modifier = Modifier.padding(end = 10.dp))
-                    else if (key == Screens.Logs.name) {
-                        Icon(imageVector = ImageVector.vectorResource(value.iconRes), tint = buttonColor, contentDescription = key, modifier = Modifier.padding(start = 10.dp).clickable {
-                            Logm(TAG, "Recent logs:", sessionLogsFlow.value.reversed().take(5).joinToString("\n"))
-                        })
-                        Spacer(Modifier.weight(0.3f))
-                        Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_memory_24), tint = buttonColor, contentDescription = key, modifier = Modifier.padding(start = 10.dp).clickable {
-                            showMemoryUsage()
-                        })
+                    when {
+                        value.count.isNotBlank() -> Text(value.count, color = textColor, modifier = Modifier.padding(end = 10.dp))
+                        key == Screens.Logs.name -> {
+                            Icon(imageVector = ImageVector.vectorResource(value.iconRes), tint = buttonColor, contentDescription = "recent", modifier = Modifier.padding(start = 10.dp).clickable {
+                                Logm(TAG, "Recent logs:", sessionLogsFlow.value.reversed().take(5).joinToString("\n")); drawerCtrl?.close()
+                            })
+                            Spacer(Modifier.weight(0.3f))
+                            Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_memory_24), tint = buttonColor, contentDescription = "memory", modifier = Modifier.padding(start = 10.dp).clickable {
+                                showMemoryUsage(); drawerCtrl?.close()
+                            })
+                            Spacer(Modifier.weight(0.1f))
+                        }
+                        key == Screens.Facets.name -> {
+                            Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_new_releases_24), tint = buttonColor, contentDescription = "new", modifier = Modifier.padding(start = 10.dp).clickable {
+                                navTo(Facets(modeName = QuickAccess.New.name)); drawerCtrl?.close()
+                            })
+                            Spacer(Modifier.weight(0.3f))
+                            Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_history), tint = buttonColor, contentDescription = "history", modifier = Modifier.padding(start = 10.dp).clickable {
+                                navTo(Facets(modeName = QuickAccess.History.name)); drawerCtrl?.close()
+                            })
+                            Spacer(Modifier.weight(0.1f))
+                        }
+                        key == Screens.Search.name -> {
+                            Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_cloud_download_24), tint = buttonColor, contentDescription = "add feed", modifier = Modifier.padding(start = 10.dp).clickable {
+                                navTo(FindFeeds, PopMode.Clear); drawerCtrl?.close()
+                            })
+                            Spacer(Modifier.weight(0.4f))
+                        }
                     }
                 }
             }
@@ -173,18 +193,20 @@ fun NavDrawerScreen() {
                 Spacer(Modifier.width(10.dp))
             }
             HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
-            for ((id, title, imageUrl) in feedBriefs) {
-                Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp).clickable {
-                    navTo(FeedDetails(feedId= id))
-                    drawerCtrl?.close()
-                    psState = PSState.PartiallyExpanded
-                }) {
-                    AsyncImage(model = imageUrl, imageLoader = imageLoader, contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(40.dp).height(40.dp))
-                    Text(title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 10.dp))
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                for ((id, title, imageUrl) in feedBriefs) {
+                    Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp).clickable {
+                        navTo(FeedDetails(feedId = id))
+                        drawerCtrl?.close()
+                        psState = PSState.PartiallyExpanded
+                    }) {
+                        AsyncImage(model = imageUrl, imageLoader = imageLoader, contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(40.dp).height(40.dp))
+                        Text(title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 10.dp))
+                    }
                 }
             }
             if (psState == PSState.Hidden) {
-                Spacer(Modifier.height(50.dp))
+                Spacer(Modifier.weight(1f))
                 AsyncImage(model = R.drawable.teaser, contentDescription = "PlayerUI", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxWidth().height(60.dp).clickable { psState = PSState.PartiallyExpanded })
             }
         }
@@ -192,7 +214,7 @@ fun NavDrawerScreen() {
 }
 
 data class NavItem(val navKey: NavKey, val iconRes: Int, val nameRes: Int) {
-    var count by mutableIntStateOf(0)
+    var count by mutableStateOf("")
 }
 
 private val navMap: LinkedHashMap<String, NavItem> = linkedMapOf(
@@ -202,7 +224,6 @@ private val navMap: LinkedHashMap<String, NavItem> = linkedMapOf(
     Screens.Search.name to NavItem(Search, R.drawable.ic_search, R.string.search_label),
     Screens.Logs.name to NavItem(Logs, R.drawable.ic_history, R.string.logs_label),
     Screens.Statistics.name to NavItem(Statistics, R.drawable.ic_chart_box, R.string.statistics_label),
-    Screens.FindFeeds.name to NavItem(FindFeeds, R.drawable.ic_add, R.string.add_feed_label),
 )
 
 interface DrawerController {

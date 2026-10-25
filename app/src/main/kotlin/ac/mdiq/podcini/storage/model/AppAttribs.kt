@@ -82,7 +82,7 @@ class AppAttribs: RealmObject {
         if (langsPreferred.size != other.langsPreferred.size) return false
         if (feedTagSet.size != other.feedTagSet.size) return false
         if (episodeTagSet.size != other.episodeTagSet.size) return false
-        if (swipeActionsMap.size != other.swipeActionsMap.size) return false
+        if (swipeActionsMap != other.swipeActionsMap) return false
         if (feedIdsToRefresh.size != other.feedIdsToRefresh.size) return false
         if (episodeIdsToDownload.size != other.episodeIdsToDownload.size) return false
         if (timetable.size != other.timetable.size) return false
@@ -110,7 +110,7 @@ class AppAttribs: RealmObject {
         result = 31 * result + langsPreferred.size
         result = 31 * result + feedTagSet.size
         result = 31 * result + episodeTagSet.size
-        result = 31 * result + swipeActionsMap.size
+        result = 31 * result + swipeActionsMap.hashCode()
         result = 31 * result + feedIdsToRefresh.size
         result = 31 * result + episodeIdsToDownload.size
         result = 31 * result + timetable.hashCode()

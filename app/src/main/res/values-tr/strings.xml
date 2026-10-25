@@ -44,7 +44,7 @@
     <string name="statistics_speed_not_counted">Not: Oynatma hızı hiçbir zaman dikkate alınmaz.</string>
     <string name="statistics_start_month">Başlangıç ayı</string>
     <string name="statistics_end_month">Bitiş ayı</string>
-    <string name="statistics_month_year">Biçim: AA/YYYY</string>
+
     <string name="statistics_today">Bugün</string>
     <string name="statistics_filter_all_time">Tüm zamanlar</string>
     <string name="statistics_reset_data">İstatistik verilerini sıfırla</string>

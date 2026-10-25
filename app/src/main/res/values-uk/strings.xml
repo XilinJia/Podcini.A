@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">Зауваження: Швидкість відтворення не враховується ніколи.</string>
     <string name="statistics_start_month">Початок місяця</string>
     <string name="statistics_end_month">Місяць завершення</string>
-    <string name="statistics_month_year">Формат: ММ/РРРР</string>
+
     <string name="statistics_today">Сьогодні</string>
     <string name="statistics_filter_all_time">Увесь час</string>
     <string name="statistics_reset_data">Cкинути дані статистики</string>

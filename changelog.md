@@ -1,3 +1,21 @@
+# 12.17.0
+
+* fixed changing swipe action not properly reflected
+* episodes Trending sort has a min time interval of 1 day
+* in Library, full refresh prompts for confirmation
+* straightened handling of parameters in episodes filter
+* added publish date filter for Episodes
+* in Facets screen,
+	* in History menu, removed clear history
+	* corrected date filter for History
+	* items in History now include episodes above Unplayed with time settings of completion, start, played, state, rating, comment, and download
+	* in infobar of New and History mdoes, added calendar icon to toggle date filter
+* in the drawer
+	* added Podcini title
+	* counts in Library and Queues are layered
+	* on Facets, instead of count, added 2 icons: New and History
+	* "Add feed" is merged into Search
+
 # 12.16.4
 
 * confirm dialogs are no longer extra wide

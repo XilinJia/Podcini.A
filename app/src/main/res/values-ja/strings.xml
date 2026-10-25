@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">注意: 再生速度は考慮されません。</string>
     <string name="statistics_start_month">月を開始する</string>
     <string name="statistics_end_month">終了月</string>
-    <string name="statistics_month_year">形式：YYYY/MM/MM/YYYY</string>
+
     <string name="statistics_today">今日</string>
     <string name="statistics_filter_all_time">全期間</string>
     <string name="statistics_reset_data">統計情報のデータをリセット</string>

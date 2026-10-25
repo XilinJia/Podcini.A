@@ -100,13 +100,19 @@ fun episodeById(id: Long): Episode? = realm.query(Episode::class).query("id == $
 fun episodesByIds(ids: List<Long>): List<Episode> = realm.query(Episode::class).query("id == $0", ids).find()
 
 fun getHistoryAsFlow(feedId: Long = 0L, start: Long = 0L, end: Long = nowInMillis(), filter: EpisodeFilter? = null, sortOrder: EpisodeSortOrder = EpisodeSortOrder.PLAYED_DATE_DESC): Flow<ResultsChange<Episode>> {
-    Logd(TAG) { "getHistory() called" }
-    var qStr = "((playbackCompletionTime > 0) OR (lastPlayedTime > $start AND lastPlayedTime <= $end))"
+    val completionStr = "(playbackCompletionTime > $start AND playbackCompletionTime <= $end)"
+    val playedStr = "(lastPlayedTime > $start AND lastPlayedTime <= $end)"
+    val startStr = "(startTime > $start AND startTime <= $end)"
+    val stateStr = "(playStateSetTime > $start AND playStateSetTime < $end)"
+    val ratingStr = "(ratingTime > $start AND ratingTime < $end)"
+    val commentStr = "(commentTime > $start AND commentTime < $end)"
+    val downloadStr = "(downloadTime > $start AND downloadTime < $end)"
+    var qStr = "playState > ${EpisodeState.UNPLAYED.code} AND ($completionStr OR $playedStr OR $startStr OR $stateStr OR $ratingStr OR $commentStr OR $downloadStr)"
     if (feedId > 0L) qStr += " AND feedId == $feedId "
     val fqstr = filter?.queryString()
     if (!fqstr.isNullOrBlank()) qStr += " AND $fqstr "
-    val episodes = realm.query(Episode::class).query(qStr).sort(sortPairOf(sortOrder)).asFlow()
-    return episodes
+    Logd(TAG) { "getHistoryAsFlow qStr: $qStr"}
+    return realm.query(Episode::class).query(qStr).sort(sortPairOf(sortOrder)).asFlow()
 }
 
 suspend fun deleteEpisodesWarnLocalRepeat(items: Iterable<Episode>) {

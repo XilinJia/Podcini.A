@@ -1,15 +1,61 @@
 package ac.mdiq.podcini.storage.specs
 
 import ac.mdiq.podcini.R
+import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.utils.Logd
 
 class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
     val propertySet = properties_.flatMap { it.split(",") }.map { it.trim() }.filter { it.isNotEmpty() }.toMutableSet()
 
-    var durationFloor: Int = 0
-    var durationCeiling: Int = Int.MAX_VALUE
+    var durationFloor: Int
+        get() {
+            propertySet.filter { it.startsWith("durationFloor") }.forEach { it.substringAfter(": ").toIntOrNull()?.let {v-> return v } }
+            return 0
+        }
+        set(value) {
+            propertySet.removeAll { it.startsWith("durationFloor") }
+            propertySet.add("durationFloor: $value")
+        }
 
-    var titleText: String = ""
+    var durationCeiling: Int
+        get() {
+            propertySet.filter { it.startsWith("durationCeiling") }.forEach { it.substringAfter(": ").toIntOrNull()?.let {v-> return v } }
+            return Int.MAX_VALUE
+        }
+        set(value) {
+            propertySet.removeAll { it.startsWith("durationCeiling") }
+            propertySet.add("durationCeiling: $value")
+        }
+
+    var pubDateFloor: Long
+        get() {
+            propertySet.filter { it.startsWith("pubDateFloor") }.forEach { it.substringAfter(": ").toLongOrNull()?.let {v-> return v } }
+            return 0L
+        }
+        set(value) {
+            propertySet.removeAll { it.startsWith("pubDateFloor") }
+            propertySet.add("pubDateFloor: $value")
+        }
+
+    var pubDateCeiling: Long
+        get() {
+            propertySet.filter { it.startsWith("pubDateCeiling") }.forEach { it.substringAfter(": ").toLongOrNull()?.let {v-> return v } }
+            return nowInMillis()
+        }
+        set(value) {
+            propertySet.removeAll { it.startsWith("pubDateCeiling") }
+            propertySet.add("pubDateCeiling: $value")
+        }
+
+    var titleText: String
+        get() {
+            propertySet.filter { it.startsWith("titleText") }.forEach { it.substringAfter(": ").let {v-> return v } }
+            return ""
+        }
+        set(value) {
+            propertySet.removeAll { it.startsWith("titleText") }
+            propertySet.add("titleText: $value")
+        }
 
     fun add(vararg properties_: String) {
         propertySet.addAll(properties_.flatMap { it.split(",") }.map { it.trim() }.filter { it.isNotEmpty() })
@@ -17,6 +63,10 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
 
     fun add(filter: EpisodeFilter): EpisodeFilter {
         propertySet.addAll(filter.propertySet)
+//        if (filter.durationFloor > 0) durationFloor = filter.durationFloor
+//        if (filter.durationCeiling < Int.MAX_VALUE) durationCeiling = filter.durationCeiling
+//        if (filter.pubDateFloor > 0) pubDateFloor = filter.pubDateFloor
+//        if (filter.pubDateCeiling < Long.MAX_VALUE) pubDateCeiling = filter.pubDateCeiling
         return this
     }
 
@@ -94,14 +144,12 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         assembleSubQueries(stateQuerys)
 
         val tagsQuerys = mutableListOf<String>()
-        val tags = propertySet.filter { it.startsWith(States.tags.name) }
-            .mapNotNull { it.removePrefix("${States.tags.name} ").takeIf(String::isNotBlank) }
+        val tags = propertySet.filter { it.startsWith(States.tags.name) }.mapNotNull { it.removePrefix("${States.tags.name} ").takeIf(String::isNotBlank) }
         for (t in tags) tagsQuerys.add(" ANY tags == '$t' ")
         assembleSubQueries(tagsQuerys)
 
         val textQuerys = mutableListOf<String>()
-        val tqs = propertySet.filter { it.startsWith(States.text.name) }
-            .mapNotNull { it.removePrefix("${States.text.name} ").takeIf(String::isNotBlank) }
+        val tqs = propertySet.filter { it.startsWith(States.text.name) }.mapNotNull { it.removePrefix("${States.text.name} ").takeIf(String::isNotBlank) }
         for (tq in tqs) textQuerys.add(tq)
         assembleSubQueries(textQuerys)
         Logd(TAG) { "queryString statements after textQuerys: $statements" }
@@ -160,6 +208,12 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         if (propertySet.contains(States.middle.name)) durationQuerys.add("duration >= $durationFloor AND duration <= $durationCeiling ")
         if (propertySet.contains(States.higher.name)) durationQuerys.add("duration > $durationCeiling ")
         assembleSubQueries(durationQuerys)
+
+        val dateQuerys = mutableListOf<String>()
+        if (propertySet.contains(States.older.name)) dateQuerys.add("pubDate < $pubDateFloor ")
+        if (propertySet.contains(States.between.name)) dateQuerys.add("pubDate >= $pubDateFloor AND pubDate <= $pubDateCeiling ")
+        if (propertySet.contains(States.newer.name)) dateQuerys.add("pubDate > $pubDateCeiling ")
+        assembleSubQueries(dateQuerys)
 
         Logd(TAG) { "queryString ${propertySet.contains(States.has_comments.name)} ${States.has_comments.name} $propertySet" }
         when {
@@ -291,10 +345,13 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         title_exclude,
         title_off,
 
-        duration,
         lower,
         middle,
         higher,
+
+        older,
+        between,
+        newer,
 
         tags,
         text
@@ -326,6 +383,10 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
             FilterProperties(R.string.passed, States.PASSED.name),
             FilterProperties(R.string.ignored, States.IGNORED.name),
         ),
+        PUB_DATE(R.string.publish_date,
+            FilterProperties(R.string.older, States.older.name),
+            FilterProperties(R.string.between, States.between.name),
+            FilterProperties(R.string.newer, States.newer.name)),
         DURATION(R.string.duration,
             FilterProperties(R.string.lower, States.lower.name),
             FilterProperties(R.string.middle, States.middle.name),

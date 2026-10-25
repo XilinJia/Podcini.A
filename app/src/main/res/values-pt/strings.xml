@@ -29,7 +29,7 @@
     <string name="statistics_speed_not_counted">Aviso: a velocidade de reprodução nunca será considerada.</string>
     <string name="statistics_start_month">Mês de início</string>
     <string name="statistics_end_month">Mês de término</string>
-    <string name="statistics_month_year">Formato: MM/YYYY</string>
+
     <string name="statistics_today">Hoje</string>
     <string name="statistics_filter_all_time">De sempre</string>
     <string name="statistics_reset_data">Reiniciar estatísticas dos dados</string>

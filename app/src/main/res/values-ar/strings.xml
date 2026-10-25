@@ -28,7 +28,6 @@
     <string name="statistics_speed_not_counted">ملاحظة: سرعة التشغيل لن تأخذ بالاعتبار.</string>
     <string name="statistics_start_month">بداية الشهر</string>
     <string name="statistics_end_month">نهاية الشهر</string>
-    <string name="statistics_month_year">التنسيق: شهر/سنة</string>
     <string name="statistics_today">اليوم</string>
     <string name="statistics_filter_all_time">جميع الوقت</string>
     <string name="statistics_reset_data">صفّر الإحصاءات</string>
