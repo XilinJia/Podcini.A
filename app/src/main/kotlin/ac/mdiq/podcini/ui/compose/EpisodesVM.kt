@@ -73,7 +73,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -635,7 +638,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             onOperation()
                             showChooseRatingDialog = true
                         }) {
-                            Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_star), contentDescription = "Set rating")
+                            Icon(imageVector = Icons.Filled.Star, contentDescription = "Set rating")
                             Text(stringResource(id = R.string.set_rating_label)) } },
                         { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
                             onOperation()
@@ -717,7 +720,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                     }
                                 }
                             }) {
-                                Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_delete), contentDescription = "Set related")
+                                Icon(imageVector = Icons.Filled.Delete, contentDescription = "Set related")
                                 Text(stringResource(id = R.string.set_related)) }
                         }
                         if (!isExternal) options.add { Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
@@ -765,7 +768,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                     deleteEpisodesWarnLocalRepeat(selected)
                                 }
                             }) {
-                                Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_delete), contentDescription = "Delete media")
+                                Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete media")
                                 Text(stringResource(id = R.string.delete_episode_media))
                             }
                         }
@@ -789,7 +792,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             onOperation()
                             showMulticastDialog = true
                         }) {
-                            Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_share), contentDescription = "Multicast")
+                            Icon(imageVector = Icons.Filled.Share, contentDescription = "Multicast")
                             Text(stringResource(id = R.string.multicast_to_devices)) }
                         }
                     }

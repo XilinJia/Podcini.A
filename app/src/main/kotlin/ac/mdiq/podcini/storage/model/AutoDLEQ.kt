@@ -10,28 +10,17 @@ import io.github.xilinjia.krdb.types.annotations.Ignore
 
 class AutoDLEQ: EmbeddedRealmObject {
     @Ignore
-    var episodeFilterADL: EpisodeFilter = EpisodeFilter()
-        get() {
-            val f = EpisodeFilter(filterStringADL)
-            f.durationFloor = durationFloorADL
-            f.durationCeiling = durationCeilingADL
-            return f
-        }
+    var episodeFilterADL: EpisodeFilter
+        get() = EpisodeFilter(filterStringADL)
         set(value) {
-            field = value
             filterStringADL = value.propertySet.joinToString()
-            durationFloorADL = value.durationFloor
-            durationCeilingADL = value.durationCeiling
         }
     var filterStringADL: String = ""
-    var durationFloorADL: Int = 0
-    var durationCeilingADL: Int = Int.MAX_VALUE
 
     @Ignore
-    var episodesSortOrderADL: EpisodeSortOrder = EpisodeSortOrder.DATE_DESC
+    var episodesSortOrderADL: EpisodeSortOrder
         get() = fromCode(sortOrderCodeADL)
         set(value) {
-            field = value
             sortOrderCodeADL = value.code
         }
     var sortOrderCodeADL: Int = EpisodeSortOrder.DATE_DESC.code
@@ -76,8 +65,6 @@ class AutoDLEQ: EmbeddedRealmObject {
 
         other as AutoDLEQ
 
-        if (durationFloorADL != other.durationFloorADL) return false
-        if (durationCeilingADL != other.durationCeilingADL) return false
         if (sortOrderCodeADL != other.sortOrderCodeADL) return false
         if (autoDLMinDuration != other.autoDLMinDuration) return false
         if (autoDLMaxDuration != other.autoDLMaxDuration) return false
@@ -92,9 +79,7 @@ class AutoDLEQ: EmbeddedRealmObject {
     }
 
     override fun hashCode(): Int {
-        var result = durationFloorADL
-        result = 31 * result + durationCeilingADL
-        result = 31 * result + sortOrderCodeADL
+        var result = sortOrderCodeADL
         result = 31 * result + autoDLMinDuration
         result = 31 * result + autoDLMaxDuration
         result = 31 * result + markExcludedPlayed.hashCode()

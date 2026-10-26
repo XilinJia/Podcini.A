@@ -1,3 +1,9 @@
+# 12.17.1
+
+* removed unnecessary reference to duration floor and ceiling in AutoDLEQ
+* in feed auto-enqueue/download settings, auto-downloadable filer is no longer necessary
+* in episodes filter popup, added reset icon for duration and pubDate filters
+
 # 12.17.0
 
 * fixed changing swipe action not properly reflected

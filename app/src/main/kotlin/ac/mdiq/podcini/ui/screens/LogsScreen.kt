@@ -57,6 +57,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Warning
@@ -331,7 +332,7 @@ fun LogsScreen() {
                         Icon(if (log.status == ShareLog.Status.SUCCESS.code) Icons.Filled.Info else Icons.Filled.Warning, "Info", tint = if (log.status == ShareLog.Status.SUCCESS.code) Color.Green else Color.Yellow, modifier = Modifier.padding(end = 2.dp))
                         Text(formatDateTimeFlex(log.id), color = textColor)
                         Spacer(Modifier.weight(1f))
-                        if (log.status != ShareLog.Status.SUCCESS.code) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_delete), tint = textColor, contentDescription = null, modifier = Modifier.width(25.dp).height(25.dp).clickable {
+                        if (log.status != ShareLog.Status.SUCCESS.code) Icon(imageVector = Icons.Filled.Delete, tint = textColor, contentDescription = null, modifier = Modifier.width(25.dp).height(25.dp).clickable {
                             toDelete = log
                             deleteLogDialog.value = true
                         })

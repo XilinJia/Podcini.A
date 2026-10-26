@@ -24,7 +24,7 @@
 
     <shortcut
         android:enabled="true"
-        android:icon="@drawable/ic_add"
+        android:icon="@drawable/outline_cloud_download_24"
         android:shortcutId="FindFeeds"
         android:shortcutShortLabel="@string/add_feed_label">
         <intent

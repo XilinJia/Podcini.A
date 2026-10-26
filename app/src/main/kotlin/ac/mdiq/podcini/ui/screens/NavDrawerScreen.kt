@@ -34,6 +34,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -177,7 +179,7 @@ fun NavDrawerScreen() {
                 navTo(Settings, PopMode.Clear)
                 drawerCtrl?.close()
             }) {
-                Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_settings), tint = textColor, contentDescription = "settings", modifier = Modifier.padding(start = 10.dp))
+                Icon(imageVector = Icons.Filled.Settings, tint = textColor, contentDescription = "settings", modifier = Modifier.padding(start = 10.dp))
                 Text(stringResource(R.string.settings_label), color = textColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 20.dp))
                 Spacer(Modifier.weight(1f))
                 val playersRes = if (theatresCount == 1) R.drawable.teaser else R.drawable.ic_launcher_foreground

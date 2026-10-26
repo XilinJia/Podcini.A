@@ -23,7 +23,6 @@ import ac.mdiq.podcini.sourcing.listenForUDPBroadcasts
 import ac.mdiq.podcini.sourcing.sendEpisodes
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.addToQueue
-
 import ac.mdiq.podcini.storage.database.allowForAutoDelete
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -622,7 +621,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                                 showTodoDialog = true
                             })
                             Spacer(Modifier.weight(1f))
-                            Icon(ImageVector.vectorResource(id = R.drawable.ic_delete), contentDescription = "delete", modifier = Modifier.padding(end = 15.dp).clickable { runOnIOScope { upsert(episode) { it.todos.remove(todo) } } })
+                            Icon(Icons.Filled.Delete, contentDescription = "delete", modifier = Modifier.padding(end = 15.dp).clickable { runOnIOScope { upsert(episode) { it.todos.remove(todo) } } })
                         }
                         Row {
                             if (todo.dueTime > 0) {
@@ -1393,22 +1392,28 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                             var showIcon by remember { mutableStateOf(false) }
                                             var floor by remember { mutableIntStateOf(filter.durationFloor/1000) }
                                             var ceiling by remember { mutableIntStateOf(filter.durationCeiling/1000) }
-                                            NumberEditor(floor, stringResource(R.string.floor_seconds), nz = true, instant = true, modifier = Modifier.width(150.dp)) {
+                                            NumberEditor(floor, stringResource(R.string.floor_seconds), nz = true, instant = true, modifier = Modifier.width(140.dp)) {
                                                 floor = it
                                                 showIcon = true
                                             }
                                             Spacer(Modifier.width(10.dp))
-                                            NumberEditor(ceiling, stringResource(R.string.ceiling_seconds), nz = true, instant = true, modifier = Modifier.width(150.dp)) {
+                                            NumberEditor(ceiling, stringResource(R.string.ceiling_seconds), nz = true, instant = true, modifier = Modifier.width(140.dp)) {
                                                 ceiling = it
                                                 showIcon = true
                                             }
-                                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon",
-                                                modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
-                                                    filter.durationFloor = floor * 1000
-                                                    filter.durationCeiling = if (ceiling == 0) Int.MAX_VALUE else ceiling * 1000
-                                                    onFilterChanged(filter)
-                                                    showIcon = false
-                                                })
+                                            Icon(imageVector =  ImageVector.vectorResource(R.drawable.outline_reset_settings_24), contentDescription = "Reset icon", modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                                                floor = 0
+                                                ceiling = Int.MAX_VALUE/1000
+                                                filter.durationFloor = floor
+                                                filter.durationCeiling = Int.MAX_VALUE
+                                                onFilterChanged(filter)
+                                            })
+                                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                                                filter.durationFloor = floor * 1000
+                                                filter.durationCeiling = if (ceiling == 0) Int.MAX_VALUE else ceiling * 1000
+                                                onFilterChanged(filter)
+                                                showIcon = false
+                                            })
                                         }
                                     }
                                 }
@@ -1420,20 +1425,30 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                             var showIcon by remember { mutableStateOf(false) }
                                             var timeFilterFrom by remember { mutableLongStateOf(filter.pubDateFloor) }
                                             var timeFilterTo by remember { mutableLongStateOf(filter.pubDateCeiling) }
-                                            MonthYearInput(convertUnixTimeToMonthYear(timeFilterFrom), modifier = Modifier.width(150.dp), onError = { error = it }) { str ->
+                                            val fromStr = remember(timeFilterFrom) {  convertUnixTimeToMonthYear(timeFilterFrom)}
+                                            val toStr = remember(timeFilterTo) { convertUnixTimeToMonthYear(timeFilterTo) }
+                                            MonthYearInput(fromStr, modifier = Modifier.width(140.dp), onError = { error = it }) { str ->
                                                 convertMonthYearToUnixTime(str)?.let { timeFilterFrom = it; error = ""; showIcon = true }
                                             }
                                             Spacer(Modifier.width(10.dp))
-                                            MonthYearInput(convertUnixTimeToMonthYear(timeFilterTo), modifier = Modifier.width(150.dp), onError = { error = it }) { str ->
+                                            MonthYearInput(toStr, modifier = Modifier.width(140.dp), onError = { error = it }) { str ->
                                                 convertMonthYearToUnixTime(str, false)?.let { timeFilterTo = it; error = ""; showIcon = true }
                                             }
-                                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon",
-                                                modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
-                                                    filter.pubDateFloor = timeFilterFrom
-                                                    filter.pubDateCeiling = timeFilterTo
-                                                    onFilterChanged(filter)
-                                                    showIcon = false
-                                                })
+                                            Icon(imageVector =  ImageVector.vectorResource(R.drawable.outline_reset_settings_24), contentDescription = "Reset icon", modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                                                timeFilterFrom = 0L
+                                                timeFilterTo = nowInMillis()
+                                                filter.pubDateFloor = timeFilterFrom
+                                                filter.pubDateCeiling = Long.MAX_VALUE
+                                                onFilterChanged(filter)
+                                            })
+//                                            R.drawable.baseline_arrow_right_alt_24
+//                                            Icons.AutoMirrored.Filled.ArrowForward
+                                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                                                filter.pubDateFloor = timeFilterFrom
+                                                filter.pubDateCeiling = timeFilterTo
+                                                onFilterChanged(filter)
+                                                showIcon = false
+                                            })
                                         }
                                         if (error.isNotBlank()) Text(error)
                                     }
@@ -1556,8 +1571,8 @@ fun MonthYearInput(default: String, modifier: Modifier = Modifier, onError: (Str
         val regex = Regex("^(0[1-9]|1[0-2])/\\d{4}$")
         return regex.matches(input)
     }
-    var monthYear by remember { mutableStateOf(TextFieldValue(default)) }
-    var isValid by remember { mutableStateOf(isValidMonthYear(monthYear.text)) }
+    var monthYear by remember(default) { mutableStateOf(TextFieldValue(default)) }
+    var isValid by remember(monthYear) { mutableStateOf(isValidMonthYear(monthYear.text)) }
     TextField(value = monthYear, singleLine = true, label = { Text(stringResource(R.string.mm_yyyy)) },
         onValueChange = { input ->
             monthYear = input

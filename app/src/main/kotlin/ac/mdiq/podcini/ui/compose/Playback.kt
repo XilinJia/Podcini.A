@@ -537,7 +537,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                                     it.AutoEnableTo = to.toInt()
                                 }
                             }
-                        }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_settings), contentDescription = "setting") }
+                        }) { Icon(imageVector = Icons.Filled.Settings, contentDescription = "setting") }
                     }
                 }
             }

@@ -38,6 +38,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -432,7 +433,7 @@ fun SearchBarRow(hintTextRes: Int, defaultText: String, modifier: Modifier = Mod
             }),
             leadingIcon = if (history.isNotEmpty()) { { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_history), tint = buttonColor, contentDescription = "history",
                 modifier = Modifier.width(40.dp).height(40.dp).padding(start = 5.dp).clickable { showHistory = true }) } } else null,
-            trailingIcon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_search), tint = buttonColor, contentDescription = "search",
+            trailingIcon = { Icon(imageVector = Icons.Filled.Search, tint = buttonColor, contentDescription = "search",
                 modifier = Modifier.width(40.dp).height(40.dp).padding(start = 5.dp).clickable {
                     performSearch(queryText)
                     focusManager.clearFocus()
@@ -443,7 +444,7 @@ fun SearchBarRow(hintTextRes: Int, defaultText: String, modifier: Modifier = Mod
 
 @Composable
 fun NumberEditor(initVal: Int, label: String = "seconds", nz: Boolean = true, instant: Boolean = false, modifier: Modifier, cb: (Int)->Unit) {
-    var inputVal by remember { mutableStateOf(initVal.toString()) }
+    var inputVal by remember(initVal) { mutableStateOf(initVal.toString()) }
     var showSet by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     fun set() {

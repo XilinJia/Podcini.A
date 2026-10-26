@@ -79,7 +79,7 @@ val config: RealmConfiguration by lazy {
         FacetsPrefs::class,
         SleepPrefs::class,
         SyncPrefs::class,
-    )).name("Podcini.realm").schemaVersion(172)
+    )).name("Podcini.realm").schemaVersion(173)
         .migration({ mContext ->
             val oldRealm = mContext.oldRealm // old realm using the previous schema
             val newRealm = mContext.newRealm // new realm using the new schema
@@ -98,9 +98,9 @@ val config: RealmConfiguration by lazy {
                         val filterStringADL = f.getValue<String>("filterStringADL")
                         dleq.filterStringADL = filterStringADL
                         val durationFloorADL = f.getValue<Long>("durationFloorADL")
-                        dleq.durationFloorADL = durationFloorADL.toInt()
+//                        dleq.durationFloorADL = durationFloorADL.toInt()
                         val durationCeilingADL = f.getValue<Long>("durationCeilingADL")
-                        dleq.durationCeilingADL = durationCeilingADL.toInt()
+//                        dleq.durationCeilingADL = durationCeilingADL.toInt()
                         val sortOrderCodeADL = f.getValue<Long>("sortOrderCodeADL")
                         dleq.sortOrderCodeADL = sortOrderCodeADL.toInt()
                         val autoDLInclude = f.getNullableValue<String>("autoDLInclude")

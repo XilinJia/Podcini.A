@@ -93,6 +93,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -741,7 +742,7 @@ fun AVPlayerScreen() {
         val episode = episode_ ?: return
         val client = remember(episode.id) { clientByEpisode(episode) }
         if (vm.showActionBar) Row(modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_down), tint = textColor, contentDescription = "Collapse", modifier = Modifier.clickable { psState = PSState.PartiallyExpanded })
+            Icon(imageVector = Icons.Filled.ArrowDropDown, tint = textColor, contentDescription = "Collapse", modifier = Modifier.clickable { psState = PSState.PartiallyExpanded })
             if (vm0.landscape) Column {
                 Text(text = episode.title?:"", fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(text = episode.feed?.title?:"", fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -819,7 +820,7 @@ fun AVPlayerScreen() {
         val mediaType = remember(episode.id) { episode.mediaType }
         val client = remember(episode.id) { clientByEpisode(episode) }
         Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_down), tint = textColor, contentDescription = "Collapse", modifier = Modifier.clickable { psState = PSState.PartiallyExpanded })
+            Icon(imageVector = Icons.Filled.ArrowDropDown, tint = textColor, contentDescription = "Collapse", modifier = Modifier.clickable { psState = PSState.PartiallyExpanded })
             if (episode.captionCues.isNotEmpty()) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_description_24), contentDescription = "transcript", modifier = Modifier.clickable { showTransDialog = true })
             if (mediaType == MediaType.VIDEO && client?.attributes?.hasSeparateAVs == true) Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_fullscreen_24), tint = textColor, contentDescription = "Play video",
                 modifier = Modifier.clickable {

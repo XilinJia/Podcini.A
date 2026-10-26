@@ -75,8 +75,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -531,7 +533,7 @@ fun FeedsSettingsScreen() {
                                 }
                             }
                         }
-                        Icon(ImageVector.vectorResource(id = R.drawable.ic_delete), "", tint = textColor)
+                        Icon(Icons.Filled.Delete, "", tint = textColor)
                         Spacer(modifier = Modifier.width(20.dp))
                         Text(text = stringResource(R.string.video_mode), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog = true })
                         Spacer(modifier = Modifier.width(30.dp))
@@ -818,7 +820,7 @@ fun FeedsSettingsScreen() {
                 var episodesLimit by remember { mutableIntStateOf(feedToSet.limitEpisodesCount) }
                 Column {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(ImageVector.vectorResource(id = R.drawable.ic_refresh), "", tint = textColor)
+                        Icon(Icons.Outlined.Refresh, "", tint = textColor)
                         Spacer(modifier = Modifier.width(20.dp))
                         Text(text = stringResource(R.string.limit_episodes_to), style = CustomTextStyles.titleCustom, color = textColor)
                         Spacer(modifier = Modifier.weight(1f))
@@ -1031,7 +1033,7 @@ fun FeedsSettingsScreen() {
                                                 Text(text = stringResource(R.string.replace), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
                                             }
                                     }
-                                    if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) Text(stringResource(R.string.current_filter_sort_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
+//                                    if (selectedPolicy == AutoDLEQPolicy.FILTER_SORT) Text(stringResource(R.string.current_filter_sort_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                                 }
                             },
                             confirmButton = {
@@ -1280,7 +1282,7 @@ fun FeedsSettingsScreen() {
                             }
                         }
                         if (showDialog.value) AutoDeleteDialog(onDismiss = { showDialog.value = false })
-                        Icon(ImageVector.vectorResource(id = R.drawable.ic_delete), "", tint = textColor)
+                        Icon(Icons.Filled.Delete, "", tint = textColor)
                         Spacer(modifier = Modifier.width(20.dp))
                         Text(text = stringResource(R.string.auto_delete_episode), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
                     }

@@ -40,6 +40,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -145,7 +147,7 @@ fun PrefsScreen() {
     val drawerController = LocalDrawerController.current
 
     Scaffold(topBar = { TopAppBar(title = { Text(topAppBarTitle) },
-        navigationIcon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_settings), contentDescription = "Back", modifier = Modifier.padding(7.dp).clickable { if (!pfNavBack()) drawerController?.open() } ) }) }) { innerPadding ->
+        navigationIcon = { Icon(imageVector = Icons.Filled.Settings, contentDescription = "Back", modifier = Modifier.padding(7.dp).clickable { if (!pfNavBack()) drawerController?.open() } ) }) }) { innerPadding ->
         CompositionLocalProvider(LocalViewModelStoreOwner provides viewModelStoreOwner) {
             NavDisplay(backStack = pfBackStack, onBack = { pfNavBack() }, entryProvider = pfAnyEntryProvider, modifier = Modifier.padding(innerPadding))
         }
@@ -212,7 +214,7 @@ fun AboutScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp).background(MaterialTheme.colorScheme.surface)) {
         Image(painter = painterResource(R.drawable.teaser), contentDescription = "")
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp, top = 5.dp, bottom = 5.dp)) {
-            Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_star), contentDescription = "", tint = textColor)
+            Icon(imageVector = Icons.Filled.Star, contentDescription = "", tint = textColor)
             Column(Modifier.padding(start = 10.dp).clickable { copyToClipboard(context.getString(R.string.bug_report_title), "Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})") }) {
                 Text(stringResource(R.string.podcini_version), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
                 Text(BuildConfig.VERSION_NAME, color = textColor)

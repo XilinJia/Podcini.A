@@ -74,6 +74,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -504,13 +505,12 @@ fun EpisodeWebView(episode: Episode) {
             }
             val showJSIconRes = if (readMode) R.drawable.outline_eyeglasses_24 else R.drawable.javascript_icon_245402
             IconButton(onClick = { jsEnabled = !jsEnabled }) { Icon(imageVector = ImageVector.vectorResource(showJSIconRes), contentDescription = "JS") }
-            val homeIconRes = if (readMode) R.drawable.baseline_home_24 else R.drawable.outline_home_24
             IconButton(onClick = {
                 readMode = !readMode
                 Logd(TAG) { "readMode: $readMode" }
                 jsEnabled = false
                 prepareContent()
-            }) { Icon(imageVector = ImageVector.vectorResource(homeIconRes), contentDescription = "switch home") }
+            }) { Icon(imageVector = Icons.Filled.Home, tint = if (readMode) textColor else buttonColor, contentDescription = "switch home") }
             Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                 IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                 DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {

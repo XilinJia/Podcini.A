@@ -48,6 +48,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
@@ -231,7 +233,7 @@ fun FindFeedsScreen() {
         val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
         Column(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
             Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_add), contentDescription = "Open Drawer", modifier = Modifier.padding(end = 7.dp).clickable { drawerController?.open() })
+                Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_cloud_download_24), contentDescription = "Open Drawer", modifier = Modifier.padding(end = 7.dp).clickable { drawerController?.open() })
                 SearchBarRow(R.string.search_podcast_hint, modifier = Modifier.weight(1f), defaultText = searchText, history = appAttribs.onlineSearchHistory) { str ->
                     if (str.isBlank()) return@SearchBarRow
                     searchText = str
@@ -245,7 +247,7 @@ fun FindFeedsScreen() {
                     if (str.matches("http[s]?://.*".toRegex())) navTo(OnlineFeed(url=str))
                     else vm.search(str)
                 }
-                Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_settings), contentDescription = "Advanced", modifier = Modifier.padding(7.dp).clickable { showAdvanced = true })
+                Icon(imageVector = Icons.Filled.Settings, contentDescription = "Advanced", modifier = Modifier.padding(7.dp).clickable { showAdvanced = true })
             }
             HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
         }

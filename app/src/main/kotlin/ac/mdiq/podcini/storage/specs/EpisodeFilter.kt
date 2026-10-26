@@ -14,17 +14,19 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         }
         set(value) {
             propertySet.removeAll { it.startsWith("durationFloor") }
-            propertySet.add("durationFloor: $value")
+            if (value > 0) propertySet.add("durationFloor: $value")
         }
 
     var durationCeiling: Int
         get() {
-            propertySet.filter { it.startsWith("durationCeiling") }.forEach { it.substringAfter(": ").toIntOrNull()?.let {v-> return v } }
+            propertySet.filter { it.startsWith("durationCeiling") }.forEach { it.substringAfter(": ").toIntOrNull()?.let {v->
+                Logd(TAG) { " durationCeiling it: $it v=$v"}
+                return v } }
             return Int.MAX_VALUE
         }
         set(value) {
             propertySet.removeAll { it.startsWith("durationCeiling") }
-            propertySet.add("durationCeiling: $value")
+            if (value < Int.MAX_VALUE) propertySet.add("durationCeiling: $value")
         }
 
     var pubDateFloor: Long
@@ -34,7 +36,7 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         }
         set(value) {
             propertySet.removeAll { it.startsWith("pubDateFloor") }
-            propertySet.add("pubDateFloor: $value")
+            if (value > 0) propertySet.add("pubDateFloor: $value")
         }
 
     var pubDateCeiling: Long
@@ -44,7 +46,7 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         }
         set(value) {
             propertySet.removeAll { it.startsWith("pubDateCeiling") }
-            propertySet.add("pubDateCeiling: $value")
+            if (value < Long.MAX_VALUE) propertySet.add("pubDateCeiling: $value")
         }
 
     var titleText: String
@@ -54,7 +56,7 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
         }
         set(value) {
             propertySet.removeAll { it.startsWith("titleText") }
-            propertySet.add("titleText: $value")
+            if (value.isNotBlank()) propertySet.add("titleText: $value")
         }
 
     fun add(vararg properties_: String) {
@@ -63,10 +65,6 @@ class EpisodeFilter(vararg properties_: String, var andOr: String = "AND") {
 
     fun add(filter: EpisodeFilter): EpisodeFilter {
         propertySet.addAll(filter.propertySet)
-//        if (filter.durationFloor > 0) durationFloor = filter.durationFloor
-//        if (filter.durationCeiling < Int.MAX_VALUE) durationCeiling = filter.durationCeiling
-//        if (filter.pubDateFloor > 0) pubDateFloor = filter.pubDateFloor
-//        if (filter.pubDateCeiling < Long.MAX_VALUE) pubDateCeiling = filter.pubDateCeiling
         return this
     }
 

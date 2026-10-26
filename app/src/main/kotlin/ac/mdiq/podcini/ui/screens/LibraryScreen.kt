@@ -7,23 +7,21 @@ import ac.mdiq.podcini.config.settings.DocumentFileExportWorker
 import ac.mdiq.podcini.config.settings.ExportTypes
 import ac.mdiq.podcini.config.settings.ExportWorker
 import ac.mdiq.podcini.config.settings.OpmlTransporter.OpmlWriter
-import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.checkAndScheduleUpdateTaskOnce
-import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnce
-import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
+import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.sourcing.CatalogReceiver
 import ac.mdiq.podcini.sourcing.ContentType
 import ac.mdiq.podcini.sourcing.EpisodesReceiver
 import ac.mdiq.podcini.sourcing.FeedReceiver
 import ac.mdiq.podcini.sourcing.Receiver
 import ac.mdiq.podcini.sourcing.broadcastPresence
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.checkAndScheduleUpdateTaskOnce
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnce
+import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
+import ac.mdiq.podcini.sourcing.feed.loadLocalFolder
 import ac.mdiq.podcini.sourcing.sendCatalog
 import ac.mdiq.podcini.sourcing.sendFeed
-import ac.mdiq.podcini.utils.NetworkUtils.getLocalIpAddress
-import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.feedCountFlow
-import ac.mdiq.podcini.ui.compose.feedOperationText
-import ac.mdiq.podcini.sourcing.feed.loadLocalFolder
 import ac.mdiq.podcini.storage.database.queuesFlow
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
@@ -60,6 +58,7 @@ import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.complementaryColorOf
 import ac.mdiq.podcini.ui.compose.confirm
+import ac.mdiq.podcini.ui.compose.feedOperationText
 import ac.mdiq.podcini.ui.compose.filterChipBorder
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.compose.trackAsTextField
@@ -67,12 +66,10 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.NetworkUtils.getLocalIpAddress
 import ac.mdiq.podcini.utils.NetworkUtils.imageLoader
-import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowFeedRefresh
-import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatWithGrouping
-import ac.mdiq.podcini.utils.showMemoryUsage
 import ac.mdiq.podcini.utils.timeIt
 import android.annotation.SuppressLint
 import android.app.Activity.RESULT_OK
@@ -125,9 +122,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -679,7 +680,7 @@ fun LibraryScreen() {
             exitSelectMode()
             showChooseRatingDialog = true
         }) {
-            Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_star), "Set rating")
+            Icon(imageVector = Icons.Filled.Star, "Set rating")
             Text(stringResource(id = R.string.set_rating_label)) } },
         "AssociatedQueue" to { Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
             showAssociateDialog = true
@@ -698,7 +699,7 @@ fun LibraryScreen() {
             navTo(FeedsSettings)
             exitSelectMode()
         }) {
-            Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_settings), "full settings")
+            Icon(imageVector = Icons.Filled.Settings, "full settings")
             Text(stringResource(id = R.string.full_settings)) } },
         "SendToDevice" to { Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
             showToDeviceDialog = true
@@ -710,7 +711,7 @@ fun LibraryScreen() {
             showRemoveFeedDialog = true
             exitSelectMode()
         }) {
-            Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_delete), "remove feed")
+            Icon(imageVector = Icons.Filled.Delete, "remove feed")
             Text(stringResource(id = R.string.remove_feed)) } },
         "OPMLExport" to { Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
             exitSelectMode()
@@ -799,7 +800,7 @@ fun LibraryScreen() {
                 Text(feedCountState, maxLines=1, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.scale(scaleX = 1f, scaleY = 1.8f))
             }
             Spacer(Modifier.weight(1f))
-            if (!vm.isViewGarden) IconButton(onClick = { navTo(Search) }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_search), contentDescription = "search") }
+            if (!vm.isViewGarden) IconButton(onClick = { navTo(Search) }) { Icon(imageVector = Icons.Filled.Search, contentDescription = "search") }
             if (!vm.isViewGarden) IconButton(onClick = { showFilterDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_filter), tint = if (isFiltered) buttonAltColor else MaterialTheme.colorScheme.onSurface, contentDescription = "filter") }
             IconButton(onClick = { showSortDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.arrows_sort), contentDescription = "sort") }
             if (!vm.isViewGarden) IconButton(onClick = {
@@ -1741,7 +1742,7 @@ fun LibraryScreen() {
                                 }
                             })
                     }) {
-                        Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_delete), "remove volume")
+                        Icon(imageVector = Icons.Filled.Delete, "remove volume")
                         Text(stringResource(id = R.string.remove_volume)) }
                     if (volumeToOperate?.isLocal == true) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp).clickable {
                         confirm(title = context.getString(R.string.reconnect_local_folder) + "?",

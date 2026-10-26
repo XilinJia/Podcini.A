@@ -62,6 +62,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -226,8 +229,8 @@ fun OnlineFeedItem(result: FeedSearchResult, log: SubscriptionLog? = null) {
                 AsyncImage(model = ImageRequest.Builder(context).data(result.imageUrl).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.fillMaxSize())
                 if (result.feedId > 0 || log != null) {
                     Logd("OnlineFeedItem") { "${result.feedId} $log" }
-                    val iRes = remember(result) { if (result.feedId > 0) R.drawable.ic_check else R.drawable.baseline_clear_24 }
-                    Icon(imageVector = ImageVector.vectorResource(iRes), tint = textColor, contentDescription = "played_mark", modifier = Modifier.background(Color.Green).alpha(1.0f).align(Alignment.BottomEnd))
+                    val ic = remember(result) { if (result.feedId > 0) Icons.Filled.Check else Icons.Filled.Clear }
+                    Icon(imageVector = ic, tint = textColor, contentDescription = "played_mark", modifier = Modifier.background(Color.Green).alpha(1.0f).align(Alignment.BottomEnd))
                 }
             }
             Column(Modifier.padding(start = 10.dp)) {

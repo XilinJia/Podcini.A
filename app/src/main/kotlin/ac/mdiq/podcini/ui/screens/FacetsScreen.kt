@@ -33,7 +33,6 @@ import ac.mdiq.podcini.storage.utils.mediaDir
 import ac.mdiq.podcini.ui.actions.ButtonTypes
 import ac.mdiq.podcini.ui.actions.SwipeActions
 import ac.mdiq.podcini.ui.compose.AssociatedFeedsGrid
-import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.DatesFilterDialog
 import ac.mdiq.podcini.ui.compose.EpisodeLazyColumn
 import ac.mdiq.podcini.ui.compose.EpisodeScreen
@@ -69,7 +68,9 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -113,11 +114,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import io.github.xilinjia.krdb.notifications.DeletedObject
-import io.github.xilinjia.krdb.notifications.InitialObject
-import io.github.xilinjia.krdb.notifications.PendingObject
-import io.github.xilinjia.krdb.notifications.SingleQueryChange
-import io.github.xilinjia.krdb.notifications.UpdatedObject
 import io.github.xilinjia.krdb.query.RealmQuery
 import io.ktor.http.decodeURLQueryComponent
 import kotlinx.coroutines.Dispatchers
@@ -131,7 +127,6 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -450,20 +445,6 @@ class FacetsVM(modeName_: String): ViewModel() {
 
     init {
         timeIt("$TAG start of init")
-//        if (facetsPrefsJob == null) {
-////            facetsPrefs = realm.query(FacetsPrefs::class).first().find() ?: upsertBlk(FacetsPrefs()) {}
-//            facetsPrefsJob = viewModelScope.launch(Dispatchers.IO) {
-//                val flow = realm.query(FacetsPrefs::class).first().asFlow()
-//                flow.collect { changes: SingleQueryChange<FacetsPrefs> ->
-//                    when (changes) {
-//                        is InitialObject -> facetsPrefs = changes.obj
-//                        is UpdatedObject -> facetsPrefs = changes.obj
-//                        is DeletedObject -> {}
-//                        is PendingObject -> {}
-//                    }
-//                }
-//            }
-//        }
         Logd(TAG) { "modeName: $modeName facetsMode: ${facetsMode.name} ${facetsPrefs.screenMode}" }
         when {
             modeName == QuickAccess.None.name -> {
@@ -559,7 +540,7 @@ fun FacetsScreen(modeName: String = "") {
             if (facetsMode !in listOf(QuickAccess.Recorded, QuickAccess.Due, QuickAccess.Timers, QuickAccess.Archived, QuickAccess.Frozen)) IconButton(onClick = { showFilterDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_filter), tint = if (vm.filterButtonColor.value == Color.White) textColor else vm.filterButtonColor.value, contentDescription = "filter") }
             if (vm.showFeeds) IconButton(onClick = { feedIdsToUse = feedsAssociated.map { it.id }; navTo(Library)
             }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_subscriptions), contentDescription = "library") }
-            IconButton(onClick = { navTo(Search) }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_search), contentDescription = "search") }
+            IconButton(onClick = { navTo(Search) }) { Icon(imageVector = Icons.Filled.Search, contentDescription = "search") }
             if (facetsMode in listOf(QuickAccess.History, QuickAccess.Downloaded, QuickAccess.New)) {
                 Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
@@ -656,7 +637,7 @@ fun FacetsScreen(modeName: String = "") {
                 val curDate = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
                 InforBar(swipeActions) {
                     if (facetsMode in listOf(QuickAccess.New, QuickAccess.History)) {
-                        Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_calendar_month_24), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "random", modifier = Modifier.clickable {
+                        Icon(imageVector = Icons.Filled.DateRange, tint = MaterialTheme.colorScheme.tertiary, contentDescription = "random", modifier = Modifier.clickable {
                             vm.date = if (vm.date == null) curDate else null
                             if (vm.date == null) {
                                 vm.historyStartDate = 0L
