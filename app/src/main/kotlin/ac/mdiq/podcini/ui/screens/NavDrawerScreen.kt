@@ -207,10 +207,7 @@ fun NavDrawerScreen() {
                     }
                 }
             }
-            if (psState == PSState.Hidden) {
-                Spacer(Modifier.weight(1f))
-                AsyncImage(model = R.drawable.teaser, contentDescription = "PlayerUI", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxWidth().height(60.dp).clickable { psState = PSState.PartiallyExpanded })
-            }
+            if (psState == PSState.Hidden) AsyncImage(model = R.drawable.teaser, contentDescription = "PlayerUI", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxWidth().height(60.dp).clickable { psState = PSState.PartiallyExpanded })
         }
     }
 }

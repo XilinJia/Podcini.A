@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 145
-        versionName = "12.17.1"
+        versionCode = 146
+        versionName = "12.17.2"
 
         ndkVersion = "30.0.16248370"
 
@@ -254,7 +254,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
     implementation("org.jetbrains.kotlinx:atomicfu:0.33.0")
     implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.9.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
 
     implementation("com.github.XilinJia:PodciniLib:1.1.6")
     implementation("io.github.xilinjia.krdb:library-base:${project.property("krdb_version")}")
@@ -275,7 +275,7 @@ dependencies {
     implementation("io.github.pdvrieze.xmlutil:serialization:1.0.2.1")
     implementation("io.github.pdvrieze.xmlutil:core-android:1.0.2.1")
 
-    implementation("com.squareup.okhttp3:okhttp:5.5.0")
+    implementation("com.squareup.okhttp3:okhttp:5.5.1")
     implementation("com.squareup.okio:okio:3.18.2")
 
     implementation("net.dankito.readability4j:readability4j:1.0.8")

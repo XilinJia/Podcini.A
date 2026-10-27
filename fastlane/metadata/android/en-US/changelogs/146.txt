@@ -1,0 +1,10 @@
+* set episode to Error on build or update when downloadUrl is null or blank
+* record action (for stable feed scores) when setting episode to Again or Forever, DB migration is performed
+* in Feed sorting dialog
+	* added summary text in each category
+	* in property sorting, added Visited, Played from
+	* in date sorting, added Rated
+* in Feed filter dialog
+	* minor layout adjustments
+	* auto-enqueue and auto-download are merged into one
+* in drawer, PlayerUI holder doesn't take more space

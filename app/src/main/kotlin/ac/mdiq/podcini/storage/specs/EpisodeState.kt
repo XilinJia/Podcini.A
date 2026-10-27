@@ -13,10 +13,10 @@ enum class EpisodeState(val code: Int, val res: Int, val color: Color?, val user
     SOON(2, R.drawable.baseline_access_alarms_24, Color.Yellow, true),
     QUEUE(3, R.drawable.ic_playlist_play, null, true),
     PROGRESS(5, R.drawable.baseline_play_circle_outline_24, null, false),
-    AGAIN(7, R.drawable.baseline_replay_24, Color.Cyan, true),   // was 12
-    FOREVER(8, R.drawable.baseline_light_mode_24, Color.Cyan, true),     // was 15
-    SKIPPED(9, R.drawable.ic_skip_24dp, null, true),    // was 6
-    PLAYED(10, R.drawable.ic_check, Color.Blue, true),  // was 1
+    AGAIN(7, R.drawable.baseline_replay_24, Color.Cyan, true),
+    FOREVER(8, R.drawable.baseline_light_mode_24, Color.Cyan, true),
+    SKIPPED(9, R.drawable.ic_skip_24dp, null, true),
+    PLAYED(10, R.drawable.ic_check, Color.Blue, true),
     PASSED(17, R.drawable.baseline_low_priority_24, null, true),
     IGNORED(20, R.drawable.baseline_visibility_off_24, null, true);
 

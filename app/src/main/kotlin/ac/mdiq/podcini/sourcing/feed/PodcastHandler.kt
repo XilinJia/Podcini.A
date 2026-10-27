@@ -367,9 +367,7 @@ object PodcastHandler {
                                 LINK_REL_ENCLOSURE -> {
                                     val strSize: String? = attributes.getValue(LINK_LENGTH)
                                     var size: Long = 0
-                                    try { if (strSize != null) size = strSize.toLong() } catch (e: NumberFormatException) {
-                                        Logs(TAG, e, "Length attribute could not be parsed.")
-                                    }
+                                    try { if (strSize != null) size = strSize.toLong() } catch (e: NumberFormatException) { Logs(TAG, e, "Length attribute could not be parsed.") }
                                     val mimeType: String? = getMimeType(attributes.getValue(LINK_TYPE), href)
                                     val currItem = state.currentItem
                                     if (isMediaFile(mimeType) && currItem != null) currItem.fillMedia(href, size, mimeType)

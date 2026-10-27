@@ -357,7 +357,7 @@ suspend fun sumup(feed: Feed) {
             scoreCount++
             if (e.rating != Rating.UNRATED.code) sumR += e.rating
             if (e.playState >= EpisodeState.SKIPPED.code) sumR += if (e.rating > Rating.OK.code) 1.0 else - 0.5 + 1.0 * e.playedDuration / e.duration
-            else if (e.playState in listOf(EpisodeState.AGAIN.code, EpisodeState.FOREVER.code)) sumR += 0.5
+            if (e.hasSetRepeat) sumR += 0.5
         }
     }
     upsert(feed) {

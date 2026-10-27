@@ -141,9 +141,9 @@ class Episode : RealmObject {
     @set:JvmName("setPlayStateProperty")
     var playState: Int
         private set
-
     var playStateSetTime: Long = 0L
         private set
+    var hasSetRepeat: Boolean = false
 
     var paymentLink: String? = null
 
@@ -276,6 +276,7 @@ class Episode : RealmObject {
         if (other.link != null) link = other.link
         if (other.pubDate != 0L && other.pubDate != pubDate) pubDate = other.pubDate
         this.downloadUrl = other.downloadUrl
+        if (downloadUrl.isNullOrBlank()) setPlayState(EpisodeState.ERROR)
 
         setDescriptionIfLonger(other.description)
 
@@ -337,6 +338,7 @@ class Episode : RealmObject {
         //        }
         if (resetPosition || playState in listOf(EpisodeState.PLAYED.code, EpisodeState.IGNORED.code)) position = 0
         if (state in listOf(EpisodeState.QUEUE, EpisodeState.SKIPPED, EpisodeState.PLAYED, EpisodeState.PASSED, EpisodeState.IGNORED)) isAutoDownloadEnabled = false
+        if (state in listOf(EpisodeState.AGAIN, EpisodeState.FOREVER)) hasSetRepeat = true
         playStateSetTime = if (setTime > 0L) setTime else nowInMillis()
     }
 
@@ -386,7 +388,8 @@ class Episode : RealmObject {
         this.mimeType = mimeType
         fileUrl = null
         this.downloadUrl = downloadUrl
-//        Logd(TAG) { "fillMedia downloadUrl: $downloadUrl" }
+        if (downloadUrl.isNullOrBlank()) setPlayState(EpisodeState.ERROR)
+        //        Logd(TAG) { "fillMedia downloadUrl: $downloadUrl" }
     }
 
     suspend fun mediaFileUriString(): String {

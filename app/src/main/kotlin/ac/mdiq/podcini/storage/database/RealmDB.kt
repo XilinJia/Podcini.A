@@ -26,6 +26,7 @@ import ac.mdiq.podcini.storage.model.Timer
 import ac.mdiq.podcini.storage.model.Todo
 import ac.mdiq.podcini.storage.model.TranscriptMeta
 import ac.mdiq.podcini.storage.model.Volume
+import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
@@ -79,7 +80,7 @@ val config: RealmConfiguration by lazy {
         FacetsPrefs::class,
         SleepPrefs::class,
         SyncPrefs::class,
-    )).name("Podcini.realm").schemaVersion(173)
+    )).name("Podcini.realm").schemaVersion(175)
         .migration({ mContext ->
             val oldRealm = mContext.oldRealm // old realm using the previous schema
             val newRealm = mContext.newRealm // new realm using the new schema
@@ -193,6 +194,25 @@ val config: RealmConfiguration by lazy {
                     tNew?.set("note", "$title\n$note")
                     migrationProg.value = "feeds ${++count}/${todos.size}"
                 }
+            }
+            if (oldRealm.schemaVersion() < 174) {
+                migrationStep.value = "migrating for 174"
+                Log.d(TAG, "migrating DB from below 174")
+                var offset = 0
+                migrationProg.value = "episodes $offset"
+                while (true) {
+                    Log.d(TAG, "migrating episodes: $offset")
+                    val episodes = oldRealm.query("Episode").query("playState == ${EpisodeState.AGAIN.code} OR playState == ${EpisodeState.FOREVER.code}").find().drop(offset).take(1000)
+                    if (episodes.isEmpty()) break
+                    for (e in episodes) {
+                        val id = e.getValue<Long>("id")
+                        val eNew = newRealm.query("Episode", "id == $id").first().find()
+                        eNew?.set("hasSetRepeat", true)
+                    }
+                    offset += episodes.size
+                    migrationProg.value = "episodes $offset"
+                }
+                Log.d(TAG, "migrating DB below 163 complete")
             }
         })
         .compactOnLaunch()

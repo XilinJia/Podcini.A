@@ -121,6 +121,8 @@ class Feed : RealmObject {
 
     var commentTime: Long = 0L
 
+    var lastVisited: Long = 0L
+
     var subscriberCount: Int = 0
 
     /**

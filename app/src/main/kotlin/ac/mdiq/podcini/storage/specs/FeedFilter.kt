@@ -94,14 +94,22 @@ class FeedFilter(vararg properties_: String) {
             Logd("FeedFilter") { "audoDeleteQueues: $query" }
             statements.add(query.toString())
         }
-        when {
-            properties.contains(States.autoDownload.name) -> statements.add(" autoDownload == true ")
-            properties.contains(States.not_autoDownload.name) -> statements.add(" autoDownload == false ")
+        
+        val audoEqDlQuerys = mutableListOf<String>()
+        if (properties.contains(States.autoDownload.name)) audoEqDlQuerys.add(" autoDownload == true ")
+        if (properties.contains(States.autoEnqueue.name)) audoEqDlQuerys.add(" autoEnqueue == true ")
+        if (properties.contains(States.auto_eqdl_off.name)) audoEqDlQuerys.add(" (autoEnqueue == false AND autoDownload == false) ")
+        if (audoEqDlQuerys.isNotEmpty()) {
+            val query = StringBuilder(" (" + audoEqDlQuerys[0])
+            if (audoEqDlQuerys.size > 1) for (r in audoEqDlQuerys.subList(1, audoEqDlQuerys.size)) {
+                query.append(" OR ")
+                query.append(r)
+            }
+            query.append(") ")
+            Logd("FeedFilter") { "audoDeleteQueues: $query" }
+            statements.add(query.toString())
         }
-        when {
-            properties.contains(States.autoEnqueue.name) -> statements.add(" autoEnqueue == true ")
-            properties.contains(States.not_autoEnqueue.name) -> statements.add(" autoEnqueue == false ")
-        }
+
         if (statements.isEmpty()) return "id > 0"
 
         val query = StringBuilder(" (" + statements[0])
@@ -130,18 +138,15 @@ class FeedFilter(vararg properties_: String) {
         no_video,
         is_local,
         remote,
-//        youtube,
-//        rss,
-//        atom,
         synthetic,
         normal,
         global_auto_delete,
         always_auto_delete,
         never_auto_delete,
         autoDownload,
-        not_autoDownload,
         autoEnqueue,
-        not_autoEnqueue,
+        auto_eqdl_off,
+
         unrated,
         trash,
         bad,
@@ -150,7 +155,7 @@ class FeedFilter(vararg properties_: String) {
         Super,
     }
 
-    enum class FeedFilterGroup(val nameRes: Int, vararg values_: ItemProperties) {
+    enum class FeedFilterGroup(val nameRes: Int, vararg values_: ItemProperties, val expand: Boolean = false) {
         RATING(R.string.rating_label,
             ItemProperties(R.string.unrated, States.unrated.name),
             ItemProperties(R.string.trash, States.trash.name),
@@ -158,25 +163,28 @@ class FeedFilter(vararg properties_: String) {
             ItemProperties(R.string.OK, States.OK.name),
             ItemProperties(R.string.good, States.good.name),
             ItemProperties(R.string.Super, States.Super.name),
-        ),
+            expand = true),
+        ORIGIN(R.string.feed_origin,
+            ItemProperties(R.string.unknown, FeedType.Unknown.name),
+            ItemProperties(R.string.rss, FeedType.RSS.name),
+            ItemProperties(R.string.atom, FeedType.ATOM.name),
+            ItemProperties(R.string.youtube, FeedType.YouTube.name),
+            ItemProperties(R.string.peertube, FeedType.PeerTube.name),
+            ItemProperties(R.string.soundcloud, FeedType.SoundCloud.name),
+            expand = true),
         OPINION(R.string.commented, ItemProperties(R.string.yes, States.has_comments.name), ItemProperties(R.string.no, States.no_comments.name)),
         KEEP_UPDATED(R.string.keep_updated, ItemProperties(R.string.yes, States.keepUpdated.name), ItemProperties(R.string.no, States.not_keepUpdated.name)),
         HAS_VIDEO(R.string.has_video, ItemProperties(R.string.yes, States.has_video.name), ItemProperties(R.string.no, States.no_video.name)),
         PLAY_SPEED(R.string.play_speed, ItemProperties(R.string.global, States.global_playSpeed.name), ItemProperties(R.string.custom_speed, States.custom_playSpeed.name)),
-        ORIGIN(R.string.feed_origin, ItemProperties(R.string.unknown, FeedType.Unknown.name), ItemProperties(R.string.rss, FeedType.RSS.name), ItemProperties(R.string.atom, FeedType.ATOM.name), ItemProperties(R.string.youtube, FeedType.YouTube.name), ItemProperties(R.string.peertube, FeedType.PeerTube.name), ItemProperties(R.string.soundcloud, FeedType.SoundCloud.name)),
         TYPE(R.string.feed_type, ItemProperties(R.string.synthetic, States.synthetic.name), ItemProperties(R.string.normal, States.normal.name)),
         IS_LOCAL(R.string.is_local, ItemProperties(R.string.yes, States.is_local.name), ItemProperties(R.string.no, States.remote.name)),
         SKIPS(R.string.has_skips, ItemProperties(R.string.yes, States.has_skips.name), ItemProperties(R.string.no, States.no_skips.name)),
         PREF_STREAMING(R.string.pref_stream_over_download_title, ItemProperties(R.string.yes, States.pref_streaming.name), ItemProperties(R.string.no, States.not_pref_streaming.name)),
-        AUTO_ENQUEUE(R.string.auto_enqueue, ItemProperties(R.string.yes, States.autoEnqueue.name), ItemProperties(R.string.no, States.not_autoEnqueue.name)),
-        AUTO_DOWNLOAD(R.string.auto_download, ItemProperties(R.string.yes, States.autoDownload.name), ItemProperties(R.string.no, States.not_autoDownload.name)),
-        AUTO_DELETE(R.string.auto_delete,
-            ItemProperties(R.string.always, States.always_auto_delete.name),
-            ItemProperties(R.string.never, States.never_auto_delete.name),
-            ItemProperties(R.string.global, States.global_auto_delete.name), );
+        AUTO(R.string.auto, ItemProperties(R.string.enqueue, States.autoEnqueue.name), ItemProperties(R.string.off, States.auto_eqdl_off.name), ItemProperties(R.string.download, States.autoDownload.name)),
+        AUTO_DELETE(R.string.auto_delete, ItemProperties(R.string.always, States.always_auto_delete.name), ItemProperties(R.string.never, States.never_auto_delete.name), ItemProperties(R.string.global, States.global_auto_delete.name));
 
         val values: Array<ItemProperties> = arrayOf(*values_)
 
-        data class ItemProperties(val displayName: Int, val filterId: String)
+        data class ItemProperties(val nameRes: Int, val filterId: String)
     }
 }

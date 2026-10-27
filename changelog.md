@@ -1,8 +1,23 @@
+# 12.17.2
+
+* set episode to Error on build or update when downloadUrl is null or blank
+* record action when setting episode to Again or Forever (for stable feed scores), DB migration is performed
+* in Feed sorting dialog
+	* added summary text in each category
+	* in property sorting, added Visited, Played from
+	* in date sorting, added Rated
+* in Feed filter dialog
+	* minor layout adjustments
+	* auto-enqueue and auto-download are merged into one
+* in drawer, PlayerUI holder doesn't take more space
+* minor dependencies update
+
 # 12.17.1
 
 * removed unnecessary reference to duration floor and ceiling in AutoDLEQ
 * in feed auto-enqueue/download settings, auto-downloadable filer is no longer necessary
 * in episodes filter popup, added reset icon for duration and pubDate filters
+* some drawable icons are replaced with available material icons
 
 # 12.17.0
 

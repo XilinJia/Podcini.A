@@ -113,9 +113,6 @@
 
     <string name="change_stream">Change stream</string>
 
-    <string name="last_full_update">Last full update</string>
-    <string name="last_update">Last update</string>
-
 
     <string name="error_label">Error</string>
     <string name="error_msg_prefix">An error occurred:</string>
@@ -484,9 +481,19 @@
     <string name="filter">Filter</string>
     <string name="filter_sum">Set filter for episodes.</string>
 
+    <string name="feed_sort_sum">Sort based on properties of a feed.</string>
+    <string name="feed_date_sort_sum">Sort based on date related properties of the episodes in a feed.</string>
+    <string name="feed_time_sort_sum">Sort based on summarized duration properties of the episodes in a feed.</string>
+    <string name="feed_count_sort_sum">Sort based on number of episodes satisfying specified conditions in a feed.</string>
+
+
     <string name="rename">Rename</string>
     <string name="add_queue">Add queue</string>
     <string name="publish_date">Publish date</string>
+    <string name="update">Update</string>
+    <string name="full_update">Full update</string>
+    <string name="visit">Visit</string>
+    <string name="played_from">Played from</string>
     <string name="download_date">Download date</string>
     <string name="total_duration">Total duration</string>
     <string name="average_duration">Average duration</string>
@@ -1051,7 +1058,6 @@
     <string name="has_skips">Skips set</string>
     <string name="commented">Commented</string>
     <string name="add_comment">Add comment (auto save 10s)</string>
-    <string name="last_commented">Last commented</string>
 
     <string name="is_local">Is local</string>
 
@@ -1075,6 +1081,7 @@
 
     <string name="always">Always</string>
     <string name="never">Never</string>
+    <string name="auto">Auto</string>
     <string name="auto_download">Auto download</string>
     <string name="auto_enqueue">Auto enqueue</string>
 

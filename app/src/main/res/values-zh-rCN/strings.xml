@@ -70,8 +70,6 @@
     <string name="no">否</string>
     <string name="reset">重置</string>
     <string name="global_default">全局默认</string>
-    <string name="last_full_update">上次完整更新</string>
-    <string name="last_update">上次更新</string>
 
 
     <string name="error_label">错误</string>
@@ -755,7 +753,6 @@
     <string name="has_skips">跳过设置</string>
     <string name="commented">已评论</string>
     <string name="add_comment">添加评论 (自动保存 10s)</string>
-    <string name="last_commented">上次批注</string>
     <string name="is_local">是本地的</string>
     <string name="feed_type">新闻源类型</string>
     <string name="synthetic">合成体</string>

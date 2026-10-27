@@ -422,8 +422,10 @@ class LibraryVM : ViewModel() {
                         FeedPropertySortIndex.ScoreCount.code -> "${f.score}(${f.scoreCount})"
                         FeedPropertySortIndex.Updated.code -> formatDateTimeFlex(f.lastUpdateTime)
                         FeedPropertySortIndex.FullUpdate.code -> formatDateTimeFlex(f.lastFullUpdateTime)
-                        FeedPropertySortIndex.TotleDuration.code -> durationStringShort(f.totleDuration, true)
                         FeedPropertySortIndex.Commented.code -> formatDateTimeFlex(f.commentTime)
+                        FeedPropertySortIndex.Visited.code -> formatDateTimeFlex(f.lastVisited)
+                        FeedPropertySortIndex.PlayedFrom.code -> formatDateTimeFlex(f.lastPlayed)
+                        FeedPropertySortIndex.TotleDuration.code -> durationStringShort(f.totleDuration, true)
                         else -> formatDateTimeFlex(f.lastUpdateTime)
                     }
                 }
@@ -440,8 +442,10 @@ class LibraryVM : ViewModel() {
                         FeedPropertySortIndex.ScoreCount.code -> "scoreCount"
                         FeedPropertySortIndex.Updated.code -> "lastUpdateTime"
                         FeedPropertySortIndex.FullUpdate.code -> "lastFullUpdateTime"
+                        FeedPropertySortIndex.Visited.code -> "commentTime"
+                        FeedPropertySortIndex.PlayedFrom.code -> "lastPlayed"
+                        FeedPropertySortIndex.Commented.code -> "lastVisited"
                         FeedPropertySortIndex.TotleDuration.code -> "totleDuration"
-                        FeedPropertySortIndex.Commented.code -> "commentTime"
                         else -> "eigenTitle"
                     }
                 it.feedsSortedInc()
@@ -510,6 +514,19 @@ class LibraryVM : ViewModel() {
                             val d = query(Episode::class).query(queryString, f.id).first().find()?.commentTime ?: 0L
                             f.sortValue = d
                             f.sortInfo = "C: ${formatDateTimeFlex(d)}"
+                        }
+                    }
+                    Logd(TAG) { "prepareSort queryString: $queryString" }
+                    persistDateSort()
+                }
+                FeedDateSortIndex.Rated.code -> {  // date last rated
+                    val queryString = "feedId == $0 SORT(ratingTime DESC)"
+                    realm.write {
+                        for (f_ in feeds) {
+                            val f = findLatest(f_) ?: continue
+                            val d = query(Episode::class).query(queryString, f.id).first().find()?.ratingTime ?: 0L
+                            f.sortValue = d
+                            f.sortInfo = "R: ${formatDateTimeFlex(d)}"
                         }
                     }
                     Logd(TAG) { "prepareSort queryString: $queryString" }
@@ -964,6 +981,7 @@ fun LibraryScreen() {
                         HorizontalDivider(color = MaterialTheme.colorScheme.onTertiaryContainer, thickness = 1.dp)
                         when (subPrefs.sortIndex) {
                             FeedSortIndex.Feed.code -> {
+                                Text(stringResource(R.string.feed_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedPropertySortIndex.entries) {
                                         OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.propertySortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.propertySortIndex != sd.code) vm.preparePropertySort(feedList, sd) }) { Text(stringResource(sd.res)) }
@@ -971,6 +989,7 @@ fun LibraryScreen() {
                                 }
                             }
                             FeedSortIndex.Date.code -> {
+                                Text(stringResource(R.string.feed_date_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedDateSortIndex.entries) {
                                         OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.dateSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.dateSortIndex != sd.code) vm.prepareDateSort(feedList,sd) }) { Text(stringResource(sd.res)) }
@@ -978,14 +997,15 @@ fun LibraryScreen() {
                                 }
                             }
                             FeedSortIndex.Time.code -> {
+                                Text(stringResource(R.string.feed_time_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedTimeSortIndex.entries) {
                                         OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.timeSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.timeSortIndex != sd.code) vm.prepareTimeSort(feedList, sd) }) { Text(stringResource(sd.res)) }
                                     }
                                 }
                             }
-                            else -> {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.onTertiaryContainer, thickness = 1.dp)
+                            else -> {   // Count
+                                Text(stringResource(R.string.feed_count_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 Column(modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
                                     if (subPrefs.sortIndex == FeedSortIndex.Count.code) {
                                         Row(modifier = Modifier.padding(2.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -1004,15 +1024,9 @@ fun LibraryScreen() {
                                                     vm.prepareCountSort(feedList)
                                                 }
                                             }
-                                            OutlinedButton(
-                                                modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 0) borderColor else buttonAltColor),
-                                                onClick = { persistDLSort(0) },
-                                            ) { Text(text = stringResource(item.properties[0].displayName), color = textColor) }
+                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistDLSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor) }
                                             Spacer(Modifier.weight(0.1f))
-                                            OutlinedButton(
-                                                modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 1) borderColor else buttonAltColor),
-                                                onClick = { persistDLSort(1) },
-                                            ) { Text(text = stringResource(item.properties[1].displayName), color = textColor) }
+                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistDLSort(1) }) { Text(text = stringResource(item.properties[1].displayName), color = textColor) }
                                             Spacer(Modifier.weight(0.5f))
                                         }
                                         Row(modifier = Modifier.padding(2.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -1031,15 +1045,9 @@ fun LibraryScreen() {
                                                     vm.prepareCountSort(feedList)
                                                 }
                                             }
-                                            OutlinedButton(
-                                                modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 0) borderColor else buttonAltColor),
-                                                onClick = { persistCommentSort(0) },
-                                            ) { Text(text = stringResource(item.properties[0].displayName), color = textColor) }
+                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistCommentSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor) }
                                             Spacer(Modifier.weight(0.1f))
-                                            OutlinedButton(
-                                                modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 1) borderColor else buttonAltColor),
-                                                onClick = { persistCommentSort(1) },
-                                            ) { Text(text = stringResource(item.properties[1].displayName), color = textColor) }
+                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistCommentSort(1) }, ) { Text(text = stringResource(item.properties[1].displayName), color = textColor) }
                                             Spacer(Modifier.weight(0.5f))
                                         }
                                     }
@@ -1133,8 +1141,7 @@ fun LibraryScreen() {
                                             Spacer(Modifier.weight(1f))
                                         }
                                         if (expandRow) ScrollRowGrid(columns = 3, itemCount = item.properties.size, modifier = Modifier.padding(start = 10.dp)) { index ->
-                                            OutlinedButton(
-                                                modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (episodeStateSort[index].value) buttonAltColor else borderColor),
+                                            OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (episodeStateSort[index].value) buttonAltColor else borderColor),
                                                 onClick = {
                                                     episodeStateSort[index].value = !episodeStateSort[index].value
                                                     val c = episodeStateSort.count { it.value }
@@ -1232,8 +1239,7 @@ fun LibraryScreen() {
                                             Spacer(Modifier.weight(1f))
                                         }
                                         if (expandRow) ScrollRowGrid(columns = 3, itemCount = item.properties.size, modifier = Modifier.padding(start = 10.dp)) { index ->
-                                            OutlinedButton(
-                                                modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (ratingSort[index].value) buttonAltColor else borderColor),
+                                            OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (ratingSort[index].value) buttonAltColor else borderColor),
                                                 onClick = {
                                                     ratingSort[index].value = !ratingSort[index].value
                                                     val c = ratingSort.count { it.value }
@@ -1413,49 +1419,45 @@ fun LibraryScreen() {
                         }
                         var selectNone by remember { mutableStateOf(false) }
                         for (item in FeedFilter.FeedFilterGroup.entries) {
-                            if (item.values.size == 2) {
+                            if (!item.expand) {
                                 Row(modifier = Modifier.padding(start = 5.dp).fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
-                                    var selectedIndex by remember(selectNone) { mutableIntStateOf(
-                                        if (selectNone) -1
-                                        else if (filter != null) {
-                                            if (item.values[0].filterId in filter.properties) 0
-                                            else if (item.values[1].filterId in filter.properties) 1
-                                            else -1
-                                        } else -1
-                                    ) }
-                                    Text(stringResource(item.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = textColor, modifier = Modifier.padding(end = 10.dp))
-                                    Spacer(Modifier.width(30.dp))
-                                    OutlinedButton(
-                                        modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp), border = BorderStroke(2.dp, if (selectedIndex != 0) borderColor else buttonAltColor),
-                                        onClick = {
-                                            if (selectedIndex != 0) {
-                                                selectNone = false
-                                                selectedIndex = 0
-                                                filterValues.add(item.values[0].filterId)
-                                                filterValues.remove(item.values[1].filterId)
-                                            } else {
-                                                selectedIndex = -1
-                                                filterValues.remove(item.values[0].filterId)
+                                    var selectedIndex by remember(selectNone) { mutableIntStateOf(when {
+                                        selectNone -> -1
+                                        filter != null -> {
+                                            var index = -1
+                                            for (i in item.values.indices) {
+                                                if (item.values[i].filterId in filter.properties) {
+                                                    index = i
+                                                    break
+                                                }
                                             }
-                                            onFilterChanged(filterValues)
-                                        },
-                                    ) { Text(text = if (item.values[0].displayName > 0) stringResource(item.values[0].displayName) else item.values[0].filterId, color = textColor) }
-                                    Spacer(Modifier.width(20.dp))
-                                    OutlinedButton(
-                                        modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp), border = BorderStroke(2.dp, if (selectedIndex != 1) borderColor else buttonAltColor),
-                                        onClick = {
-                                            if (selectedIndex != 1) {
-                                                selectNone = false
-                                                selectedIndex = 1
-                                                filterValues.add(item.values[1].filterId)
-                                                filterValues.remove(item.values[0].filterId)
-                                            } else {
-                                                selectedIndex = -1
-                                                filterValues.remove(item.values[1].filterId)
-                                            }
-                                            onFilterChanged(filterValues)
-                                        },
-                                    ) { Text(text = if (item.values[1].displayName > 0) stringResource(item.values[1].displayName) else item.values[1].filterId, color = textColor) } //                                    Spacer(Modifier.weight(0.5f))
+                                            index
+                                        }
+                                        else -> -1
+                                    }) }
+                                    Text(stringResource(item.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = textColor, modifier = Modifier.padding(end = 5.dp))
+                                    fun removeAllBut(index: Int) {
+                                        for (i in item.values.indices) {
+                                            if (i != index) filterValues.remove(item.values[i].filterId)
+                                        }
+                                    }
+                                    for (i in item.values.indices) {
+                                        Spacer(Modifier.width(10.dp))
+                                        OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp), border = BorderStroke(2.dp, if (selectedIndex != i) borderColor else buttonAltColor),
+                                            onClick = {
+                                                if (selectedIndex != i) {
+                                                    selectNone = false
+                                                    selectedIndex = i
+                                                    filterValues.add(item.values[i].filterId)
+                                                    removeAllBut(i)
+                                                } else {
+                                                    selectedIndex = -1
+                                                    filterValues.remove(item.values[i].filterId)
+                                                }
+                                                onFilterChanged(filterValues)
+                                            },
+                                        ) { Text(text = if (item.values[i].nameRes > 0) stringResource(item.values[i].nameRes) else item.values[i].filterId, color = textColor) }
+                                    }
                                 }
                             } else {
                                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -1489,8 +1491,7 @@ fun LibraryScreen() {
                                     }
                                     if (expandRow) ScrollRowGrid(columns = 3, itemCount = item.values.size, modifier = Modifier.padding(start = 10.dp)) { index ->
                                         if (selectNone) selectedList[index].value = false
-                                        OutlinedButton(
-                                            modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                        OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                             onClick = {
                                                 selectNone = false
                                                 selectedList[index].value = !selectedList[index].value
@@ -1500,7 +1501,7 @@ fun LibraryScreen() {
                                                 allOrNone = c == 0 || c == item.values.size
                                                 onFilterChanged(filterValues)
                                             },
-                                        ) { Text(text = if (item.values[index].displayName > 0) stringResource(item.values[index].displayName) else item.values[index].filterId, maxLines = 1, color = textColor) }
+                                        ) { Text(text = if (item.values[index].nameRes > 0) stringResource(item.values[index].nameRes) else item.values[index].filterId, maxLines = 1, color = textColor) }
                                     }
                                 }
                             }
@@ -1610,9 +1611,7 @@ fun LibraryScreen() {
         }
 
         if (showReceiverDialog) ReceiveContentDialog()
-
         if (showSendCatalogDialog) SendToDevice(onDismiss = { showSendCatalogDialog = false}) { host, port -> sendCatalog(host, port) { showSendCatalogDialog =  false } }
-
         if (showFilterDialog) FilterDialog(FeedFilter(subPrefs.feedsFilter)) { showFilterDialog = false }
         if (showSortDialog) SortDialog { showSortDialog = false }
         if (showNewSynthetic) AmendSyntheticFeed(volume = vm.curVolume, onDismiss = { showNewSynthetic = false }) {}
@@ -1749,10 +1748,7 @@ fun LibraryScreen() {
                             message = volumeToOperate?.name + "\n" + context.getString(R.string.reconnect_local_folder_warning),
                             confirmRes = R.string.confirm_label,
                             cancelRes = R.string.cancel_label,
-                            onConfirm = {
-                                Logd(TAG) { "reconnecting folder: ${volumeToOperate?.name}" }
-                                try { connectLocalFolderLauncher.launch(null) } catch (e: ActivityNotFoundException) { Logs(TAG, e, "No activity found. Should never happen...") }
-                            })
+                            onConfirm = { try { connectLocalFolderLauncher.launch(null) } catch (e: ActivityNotFoundException) { Logs(TAG, e, "No activity found. Should never happen...") } })
                     }) {
                         Icon(imageVector = ImageVector.vectorResource(id = R.drawable.rounded_books_movies_and_music_24), "reconnect folder", modifier = Modifier.size(24.dp))
                         Text(stringResource(id = R.string.reconnect_local_folder)) }
@@ -2047,8 +2043,7 @@ fun LibraryScreen() {
                         if (isFeedsOptionsExpanded) CommonPopupCard(onDismiss = { isFeedsOptionsExpanded = false }) {
                             Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { feedsOptionsMap.entries.forEachIndexed { _, entry -> entry.value() } }
                         }
-                        FloatingActionButton(containerColor = bgColor, contentColor = fgColor,
-                            onClick = { isFeedsOptionsExpanded = !isFeedsOptionsExpanded }) { Icon(Icons.Filled.Menu, "Menu") }
+                        FloatingActionButton(containerColor = bgColor, contentColor = fgColor, onClick = { isFeedsOptionsExpanded = !isFeedsOptionsExpanded }) { Icon(Icons.Filled.Menu, "Menu") }
                     }
                     FeedsSpeedDial(feedsSelected, modifier = Modifier.padding(start = 16.dp))
                 }
@@ -2070,17 +2065,20 @@ enum class FeedPropertySortIndex(val code: Int, val res: Int) {
     Rating(2, R.string.rating_label),
     Score(3, R.string.score),
     ScoreCount(4, R.string.score_count),
-    Updated(5, R.string.last_update),
-    FullUpdate(6, R.string.last_full_update),
-    TotleDuration(7, R.string.total_duration),
-    Commented(8, R.string.last_commented);
+    Updated(5, R.string.update),
+    FullUpdate(6, R.string.full_update),
+    Commented(7, R.string.commented),
+    Visited(8, R.string.visit),
+    PlayedFrom(9, R.string.played_from),
+    TotleDuration(10, R.string.total_duration),
 }
 
 enum class FeedDateSortIndex(val code: Int, val res: Int) {
     Publish(0, R.string.publish_date),
     Downloaded(1, R.string.downloaded_label),
     Played(2, R.string.played),
-    Commented(3, R.string.commented);
+    Commented(3, R.string.commented),
+    Rated(4, R.string.rating_label),
 }
 
 enum class FeedTimeSortIndex(val code: Int, val res: Int) {

@@ -603,7 +603,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                         searchFeedsOnline(query = "${feed?.author} podcasts")
                         navTo(FindFeeds)
                     })
-                Text(stringResource(R.string.last_full_update) + ": ${formatDateTimeFlex(feed?.lastFullUpdateTime?:0L)}", modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
+                Text(stringResource(R.string.full_update) + ": ${formatDateTimeFlex(feed?.lastFullUpdateTime?:0L)}", modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
                 if (vm.logs.isNotEmpty()) {
                     var showLogs by remember { mutableStateOf(false) }
                     Text(stringResource(R.string.logs), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp).clickable { showLogs = !showLogs})
