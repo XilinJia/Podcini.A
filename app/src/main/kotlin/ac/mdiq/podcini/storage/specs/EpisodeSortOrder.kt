@@ -11,8 +11,8 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
     DATE_ASC(1, R.string.publish_date),
     DATE_DESC(2, R.string.publish_date),
 
-    EPISODE_TITLE_ASC(3, R.string.episode_title),
-    EPISODE_TITLE_DESC(4, R.string.episode_title),
+    EPISODE_TITLE_ASC(3, R.string.title),
+    EPISODE_TITLE_DESC(4, R.string.title),
 
     DURATION_ASC(5, R.string.duration),
     DURATION_DESC(6, R.string.duration),
@@ -29,17 +29,17 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
     COMMENT_DATE_ASC(19, R.string.last_comment_date),
     COMMENT_DATE_DESC(20, R.string.last_comment_date),
 
-    TRACK_NUMBER_ASC(21, R.string.track_number, false),
-    TRACK_NUMBER_DESC(22, R.string.track_number, false),
+    RATING_ASC(21, R.string.rating_label),
+    RATING_DESC(22, R.string.rating_label),
 
-    VIEWS_SPEED_ASC(31, R.string.trending, true),
-    VIEWS_SPEED_DESC(32, R.string.trending, true),
+    RATING_DATE_ASC(23, R.string.rating_date),
+    RATING_DATE_DESC(24, R.string.rating_date),
+
+    TRENDING_ASC(31, R.string.trending, true),
+    TRENDING_DESC(32, R.string.trending, true),
 
     LIKES_ASC(33, R.string.like_count, true),
     LIKES_DESC(34, R.string.like_count, true),
-
-    EPISODE_FILENAME_ASC(7, R.string.filename),
-    EPISODE_FILENAME_DESC(8, R.string.filename),
 
     FEED_TITLE_ASC(101, R.string.feed_title, true),
     FEED_TITLE_DESC(102, R.string.feed_title, true),
@@ -49,13 +49,17 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
     FEED_SCORE_COUNT_ASC(113, R.string.feed_score_count, true),
     FEED_SCORE_COUNT_DESC(114, R.string.feed_score_count, true),
 
-    SIZE_ASC(9, R.string.size),
-    SIZE_DESC(10, R.string.size),
+    TRACK_NUMBER_ASC(51, R.string.track_number, false),
+    TRACK_NUMBER_DESC(52, R.string.track_number, false),
+    SIZE_ASC(53, R.string.size),
+    SIZE_DESC(54, R.string.size),
+    EPISODE_FILENAME_ASC(55, R.string.filename),
+    EPISODE_FILENAME_DESC(56, R.string.filename),
 
-    RANDOM(103, R.string.random, true),
-    RANDOM1(104, R.string.random, true),
-    SMART_SHUFFLE_ASC(105, R.string.smart_shuffle, true),
-    SMART_SHUFFLE_DESC(106, R.string.smart_shuffle, true);
+    RANDOM(203, R.string.random, true),
+    RANDOM1(204, R.string.random, true),
+    SMART_SHUFFLE_ASC(205, R.string.smart_shuffle, true),
+    SMART_SHUFFLE_DESC(206, R.string.smart_shuffle, true);
 
     fun reverseCode(): Int {
         return if (code % 2 == 0) code - 1 else code + 1
@@ -119,10 +123,14 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
                     VIEWS_DESC -> viewCount(f2).compareTo(viewCount(f1))
                     LIKES_ASC -> likeCount(f1).compareTo(likeCount(f2))
                     LIKES_DESC -> likeCount(f2).compareTo(likeCount(f1))
-                    VIEWS_SPEED_ASC -> viewSpeed(f1).compareTo(viewSpeed(f2))
-                    VIEWS_SPEED_DESC -> viewSpeed(f2).compareTo(viewSpeed(f1))
+                    TRENDING_ASC -> viewSpeed(f1).compareTo(viewSpeed(f2))
+                    TRENDING_DESC -> viewSpeed(f2).compareTo(viewSpeed(f1))
                     COMMENT_DATE_ASC -> commentDate(f1).compareTo(commentDate(f2))
                     COMMENT_DATE_DESC -> commentDate(f2).compareTo(commentDate(f1))
+                    RATING_ASC -> rating(f1).compareTo(rating(f2))
+                    RATING_DESC -> rating(f2).compareTo(rating(f1))
+                    RATING_DATE_ASC -> ratingDate(f1).compareTo(ratingDate(f2))
+                    RATING_DATE_DESC -> ratingDate(f2).compareTo(ratingDate(f1))
                     TRACK_NUMBER_ASC -> trackNumber(f1).compareTo(trackNumber(f2))
                     TRACK_NUMBER_DESC -> trackNumber(f2).compareTo(trackNumber(f1))
                     FEED_TITLE_ASC -> feedTitle(f1).compareToNatural(feedTitle(f2))
@@ -138,6 +146,7 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
             this.sortWith(comparator)
         }
 
+        // TODO: not all are supported
         fun sortPairOf(sortOrder: EpisodeSortOrder?): Pair<String, Sort> {
             return when (sortOrder) {
                 EPISODE_TITLE_ASC -> Pair("title", Sort.ASCENDING)
@@ -160,6 +169,10 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
                 LIKES_DESC -> Pair("likeCount", Sort.DESCENDING)
                 COMMENT_DATE_ASC -> Pair("commentTime", Sort.ASCENDING)
                 COMMENT_DATE_DESC -> Pair("commentTime", Sort.DESCENDING)
+                RATING_DATE_ASC -> Pair("ratingTime", Sort.ASCENDING)
+                RATING_DATE_DESC -> Pair("ratingTime", Sort.DESCENDING)
+                RATING_ASC -> Pair("rating", Sort.ASCENDING)
+                RATING_DESC -> Pair("rating", Sort.DESCENDING)
                 // TODO
 //                FEED_TITLE_ASC -> Pair("feed.title", Sort.ASCENDING)
 //                FEED_TITLE_DESC -> Pair("feed.title", Sort.DESCENDING)
@@ -194,6 +207,8 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
         private fun playDate(item: Episode?): Long = item?.lastPlayedTime ?: 0
 
         private fun commentDate(item: Episode?): Long = item?.commentTime ?: 0
+        private fun ratingDate(item: Episode?): Long = item?.ratingTime ?: 0
+        private fun rating(item: Episode?): Int = item?.rating ?: 0
 
         private fun trackNumber(item: Episode?): Int = item?.trackNumber ?: 0
 

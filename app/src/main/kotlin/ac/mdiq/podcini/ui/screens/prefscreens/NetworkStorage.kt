@@ -657,7 +657,7 @@ fun SynchronizationScreen() {
                                 loggedIn = isSyncProviderConnected
                                 onDismiss()
                             }) {
-                            Icon(painter = painterResource(id = option.iconResource), contentDescription = "", modifier = Modifier.size(40.dp).padding(end = 15.dp))
+                            Icon(painter = painterResource(id = option.iconResource), contentDescription = "", modifier = Modifier.padding(end = 15.dp).size(40.dp))
                             Text(stringResource(option.summaryResource), modifier = Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
@@ -792,14 +792,14 @@ fun SynchronizationScreen() {
             selectedProvider?.let {
                 summaryRes = it.summaryResource
                 iconRes = it.iconResource
-                Icon(painter = painterResource(id = iconRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
+                Icon(painter = painterResource(id = iconRes), contentDescription = "", tint = textColor, modifier = Modifier.padding(end = 15.dp).size(40.dp))
             }
         } else {
             titleRes = R.string.synchronization_choose_title
             summaryRes = R.string.synchronization_summary_unchoosen
             iconRes = R.drawable.ic_cloud
             onClick = { chooseProviderAndLoginDialog = true }
-            Icon(imageVector = ImageVector.vectorResource(iconRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
+            Icon(imageVector = ImageVector.vectorResource(iconRes), contentDescription = "", tint = textColor, modifier = Modifier.padding(end = 15.dp).size(40.dp))
         }
         TitleSummaryActionColumn(titleRes, summaryRes) { onClick?.invoke() }
     }

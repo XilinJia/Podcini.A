@@ -292,7 +292,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                 } else runOnIOScope { upsert(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed } }
                                 onDismiss()
                             },
-                            trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon", modifier = Modifier.size(30.dp).padding(start = 3.dp).clickable {
+                            trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon", modifier = Modifier.padding(start = 3.dp).size(30.dp).clickable {
                                 speeds.remove(chipSpeed)
                                 setPlaybackSpeedArray(speeds)
                             }) })

@@ -165,7 +165,7 @@ fun PrefPortalScreen() {
     @Composable
     fun IconTitleSummaryScreenRow(vecRes: Int, titleRes: Int, summaryRes: Int, screen: PFNavKey) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 10.dp)) {
-            Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
+            Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.padding(end = 15.dp).size(40.dp))
             Column(modifier = Modifier.weight(1f).clickable { pfBackStack.add(screen) }) {
                 Text(stringResource(titleRes), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
                 Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.labelSmall)
@@ -175,7 +175,7 @@ fun PrefPortalScreen() {
     @Composable
     fun IconTitleActionRow(vecRes: Int, titleRes: Int, callback: ()-> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 10.dp)) {
-            Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
+            Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.padding(end = 15.dp).size(40.dp))
             Column(modifier = Modifier.weight(1f).clickable { callback() }) {
                 Text(stringResource(titleRes), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
             }
@@ -186,7 +186,7 @@ fun PrefPortalScreen() {
         val copyrightNoticeText by remember { mutableStateOf(getCopyrightNoticeText()) }
         if (copyrightNoticeText.isNotBlank()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 10.dp)) {
-                Icon(imageVector = Icons.Filled.Info, contentDescription = "", tint = Color.Red, modifier = Modifier.size(40.dp).padding(end = 15.dp))
+                Icon(imageVector = Icons.Filled.Info, contentDescription = "", tint = Color.Red, modifier = Modifier.padding(end = 15.dp).size(40.dp))
                 Text(copyrightNoticeText, color = textColor)
             }
         }

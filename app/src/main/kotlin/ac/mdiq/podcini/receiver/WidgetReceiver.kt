@@ -150,15 +150,15 @@ class PodciniWidget : GlanceAppWidget() {
                 val buttonSize = 60.dp
                 Row(modifier = GlanceModifier.fillMaxWidth().padding(horizontal = 5.dp),  horizontalAlignment = Alignment.CenterHorizontally) {
                     Image(provider = ImageProvider(R.drawable.outline_smart_display_24), contentDescription = "PlayerUI", colorFilter = ColorFilter.tint(buttonColorProvider),
-                        modifier = GlanceModifier.size(buttonSize).padding(end = 5.dp).clickable(actionStartActivity<PlayerUIActivity>(), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
+                        modifier = GlanceModifier.padding(end = 5.dp).size(buttonSize).clickable(actionStartActivity<PlayerUIActivity>(), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
                     Image(provider = ImageProvider(R.drawable.baseline_skip_previous_24), contentDescription = "Restart", colorFilter = ColorFilter.tint(buttonColorProvider),
-                        modifier = GlanceModifier.size(buttonSize).padding(end = 5.dp).clickable(actionRunCallback<PrevAction>(), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
+                        modifier = GlanceModifier.padding(end = 5.dp).size(buttonSize).clickable(actionRunCallback<PrevAction>(), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
                     Image(provider = ImageProvider(R.drawable.ic_fast_rewind), contentDescription = "Rewind", colorFilter = ColorFilter.tint(buttonColorProvider),
-                        modifier = GlanceModifier.size(buttonSize).padding(end = 5.dp).clickable(actionRunCallback<RewindAction>(), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
+                        modifier = GlanceModifier.padding(end = 5.dp).size(buttonSize).clickable(actionRunCallback<RewindAction>(), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
                     Image(provider = ImageProvider(R.drawable.outline_play_pause_24), contentDescription = "Play/pause", colorFilter = ColorFilter.tint(buttonColorProvider),
-                        modifier = GlanceModifier.size(buttonSize).padding(end = 5.dp).clickable(actionRunCallback<ToggleAction>(if (episodes.isNotEmpty()) actionParametersOf(EPISODE_ID_KEY to episodes[0].id) else actionParametersOf()), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
+                        modifier = GlanceModifier.padding(end = 5.dp).size(buttonSize).clickable(actionRunCallback<ToggleAction>(if (episodes.isNotEmpty()) actionParametersOf(EPISODE_ID_KEY to episodes[0].id) else actionParametersOf()), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
                     Image(provider = ImageProvider(R.drawable.ic_fast_forward), contentDescription = "Forward", colorFilter = ColorFilter.tint(buttonColorProvider),
-                        modifier = GlanceModifier.size(buttonSize).padding(end = 5.dp).clickable(actionRunCallback<ForwardAction>(), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
+                        modifier = GlanceModifier.padding(end = 5.dp).size(buttonSize).clickable(actionRunCallback<ForwardAction>(), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
                     Image(provider = ImageProvider(R.drawable.ic_skip_48dp), contentDescription = "Skip", colorFilter = ColorFilter.tint(buttonColorProvider),
                         modifier = GlanceModifier.size(buttonSize).clickable(actionRunCallback<NextAction>(), rippleOverride = R.drawable.widget_ripple).background(ImageProvider(R.drawable.widget_ripple)))
                 }

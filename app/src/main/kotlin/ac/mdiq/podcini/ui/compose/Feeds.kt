@@ -149,7 +149,7 @@ fun RemoveFeedDialog(feeds: List<Feed>, onDismiss: () -> Unit, callback: ()->Uni
                 Text(text = stringResource(R.string.shelve_important), style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
             }
             Text(stringResource(R.string.reason_to_delete_msg))
-            BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().height(100.dp).padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
+            BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).height(100.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             val reasonText = stringResource(R.string.reason_to_remove)
             Button(onClick = {
                 CoroutineScope(Dispatchers.IO).launch {

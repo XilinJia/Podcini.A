@@ -1,3 +1,14 @@
+# 12.17.3
+
+* update feed lastVisited in FeedDetails screen
+* ensure Caption options icon in EpisodeDetails not impact UI
+* in popup of captions
+	* added toggle text only icon on top bar
+	* in search bar, changed Search to search forward/backward
+* in episode sort, added Rating and Rating date
+* in filter and sort dialogs, changed grids to flow rows, and adjusted some lauouts
+* corrected some improper icon paddings
+
 # 12.17.2
 
 * set episode to Error on build or update when downloadUrl is null or blank

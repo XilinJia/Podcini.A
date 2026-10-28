@@ -89,7 +89,7 @@ class ShareReceiverActivity : ComponentActivity() {
                     existing!!.size > 1 -> {
                         Surface(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
                             Box(modifier = Modifier.fillMaxWidth()) {
-                                Box(modifier = Modifier.fillMaxWidth().requiredHeightIn(max = 400.dp).padding(bottom = 50.dp)) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 50.dp).requiredHeightIn(max = 400.dp)) {
                                     EpisodeLazyColumn(existing!!, layoutMode = LayoutMode.FeedTitle.code, forceFeedImage = true, showActionButtons = false)
                                 }
                                 Button(modifier = Modifier.align(Alignment.BottomEnd), onClick = { addAsNew = true }) { Text(stringResource(R.string.add_as_new)) }

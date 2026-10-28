@@ -116,6 +116,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -166,6 +167,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
@@ -343,12 +345,15 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
         var selectMode by remember { mutableStateOf(false) }
         val selected = remember { mutableStateSetOf<CaptionCue>() }
         Column(Modifier.fillMaxWidth().padding(horizontal = 5.dp)) {
+            var readerMode by remember { mutableStateOf(false) }
             var letScroll by remember(playWhenReady) { mutableStateOf(playWhenReady) }
             var jumpTo by remember { mutableIntStateOf(-1) }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Close, contentDescription = "close", modifier = Modifier.padding(7.dp).clickable { onDismiss() })
                 Spacer(Modifier.weight(1f))
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_help_24), contentDescription = "help", modifier = Modifier.padding(7.dp).clickable { showHelp = !showHelp })
+                Spacer(Modifier.weight(0.2f))
+                Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_text_ad_24), contentDescription = "text", modifier = Modifier.padding(7.dp).clickable { readerMode = !readerMode })
                 Spacer(Modifier.weight(0.2f))
                 if (player != null) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_center_focus_strong_24), tint = if (letScroll) Color.Green else Color.Red, contentDescription = "center", modifier = Modifier.padding(start = 10.dp).combinedClickable(
                     onClick = {
@@ -396,26 +401,42 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
                         }
                     }
                 }
-                if (level == 2) SearchBarRow(R.string.search_captions_hint, defaultText = "", modifier = Modifier.fillMaxWidth()) { str ->
-                    if (str.isBlank()) return@SearchBarRow
-                    Logd(TAG) { "searching str: $str"}
-                    val iStart = (jumpTo.takeIf { it >= 0 } ?: cueIndex.takeIf { it >= 0 }?: -1) + 1
-                    val caps = episode.captionCues
-                    for (i in iStart..<caps.size) {
-                        Logd(TAG) { "$i in caps: ${caps[i].text}"}
-                        if (str in caps[i].text) {
-                            letScroll = false
-                            jumpTo = i
-                            return@SearchBarRow
+                if (level == 2) {
+                    fun search(str: String, forward: Boolean = true) {
+                        if (str.isBlank()) return
+                        Logd(TAG) { "searching str: $str jumpTo: $jumpTo cueIndex: $cueIndex" }
+                        val iStart = (jumpTo.takeIf { it >= 0 } ?: cueIndex.takeIf { it >= 0 } ?: -1)
+                        val caps = episode.captionCues
+                        val range = if (forward) iStart+1 until caps.size else iStart-1 downTo 0
+                        for (i in range) {
+                            Logd(TAG) { "$i in caps: ${caps[i].text}" }
+                            if (caps[i].text.contains(str, ignoreCase = true)) {
+                                letScroll = false
+                                jumpTo = i
+                                return
+                            }
                         }
+                        Logt(TAG, "Text $str not found in captions")
                     }
-                    Logt(TAG, "Text $str not found in captions")
+                    val focusManager = LocalFocusManager.current
+                    var queryText by remember { mutableStateOf("") }
+                    TextField(value = queryText, singleLine = true, textStyle = TextStyle(fontSize = 14.sp), label = { Text(stringResource(R.string.search_case_insensitive), style = MaterialTheme.typography.labelSmall) }, modifier = Modifier.trackAsTextField().fillMaxWidth(), keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done), onValueChange = { queryText = it },
+                        keyboardActions = KeyboardActions(onDone = { search(queryText); focusManager.clearFocus() }),
+                        trailingIcon = { Row {
+                            Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_upward_24), tint = buttonColor, contentDescription = "search back", modifier = Modifier.width(40.dp).height(40.dp).clickable {
+                                search(queryText, false); focusManager.clearFocus()
+                            })
+                            Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_downward_24), tint = buttonColor, contentDescription = "search forward", modifier = Modifier.padding(horizontal = 5.dp).width(40.dp).height(40.dp).clickable {
+                                search(queryText); focusManager.clearFocus()
+                            }) }
+                    })
                 }
                 LazyColumn(state = listState, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     itemsIndexed(episode.captionCues) { i, c ->
                         val color = if ((cueIndex == -1 && jumpTo == -1) || i == cueIndex || i == jumpTo) textColor else textColor.copy(alpha = 0.75f)
                         var isSelected by remember(i, selectMode, selected.size) { mutableStateOf(selectMode && c in selected) }
-                        Text("${durationStringAdapt(c.startMs.toInt())}| ${c.speaker}: ${c.text}", color = color, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.then(if (i == cueIndex) Modifier.border(width = 1.dp, color = borderColor.copy(alpha = 0.5f)) else Modifier).background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface).combinedClickable(onClick = {
+                        val cap = remember(i, readerMode) { if (!readerMode) "${durationStringAdapt(c.startMs.toInt())}| ${c.speaker}: ${c.text}" else c.text }
+                        Text(cap, color = color, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.then(if (i == cueIndex) Modifier.border(width = 1.dp, color = borderColor.copy(alpha = 0.5f)) else Modifier).background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface).combinedClickable(onClick = {
                             if (selectMode) {
                                 if (c in selected) selected.remove(c)
                                 else selected.add(c)
@@ -972,7 +993,7 @@ fun EraseEpisodesDialog(selected: List<Episode>, feed: Feed?, onDismiss: () -> U
         else Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(message + ": ${selected.size}")
             Text(stringResource(R.string.reason_to_delete_msg))
-            BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().height(100.dp).padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
+            BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).height(100.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             Button(onClick = {
                 CoroutineScope(Dispatchers.IO).launch { eraseEpisodes(selected, textState.text) }
                 onDismiss()
@@ -1164,7 +1185,7 @@ fun IgnoreEpisodesDialog(selected: List<Episode>, onDismiss: () -> Unit) {
             var textState by remember { mutableStateOf(TextFieldValue("")) }
             Text(message + ": ${selected.size}")
             Text(stringResource(R.string.reason_to_delete_msg))
-            BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().height(100.dp).padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
+            BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).height(100.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             Button(onClick = {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
@@ -1246,24 +1267,22 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                 if (showAndOr) {
                     Row(modifier = Modifier.padding(start = 5.dp).fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.join_categories_with) + " :", style = MaterialTheme.typography.bodyMedium , color = textColor, modifier = Modifier.padding(end = 10.dp))
-                        Spacer(Modifier.width(30.dp))
-                        OutlinedButton(
-                            modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (andOr == "OR") borderColor else buttonAltColor),
+                        Spacer(Modifier.width(20.dp))
+                        OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (andOr == "OR") borderColor else buttonAltColor),
                             onClick = {
                                 andOr = "AND"
                                 filter.andOr = andOr
                                 onFilterChanged(filter)
                             },
-                        ) { Text(text = "AND", color = textColor) }
-                        Spacer(Modifier.width(20.dp))
-                        OutlinedButton(
-                            modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (andOr == "AND") borderColor else buttonAltColor),
+                        ) { Text(text = "AND", color = textColor, style = MaterialTheme.typography.bodySmall) }
+                        Spacer(Modifier.width(10.dp))
+                        OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (andOr == "AND") borderColor else buttonAltColor),
                             onClick = {
                                 andOr = "OR"
                                 filter.andOr = andOr
                                 onFilterChanged(filter)
                             },
-                        ) { Text(text = "OR", color = textColor) }
+                        ) { Text(text = "OR", color = textColor, style = MaterialTheme.typography.bodySmall) }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.onTertiaryContainer, thickness = 1.dp)
                 }
@@ -1301,7 +1320,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                         val selectedList = remember { MutableList(tagList.size) { mutableStateOf(false) } }
                         val tagsSel = remember { mutableStateListOf<String>() }
                         var expandRow by remember { mutableStateOf(false) }
-                        Row(modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
                             Text(stringResource(R.string.tags_label) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = if (tagsSel.size == tagList.size) buttonColor else buttonAltColor, modifier = Modifier.clickable { expandRow = !expandRow })
                             if (expandRow) {
                                 val cb = {
@@ -1320,18 +1339,19 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                 SelectLowerAllUpper(selectedList, lowerCB = cb, allCB = cb, upperCB = cb)
                             }
                         }
-                        if (expandRow) ScrollRowGrid(columns = 3, itemCount = tagList.size, modifier = Modifier.padding(start = 10.dp)) { index ->
-                            LaunchedEffect(Unit) { if (filter.containsTag(tagList[index])) selectedList[index].value = true }
-                            OutlinedButton(
-                                modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
-                                onClick = {
-                                    selectNone = false
-                                    selectedList[index].value = !selectedList[index].value
-                                    if (selectedList[index].value) filter.addTag(tagList[index])
-                                    else filter.removeTag(tagList[index])
-                                    onFilterChanged(filter)
-                                },
-                            ) { Text(text = tagList[index], maxLines = 1, color = textColor) }
+                        if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
+                            for (index in tagList.indices) {
+                                LaunchedEffect(Unit) { if (filter.containsTag(tagList[index])) selectedList[index].value = true }
+                                OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                    onClick = {
+                                        selectNone = false
+                                        selectedList[index].value = !selectedList[index].value
+                                        if (selectedList[index].value) filter.addTag(tagList[index])
+                                        else filter.removeTag(tagList[index])
+                                        onFilterChanged(filter)
+                                    },
+                                ) { Text(text = tagList[index], maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
+                            }
                         }
                     }
                 }
@@ -1345,8 +1365,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                 if (group.properties[0].filterId in filter.propertySet) selectedIndex = 0
                                 else if (group.properties[1].filterId in filter.propertySet) selectedIndex = 1
                             }
-                            Text(stringResource(group.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge , color = textColor, modifier = Modifier.padding(end = 10.dp))
-                            Spacer(Modifier.width(30.dp))
+                            Text(stringResource(group.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge , color = textColor, modifier = Modifier.padding(end = 15.dp))
                             OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (selectedIndex != 0) borderColor else buttonAltColor),
                                 onClick = {
                                     if (selectedIndex != 0) {
@@ -1361,10 +1380,9 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                     Logd("EpisodesFilterDialog") { "selectedIndex: $selectedIndex filterValues = [${filter.propertySet}]" }
                                     onFilterChanged(filter)
                                 },
-                            ) { Text(text = stringResource(group.properties[0].displayName), color = textColor) }
-                            Spacer(Modifier.width(20.dp))
-                            OutlinedButton(
-                                modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (selectedIndex != 1) borderColor else buttonAltColor),
+                            ) { Text(text = stringResource(group.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
+                            Spacer(Modifier.width(10.dp))
+                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (selectedIndex != 1) borderColor else buttonAltColor),
                                 onClick = {
                                     if (selectedIndex != 1) {
                                         selectNone = false
@@ -1377,8 +1395,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                     }
                                     onFilterChanged(filter)
                                 },
-                            ) { Text(text = stringResource(group.properties[1].displayName), color = textColor) }
-                            //                            Spacer(Modifier.weight(0.5f))
+                            ) { Text(text = stringResource(group.properties[1].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                         }
                     } else {
                         Column(modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
@@ -1393,22 +1410,20 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                             var floor by remember { mutableIntStateOf(filter.durationFloor/1000) }
                                             var ceiling by remember { mutableIntStateOf(filter.durationCeiling/1000) }
                                             NumberEditor(floor, stringResource(R.string.floor_seconds), nz = true, instant = true, modifier = Modifier.width(140.dp)) {
-                                                floor = it
-                                                showIcon = true
+                                                floor = it; showIcon = true
                                             }
                                             Spacer(Modifier.width(10.dp))
                                             NumberEditor(ceiling, stringResource(R.string.ceiling_seconds), nz = true, instant = true, modifier = Modifier.width(140.dp)) {
-                                                ceiling = it
-                                                showIcon = true
+                                                ceiling = it; showIcon = true
                                             }
-                                            Icon(imageVector =  ImageVector.vectorResource(R.drawable.outline_reset_settings_24), contentDescription = "Reset icon", modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                                            Icon(imageVector =  ImageVector.vectorResource(R.drawable.outline_reset_settings_24), contentDescription = "Reset icon", modifier = Modifier.padding(start = 10.dp).size(30.dp).clickable {
                                                 floor = 0
                                                 ceiling = Int.MAX_VALUE/1000
                                                 filter.durationFloor = floor
                                                 filter.durationCeiling = Int.MAX_VALUE
                                                 onFilterChanged(filter)
                                             })
-                                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.padding(start = 10.dp).size(30.dp).clickable {
                                                 filter.durationFloor = floor * 1000
                                                 filter.durationCeiling = if (ceiling == 0) Int.MAX_VALUE else ceiling * 1000
                                                 onFilterChanged(filter)
@@ -1434,7 +1449,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                             MonthYearInput(toStr, modifier = Modifier.width(140.dp), onError = { error = it }) { str ->
                                                 convertMonthYearToUnixTime(str, false)?.let { timeFilterTo = it; error = ""; showIcon = true }
                                             }
-                                            Icon(imageVector =  ImageVector.vectorResource(R.drawable.outline_reset_settings_24), contentDescription = "Reset icon", modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                                            Icon(imageVector =  ImageVector.vectorResource(R.drawable.outline_reset_settings_24), contentDescription = "Reset icon", modifier = Modifier.padding(start = 10.dp).size(30.dp).clickable {
                                                 timeFilterFrom = 0L
                                                 timeFilterTo = nowInMillis()
                                                 filter.pubDateFloor = timeFilterFrom
@@ -1443,7 +1458,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                             })
 //                                            R.drawable.baseline_arrow_right_alt_24
 //                                            Icons.AutoMirrored.Filled.ArrowForward
-                                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.padding(start = 10.dp).size(30.dp).clickable {
                                                 filter.pubDateFloor = timeFilterFrom
                                                 filter.pubDateCeiling = timeFilterTo
                                                 onFilterChanged(filter)
@@ -1460,10 +1475,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                         var titleText by remember { mutableStateOf((filter.titleText)) }
                                         val focusManager = LocalFocusManager.current
                                         TextField(value = titleText, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), label = { Text("Text in titles") }, singleLine = true, modifier = Modifier.trackAsTextField(),
-                                            onValueChange = {
-                                                titleText = it
-                                                showIcon = true
-                                            },
+                                            onValueChange = { titleText = it; showIcon = true },
                                             trailingIcon = {
                                                 if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon",
                                                     modifier = Modifier.size(30.dp).clickable {
@@ -1491,28 +1503,30 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                     }
                                 }
                             }
-                            if (expandRow) ScrollRowGrid(columns = 3, itemCount = group.properties.size) { index ->
-                                if (selectNone) selectedList[index].value = false
-                                LaunchedEffect(Unit) { if (group.properties[index].filterId in filter.propertySet) selectedList[index].value = true }
-                                OutlinedButton(
-                                    modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
-                                    onClick = {
-                                        selectNone = false
-                                        selectedList[index].value = !selectedList[index].value
-                                        Logd(TAG) { " index: $index filter: ${filter.pubDateFloor}"}
-                                        if (selectedList[index].value) {
-                                            filter.add(group.properties[index].filterId)
-                                            if (group.exclusive) for (i in selectedList.indices) {
-                                                if (i != index) {
-                                                    selectedList[i].value = false
-                                                    filter.remove(group.properties[i].filterId)
+                            if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
+                                for (index in group.properties.indices) {
+                                    if (selectNone) selectedList[index].value = false
+                                    LaunchedEffect(Unit) { if (group.properties[index].filterId in filter.propertySet) selectedList[index].value = true }
+                                    OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                        onClick = {
+                                            selectNone = false
+                                            selectedList[index].value = !selectedList[index].value
+                                            Logd(TAG) { " index: $index filter: ${filter.pubDateFloor}"}
+                                            if (selectedList[index].value) {
+                                                filter.add(group.properties[index].filterId)
+                                                if (group.exclusive) for (i in selectedList.indices) {
+                                                    if (i != index) {
+                                                        selectedList[i].value = false
+                                                        filter.remove(group.properties[i].filterId)
+                                                    }
                                                 }
-                                            }
-                                        } else filter.remove(group.properties[index].filterId)
-                                        Logd(TAG) { " index: $index filter: ${filter.pubDateFloor}"}
-                                        onFilterChanged(filter)
-                                    },
-                                ) { Text(text = stringResource(group.properties[index].displayName), maxLines = 1, color = textColor) }
+                                            } else filter.remove(group.properties[index].filterId)
+                                            Logd(TAG) { " index: $index filter: ${filter.pubDateFloor}"}
+                                            onFilterChanged(filter)
+                                        },
+                                    ) { Text(text = stringResource(group.properties[index].displayName), maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
+
+                                }
                             }
                         }
                     }
@@ -1535,7 +1549,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
 
 @Composable
 fun EpisodeSortDialog(initOrder: EpisodeSortOrder, includeConditionals: List<EpisodeSortOrder> = listOf(), feed: Feed? = null, onDismiss: () -> Unit, onSelectionChanged: (EpisodeSortOrder?) -> Unit) {
-    val viewCounts = remember { listOf(EpisodeSortOrder.VIEWS_ASC, EpisodeSortOrder.VIEWS_DESC, EpisodeSortOrder.VIEWS_SPEED_ASC, EpisodeSortOrder.VIEWS_SPEED_DESC) }
+    val viewCounts = remember { listOf(EpisodeSortOrder.VIEWS_ASC, EpisodeSortOrder.VIEWS_DESC, EpisodeSortOrder.TRENDING_ASC, EpisodeSortOrder.TRENDING_DESC) }
     val likeCounts = remember { listOf(EpisodeSortOrder.LIKES_ASC, EpisodeSortOrder.LIKES_DESC) }
     val client = remember { if (feed != null) clientByFeed(feed) else null }
     val ordersOnFeed: List<EpisodeSortOrder> = remember { if (feed != null && client != null) { if (client.attributes?.hasViewCount == true) viewCounts else listOf<EpisodeSortOrder>() + if (client.attributes?.hasLikeCount == true) likeCounts else listOf() } else listOf() }
@@ -1548,19 +1562,21 @@ fun EpisodeSortDialog(initOrder: EpisodeSortOrder, includeConditionals: List<Epi
         Surface(modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp).height(250.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
             var order by remember { mutableStateOf(initOrder) }
             var sortIndex by remember { mutableIntStateOf(orderList.indexOfFirst { it.code == order.code || it.code == order.code+1 }.takeIf { it >= 0 } ?: 0) }
-            Column(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
-                ScrollRowGrid(columns = 2, itemCount = orderList.size) { index ->
-                    var dir by remember { mutableStateOf(order.code != orderList[sortIndex].code) }
-                    OutlinedButton(modifier = Modifier.padding(2.dp), elevation = null, border = BorderStroke(2.dp, if (sortIndex != index) borderColor else buttonAltColor),
-                        onClick = {
-                            if (sortIndex == index) dir = !dir
-                            sortIndex = index
-                            order = fromCode(orderList[index].code - if (dir) 1 else 0)
-                            onSelectionChanged(order)
-                        }
-                    ) { Text(text = stringResource(orderList[index].res) + if (dir) "\u00A0▲" else "\u00A0▼", color = textColor, maxLines = 1) }
+//            Column(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
+                FlowRow(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
+                    for (index in orderList.indices) {
+                        var dir by remember { mutableStateOf(order.code != orderList[sortIndex].code) }
+                        OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (sortIndex != index) borderColor else buttonAltColor),
+                            onClick = {
+                                if (sortIndex == index) dir = !dir
+                                sortIndex = index
+                                order = fromCode(orderList[index].code - if (dir) 1 else 0)
+                                onSelectionChanged(order)
+                            }
+                        ) { Text(text = stringResource(orderList[index].res) + if (dir) "\u00A0▲" else "\u00A0▼", color = textColor, style = MaterialTheme.typography.bodySmall, maxLines = 1) }
+                    }
                 }
-            }
+//            }
         }
     }
 }
@@ -1724,7 +1740,7 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
 fun ConfirmAddToFeed(onDismiss: () -> Unit, cb: suspend (Feed)-> Unit) {
     val synthetics = remember { feedsMap.values.filter { it.id in 1..1000 } }
     Dialog(onDismissRequest = { onDismiss() }) {
-        Card(modifier = Modifier.height(350.dp).padding(16.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
+        Card(modifier = Modifier.padding(16.dp).height(350.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
             var toFeed by remember { mutableStateOf<Feed?>(null) }
             var showComfirmButton by remember { mutableStateOf(toFeed != null) }
             Column(modifier = Modifier.fillMaxWidth()) {

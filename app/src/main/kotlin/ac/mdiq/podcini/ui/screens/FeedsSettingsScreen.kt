@@ -803,7 +803,7 @@ fun FeedsSettingsScreen() {
                         seconds = it
                         showIcon = true
                     }
-                    if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).padding(start = 10.dp).clickable {
+                    if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.padding(start = 10.dp).size(30.dp).clickable {
                         runOnIOScope {
                             val startms = (minutes * 60 + seconds) * 1000
                             realm.write { for (f in feedsToSet) findLatest(f)?.let { it.transcriptStartPos = startms } }

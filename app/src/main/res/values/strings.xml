@@ -508,6 +508,7 @@
     <string name="count">Count</string>
     <string name="track_number">Track number</string>
     <string name="last_comment_date">Comment date</string>
+    <string name="rating_date">Rating date</string>
     <string name="last_played_date">Played date</string>
 
     <string name="between_dates">Between dates</string>
@@ -801,6 +802,7 @@
 
     <string name="search_label">Search</string>
     <string name="search_hint">delimit by , prefix with - to exclude</string>
+    <string name="search_case_insensitive">Search case insensitive</string>
     <string name="no_results_for_query">No results were found for \"%1$s\"</string>
 
     <string name="search_captions_hint">search case sensitive</string>

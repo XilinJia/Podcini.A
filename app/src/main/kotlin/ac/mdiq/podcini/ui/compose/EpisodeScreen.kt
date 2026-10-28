@@ -212,32 +212,13 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
         if (futureState in listOf(EpisodeState.AGAIN, EpisodeState.FOREVER, EpisodeState.LATER)) FutureStateDialog(listOf(episode), futureState, onDismiss = { futureState = EpisodeState.UNSPECIFIED })
         if (showShareDialog) ShareDialog(episode) { showShareDialog = false }
 
-        if (showEditTimerDialog) EditTimerDialog(timer = onTimer, onDismiss = { showEditTimerDialog = false },  cb = { onTimer = it })
+        if (showEditTimerDialog) EditTimerDialog(timer = onTimer, onDismiss = { showEditTimerDialog = false }, cb = { onTimer = it })
 
         if (showAddTimerDialog) EditTimerDialog(episode = episode) { showAddTimerDialog = false }
 
-        if (showTimersDialog) EpisodeTimersDialog(episode, { showTimersDialog = false }) {
-            onTimer = it
-            showEditTimerDialog = true
-        }
+        if (showTimersDialog) EpisodeTimersDialog(episode, { showTimersDialog = false }) { onTimer = it; showEditTimerDialog = true }
 
-//        if (showTransDialog) TranscriptPopup(episode, player, cueIndex) { showTransDialog = false }
-        if (showTransMetaDialog) CommonPopupCard(onDismiss = { showTransMetaDialog = false }) {
-            if (client == null) {
-                Logt(TAG, "can not find service app for episode")
-                return@CommonPopupCard
-            }
-            LaunchedEffect(Unit) {
-                withContext(Dispatchers.IO) {
-                    val captions = client.withProvider { it.getCaptionSpecs(episode.toIPC()) }
-                    if (!captions.isNullOrEmpty()) {
-                        val tm = captions.map { it.toTranscriptMeta() }.toRealmList()
-                        upsert(episode) { it.transcriptMetas = tm }
-                    }
-                }
-            }
-            TranscriptMeta(episode)
-        }
+        if (showTransMetaDialog) CommonPopupCard(onDismiss = { showTransMetaDialog = false }) { TranscriptMeta(episode) }
     }
 
     OpenDialogs()
@@ -276,7 +257,20 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                         Spacer(Modifier.weight(1f))
                     }
                     if (episode.transcriptMetas.isEmpty() && client?.attributes?.hasTranscripts == true) {
-                        IconButton(onClick = { showTransMetaDialog = true }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_closed_caption_add_24), contentDescription = "fetch transcript") }
+                        IconButton(onClick = {
+                            if (client == null) {
+                                Logt(TAG, "can not find service app for episode")
+                                return@IconButton
+                            }
+                            runOnIOScope {
+                                val captions = client.withProvider { it.getCaptionSpecs(episode.toIPC()) }
+                                if (!captions.isNullOrEmpty()) {
+                                    val tm = captions.map { it.toTranscriptMeta() }.toRealmList()
+                                    upsert(episode) { it.transcriptMetas = tm }
+                                    withContext(Dispatchers.Main) { showTransMetaDialog = true }
+                                } else Logt(TAG, "Can not find captions for this episode")
+                            }
+                        }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_closed_caption_add_24), contentDescription = "fetch transcript") }
                         Spacer(Modifier.weight(1f))
                     }
                     if (allowOpenFeed && episodeFeed != null) {

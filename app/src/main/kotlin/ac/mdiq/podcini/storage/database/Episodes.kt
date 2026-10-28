@@ -40,7 +40,7 @@ import kotlin.math.min
 
 private const val TAG: String = "Episodes"
 
-// TODO: filters of queued and not queued don't work in this
+// TODO: some filters and sorings don't work in this
 fun getEpisodes(filter: EpisodeFilter?, sortOrder: EpisodeSortOrder?, feedId: Long = -1, offset: Int = 0, limit: Int = Int.MAX_VALUE, copy: Boolean = true): List<Episode> {
     var queryString = filter?.queryString()?:"id > 0"
     if (feedId >= 0) queryString += " AND feedId == $feedId "

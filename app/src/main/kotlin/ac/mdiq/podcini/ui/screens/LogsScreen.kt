@@ -252,7 +252,7 @@ fun LogsScreen() {
                 else -> CommonDialogWide(onDismiss = { sharedUrl = "" }) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.existing), style = MaterialTheme.typography.titleMedium)
-                        Box(modifier = Modifier.fillMaxWidth().requiredHeightIn(max = 300.dp).padding(vertical = 5.dp)) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp).requiredHeightIn(max = 300.dp)) {
                             EpisodeLazyColumn(existing!!, layoutMode = LayoutMode.FeedTitle.code, forceFeedImage = true, showActionButtons = false)
                         }
                         Row {
@@ -386,7 +386,7 @@ fun LogsScreen() {
             items(vm.deletionLogs) { log ->
                 Row (verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp, end = 10.dp).clickable { dialogParam = log }) {
                     val iconRes = remember { fromCode(log.rating).res  }
-                    Icon(imageVector = ImageVector.vectorResource(iconRes), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).width(40.dp).height(40.dp).padding(end = 15.dp))
+                    Icon(imageVector = ImageVector.vectorResource(iconRes), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).padding(end = 15.dp).width(40.dp).height(40.dp))
                     Column {
                         Text(log.type + ": " + formatDateTimeFlex(log.id) + " -- " + formatDateTimeFlex(log.cancelDate), color = textColor)
                         Text(log.title, color = textColor)

@@ -585,7 +585,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                 }
             }
             Row(modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.tertiaryContainer), horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_upward_24), tint = buttonColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp).padding(start = 10.dp)
+                Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_upward_24), tint = buttonColor, contentDescription = null, modifier = Modifier.padding(start = 10.dp).width(35.dp).height(35.dp)
                     .clickable {
                         selected.clear()
                         val eList = multiSelectCB(longPressIndex, -1)

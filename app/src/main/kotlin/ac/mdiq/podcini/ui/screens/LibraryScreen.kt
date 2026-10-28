@@ -48,7 +48,6 @@ import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.PutToQueueDialog
 import ac.mdiq.podcini.ui.compose.RemoveFeedDialog
-import ac.mdiq.podcini.ui.compose.ScrollRowGrid
 import ac.mdiq.podcini.ui.compose.SelectLowerAllUpper
 import ac.mdiq.podcini.ui.compose.SendToDevice
 import ac.mdiq.podcini.ui.compose.Spinner
@@ -920,7 +919,7 @@ fun LibraryScreen() {
                 Surface(modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp).height(350.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
                     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                            OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Feed.code) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(2.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Feed.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Feed.code)
                                         runOnIOScope {
@@ -938,7 +937,7 @@ fun LibraryScreen() {
                                     else vm.preparePropertySort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Feed.res) + if (subPrefs.propertyAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
-                            OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Date.code) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(2.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Date.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Date.code)
                                         runOnIOScope {
@@ -951,7 +950,7 @@ fun LibraryScreen() {
                                     else vm.prepareDateSort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Date.res) + if (subPrefs.dateAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
-                            OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Time.code) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(2.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Time.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Time.code)
                                         runOnIOScope {
@@ -964,7 +963,7 @@ fun LibraryScreen() {
                                     else vm.prepareTimeSort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Time.res) + if (subPrefs.timeAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
-                            OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Count.code) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(2.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Count.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Count.code)
                                         runOnIOScope {
@@ -984,7 +983,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.feed_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedPropertySortIndex.entries) {
-                                        OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.propertySortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.propertySortIndex != sd.code) vm.preparePropertySort(feedList, sd) }) { Text(stringResource(sd.res)) }
+                                        OutlinedButton(modifier = Modifier.padding(1.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.propertySortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.propertySortIndex != sd.code) vm.preparePropertySort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             }
@@ -992,7 +991,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.feed_date_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedDateSortIndex.entries) {
-                                        OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.dateSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.dateSortIndex != sd.code) vm.prepareDateSort(feedList,sd) }) { Text(stringResource(sd.res)) }
+                                        OutlinedButton(modifier = Modifier.padding(1.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.dateSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.dateSortIndex != sd.code) vm.prepareDateSort(feedList,sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             }
@@ -1000,7 +999,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.feed_time_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedTimeSortIndex.entries) {
-                                        OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.timeSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.timeSortIndex != sd.code) vm.prepareTimeSort(feedList, sd) }) { Text(stringResource(sd.res)) }
+                                        OutlinedButton(modifier = Modifier.padding(1.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.timeSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.timeSortIndex != sd.code) vm.prepareTimeSort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             }
@@ -1024,9 +1023,9 @@ fun LibraryScreen() {
                                                     vm.prepareCountSort(feedList)
                                                 }
                                             }
-                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistDLSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor) }
+                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistDLSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             Spacer(Modifier.weight(0.1f))
-                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistDLSort(1) }) { Text(text = stringResource(item.properties[1].displayName), color = textColor) }
+                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistDLSort(1) }) { Text(text = stringResource(item.properties[1].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             Spacer(Modifier.weight(0.5f))
                                         }
                                         Row(modifier = Modifier.padding(2.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -1045,14 +1044,14 @@ fun LibraryScreen() {
                                                     vm.prepareCountSort(feedList)
                                                 }
                                             }
-                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistCommentSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor) }
+                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistCommentSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             Spacer(Modifier.weight(0.1f))
-                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistCommentSort(1) }, ) { Text(text = stringResource(item.properties[1].displayName), color = textColor) }
+                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistCommentSort(1) }, ) { Text(text = stringResource(item.properties[1].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             Spacer(Modifier.weight(0.5f))
                                         }
                                     }
                                     val episodeStateSort = remember { MutableList(EpisodeState.entries.size) { mutableStateOf(false) } }
-                                    val ratingSort = remember { MutableList(Rating.entries.size) { mutableStateOf(false) } }
+                                    // TODO: FeedSortIndex.Date condition not met here
                                     if ((subPrefs.sortIndex == FeedSortIndex.Date.code && subPrefs.dateSortIndex == FeedDateSortIndex.Publish.code) || subPrefs.sortIndex == FeedSortIndex.Count.code) {
                                         var allOrNone by remember { mutableStateOf(false) }
                                         LaunchedEffect(Unit) {
@@ -1083,7 +1082,6 @@ fun LibraryScreen() {
                                                 else -> {}
                                             }
                                         }
-
                                         val item = EpisodeFilter.EpisodesFilterGroup.PLAY_STATE
                                         var expandRow by remember { mutableStateOf(false) }
                                         Row {
@@ -1140,18 +1138,21 @@ fun LibraryScreen() {
                                             }
                                             Spacer(Modifier.weight(1f))
                                         }
-                                        if (expandRow) ScrollRowGrid(columns = 3, itemCount = item.properties.size, modifier = Modifier.padding(start = 10.dp)) { index ->
-                                            OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (episodeStateSort[index].value) buttonAltColor else borderColor),
-                                                onClick = {
-                                                    episodeStateSort[index].value = !episodeStateSort[index].value
-                                                    val c = episodeStateSort.count { it.value }
-                                                    allOrNone = c == 0 || c == episodeStateSort.size
-                                                    runOnIOScope { persistStateSort() }
-                                                },
-                                            ) { Text(text = stringResource(item.properties[index].displayName), maxLines = 1, color = textColor) }
+                                        if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
+                                            for (index in item.properties.indices) {
+                                                OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (episodeStateSort[index].value) buttonAltColor else borderColor),
+                                                    onClick = {
+                                                        episodeStateSort[index].value = !episodeStateSort[index].value
+                                                        val c = episodeStateSort.count { it.value }
+                                                        allOrNone = c == 0 || c == episodeStateSort.size
+                                                        runOnIOScope { persistStateSort() }
+                                                    },
+                                                ) { Text(text = stringResource(item.properties[index].displayName), maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                            }
                                         }
                                     }
                                     if (subPrefs.sortIndex == FeedSortIndex.Count.code) {
+                                        val ratingSort = remember { MutableList(Rating.entries.size) { mutableStateOf(false) } }
                                         var allOrNone by remember { mutableStateOf(false) }
                                         LaunchedEffect(Unit) {
                                             for (i in ratingSort.indices) {
@@ -1180,7 +1181,6 @@ fun LibraryScreen() {
                                                 else -> {}
                                             }
                                         }
-
                                         val item = EpisodeFilter.EpisodesFilterGroup.RATING
                                         var expandRow by remember { mutableStateOf(false) }
                                         Row {
@@ -1238,15 +1238,17 @@ fun LibraryScreen() {
                                             }
                                             Spacer(Modifier.weight(1f))
                                         }
-                                        if (expandRow) ScrollRowGrid(columns = 3, itemCount = item.properties.size, modifier = Modifier.padding(start = 10.dp)) { index ->
-                                            OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (ratingSort[index].value) buttonAltColor else borderColor),
-                                                onClick = {
-                                                    ratingSort[index].value = !ratingSort[index].value
-                                                    val c = ratingSort.count { it.value }
-                                                    allOrNone = c == 0 || c == ratingSort.size
-                                                    runOnIOScope { persistRatingSort() }
-                                                },
-                                            ) { Text(text = stringResource(item.properties[index].displayName), maxLines = 1, color = textColor) }
+                                        if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
+                                            for (index in item.properties.indices) {
+                                                OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (ratingSort[index].value) buttonAltColor else borderColor),
+                                                    onClick = {
+                                                        ratingSort[index].value = !ratingSort[index].value
+                                                        val c = ratingSort.count { it.value }
+                                                        allOrNone = c == 0 || c == ratingSort.size
+                                                        runOnIOScope { persistRatingSort() }
+                                                    },
+                                                ) { Text(text = stringResource(item.properties[index].displayName), maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                            }
                                         }
                                     }
                                 }
@@ -1291,7 +1293,7 @@ fun LibraryScreen() {
                                     }
                                 }
                                 var expandRow by remember { mutableStateOf(false) }
-                                Row(modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
                                     Text(stringResource(R.string.languages) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = if (langFull) buttonColor else buttonAltColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                     if (expandRow) {
                                         val cb = {
@@ -1308,21 +1310,23 @@ fun LibraryScreen() {
                                         SelectLowerAllUpper(selectedList, lowerCB = cb, allCB = cb, upperCB = cb)
                                     }
                                 }
-                                if (expandRow) ScrollRowGrid(columns = 3, itemCount = langs.size, modifier = Modifier.padding(start = 10.dp)) { index ->
-                                    OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
-                                        onClick = {
-                                            selectedList[index].value = !selectedList[index].value
-                                            runOnIOScope {
-                                                val langsSel = subPrefs.langsSel.toMutableSet()
-                                                if (selectedList[index].value) langsSel.add(langs[index])
-                                                else langsSel.remove(langs[index])
-                                                upsert(subPrefs) {
-                                                    it.langsSel = langsSel.toRealmSet()
-                                                    it.feedsFilteredInc()
+                                if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
+                                    for (index in langs.indices) {
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                            onClick = {
+                                                selectedList[index].value = !selectedList[index].value
+                                                runOnIOScope {
+                                                    val langsSel = subPrefs.langsSel.toMutableSet()
+                                                    if (selectedList[index].value) langsSel.add(langs[index])
+                                                    else langsSel.remove(langs[index])
+                                                    upsert(subPrefs) {
+                                                        it.langsSel = langsSel.toRealmSet()
+                                                        it.feedsFilteredInc()
+                                                    }
                                                 }
-                                            }
-                                        },
-                                    ) { Text(text = langs[index], maxLines = 1, color = textColor) }
+                                            },
+                                        ) { Text(text = langs[index], maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                    }
                                 }
                             }
                         }
@@ -1336,7 +1340,7 @@ fun LibraryScreen() {
                                 }
                             }
                             var expandRow by remember { mutableStateOf(false) }
-                            Row(modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
                                 Text(stringResource(R.string.queue_label) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = if (queuesFull) buttonColor else buttonAltColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                 if (expandRow) {
                                     val cb = {
@@ -1353,21 +1357,23 @@ fun LibraryScreen() {
                                     SelectLowerAllUpper(selectedList, lowerCB = cb, allCB = cb, upperCB = cb)
                                 }
                             }
-                            if (expandRow) ScrollRowGrid(columns = 3, itemCount = vm.queueNames.size, modifier = Modifier.padding(start = 10.dp)) { index ->
-                                OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
-                                    onClick = {
-                                        selectedList[index].value = !selectedList[index].value
-                                        runOnIOScope {
-                                            val qSelIds = subPrefs.queueSelIds.toMutableSet()
-                                            if (selectedList[index].value) qSelIds.add(vm.queueIds[index])
-                                            else qSelIds.remove(vm.queueIds[index])
-                                            upsert(subPrefs) {
-                                                it.queueSelIds = qSelIds.toRealmSet()
-                                                it.feedsFilteredInc()
+                            if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
+                                for (index in vm.queueNames.indices) {
+                                    OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                        onClick = {
+                                            selectedList[index].value = !selectedList[index].value
+                                            runOnIOScope {
+                                                val qSelIds = subPrefs.queueSelIds.toMutableSet()
+                                                if (selectedList[index].value) qSelIds.add(vm.queueIds[index])
+                                                else qSelIds.remove(vm.queueIds[index])
+                                                upsert(subPrefs) {
+                                                    it.queueSelIds = qSelIds.toRealmSet()
+                                                    it.feedsFilteredInc()
+                                                }
                                             }
-                                        }
-                                    },
-                                ) { Text(text = vm.queueNames[index], maxLines = 1, color = textColor) }
+                                        },
+                                    ) { Text(text = vm.queueNames[index], maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                }
                             }
                         }
                         if (appAttribs.feedTagSet.isNotEmpty()) {
@@ -1382,7 +1388,7 @@ fun LibraryScreen() {
                                     }
                                 }
                                 var expandRow by remember { mutableStateOf(false) }
-                                Row(modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
                                     Text(stringResource(R.string.tags_label) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = if (tagsFull) buttonColor else buttonAltColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                     if (expandRow) {
                                         val cb = {
@@ -1399,21 +1405,23 @@ fun LibraryScreen() {
                                         SelectLowerAllUpper(selectedList, lowerCB = cb, allCB = cb, upperCB = cb)
                                     }
                                 }
-                                if (expandRow) ScrollRowGrid(columns = 3, itemCount = tagList.size, modifier = Modifier.padding(start = 10.dp)) { index ->
-                                    OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
-                                        onClick = {
-                                            selectedList[index].value = !selectedList[index].value
-                                            runOnIOScope {
-                                                val tagsSel = subPrefs.tagsSel.toMutableSet()
-                                                if (selectedList[index].value) tagsSel.add(tagList[index])
-                                                else tagsSel.remove(tagList[index])
-                                                upsert(subPrefs) {
-                                                    it.tagsSel = tagsSel.toRealmSet()
-                                                    it.feedsFilteredInc()
+                                if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
+                                    for (index in tagList.indices) {
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                            onClick = {
+                                                selectedList[index].value = !selectedList[index].value
+                                                runOnIOScope {
+                                                    val tagsSel = subPrefs.tagsSel.toMutableSet()
+                                                    if (selectedList[index].value) tagsSel.add(tagList[index])
+                                                    else tagsSel.remove(tagList[index])
+                                                    upsert(subPrefs) {
+                                                        it.tagsSel = tagsSel.toRealmSet()
+                                                        it.feedsFilteredInc()
+                                                    }
                                                 }
-                                            }
-                                        },
-                                    ) { Text(text = tagList[index], maxLines = 1, color = textColor) }
+                                            },
+                                        ) { Text(text = tagList[index], maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                    }
                                 }
                             }
                         }
@@ -1456,7 +1464,7 @@ fun LibraryScreen() {
                                                 }
                                                 onFilterChanged(filterValues)
                                             },
-                                        ) { Text(text = if (item.values[i].nameRes > 0) stringResource(item.values[i].nameRes) else item.values[i].filterId, color = textColor) }
+                                        ) { Text(text = if (item.values[i].nameRes > 0) stringResource(item.values[i].nameRes) else item.values[i].filterId, color = textColor, style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             } else {
@@ -1474,7 +1482,7 @@ fun LibraryScreen() {
                                         } else allOrNone = true
                                     }
                                     var expandRow by remember { mutableStateOf(false) }
-                                    Row(modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 5.dp, bottom = 2.dp).fillMaxWidth()) {
                                         Text(stringResource(item.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = if (allOrNone) buttonColor else buttonAltColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                         if (expandRow) {
                                             val cb = {
@@ -1489,19 +1497,21 @@ fun LibraryScreen() {
                                             SelectLowerAllUpper(selectedList, lowerCB = cb, allCB = cb, upperCB = cb)
                                         }
                                     }
-                                    if (expandRow) ScrollRowGrid(columns = 3, itemCount = item.values.size, modifier = Modifier.padding(start = 10.dp)) { index ->
-                                        if (selectNone) selectedList[index].value = false
-                                        OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
-                                            onClick = {
-                                                selectNone = false
-                                                selectedList[index].value = !selectedList[index].value
-                                                if (selectedList[index].value) filterValues.add(item.values[index].filterId)
-                                                else filterValues.remove(item.values[index].filterId)
-                                                val c = selectedList.count { it.value }
-                                                allOrNone = c == 0 || c == item.values.size
-                                                onFilterChanged(filterValues)
-                                            },
-                                        ) { Text(text = if (item.values[index].nameRes > 0) stringResource(item.values[index].nameRes) else item.values[index].filterId, maxLines = 1, color = textColor) }
+                                    if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
+                                        for (index in item.values.indices) {
+                                            if (selectNone) selectedList[index].value = false
+                                            OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                                onClick = {
+                                                    selectNone = false
+                                                    selectedList[index].value = !selectedList[index].value
+                                                    if (selectedList[index].value) filterValues.add(item.values[index].filterId)
+                                                    else filterValues.remove(item.values[index].filterId)
+                                                    val c = selectedList.count { it.value }
+                                                    allOrNone = c == 0 || c == item.values.size
+                                                    onFilterChanged(filterValues)
+                                                },
+                                            ) { Text(text = if (item.values[index].nameRes > 0) stringResource(item.values[index].nameRes) else item.values[index].filterId, maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                        }
                                     }
                                 }
                             }
@@ -1648,11 +1658,7 @@ fun LibraryScreen() {
                         Logd(TAG) { "volumes: ${volumes.size}" }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             for (index in volumes.indices) {
-                                FilterChip(label = { Text(volumes[index].name) }, selected = false,
-                                    onClick = {
-                                        saveSelectedFeeds { it: Feed -> it.volumeId = volumes[index].id }
-                                        onDismiss()
-                                    })
+                                FilterChip(label = { Text(volumes[index].name) }, selected = false, onClick = { saveSelectedFeeds { it: Feed -> it.volumeId = volumes[index].id }; onDismiss() })
                             }
                         }
                     }
@@ -1688,11 +1694,7 @@ fun LibraryScreen() {
                         Logd(TAG) { "queues: ${queuesLive.size}" }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             for (index in queuesLive.indices) {
-                                FilterChip(label = { Text(queuesLive[index].name) }, selected = false,
-                                    onClick = {
-                                        saveSelectedFeeds { it: Feed -> it.queue = queuesLive[index] }
-                                        onDismiss()
-                                    })
+                                FilterChip(label = { Text(queuesLive[index].name) }, selected = false, onClick = { saveSelectedFeeds { it: Feed -> it.queue = queuesLive[index] }; onDismiss() })
                             }
                         }
                     }
@@ -1706,8 +1708,7 @@ fun LibraryScreen() {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     for (rating in Rating.entries.reversed()) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp).clickable {
-                            runOnIOScope { realm.write { for (f_ in selected) findLatest(f_)?.let { it.rating = rating.code } } }
-                            onDismiss()
+                            runOnIOScope { realm.write { for (f_ in selected) findLatest(f_)?.let { it.rating = rating.code } } }; onDismiss()
                         }) {
                             Icon(imageVector = ImageVector.vectorResource(id = rating.res), "")
                             Text(rating.name, Modifier.padding(start = 4.dp))
@@ -2010,7 +2011,7 @@ fun LibraryScreen() {
             }
             if (selectMode) {
                 Row(modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.tertiaryContainer), horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_upward_24), tint = buttonColor, contentDescription = null, modifier = Modifier.width(35.dp).height(35.dp).padding(start = 10.dp).clickable {
+                    Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_upward_24), tint = buttonColor, contentDescription = null, modifier = Modifier.padding(start = 10.dp).width(35.dp).height(35.dp).clickable {
                         feedsSelected.clear()
                         for (i in 0..longPressIndex) feedsSelected.add(feedList[i])
                         selectedSize = feedsSelected.size

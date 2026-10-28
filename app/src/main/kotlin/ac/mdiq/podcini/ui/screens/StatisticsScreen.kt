@@ -264,7 +264,7 @@ fun StatisticsScreen() {
     fun HorizontalLineChart(lineChartData: LineChartData) {
         val data = lineChartData.values
         val total = data.sum()
-        Canvas(modifier = Modifier.fillMaxWidth().height(20.dp).padding(start = 20.dp, end = 20.dp)) {
+        Canvas(modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp).height(20.dp)) {
             val canvasWidth = size.width
             val canvasHeight = size.height
             var startX = 0f
@@ -287,7 +287,7 @@ fun StatisticsScreen() {
             itemsIndexed(statisticsData.feedStats, key = { _, item -> item.feed.id }) { index, feedStats ->
                 Row(Modifier.background(MaterialTheme.colorScheme.surface).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     AsyncImage(model = ImageRequest.Builder(context).data(feedStats.feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentScale = ContentScale.FillBounds,
-                        modifier = Modifier.width(40.dp).height(90.dp).padding(end = 5.dp).clickable { navTo(FeedDetails(feedId=feedStats.feed.id, modeName=FeedScreenMode.Info.name)) })
+                        modifier = Modifier.padding(end = 5.dp).width(40.dp).height(90.dp).clickable { navTo(FeedDetails(feedId=feedStats.feed.id, modeName=FeedScreenMode.Info.name)) })
                     Column(modifier = Modifier.clickable {
                         feedId = feedStats.feed.id
                         feedTitle = feedStats.feed.title ?: "No title"
@@ -459,7 +459,7 @@ fun StatisticsScreen() {
             val totalContentWidth = remember { bars.size * (barWidth + spaceBetweenBars).toInt() }
             val screenWidth = with(LocalDensity.current) { getAppContext().resources.displayMetrics.widthPixels.toDp() }
             val barColor = MaterialTheme.colorScheme.tertiary
-            Canvas(modifier = Modifier.horizontalScroll(rememberScrollState()).width(if (totalContentWidth.dp > screenWidth) totalContentWidth.dp else screenWidth).height(150.dp).padding(start = 10.dp, end = 10.dp).border(1.dp, barColor)
+            Canvas(modifier = Modifier.horizontalScroll(rememberScrollState()).padding(start = 10.dp, end = 10.dp).width(if (totalContentWidth.dp > screenWidth) totalContentWidth.dp else screenWidth).height(150.dp).border(1.dp, barColor)
                 .pointerInput(Unit) {
                     detectTapGestures { offset ->
                         barRects.forEachIndexed { index, rect ->

@@ -534,7 +534,7 @@ fun ProgressBar(vm: AVPlayerVM) {
         val actColor = MaterialTheme.colorScheme.tertiary
         val inActColor = MaterialTheme.colorScheme.secondaryFixedDim
         val distColor = remember { distinctColorOf(actColor, inActColor) }
-        Slider(colors = SliderDefaults.colors(activeTrackColor = actColor,  inactiveTrackColor = inActColor), modifier = Modifier.height(12.dp).padding(top = 2.dp),
+        Slider(colors = SliderDefaults.colors(activeTrackColor = actColor,  inactiveTrackColor = inActColor), modifier = Modifier.padding(top = 2.dp).height(12.dp),
             value = sliderValue, valueRange = 0f..( if ((episode?.duration?:0) > 0) episode?.duration?:0 else 30000).toFloat(),
             onValueChange = { sliderValue = it }, onValueChangeFinished = { player?.seekTo(sliderValue.toInt()) })
         LinearProgressIndicator(progress = { 0.01f*bufferValue }, color = distColor.copy(alpha = 0.3f), trackColor = inActColor, modifier = Modifier.height(4.dp).fillMaxWidth().align(Alignment.BottomStart))
@@ -1080,7 +1080,7 @@ fun AVPlayerScreen() {
             if (theatresCount == 2) {
                 PlayerUI(vms[1], Modifier)
                 var sliderValue by remember { mutableFloatStateOf(0.5f) }
-                Slider(modifier = Modifier.height(12.dp).padding(top = 2.dp), value = sliderValue, onValueChange = { sliderValue = it },
+                Slider(modifier = Modifier.padding(top = 2.dp).height(12.dp), value = sliderValue, onValueChange = { sliderValue = it },
                     onValueChangeFinished = {
                         when {
                             sliderValue > 0.51 -> {

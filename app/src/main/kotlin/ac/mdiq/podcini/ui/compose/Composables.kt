@@ -228,30 +228,9 @@ fun NonlazyGrid(columns: Int, itemCount: Int, modifier: Modifier = Modifier, con
 }
 
 @Composable
-fun ScrollRowGrid(columns: Int, itemCount: Int, modifier: Modifier = Modifier, content: @Composable (Int) -> Unit) {
-    val rows = remember {
-        var r = itemCount / columns
-        if (itemCount.mod(columns) > 0) r += 1
-        r
-    }
-    Column(modifier = modifier) {
-        for (rowId in 0 until rows) {
-            val firstIndex = rowId * columns
-            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                for (cid in 0 until columns) {
-                    val index = firstIndex + cid
-                    val mod = if (cid < columns-1) Modifier.padding(end = 10.dp) else Modifier
-                    Box(modifier = mod) { if (index < itemCount) content(index) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun IconTitleSummaryActionRow(vecRes: Int, titleRes: Int, summaryRes: Int, callback: ()-> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 10.dp)) {
-        Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.size(40.dp).padding(end = 15.dp))
+        Icon(imageVector = ImageVector.vectorResource(vecRes), contentDescription = "", tint = textColor, modifier = Modifier.padding(end = 15.dp).size(40.dp))
         Column(modifier = Modifier.weight(1f).clickable { callback() }) {
             Text(stringResource(titleRes), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
             Text(stringResource(summaryRes), color = textColor, style = MaterialTheme.typography.labelSmall)
@@ -432,9 +411,9 @@ fun SearchBarRow(hintTextRes: Int, defaultText: String, modifier: Modifier = Mod
                 focusManager.clearFocus()
             }),
             leadingIcon = if (history.isNotEmpty()) { { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_history), tint = buttonColor, contentDescription = "history",
-                modifier = Modifier.width(40.dp).height(40.dp).padding(start = 5.dp).clickable { showHistory = true }) } } else null,
+                modifier = Modifier.padding(start = 5.dp).width(40.dp).height(40.dp).clickable { showHistory = true }) } } else null,
             trailingIcon = { Icon(imageVector = Icons.Filled.Search, tint = buttonColor, contentDescription = "search",
-                modifier = Modifier.width(40.dp).height(40.dp).padding(start = 5.dp).clickable {
+                modifier = Modifier.padding(start = 5.dp).width(40.dp).height(40.dp).clickable {
                     performSearch(queryText)
                     focusManager.clearFocus()
                 }) }
@@ -485,7 +464,7 @@ fun SelectLowerAllUpper(selectedList: MutableList<MutableState<Boolean>>, lowerC
     val buttonAltColor = lerp(MaterialTheme.colorScheme.tertiary, Color.Green, 0.5f)
     var lowerSelected by remember { mutableStateOf(false) }
     var higherSelected by remember { mutableStateOf(false) }
-    Spacer(Modifier.width(20.dp))
+    Spacer(Modifier.width(10.dp))
     if (lowerCB != null) {
         OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (lowerSelected) buttonAltColor else borderColor),
             onClick = {
@@ -501,7 +480,7 @@ fun SelectLowerAllUpper(selectedList: MutableList<MutableState<Boolean>>, lowerC
                 lowerCB()
             },
         ) { Text(text = "<<<", maxLines = 1, color = textColor) }
-        Spacer(Modifier.width(20.dp))
+        Spacer(Modifier.width(10.dp))
     }
     OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (lowerSelected && higherSelected) buttonAltColor else borderColor),
         onClick = {
@@ -513,7 +492,7 @@ fun SelectLowerAllUpper(selectedList: MutableList<MutableState<Boolean>>, lowerC
         },
     ) { Text(text = "A", maxLines = 1, color = textColor) }
     if (upperCB != null) {
-        Spacer(Modifier.width(20.dp))
+        Spacer(Modifier.width(10.dp))
         OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (higherSelected) buttonAltColor else borderColor),
             onClick = {
                 val lIndex = selectedList.indexOfFirst { it.value }
@@ -549,7 +528,7 @@ fun TagSettingDialog(tagType: TagType, existingTags: Set<String>, multiples: Boo
             if (multiples) Text(stringResource(R.string.tagging_multiple_sum))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 tags.forEach { FilterChip(onClick = {  }, label = { Text(it) }, selected = false, trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon",
-                    modifier = Modifier.size(FilterChipDefaults.IconSize).padding(start = 3.dp).clickable { tags.remove(it) }) }) }
+                    modifier = Modifier.padding(start = 3.dp).size(FilterChipDefaults.IconSize).clickable { tags.remove(it) }) }) }
             }
             val focusManager = LocalFocusManager.current
             ExposedDropdownMenuBox(expanded = showSuggestions, onExpandedChange = { }) {

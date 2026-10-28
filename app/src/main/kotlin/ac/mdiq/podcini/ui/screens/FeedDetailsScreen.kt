@@ -265,12 +265,13 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     LaunchedEffect(feed?.id) {
         deletionLogs.clear()
         if (feed != null) {
-            val results = mutableSetOf<SubscriptionLog>()
-            feedLogsMap?.get(feed!!.id.toString())?.apply { results.add(this) }
-            if (!feed?.title.isNullOrBlank()) feedLogsMap?.get(feed!!.title)?.apply { results.add(this) }
-            if (!feed?.downloadUrl.isNullOrBlank()) feedLogsMap?.get(feed!!.downloadUrl)?.apply { results.add(this) }
-            feed?.description?.takeCodePoints(100).takeIf { !it.isNullOrBlank() }.apply { feedLogsMap?.get(this)?.apply { results.add(this) } }
-            if (results.isNotEmpty()) deletionLogs.addAll(results)
+            val logs = mutableSetOf<SubscriptionLog>()
+            feedLogsMap?.get(feed!!.id.toString())?.apply { logs.add(this) }
+            if (!feed?.title.isNullOrBlank()) feedLogsMap?.get(feed!!.title)?.apply { logs.add(this) }
+            if (!feed?.downloadUrl.isNullOrBlank()) feedLogsMap?.get(feed!!.downloadUrl)?.apply { logs.add(this) }
+            feed?.description?.takeCodePoints(100).takeIf { !it.isNullOrBlank() }.apply { feedLogsMap?.get(this)?.apply { logs.add(this) } }
+            if (logs.isNotEmpty()) deletionLogs.addAll(logs)
+            runOnIOScope { upsert(feed!!) { it.lastVisited = nowInMillis() } }
         }
     }
 
