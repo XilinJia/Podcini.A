@@ -158,7 +158,8 @@
     <string name="description_label">Description</string>
     <string name="transcript">Transcript</string>
     <string name="transcript_selections">Transcript selections</string>
-    <string name="transcript_fetched">Transcript is fetched. </string>
+    <string name="fetching_transcripts">Fetching transcripts.</string>
+    <string name="transcript_fetched">Transcript is fetched.</string>
     <string name="captions_mismatch_sum">If voice and captions mismatch, play the media and find the transcript start position, pause the player, long-press the Focus icon on the top bar or the Caption icon in PlayerDetailed view. The captions are offset to that as the start. This can also be set in the feed for all the media.</string>
 
     <string name="caption_start">Caption start</string>

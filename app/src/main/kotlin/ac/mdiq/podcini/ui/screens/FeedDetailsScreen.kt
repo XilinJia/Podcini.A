@@ -218,8 +218,8 @@ class FeedDetailsVM(feedId: Long = 0L, modeName: String = FeedScreenMode.List.na
                 }
             }.map {
                 when (feed.episodeSortOrder) {
-                    EpisodeSortOrder.EPISODE_TITLE_ASC -> it.sortedWith { episode, episode1 -> episode.title?.compareToNatural(episode1.title?:"") ?: -1 }
-                    EpisodeSortOrder.EPISODE_TITLE_DESC -> it.sortedWith { episode, episode1 -> episode1.title?.compareToNatural(episode.title?:"") ?: -1 }
+                    EpisodeSortOrder.TITLE_ASC -> it.sortedWith { episode, episode1 -> episode.title?.compareToNatural(episode1.title?:"") ?: -1 }
+                    EpisodeSortOrder.TITLE_DESC -> it.sortedWith { episode, episode1 -> episode1.title?.compareToNatural(episode.title?:"") ?: -1 }
                     else -> it
                 }
 

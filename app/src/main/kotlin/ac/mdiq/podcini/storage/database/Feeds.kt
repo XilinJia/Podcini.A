@@ -42,7 +42,7 @@ val feedCountFlow = MutableStateFlow(-1)
 
 @Synchronized
 fun getFeedList(queryString: String = ""): List<Feed> {
-    return if (queryString.isEmpty()) feedsMap.values.toList()
+    return if (queryString.isEmpty()) feedsMap.values.toList() 
     else realm.query(Feed::class, queryString).find()
 }
 

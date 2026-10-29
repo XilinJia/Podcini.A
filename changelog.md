@@ -1,3 +1,10 @@
+# 12.17.4
+
+* ensure Caption options icon in EpisodeDetails more responsive
+* in captions popup, added toggle search icon on top bar to toggle search bar, only in expanded mode
+* rearranged episodes sorts
+* further amended buttons spacing in filter and sort dialogs
+
 # 12.17.3
 
 * update feed lastVisited in FeedDetails screen

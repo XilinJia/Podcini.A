@@ -12,22 +12,19 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -466,7 +463,7 @@ fun SelectLowerAllUpper(selectedList: MutableList<MutableState<Boolean>>, lowerC
     var higherSelected by remember { mutableStateOf(false) }
     Spacer(Modifier.width(10.dp))
     if (lowerCB != null) {
-        OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (lowerSelected) buttonAltColor else borderColor),
+        OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (lowerSelected) buttonAltColor else borderColor),
             onClick = {
                 val hIndex = selectedList.indexOfLast { it.value }
                 if (hIndex < 0) return@OutlinedButton
@@ -482,7 +479,7 @@ fun SelectLowerAllUpper(selectedList: MutableList<MutableState<Boolean>>, lowerC
         ) { Text(text = "<<<", maxLines = 1, color = textColor) }
         Spacer(Modifier.width(10.dp))
     }
-    OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (lowerSelected && higherSelected) buttonAltColor else borderColor),
+    OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (lowerSelected && higherSelected) buttonAltColor else borderColor),
         onClick = {
             val selectAll = !(lowerSelected && higherSelected)
             lowerSelected = selectAll
@@ -493,7 +490,7 @@ fun SelectLowerAllUpper(selectedList: MutableList<MutableState<Boolean>>, lowerC
     ) { Text(text = "A", maxLines = 1, color = textColor) }
     if (upperCB != null) {
         Spacer(Modifier.width(10.dp))
-        OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (higherSelected) buttonAltColor else borderColor),
+        OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (higherSelected) buttonAltColor else borderColor),
             onClick = {
                 val lIndex = selectedList.indexOfFirst { it.value }
                 if (lIndex < 0) return@OutlinedButton

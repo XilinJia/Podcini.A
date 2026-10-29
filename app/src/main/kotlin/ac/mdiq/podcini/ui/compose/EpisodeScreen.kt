@@ -258,17 +258,18 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                     }
                     if (episode.transcriptMetas.isEmpty() && client?.attributes?.hasTranscripts == true) {
                         IconButton(onClick = {
-                            if (client == null) {
-                                Logt(TAG, "can not find service app for episode")
-                                return@IconButton
-                            }
+                            if (client == null) { Logt(TAG, "can not find service app for episode"); return@IconButton }
+                            showTransMetaDialog = true
                             runOnIOScope {
                                 val captions = client.withProvider { it.getCaptionSpecs(episode.toIPC()) }
                                 if (!captions.isNullOrEmpty()) {
                                     val tm = captions.map { it.toTranscriptMeta() }.toRealmList()
                                     upsert(episode) { it.transcriptMetas = tm }
                                     withContext(Dispatchers.Main) { showTransMetaDialog = true }
-                                } else Logt(TAG, "Can not find captions for this episode")
+                                } else {
+                                    withContext(Dispatchers.Main) { showTransMetaDialog = false }
+                                    Logt(TAG, "Can not find captions for this episode")
+                                }
                             }
                         }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_closed_caption_add_24), contentDescription = "fetch transcript") }
                         Spacer(Modifier.weight(1f))

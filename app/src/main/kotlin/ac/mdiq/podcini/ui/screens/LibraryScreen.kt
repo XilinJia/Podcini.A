@@ -100,15 +100,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -919,7 +916,7 @@ fun LibraryScreen() {
                 Surface(modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp).height(350.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
                     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                            OutlinedButton(modifier = Modifier.padding(2.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Feed.code) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Feed.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Feed.code)
                                         runOnIOScope {
@@ -937,7 +934,7 @@ fun LibraryScreen() {
                                     else vm.preparePropertySort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Feed.res) + if (subPrefs.propertyAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
-                            OutlinedButton(modifier = Modifier.padding(2.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Date.code) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Date.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Date.code)
                                         runOnIOScope {
@@ -950,7 +947,7 @@ fun LibraryScreen() {
                                     else vm.prepareDateSort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Date.res) + if (subPrefs.dateAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
-                            OutlinedButton(modifier = Modifier.padding(2.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Time.code) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Time.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Time.code)
                                         runOnIOScope {
@@ -963,7 +960,7 @@ fun LibraryScreen() {
                                     else vm.prepareTimeSort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Time.res) + if (subPrefs.timeAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
-                            OutlinedButton(modifier = Modifier.padding(2.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Count.code) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Count.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Count.code)
                                         runOnIOScope {
@@ -983,7 +980,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.feed_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedPropertySortIndex.entries) {
-                                        OutlinedButton(modifier = Modifier.padding(1.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.propertySortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.propertySortIndex != sd.code) vm.preparePropertySort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.propertySortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.propertySortIndex != sd.code) vm.preparePropertySort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             }
@@ -991,7 +988,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.feed_date_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedDateSortIndex.entries) {
-                                        OutlinedButton(modifier = Modifier.padding(1.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.dateSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.dateSortIndex != sd.code) vm.prepareDateSort(feedList,sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.dateSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.dateSortIndex != sd.code) vm.prepareDateSort(feedList,sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             }
@@ -999,7 +996,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.feed_time_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedTimeSortIndex.entries) {
-                                        OutlinedButton(modifier = Modifier.padding(1.dp), elevation = null, border = BorderStroke(2.dp, if (subPrefs.timeSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.timeSortIndex != sd.code) vm.prepareTimeSort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.timeSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.timeSortIndex != sd.code) vm.prepareTimeSort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             }
@@ -1023,9 +1020,9 @@ fun LibraryScreen() {
                                                     vm.prepareCountSort(feedList)
                                                 }
                                             }
-                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistDLSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                            OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistDLSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             Spacer(Modifier.weight(0.1f))
-                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistDLSort(1) }) { Text(text = stringResource(item.properties[1].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                            OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistDLSort(1) }) { Text(text = stringResource(item.properties[1].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             Spacer(Modifier.weight(0.5f))
                                         }
                                         Row(modifier = Modifier.padding(2.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -1044,9 +1041,9 @@ fun LibraryScreen() {
                                                     vm.prepareCountSort(feedList)
                                                 }
                                             }
-                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistCommentSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                            OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistCommentSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             Spacer(Modifier.weight(0.1f))
-                                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistCommentSort(1) }, ) { Text(text = stringResource(item.properties[1].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
+                                            OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 1) borderColor else buttonAltColor), onClick = { persistCommentSort(1) }) { Text(text = stringResource(item.properties[1].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             Spacer(Modifier.weight(0.5f))
                                         }
                                     }
@@ -1140,7 +1137,7 @@ fun LibraryScreen() {
                                         }
                                         if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
                                             for (index in item.properties.indices) {
-                                                OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (episodeStateSort[index].value) buttonAltColor else borderColor),
+                                                OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (episodeStateSort[index].value) buttonAltColor else borderColor),
                                                     onClick = {
                                                         episodeStateSort[index].value = !episodeStateSort[index].value
                                                         val c = episodeStateSort.count { it.value }
@@ -1240,7 +1237,7 @@ fun LibraryScreen() {
                                         }
                                         if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
                                             for (index in item.properties.indices) {
-                                                OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (ratingSort[index].value) buttonAltColor else borderColor),
+                                                OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (ratingSort[index].value) buttonAltColor else borderColor),
                                                     onClick = {
                                                         ratingSort[index].value = !ratingSort[index].value
                                                         val c = ratingSort.count { it.value }
@@ -1312,7 +1309,7 @@ fun LibraryScreen() {
                                 }
                                 if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
                                     for (index in langs.indices) {
-                                        OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                             onClick = {
                                                 selectedList[index].value = !selectedList[index].value
                                                 runOnIOScope {
@@ -1359,7 +1356,7 @@ fun LibraryScreen() {
                             }
                             if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
                                 for (index in vm.queueNames.indices) {
-                                    OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                    OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                         onClick = {
                                             selectedList[index].value = !selectedList[index].value
                                             runOnIOScope {
@@ -1407,7 +1404,7 @@ fun LibraryScreen() {
                                 }
                                 if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
                                     for (index in tagList.indices) {
-                                        OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                             onClick = {
                                                 selectedList[index].value = !selectedList[index].value
                                                 runOnIOScope {
@@ -1434,10 +1431,7 @@ fun LibraryScreen() {
                                         filter != null -> {
                                             var index = -1
                                             for (i in item.values.indices) {
-                                                if (item.values[i].filterId in filter.properties) {
-                                                    index = i
-                                                    break
-                                                }
+                                                if (item.values[i].filterId in filter.properties) { index = i; break }
                                             }
                                             index
                                         }
@@ -1451,7 +1445,7 @@ fun LibraryScreen() {
                                     }
                                     for (i in item.values.indices) {
                                         Spacer(Modifier.width(10.dp))
-                                        OutlinedButton(modifier = Modifier.padding(0.dp).heightIn(min = 20.dp).widthIn(min = 20.dp), border = BorderStroke(2.dp, if (selectedIndex != i) borderColor else buttonAltColor),
+                                        OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedIndex != i) borderColor else buttonAltColor),
                                             onClick = {
                                                 if (selectedIndex != i) {
                                                     selectNone = false
@@ -1500,7 +1494,7 @@ fun LibraryScreen() {
                                     if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
                                         for (index in item.values.indices) {
                                             if (selectNone) selectedList[index].value = false
-                                            OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                            OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                                 onClick = {
                                                     selectNone = false
                                                     selectedList[index].value = !selectedList[index].value

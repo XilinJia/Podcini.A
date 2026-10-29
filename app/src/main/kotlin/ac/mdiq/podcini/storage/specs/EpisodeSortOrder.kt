@@ -11,23 +11,19 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
     DATE_ASC(1, R.string.publish_date),
     DATE_DESC(2, R.string.publish_date),
 
-    EPISODE_TITLE_ASC(3, R.string.title),
-    EPISODE_TITLE_DESC(4, R.string.title),
+    TITLE_ASC(3, R.string.title),
+    TITLE_DESC(4, R.string.title),
 
     DURATION_ASC(5, R.string.duration),
     DURATION_DESC(6, R.string.duration),
 
-    VIEWS_ASC(17, R.string.view_count, true),
-    VIEWS_DESC(18, R.string.view_count, true),
-
     PLAYED_DATE_ASC(11, R.string.last_played_date),
     PLAYED_DATE_DESC(12, R.string.last_played_date),
-    COMPLETED_DATE_ASC(13, R.string.completed_date),
-    COMPLETED_DATE_DESC(14, R.string.completed_date),
-    DOWNLOAD_DATE_ASC(15, R.string.download_date),
-    DOWNLOAD_DATE_DESC(16, R.string.download_date),
-    COMMENT_DATE_ASC(19, R.string.last_comment_date),
-    COMMENT_DATE_DESC(20, R.string.last_comment_date),
+
+    VIEWS_ASC(17, R.string.view_count, true),
+    VIEWS_DESC(18, R.string.view_count, true),
+    TRENDING_ASC(19, R.string.trending, true),
+    TRENDING_DESC(20, R.string.trending, true),
 
     RATING_ASC(21, R.string.rating_label),
     RATING_DESC(22, R.string.rating_label),
@@ -35,8 +31,8 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
     RATING_DATE_ASC(23, R.string.rating_date),
     RATING_DATE_DESC(24, R.string.rating_date),
 
-    TRENDING_ASC(31, R.string.trending, true),
-    TRENDING_DESC(32, R.string.trending, true),
+    COMMENT_DATE_ASC(25, R.string.last_comment_date),
+    COMMENT_DATE_DESC(26, R.string.last_comment_date),
 
     LIKES_ASC(33, R.string.like_count, true),
     LIKES_DESC(34, R.string.like_count, true),
@@ -49,8 +45,14 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
     FEED_SCORE_COUNT_ASC(113, R.string.feed_score_count, true),
     FEED_SCORE_COUNT_DESC(114, R.string.feed_score_count, true),
 
-    TRACK_NUMBER_ASC(51, R.string.track_number, false),
-    TRACK_NUMBER_DESC(52, R.string.track_number, false),
+    TRACK_NUMBER_ASC(41, R.string.track_number, false),
+    TRACK_NUMBER_DESC(42, R.string.track_number, false),
+
+    COMPLETED_DATE_ASC(43, R.string.completed_date),
+    COMPLETED_DATE_DESC(44, R.string.completed_date),
+
+    DOWNLOAD_DATE_ASC(51, R.string.download_date),
+    DOWNLOAD_DATE_DESC(52, R.string.download_date),
     SIZE_ASC(53, R.string.size),
     SIZE_DESC(54, R.string.size),
     EPISODE_FILENAME_ASC(55, R.string.filename),
@@ -75,13 +77,13 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
         }
 
         fun fromCodeString(codeStr: String?): EpisodeSortOrder {
-            if (codeStr.isNullOrEmpty()) return EPISODE_TITLE_ASC
+            if (codeStr.isNullOrEmpty()) return TITLE_ASC
             val code = codeStr.toInt()
             for (sortOrder in entries) if (sortOrder.code == code) return sortOrder
-            return EPISODE_TITLE_ASC //            throw IllegalArgumentException("Unsupported code: $code")
+            return TITLE_ASC //            throw IllegalArgumentException("Unsupported code: $code")
         }
 
-        fun fromCode(code: Int, default: EpisodeSortOrder = EPISODE_TITLE_ASC): EpisodeSortOrder = EpisodeSortOrder.entries.firstOrNull { it.code == code } ?: default
+        fun fromCode(code: Int, default: EpisodeSortOrder = TITLE_ASC): EpisodeSortOrder = EpisodeSortOrder.entries.firstOrNull { it.code == code } ?: default
 
         fun toCodeString(sortOrder: EpisodeSortOrder): String = sortOrder.code.toString()
 
@@ -105,8 +107,8 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
             }
             val comparator: Comparator<Episode> = Comparator { f1: Episode?, f2: Episode? ->
                 when (sortOrder) {
-                    EPISODE_TITLE_ASC -> itemTitle(f1).compareToNatural(itemTitle(f2))
-                    EPISODE_TITLE_DESC -> itemTitle(f2).compareToNatural(itemTitle(f1))
+                    TITLE_ASC -> itemTitle(f1).compareToNatural(itemTitle(f2))
+                    TITLE_DESC -> itemTitle(f2).compareToNatural(itemTitle(f1))
                     DATE_ASC -> pubDate(f1).compareTo(pubDate(f2))
                     DATE_DESC -> pubDate(f2).compareTo(pubDate(f1))
                     DURATION_ASC -> duration(f1).compareTo(duration(f2))
@@ -149,8 +151,8 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
         // TODO: not all are supported
         fun sortPairOf(sortOrder: EpisodeSortOrder?): Pair<String, Sort> {
             return when (sortOrder) {
-                EPISODE_TITLE_ASC -> Pair("title", Sort.ASCENDING)
-                EPISODE_TITLE_DESC -> Pair("title", Sort.DESCENDING)
+                TITLE_ASC -> Pair("title", Sort.ASCENDING)
+                TITLE_DESC -> Pair("title", Sort.DESCENDING)
                 DATE_ASC -> Pair("pubDate", Sort.ASCENDING)
                 DATE_DESC -> Pair("pubDate", Sort.DESCENDING)
                 DURATION_ASC -> Pair("duration", Sort.ASCENDING)

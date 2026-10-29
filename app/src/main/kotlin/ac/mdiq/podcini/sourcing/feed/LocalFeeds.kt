@@ -9,7 +9,6 @@ import ac.mdiq.podcini.storage.database.addNewFeed
 
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.feedByIdentityOrID
-import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -87,7 +86,7 @@ suspend fun loadLocalFolder(uri: Uri, feedsExist: List<Feed> = listOf()) {
                 dirFeed.volumeId = parentId
                 val fExist = feedByIdentityOrID(dirFeed)
                 if (fExist == null) {
-                    dirFeed.episodeSortOrder = EpisodeSortOrder.EPISODE_TITLE_ASC
+                    dirFeed.episodeSortOrder = EpisodeSortOrder.TITLE_ASC
                     dirFeed.keepUpdated = false
                     dirFeed.autoDownload = false
                     dirFeed.description = context.getString(R.string.local_feed_description)

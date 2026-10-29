@@ -96,19 +96,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -346,16 +344,15 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
         val selected = remember { mutableStateSetOf<CaptionCue>() }
         Column(Modifier.fillMaxWidth().padding(horizontal = 5.dp)) {
             var readerMode by remember { mutableStateOf(false) }
+            var showSearch by remember { mutableStateOf(true) }
             var letScroll by remember(playWhenReady) { mutableStateOf(playWhenReady) }
             var jumpTo by remember { mutableIntStateOf(-1) }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Close, contentDescription = "close", modifier = Modifier.padding(7.dp).clickable { onDismiss() })
+                Icon(Icons.Filled.Close, contentDescription = "close", modifier = Modifier.padding(start = 10.dp).clickable { onDismiss() })
                 Spacer(Modifier.weight(1f))
-                Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_help_24), contentDescription = "help", modifier = Modifier.padding(7.dp).clickable { showHelp = !showHelp })
+                Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_text_ad_24), contentDescription = "text", modifier = Modifier.clickable { readerMode = !readerMode })
                 Spacer(Modifier.weight(0.2f))
-                Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_text_ad_24), contentDescription = "text", modifier = Modifier.padding(7.dp).clickable { readerMode = !readerMode })
-                Spacer(Modifier.weight(0.2f))
-                if (player != null) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_center_focus_strong_24), tint = if (letScroll) Color.Green else Color.Red, contentDescription = "center", modifier = Modifier.padding(start = 10.dp).combinedClickable(
+                if (player != null) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_center_focus_strong_24), tint = if (letScroll) Color.Green else Color.Red, contentDescription = "center", modifier = Modifier.combinedClickable(
                     onClick = {
                         letScroll = !letScroll
                         if (letScroll) jumpTo = -1
@@ -366,12 +363,18 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
                         Logt(TAG, "transcript start position is offset to ${durationStringAdapt(pos)}")
                     }
                 ))
+                if (level == 2) {
+                    Spacer(Modifier.weight(0.2f))
+                    Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_search), contentDescription = "search", modifier = Modifier.clickable { showSearch = !showSearch })
+                }
                 val startPos = episode.getCaptionStartPos()
                 if (startPos > 0) {
                     Spacer(Modifier.weight(0.2f))
                     Text(durationStringAdapt(startPos), style = MaterialTheme.typography.bodySmall)
                 }
                 Spacer(Modifier.weight(1f))
+                Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_help_24), contentDescription = "help", modifier = Modifier.clickable { showHelp = !showHelp })
+                Spacer(Modifier.weight(0.2f))
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_expansion_panels_24), tint = textColor, contentDescription = "expand", modifier = Modifier.padding(end = 10.dp).clickable {
                     level = (level + 1) % Levels.size
                     jumpTo = -1
@@ -401,7 +404,7 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
                         }
                     }
                 }
-                if (level == 2) {
+                if (level == 2 && showSearch) {
                     fun search(str: String, forward: Boolean = true) {
                         if (str.isBlank()) return
                         Logd(TAG) { "searching str: $str jumpTo: $jumpTo cueIndex: $cueIndex" }
@@ -486,8 +489,10 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
 fun TranscriptMeta(episode: Episode) {
     val context by rememberUpdatedState(LocalContext.current)
     var transIndex by remember { mutableIntStateOf(if (episode.captionCues.isNotEmpty()) episode.transcriptIndex else -1) }
+
     Column(verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(start = 10.dp).fillMaxWidth()) {
-        for (i in episode.transcriptMetas.indices) {
+        if (episode.transcriptMetas.isEmpty()) Text(stringResource(R.string.fetching_transcripts))
+        else for (i in episode.transcriptMetas.indices) {
             val t = episode.transcriptMetas[i]
             if (!t.url.isNullOrBlank()) Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_download), tint = textColor, contentDescription = "download", modifier = Modifier.padding(end = 10.dp).clickable {
@@ -1268,7 +1273,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                     Row(modifier = Modifier.padding(start = 5.dp).fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.join_categories_with) + " :", style = MaterialTheme.typography.bodyMedium , color = textColor, modifier = Modifier.padding(end = 10.dp))
                         Spacer(Modifier.width(20.dp))
-                        OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (andOr == "OR") borderColor else buttonAltColor),
+                        OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (andOr == "OR") borderColor else buttonAltColor),
                             onClick = {
                                 andOr = "AND"
                                 filter.andOr = andOr
@@ -1276,7 +1281,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                             },
                         ) { Text(text = "AND", color = textColor, style = MaterialTheme.typography.bodySmall) }
                         Spacer(Modifier.width(10.dp))
-                        OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (andOr == "AND") borderColor else buttonAltColor),
+                        OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (andOr == "AND") borderColor else buttonAltColor),
                             onClick = {
                                 andOr = "OR"
                                 filter.andOr = andOr
@@ -1342,7 +1347,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                         if (expandRow) FlowRow(Modifier.fillMaxWidth().padding(start = 10.dp)) {
                             for (index in tagList.indices) {
                                 LaunchedEffect(Unit) { if (filter.containsTag(tagList[index])) selectedList[index].value = true }
-                                OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                     onClick = {
                                         selectNone = false
                                         selectedList[index].value = !selectedList[index].value
@@ -1366,7 +1371,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                 else if (group.properties[1].filterId in filter.propertySet) selectedIndex = 1
                             }
                             Text(stringResource(group.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge , color = textColor, modifier = Modifier.padding(end = 15.dp))
-                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (selectedIndex != 0) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedIndex != 0) borderColor else buttonAltColor),
                                 onClick = {
                                     if (selectedIndex != 0) {
                                         selectNone = false
@@ -1382,7 +1387,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                 },
                             ) { Text(text = stringResource(group.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
                             Spacer(Modifier.width(10.dp))
-                            OutlinedButton(modifier = Modifier.padding(0.dp), border = BorderStroke(2.dp, if (selectedIndex != 1) borderColor else buttonAltColor),
+                            OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedIndex != 1) borderColor else buttonAltColor),
                                 onClick = {
                                     if (selectedIndex != 1) {
                                         selectNone = false
@@ -1507,7 +1512,7 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                 for (index in group.properties.indices) {
                                     if (selectNone) selectedList[index].value = false
                                     LaunchedEffect(Unit) { if (group.properties[index].filterId in filter.propertySet) selectedList[index].value = true }
-                                    OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp).heightIn(min = 20.dp).widthIn(min = 20.dp).wrapContentWidth(), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
+                                    OutlinedButton(modifier = Modifier.padding(horizontal = 2.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                         onClick = {
                                             selectNone = false
                                             selectedList[index].value = !selectedList[index].value
@@ -1562,21 +1567,19 @@ fun EpisodeSortDialog(initOrder: EpisodeSortOrder, includeConditionals: List<Epi
         Surface(modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp).height(250.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
             var order by remember { mutableStateOf(initOrder) }
             var sortIndex by remember { mutableIntStateOf(orderList.indexOfFirst { it.code == order.code || it.code == order.code+1 }.takeIf { it >= 0 } ?: 0) }
-//            Column(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
-                FlowRow(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
-                    for (index in orderList.indices) {
-                        var dir by remember { mutableStateOf(order.code != orderList[sortIndex].code) }
-                        OutlinedButton(modifier = Modifier.padding(5.dp), elevation = null, border = BorderStroke(2.dp, if (sortIndex != index) borderColor else buttonAltColor),
-                            onClick = {
-                                if (sortIndex == index) dir = !dir
-                                sortIndex = index
-                                order = fromCode(orderList[index].code - if (dir) 1 else 0)
-                                onSelectionChanged(order)
-                            }
-                        ) { Text(text = stringResource(orderList[index].res) + if (dir) "\u00A0▲" else "\u00A0▼", color = textColor, style = MaterialTheme.typography.bodySmall, maxLines = 1) }
-                    }
+            FlowRow(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
+                for (index in orderList.indices) {
+                    var dir by remember { mutableStateOf(order.code != orderList[sortIndex].code) }
+                    OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (sortIndex != index) borderColor else buttonAltColor),
+                        onClick = {
+                            if (sortIndex == index) dir = !dir
+                            sortIndex = index
+                            order = fromCode(orderList[index].code - if (dir) 1 else 0)
+                            onSelectionChanged(order)
+                        }
+                    ) { Text(text = stringResource(orderList[index].res) + if (dir) "\u00A0▲" else "\u00A0▼", color = textColor, style = MaterialTheme.typography.bodySmall, maxLines = 1) }
                 }
-//            }
+            }
         }
     }
 }
