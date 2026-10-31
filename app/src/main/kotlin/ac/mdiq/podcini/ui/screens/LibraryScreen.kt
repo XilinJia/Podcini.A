@@ -637,7 +637,7 @@ fun LibraryScreen() {
     val drawerController = LocalDrawerController.current
 
 //    val muteColor = MaterialTheme.colorScheme.onSurfaceVariant
-    
+
     val buttonAltColor = lerp(MaterialTheme.colorScheme.tertiary, Color.Green, 0.5f)
 
 //    val vm: LibraryVM = viewModel()
@@ -1993,9 +1993,11 @@ fun LibraryScreen() {
                                     if (feed.comment.isNotBlank()) Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_comment_24), tint = textColor, contentDescription = "comment", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).size(16.dp))
                                     if (feed.tags.isNotEmpty()) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_tag), tint = textColor, contentDescription = "tags", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).size(16.dp))
                                     if (feed.autoDownload || feed.autoEnqueue) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_automation_24), tint = textColor, contentDescription = "tags", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).size(16.dp))
-                                    Spacer(Modifier.width(5.dp))
-                                    val scoreText = remember(feed.score, feed.scoreCount) { (feed.score).toString() + "(" + feed.scoreCount + ")" }
-                                    Text("$scoreText", style = MaterialTheme.typography.bodyMedium)
+                                    if (feed.scoreCount > 0) {
+                                        Spacer(Modifier.width(5.dp))
+                                        val scoreText = remember(feed.score, feed.scoreCount) { (feed.score).toString() + "(" + feed.scoreCount + ")" }
+                                        Text("$scoreText", style = MaterialTheme.typography.bodyMedium)
+                                    }
                                     //                                    Logd(TAG) { "episodesCount: ${feed.id} ${feed.episodesCount} ${feed.totleDuration}" }
                                     Spacer(Modifier.width(5.dp))
                                     val measureString = remember(feed.episodesCount, feed.totleDuration) { formatWithGrouping(feed.episodesCount.toLong()) + " : " + durationInHours(feed.totleDuration/1000, false) }

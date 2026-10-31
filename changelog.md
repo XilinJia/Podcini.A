@@ -1,3 +1,8 @@
+# 12.17.6
+
+* in Library, if show feed score on when scoreCount is above 0
+* ensure separate x-86_64 build
+
 # 12.17.5
 
 * in OnlineFeed, if shared feed exist, "Episodes" button is changed to "Open feed"

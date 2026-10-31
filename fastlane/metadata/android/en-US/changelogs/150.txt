@@ -1,0 +1,1 @@
+* in Library, if show feed score on when scoreCount is above 0
