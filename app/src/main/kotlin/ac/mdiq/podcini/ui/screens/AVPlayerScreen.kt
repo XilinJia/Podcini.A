@@ -41,6 +41,7 @@ import ac.mdiq.podcini.ui.compose.TranscriptOverlay
 import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.distinctColorOf
+import ac.mdiq.podcini.ui.compose.episodeForInfo
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
@@ -978,7 +979,11 @@ fun AVPlayerScreen() {
                 Icon(imageVector = ImageVector.vectorResource(comboAction.iconRes), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "Combo", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).clickable {  comboAction.performAction(episode) })
                 Spacer(modifier = Modifier.weight(0.1f))
             }
-            SelectionContainer { Text((vm.episodeFeed?.title?:"").trim(), textAlign = TextAlign.Center, color = textColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 5.dp)) }
+            SelectionContainer { Text((vm.episodeFeed?.title?:"").trim(), textAlign = TextAlign.Center, color = buttonColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 5.dp).clickable {
+                navTo(FeedDetails(feedId = vm.episodeFeed?.id?:-1L))
+                episodeForInfo = null
+                psState = PSState.PartiallyExpanded
+            }) }
             if (episode.captionCues.isNotEmpty()) {
                 val captionPrev = remember(cueIndex) { if (cueIndex>0) episode.captionCues[cueIndex-1] else null }
                 val captionNow = remember(cueIndex) { if (cueIndex>=0) episode.captionCues[cueIndex] else null }

@@ -212,7 +212,6 @@ private const val TAG = "ComposeEpisodes"
 @Composable
 fun ShareDialog(item: Episode, onDismiss: () -> Unit) {
     val context = LocalContext.current
-
     var option by remember { mutableIntStateOf(1) }
     var withPosition by remember { mutableStateOf(false) }
     var withComment by remember { mutableStateOf(false) }
@@ -614,7 +613,6 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             }
             if (showTransOptions) TranscriptMeta(episode)
         }
-
         if (episode.todos.isNotEmpty()) {
             var showTodos by remember { mutableStateOf(false) }
             var showDone by remember { mutableStateOf(false) }
@@ -661,7 +659,6 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 }
             }
         }
-
         if (episode.tagsAsString.isNotBlank()) Text("Tags: ${episode.tagsAsString}", color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable { showTagsSettingDialog = true })
         if (episode.comment.isNotBlank()) {
             Text(stringResource(R.string.comments), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable { showEditComment = true })
@@ -746,7 +743,6 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             }
             Text(stringResource(R.string.related), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 10.dp, bottom = 10.dp).clickable { showRelated = true })
         }
-
         if (episode.chapters.isEmpty() && !episode.podcastIndexChapterUrl.isNullOrBlank()) Text(stringResource(id = R.string.download_chapters), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable(onClick = { runOnIOScope { loadChapters(episode = episode, false) } }))
         if (episode.chapters.isNotEmpty()) {
             val chapters = remember { episode.chapters }
@@ -780,7 +776,6 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 }
             }
         }
-
         Text(stringResource(R.string.description_label), color = textColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, top = 10.dp, bottom = 4.dp))
         AndroidView(modifier = Modifier.fillMaxSize(),
             factory = {

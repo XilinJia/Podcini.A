@@ -288,27 +288,6 @@ fun parseTTMLCaptions(xml: String): List<CaptionCue> {
             }
         } catch (_: NumberFormatException) { null }
     }
-    fun mergeCaptionCues(cues: List<CaptionCue>): List<CaptionCue> {
-        if (cues.isEmpty()) return emptyList()
-        val result = mutableListOf<CaptionCue>()
-        var current = cues.first()
-        fun endsSentence(text: String): Boolean = text.trimEnd().lastOrNull() in setOf('.', '!', '?', '…')
-        for (next in cues.drop(1)) {
-            val gap = next.startMs - current.endMs
-            val duration = next.endMs - current.startMs
-            val combinedLength = current.text.length + 1 + next.text.length
-            val shouldBreak = gap > MAX_GAP_MS || duration > MAX_CUE_DURATION_MS || combinedLength > MAX_CUE_CHARS || endsSentence(current.text)
-            if (shouldBreak) {
-                result += current
-                current = next
-            } else {
-                current.text = "${current.text.trim()} ${next.text.trim()}"
-                current.endMs = next.endMs
-            }
-        }
-        result += current
-        return result.sortedBy { it.startMs }
-    }
 
     val document = Ksoup.parse(xml, parser = Parser.xmlParser())
     val cues = document.select("p").mapNotNull { p ->
@@ -323,5 +302,33 @@ fun parseTTMLCaptions(xml: String): List<CaptionCue> {
             this.text = text
         }
     }
-    return mergeCaptionCues(cues)
+    if (cues.isEmpty()) return emptyList()
+
+    val result = mutableListOf<CaptionCue>()
+    var current = cues.first()
+    fun endsSentence(text: String): Boolean = text.trimEnd().lastOrNull() in setOf('.', '!', '?', '…')
+    for (next in cues.drop(1)) {
+        val gap = next.startMs - current.endMs
+        val duration = next.endMs - current.startMs
+        val combinedLength = current.text.length + 1 + next.text.length
+        val shouldBreak = gap > MAX_GAP_MS || duration > MAX_CUE_DURATION_MS || combinedLength > MAX_CUE_CHARS || endsSentence(current.text)
+        if (shouldBreak) {
+            result += current
+            current = next
+        } else {
+            current.text = "${current.text.trim()} ${next.text.trim()}"
+            current.endMs = next.endMs
+        }
+    }
+    result += current
+    return result.sortedBy { it.startMs }
+}
+
+// TODO: use this to sort
+fun MutableList<CaptionCue>.sortedCues(): List<CaptionCue> {
+    val cs = sortedBy { it.startMs }
+//    for (i in cs.indices) {
+//        cs[i].index = i
+//    }
+    return cs
 }

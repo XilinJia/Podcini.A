@@ -64,6 +64,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
@@ -274,14 +275,14 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                         }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_closed_caption_add_24), contentDescription = "fetch transcript") }
                         Spacer(Modifier.weight(1f))
                     }
-                    if (allowOpenFeed && episodeFeed != null) {
-                        IconButton(onClick = {
-                            navTo(FeedDetails(feedId = episodeFeed.id))
-                            episodeForInfo = null
-                            psState = PSState.PartiallyExpanded
-                        }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_feed), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "Open podcast", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer)) }
-                        Spacer(Modifier.weight(1f))
-                    }
+//                    if (allowOpenFeed && episodeFeed != null) {
+//                        IconButton(onClick = {
+//                            navTo(FeedDetails(feedId = episodeFeed.id))
+//                            episodeForInfo = null
+//                            psState = PSState.PartiallyExpanded
+//                        }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_feed), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "Open podcast", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer)) }
+//                        Spacer(Modifier.weight(1f))
+//                    }
                     IconButton(onClick = { comboAction.performAction(episode) }) { Icon(imageVector = ImageVector.vectorResource(comboAction.iconRes), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "Combo", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer)) }
                     Spacer(Modifier.weight(1f))
                     if (!isExtFeed(episode.feed) && !episode.link.isNullOrEmpty()) {
@@ -305,8 +306,8 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (episode.downloadUrl.isNullOrBlank()) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_error), tint = Color.Red, contentDescription = "error")
                         val playState = remember(episode.playState) { EpisodeState.fromCode(episode.playState) }
-                        Icon(imageVector = ImageVector.vectorResource(playState.res), tint = playState.color ?: MaterialTheme.colorScheme.tertiary, contentDescription = "playState", modifier = Modifier.background(if (episode.playState >= EpisodeState.SKIPPED.code) Color.Green.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surface).width(16.dp).height(16.dp))
-                        if (episode.rating != Rating.UNRATED.code) Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(episode.rating).res), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).width(16.dp).height(16.dp))
+                        Icon(imageVector = ImageVector.vectorResource(playState.res), tint = playState.color ?: MaterialTheme.colorScheme.tertiary, contentDescription = "playState", modifier = Modifier.background(if (episode.playState >= EpisodeState.SKIPPED.code) Color.Green.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surface).size(16.dp))
+                        if (episode.rating != Rating.UNRATED.code) Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(episode.rating).res), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).size(16.dp))
                         val pubTimeText = remember(episode.id) { formatDateTimeFlex(episode.pubDate) }
                         val txtvDuration = remember(episode.id) { if (episode.duration > 0) durationStringFull(episode.duration) else "" }
                         var txtvSize by remember(episode.id) { mutableStateOf("") }
@@ -345,7 +346,13 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     val txtvPodcast = remember(episodeFeed?.id, episode.origFeedTitle) {  if (episodeFeed != null) (if (episodeFeed.isSynthetic() && episode.origFeedTitle != null) episode.origFeedTitle!! else episodeFeed.title ?: "") else "" }
-                    SelectionContainer { Text(txtvPodcast, color = textColor, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                    SelectionContainer { Text(txtvPodcast, color = if (allowOpenFeed) buttonColor else textColor, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.clickable {
+                        if (allowOpenFeed) {
+                            navTo(FeedDetails(feedId = episodeFeed?.id ?: -1L))
+                            episodeForInfo = null
+                            psState = PSState.PartiallyExpanded
+                        }
+                    }) }
                 }
             }
         }

@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 148
-        versionName = "12.17.4"
+        versionCode = 149
+        versionName = "12.17.5"
 
         ndkVersion = "30.0.16248370"
 
@@ -72,7 +72,7 @@ configure<ApplicationExtension> {
         abi {
             isEnable = true
             reset()
-            include("arm64-v8a")
+            include("arm64-v8a", "x86-64")
             isUniversalApk = true
         }
     }

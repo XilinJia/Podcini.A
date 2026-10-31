@@ -18,7 +18,6 @@ import ac.mdiq.podcini.sourcing.searcher.CombinedSearcher
 import ac.mdiq.podcini.sourcing.searcher.FeedUrlNotFoundException
 import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry
 import ac.mdiq.podcini.sourcing.sourceClients
-
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.feedById
@@ -144,8 +143,8 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
     internal var showTabsDialog by mutableStateOf(false)
 
     internal var showEpisodes by mutableStateOf(false)
-    internal var showFeedDisplay by mutableStateOf(false)
-    internal var showProgress by mutableStateOf(true)
+//    internal var showFeedDisplay by mutableStateOf(false)
+    internal var progressing by mutableStateOf(true)
     internal var autoDownloadChecked by mutableStateOf(false)
     internal var limitEpisodesCount by mutableIntStateOf(0)
     internal var enableSubscribe by mutableStateOf(true)
@@ -203,7 +202,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
         if (feedUrl.isEmpty()) Loge(TAG, "feedUrl is null.")
         else {
             Logd(TAG) { "Activity was started with url $feedUrl" }
-            showProgress = true
+            progressing = true
             // Remove subscribeonandroid.com from feed URL in order to subscribe to the actual feed URL
             if (feedUrl.contains("subscribeonandroid.com")) feedUrl = feedUrl.replaceFirst("((www.)?(subscribeonandroid.com/))".toRegex(), "")
 
@@ -222,7 +221,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
                         if (fipc != null) {
                             var exist = findExisting(preparedUrl)
                             if (exist != null) {
-                                setExist(exist, R.string.open)
+                                setExist(exist, R.string.open_feed)
                                 return true
                             }
                             exist = findExisting(fipc.toFeed())
@@ -293,7 +292,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
                             val feedBuilder = FeedBuilder(showError)
                             feedBuilder.buildPodcast(getFinalRedirectedUrl(url), username, password) { feed_, _ -> handleFeed(feed_) }
                         } else {
-                            showProgress = false
+                            progressing = false
                             Loge(TAG, getAppContext().getString(R.string.null_value_podcast_error))
                         }
                     }
@@ -308,8 +307,8 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
         feedId = exist.id
         feed = exist
         numEpisodes = getEpisodesCount(null, feedId)
-        showProgress = false
-        showFeedDisplay = true
+        progressing = false
+//        showFeedDisplay = true
         enableSubscribe = true
         subButTextRes = textRes
     }
@@ -373,8 +372,8 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
             val fl = CombinedSearcher::class.java.getDeclaredConstructor().newInstance().search("${feed?.author} podcasts")
             withContext(Dispatchers.Main) { if (fl.isNotEmpty()) relatedResults = fl }
         }
-        showProgress = false
-        showFeedDisplay = true
+        progressing = false
+//        showFeedDisplay = true
         if (isFeedFoundBySearch) Loge(TAG, getAppContext().getString(R.string.no_feed_url_podcast_found_by_search))
         handleSubscribeStatus()
     }
@@ -401,7 +400,6 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
 
     internal fun handleSubscribeStatus() {
         if (preparedUrl.isBlank()) return
-
         when {
             isDownloading(preparedUrl) -> {
                 Logd(TAG) { "handleUpdatedFeedStatus isDownloading" }
@@ -411,7 +409,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
             feedId != 0L -> {
                 Logd(TAG) { "handleUpdatedFeedStatus feedId != 0L" }
                 enableSubscribe = true
-                subButTextRes = R.string.open
+                subButTextRes = R.string.open_feed
                 if (subscribePress) {
                     subscribePress = false
                     runOnIOScope {
@@ -525,7 +523,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                                 Logd(TAG) { "fipc.title: ${fipc.title} ${fipc.downloadUrl}" }
                                 var exist = vm.findExisting(url)
                                 if (exist != null) {
-                                    vm.setExist(exist, R.string.open)
+                                    vm.setExist(exist, R.string.open_feed)
                                     return@launch
                                 }
                                 exist = vm.findExisting(fipc.toFeed())
@@ -559,7 +557,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
 
     LaunchedEffect(vm.errorMessage) {
         if (vm.errorMessage.isNotBlank()) {
-            vm.showProgress = false
+            vm.progressing = false
             Loge(TAG, "${vm.errorMessage}\n${vm.errorDetails}")
         }
     }
@@ -605,7 +603,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                         end.linkTo(parent.end)
                     }) {
                         Spacer(modifier = Modifier.weight(0.2f))
-                        if (vm.showFeedDisplay && vm.enableSubscribe) Button(onClick = {
+                        if (!vm.progressing && vm.enableSubscribe) Button(onClick = {
                             if (vm.feedId != 0L) {
                                 runOnIOScope {
                                 if (vm.isShared) {
@@ -633,7 +631,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                                             vm.subscribePress = true
                                             vm.feedId = vm.feed?.id ?: 0L
                                             vm.enableSubscribe = true
-                                            vm.subButTextRes = R.string.open
+                                            vm.subButTextRes = R.string.open_feed
                                             vm.handleSubscribeStatus()
                                         }
                                     }
@@ -642,6 +640,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                         }) { Text(stringResource(vm.subButTextRes)) }
                         Spacer(modifier = Modifier.weight(0.1f))
                         when {
+                            vm.updatedFeedUrl.isNotBlank() && vm.feed != null -> Button(onClick = { navTo(FeedDetails(feedId = vm.feedId, modeName = FeedScreenMode.Info.name)) }) { Text(stringResource(R.string.open_feed)) }
                             vm.showEpisodes -> Button(onClick = { vm.showEpisodes = false }) { Text(stringResource(R.string.feed)) }
                             vm.enableEpisodes && vm.feed != null && vm.numEpisodes > 0 -> Button(onClick = { vm.showEpisodes() }) { Text(stringResource(R.string.episodes_label)) }
                             else -> {}
@@ -708,7 +707,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                     }
                 }
             }
-            if (vm.showProgress) Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            if (vm.progressing) Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(innerPadding).fillMaxSize()) {
                 CircularProgressIndicator(strokeWidth = 10.dp, color = textColor, modifier = Modifier.size(50.dp).align(Alignment.Center))
             }
         }

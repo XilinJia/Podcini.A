@@ -615,7 +615,7 @@ class LibraryVM : ViewModel() {
                     val f = findLatest(f_) ?: continue
                     val c = query(Episode::class).query(queryString, f.id).count().find()
                     f.sortValue = c
-                    f.sortInfo = "Sort value: $c"
+                    f.sortInfo = "Count: $c"
                 }
             }
             upsert(prefsFlow.value) {
@@ -1844,8 +1844,7 @@ fun LibraryScreen() {
             if (subPrefs.prefFeedGridLayout) {
                 LazyVerticalGrid(state = rememberLazyGridState(), columns = GridCells.Adaptive(80.dp), modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp)) {
                     if (feedIdsToUse.isEmpty() && !vm.showAllFeeds && volumes.isNotEmpty()) items(volumes, key = { it.id}) { volume ->
-                        Column(Modifier.background(MaterialTheme.colorScheme.surface)
-                            .combinedClickable(onClick = { vm.curVolume = volume},
+                        Column(Modifier.background(MaterialTheme.colorScheme.surface).combinedClickable(onClick = { vm.curVolume = volume},
                                 onLongClick = {
                                     feedsSelected.clear()
                                     feedsSelected.addAll(volume.allFeeds)
@@ -1900,8 +1899,7 @@ fun LibraryScreen() {
                                     end.linkTo(parent.end)
                                     top.linkTo(coverImage.top)
                                 })
-                                if (feed.rating != Rating.UNRATED.code)
-                                    Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(feed.rating).res), tint = buttonColor, contentDescription = "rating",
+                                if (feed.rating != Rating.UNRATED.code) Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(feed.rating).res), tint = buttonColor, contentDescription = "rating",
                                         modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer.copy(0.8f)).constrainAs(rating) {
                                             start.linkTo(coverImage.start)
                                             bottom.linkTo(coverImage.bottom)
@@ -1991,7 +1989,15 @@ fun LibraryScreen() {
                             })) {
                                 Text(feed.title ?: "No title", color = textColor, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.align(Alignment.TopStart))
                                 Row(modifier = Modifier.align(Alignment.BottomStart)) {
-//                                    Logd(TAG) { "episodesCount: ${feed.id} ${feed.episodesCount} ${feed.totleDuration}" }
+                                    if (feed.hasVideoMedia) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_videocam), tint = textColor, contentDescription = "hasVideo", modifier = Modifier.size(16.dp))
+                                    if (feed.comment.isNotBlank()) Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_comment_24), tint = textColor, contentDescription = "comment", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).size(16.dp))
+                                    if (feed.tags.isNotEmpty()) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_tag), tint = textColor, contentDescription = "tags", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).size(16.dp))
+                                    if (feed.autoDownload || feed.autoEnqueue) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_automation_24), tint = textColor, contentDescription = "tags", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).size(16.dp))
+                                    Spacer(Modifier.width(5.dp))
+                                    val scoreText = remember(feed.score, feed.scoreCount) { (feed.score).toString() + "(" + feed.scoreCount + ")" }
+                                    Text("$scoreText", style = MaterialTheme.typography.bodyMedium)
+                                    //                                    Logd(TAG) { "episodesCount: ${feed.id} ${feed.episodesCount} ${feed.totleDuration}" }
+                                    Spacer(Modifier.width(5.dp))
                                     val measureString = remember(feed.episodesCount, feed.totleDuration) { formatWithGrouping(feed.episodesCount.toLong()) + " : " + durationInHours(feed.totleDuration/1000, false) }
                                     Text(measureString, color = textColor, style = MaterialTheme.typography.bodyMedium)
                                     Spacer(modifier = Modifier.weight(1f))

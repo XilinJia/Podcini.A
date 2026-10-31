@@ -26,6 +26,7 @@ import ac.mdiq.podcini.sync.SyncService
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.ui.compose.PodciniTheme
 import ac.mdiq.podcini.ui.compose.confirm
+import ac.mdiq.podcini.ui.compose.episodeForInfo
 import ac.mdiq.podcini.ui.screens.Facets
 import ac.mdiq.podcini.ui.screens.FeedDetails
 import ac.mdiq.podcini.ui.screens.FindFeeds
@@ -326,24 +327,23 @@ class MainActivity : BaseActivity() {
 
     private fun handleNavIntent() {
         Logd(TAG) { "handleNavIntent()" }
+        episodeForInfo = null
+        if (psState == PSState.Expanded) psState = PSState.PartiallyExpanded
         when {
             intent.hasExtra(Extras.feed_id.name) -> {
                 val feedId = intent.getLongExtra(Extras.feed_id.name, 0)
                 Logd(TAG) { "handleNavIntent: feedId: $feedId" }
                 if (feedId > 0) navTo(FeedDetails(feedId = feedId))
-                psState = PSState.PartiallyExpanded
             }
             intent.hasExtra(Extras.queue_id.name) -> {
                 val queueId = intent.getLongExtra(Extras.queue_id.name, 0)
                 Logd(TAG) { "handleNavIntent: queueId: $queueId" }
                 if (queueId >= 0) navTo(Queues(id = queueId))
-                psState = PSState.PartiallyExpanded
             }
             intent.hasExtra(Extras.facet_name.name) -> {
                 val facetName = intent.getStringExtra(Extras.facet_name.name)
                 Logd(TAG) { "handleNavIntent: facetName: $facetName" }
                 if (!facetName.isNullOrEmpty()) QuickAccess.entries.find { it.name == facetName }?.let { navTo(Facets(modeName = it.name)) }
-                psState = PSState.PartiallyExpanded
             }
             intent.hasExtra(Extras.feed_url.name) -> {
                 val feedurl = intent.getStringExtra(Extras.feed_url.name)

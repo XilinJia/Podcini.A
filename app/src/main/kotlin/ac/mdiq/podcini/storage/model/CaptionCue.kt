@@ -3,6 +3,8 @@ package ac.mdiq.podcini.storage.model
 import io.github.xilinjia.krdb.types.EmbeddedRealmObject
 
 class CaptionCue: EmbeddedRealmObject {
+    // TODO: add index
+//    var index: Int = 0
     var startMs: Long = 0
     var endMs: Long = 0
     var speaker: String = ""

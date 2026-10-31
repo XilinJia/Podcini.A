@@ -1,3 +1,13 @@
+# 12.17.5
+
+* in OnlineFeed, if shared feed exist, "Episodes" button is changed to "Open feed"
+* in episode list, added more attribute indicators to each
+* in Library, added some attribute indicators to each feed
+* in EpisodeInfo and PlayerDetailed, the feed title can be clicked to open FeedDetails
+* in EpisodeInfo, open feed icon on the topbar is removed
+* in MainActivity, when receiving intent, ensure to close EpisodeInfo and PlayerDetailed
+* added separate x-86-64 build
+
 # 12.17.4
 
 * ensure Caption options icon in EpisodeDetails more responsive
