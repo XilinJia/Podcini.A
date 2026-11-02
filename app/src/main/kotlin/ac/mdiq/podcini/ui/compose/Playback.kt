@@ -118,7 +118,7 @@ private fun SpeedSetter(initSpeed: Float, maxSpeed: Float, speedCB: (Float) -> U
         var speed by remember { mutableFloatStateOf(initSpeed) }
         var sliderPosition by remember { mutableFloatStateOf(speed2Slider(if (speed == SPEED_USE_GLOBAL) 1f else speed, maxSpeed)) }
         val stepSize = 0.05f
-        Text("-", fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
+        Text("-", color = buttonColor, fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
             modifier = Modifier.clickable {
                 val speed_ = round(speed / stepSize) * stepSize - stepSize
                 if (speed_ >= 0.1f) {
@@ -133,7 +133,7 @@ private fun SpeedSetter(initSpeed: Float, maxSpeed: Float, speedCB: (Float) -> U
                 speed = slider2Speed(sliderPosition, maxSpeed)
                 speedCB(speed)
             })
-        Text("+", fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
+        Text("+", color = buttonColor, fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
             modifier = Modifier.clickable {
                 val speed_ = round(speed / stepSize) * stepSize + stepSize
                 if (speed_ <= maxSpeed) {
@@ -236,7 +236,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                 if (showEdit) Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     var sliderPosition by remember { mutableFloatStateOf(speed2Slider(if (speed == SPEED_USE_GLOBAL) 1f else speed, maxSpeed)) }
                     val stepSize = 0.05f
-                    Text("-", fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
+                    Text("-", color = buttonColor, fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
                             val speed_ = round(speed / stepSize) * stepSize - stepSize
                             if (speed_ >= 0.1f) {
@@ -250,7 +250,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                             speed = slider2Speed(sliderPosition, maxSpeed)
                             Logd("PlaybackSpeedDialog") { "slider value: $it $speed}" }
                         })
-                    Text("+", fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
+                    Text("+", color = buttonColor, fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
                             val speed_ = round(speed / stepSize) * stepSize + stepSize
                             if (speed_ <= maxSpeed) {

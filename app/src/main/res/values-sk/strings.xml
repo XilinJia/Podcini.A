@@ -577,7 +577,7 @@
     <string name="statistics_total_duration">Celková dĺžka trvania (odhad):</string>
     <string name="statistics_episodes_on_device">Epizód v zariadení:</string>
     <string name="statistics_space_used">Použitý priestor:</string>
-    <string name="statistics_episodes_started_total">Epizódy začaté/celkovo:</string>
+
 
 
     <string name="feeds_related_to_author">Feeds likely related to the author »</string>

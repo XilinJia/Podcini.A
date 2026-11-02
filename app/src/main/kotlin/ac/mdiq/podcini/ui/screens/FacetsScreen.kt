@@ -42,6 +42,7 @@ import ac.mdiq.podcini.ui.compose.InforBar
 import ac.mdiq.podcini.ui.compose.PlayRandom
 import ac.mdiq.podcini.ui.compose.StatusRowMode
 import ac.mdiq.podcini.ui.compose.borderColor
+import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.episodeForInfo
 import ac.mdiq.podcini.ui.compose.filterChipBorder
 import ac.mdiq.podcini.ui.compose.textColor
@@ -532,7 +533,7 @@ fun FacetsScreen(modeName: String = "") {
         var expanded by remember { mutableStateOf(false) }
         Row(modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_view_in_ar_24), contentDescription = "Open Drawer", modifier = Modifier.padding(end = 10.dp).clickable { drawerController?.open() })
-            Text(facetsMode.name, maxLines=1, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.scale(scaleX = 1f, scaleY = 1.8f).clickable { showChooseMode = true })
+            Text(facetsMode.name, maxLines=1, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = buttonColor, modifier = Modifier.scale(scaleX = 1f, scaleY = 1.8f).clickable { showChooseMode = true })
             Spacer(Modifier.weight(1f))
             val feedsIconRes = remember(vm.showFeeds) { if (vm.showFeeds) R.drawable.baseline_list_alt_24 else R.drawable.baseline_dynamic_feed_24 }
             IconButton(onClick = { vm.showFeeds = !vm.showFeeds }) { Icon(imageVector = ImageVector.vectorResource(feedsIconRes), contentDescription = "feeds") }

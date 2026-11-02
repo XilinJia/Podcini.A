@@ -219,6 +219,7 @@ private const val TAG = "LibraryScreen"
 var feedIdsToUse by mutableStateOf<List<Long>>(listOf())
 
 class LibraryVM : ViewModel() {
+    var inited = false
     private val subPrefs_ = realm.query(SubscriptionsPrefs::class).query("id == 0").first().find() ?: SubscriptionsPrefs().apply { this.queueSelIds.add(0L) }
     val prefsFlow: StateFlow<SubscriptionsPrefs> = realm.query(SubscriptionsPrefs::class).query("id == 0").first().asFlow().map { it.obj ?: subPrefs_ }
         .distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = subPrefs_ )
@@ -269,7 +270,6 @@ class LibraryVM : ViewModel() {
                 isViewGarden = it.isNotEmpty()
             }
         }
-
         viewModelScope.launch {
             appAttribsFlow!!.map { it.langSet }.distinctUntilChanged().collect { set->
                 upsert(prefsFlow.value) {
@@ -278,7 +278,6 @@ class LibraryVM : ViewModel() {
                 }
             }
         }
-
         viewModelScope.launch(Dispatchers.IO) {
             queuesFlow.collect { changes ->
                 Logd(TAG) { "queuesFlow.collect" }
@@ -286,7 +285,6 @@ class LibraryVM : ViewModel() {
                 queueNames = changes.list.map { it.name }
             }
         }
-
         viewModelScope.launch(Dispatchers.IO) {
             prefsFlow.map  { it.playStateCodeSet }.distinctUntilChanged().collect { set->
                 val sb = StringBuilder()
@@ -325,7 +323,6 @@ class LibraryVM : ViewModel() {
                 }
             }
         }
-
         timeIt("$TAG end of vm init")
     }
 
@@ -791,13 +788,14 @@ fun LibraryScreen() {
 
     LaunchedEffect(subPrefs.sortIndex, feedOperationText, feedList.size, vm.curVolume?.id) {
         Logd(TAG) { "combine(feedsFlow, snapshotFlow {feedOperationText}) sortIndex: ${subPrefs.sortIndex}" }
-        if (feedOperationText.isBlank()) when (subPrefs.sortIndex) {
+        if (feedOperationText.isBlank() && vm.inited) when (subPrefs.sortIndex) {
             FeedSortIndex.Feed.code -> vm.preparePropertySort(feedList)
             FeedSortIndex.Date.code -> vm.prepareDateSort(feedList)
             FeedSortIndex.Time.code -> vm.prepareTimeSort(feedList)
             FeedSortIndex.Count.code -> vm.prepareCountSort(feedList)
             else -> {}
         }
+        vm.inited = true
     }
 
     @Composable
@@ -807,7 +805,7 @@ fun LibraryScreen() {
         Row(modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             val feedCount by feedCountFlow.collectAsStateWithLifecycle()
             Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_subscriptions), contentDescription = "Open Drawer", modifier = Modifier.padding(end = 10.dp).clickable { drawerController?.open() })
-            if (feedOperationText.isNotEmpty()) Text(feedOperationText, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.clickable {})
+            if (feedOperationText.isNotEmpty()) Text(feedOperationText, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             else {
                 val feedCountState = remember(feedList.size, feedCount) { "${feedList.size}/$feedCount" }
                 Text(feedCountState, maxLines=1, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.scale(scaleX = 1f, scaleY = 1.8f))
@@ -1996,7 +1994,7 @@ fun LibraryScreen() {
                                     if (feed.scoreCount > 0) {
                                         Spacer(Modifier.width(5.dp))
                                         val scoreText = remember(feed.score, feed.scoreCount) { (feed.score).toString() + "(" + feed.scoreCount + ")" }
-                                        Text("$scoreText", style = MaterialTheme.typography.bodyMedium)
+                                        Text(scoreText, style = MaterialTheme.typography.bodyMedium)
                                     }
                                     //                                    Logd(TAG) { "episodesCount: ${feed.id} ${feed.episodesCount} ${feed.totleDuration}" }
                                     Spacer(Modifier.width(5.dp))

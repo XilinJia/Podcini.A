@@ -572,7 +572,7 @@
     <string name="statistics_total_duration">Samlet varighed (skøn):</string>
     <string name="statistics_episodes_on_device">Afsnit på enheden:</string>
     <string name="statistics_space_used">Plads brugt:</string>
-    <string name="statistics_episodes_started_total">Påbegyndte afsnit/total:</string>
+
 
 
     <string name="feeds_related_to_author">Feeds sandsynligvis relateret til forfatteren »</string>

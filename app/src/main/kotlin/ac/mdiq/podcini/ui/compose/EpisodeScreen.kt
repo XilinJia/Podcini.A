@@ -10,6 +10,7 @@ import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
+import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
@@ -123,6 +124,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -142,11 +145,9 @@ var episodeForInfo by mutableStateOf<Episode?>(null)
 fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = MutableStateFlow(emptyList()), allowOpenFeed: Boolean = false, showClose: Boolean = true) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context by rememberUpdatedState(LocalContext.current)
-
-    val episodeFlow = remember(episode_.id) { listFlow.map { list -> list.firstOrNull { it.id == episode_.id } } }
+    val episodeFlow = remember(episode_.id) { listFlow.flatMapLatest { list -> list.firstOrNull { it.id == episode_.id }?.let { flowOf(it) } ?: realm.query(Episode::class).query("id == ${episode_.id}").asFlow().map { it.list.firstOrNull() } } }
     val eOfFlow by episodeFlow.collectAsStateWithLifecycle(initialValue = null)
     val episode = if (eOfFlow != null) eOfFlow!! else episode_
-
     val episodeFeed = episode.feed
     var showHomeScreen by remember { mutableStateOf(false) }
 
@@ -367,7 +368,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 50.dp)) {
                         EpisodeDetails(episode)
                         AsyncImage(model = ImageRequest.Builder(context).data((episode.images.firstOrNull() ?: episodeFeed?.images?.firstOrNull())?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
-                        Text(episode.link ?: "Link not included", color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(vertical = 15.dp).combinedClickable(onClick = { if (!episode.link.isNullOrBlank()) openInSystemDefault(episode.link!!) }, onLongClick = { if (!episode.link.isNullOrBlank()) context.shareText(episode.link!!, R.string.share_url_label) }))
+                        Text(episode.link ?: "Link not included", color = buttonColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(vertical = 15.dp).combinedClickable(onClick = { if (!episode.link.isNullOrBlank()) openInSystemDefault(episode.link!!) }, onLongClick = { if (!episode.link.isNullOrBlank()) context.shareText(episode.link!!, R.string.share_url_label) }))
                         Text("Time spent: " + durationStringShort(episode.timeSpent, true))
                         Text("Played duration: " + durationStringShort(episode.playedDuration.toLong(), true))
                     }

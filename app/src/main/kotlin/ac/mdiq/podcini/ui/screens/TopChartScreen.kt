@@ -11,6 +11,7 @@ import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.OnlineFeedItem
 import ac.mdiq.podcini.ui.compose.borderColor
+import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.filterChipBorder
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.compose.trackAsTextField
@@ -333,9 +334,9 @@ fun TopChartScreen() {
         Box {
             TopAppBar(title = {
                 Row {
-                    Text(vm.spinnerTexts[vm.curIndex], maxLines=1, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.clickable { showChooseGenre = true })
+                    Text(vm.spinnerTexts[vm.curIndex], maxLines=1, color = buttonColor, modifier = Modifier.clickable { showChooseGenre = true })
                     Spacer(Modifier.weight(1f))
-                    Text(vm.countryCode, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end=20.dp).clickable { showSelectCounrty = true })
+                    Text(vm.countryCode, color = buttonColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end=20.dp).clickable { showSelectCounrty = true })
                 } },
                 navigationIcon = { Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back or drawer", modifier = Modifier.padding(7.dp).clickable { if (!navBack()) drawerController?.open() }) })
             HorizontalDivider(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)

@@ -1,3 +1,14 @@
+# 12.17.7
+
+* in Library, avoid persisting sort on init
+* in FeedDetails, button "likely related to the author" is disabled if author is unknown
+* in EpisodeInfo and PlayerDetailed, under chapters, only timestamps are clickable, the titles are selectable
+* in Bin mode of Queues, fixed opened EpisodeInfo not updating
+* ensure EpisodeInfo update when opened from any screen
+* added more measures to Statistics
+* reformated Statistics overview
+* hopefully all clickable texts are in button color
+
 # 12.17.6
 
 * in Library, if show feed score on when scoreCount is above 0
@@ -62,8 +73,8 @@
 * in Facets screen,
 	* in History menu, removed clear history
 	* corrected date filter for History
-	* items in History now include episodes above Unplayed with time settings of completion, start, played, state, rating, comment, and download
 	* in infobar of New and History mdoes, added calendar icon to toggle date filter
+* items in History of Facets and FeedDetails now include episodes above Unplayed with time settings of completion, start, played, state, rating, comment, and download
 * in the drawer
 	* added Podcini title
 	* counts in Library and Queues are layered

@@ -116,6 +116,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
@@ -617,7 +618,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             var showTodos by remember { mutableStateOf(false) }
             var showDone by remember { mutableStateOf(false) }
             Row(modifier = Modifier.padding(start = 15.dp, end = 10.dp, top = 5.dp, bottom = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Todos:", color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.clickable {
+                Text("Todos:", color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.clickable {
                     onTodo = null
                     showTodoDialog = true
                 })
@@ -640,7 +641,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                                 done = it
                                 runOnIOScope { upsertBlkEmb(todo) { todo -> todo.completed = done } }
                             })
-                            Text(text = todo.note, maxLines = 1, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.clickable {
+                            Text(text = todo.note, color = buttonColor, maxLines = 1, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.clickable {
                                 onTodo = todo
                                 showTodoDialog = true
                             })
@@ -659,9 +660,9 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 }
             }
         }
-        if (episode.tagsAsString.isNotBlank()) Text("Tags: ${episode.tagsAsString}", color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable { showTagsSettingDialog = true })
+        if (episode.tagsAsString.isNotBlank()) Text("Tags: ${episode.tagsAsString}", color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable { showTagsSettingDialog = true })
         if (episode.comment.isNotBlank()) {
-            Text(stringResource(R.string.comments), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable { showEditComment = true })
+            Text(stringResource(R.string.comments), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable { showEditComment = true })
             Text(episode.comment, color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 15.dp, bottom = 5.dp))
         }
         if (episode.marks.isNotEmpty()) {
@@ -741,9 +742,9 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                     })
                 }
             }
-            Text(stringResource(R.string.related), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 10.dp, bottom = 10.dp).clickable { showRelated = true })
+            Text(stringResource(R.string.related), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 10.dp, bottom = 10.dp).clickable { showRelated = true })
         }
-        if (episode.chapters.isEmpty() && !episode.podcastIndexChapterUrl.isNullOrBlank()) Text(stringResource(id = R.string.download_chapters), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable(onClick = { runOnIOScope { loadChapters(episode = episode, false) } }))
+        if (episode.chapters.isEmpty() && !episode.podcastIndexChapterUrl.isNullOrBlank()) Text(stringResource(id = R.string.download_chapters), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable(onClick = { runOnIOScope { loadChapters(episode = episode, false) } }))
         if (episode.chapters.isNotEmpty()) {
             val chapters = remember { episode.chapters }
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)) {
@@ -752,26 +753,26 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 for (index in chapters.indices) {
                     val ch = remember(index) { chapters[index] }
                     //            Text(ch.link?: "")
-                    Row(modifier = Modifier.clickable {
-                        when {
-                            theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id == episode.id -> {
-                                if (!theatres[0].mPlayerFlow.value!!.isPlaying) theatres[0].mPlayerFlow.value?.play()
-                                theatres[0].mPlayerFlow.value?.seekTo(ch.start.toInt())
+                    Row(modifier = Modifier) {
+                        Text(durationStringFull(ch.start.toInt()), color = buttonColor, modifier = Modifier.padding(end = 5.dp).clickable {
+                            when {
+                                theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id == episode.id -> {
+                                    if (!theatres[0].mPlayerFlow.value!!.isPlaying) theatres[0].mPlayerFlow.value?.play()
+                                    theatres[0].mPlayerFlow.value?.seekTo(ch.start.toInt())
+                                }
+                                theatres[1].mPlayerFlow.value?.curMediaFlow?.value?.id == episode.id -> {
+                                    if (!theatres[1].mPlayerFlow.value!!.isPlaying) theatres[1].mPlayerFlow.value?.play()
+                                    theatres[1].mPlayerFlow.value?.seekTo(ch.start.toInt())
+                                }
+                                else -> {
+                                    theatres[0].mPlayerFlow.value?.pause(false)
+                                    val episode_ = upsertBlk(episode) { it.position = ch.start.toInt() }
+                                    PlaybackStarter(episode_).shouldStreamThisTime(episode_.fileUrl == null).start(0)
+                                }
                             }
-                            theatres[1].mPlayerFlow.value?.curMediaFlow?.value?.id == episode.id -> {
-                                if (!theatres[1].mPlayerFlow.value!!.isPlaying) theatres[1].mPlayerFlow.value?.play()
-                                theatres[1].mPlayerFlow.value?.seekTo(ch.start.toInt())
-                            }
-                            else -> {
-                                theatres[0].mPlayerFlow.value?.pause(false)
-                                val episode_ = upsertBlk(episode) { it.position = ch.start.toInt() }
-                                PlaybackStarter(episode_).shouldStreamThisTime(episode_.fileUrl == null).start(0)
-                            }
-                        }
-                        curChapterIndex = index
-                    }) {
-                        Text(durationStringFull(ch.start.toInt()), color = buttonColor, modifier = Modifier.padding(end = 5.dp))
-                        Text(ch.title ?: "No title", color = textColor, fontWeight = if (index == curChapterIndex) FontWeight.Bold else FontWeight.Normal)
+                            curChapterIndex = index
+                        })
+                        SelectionContainer { Text(ch.title ?: "No title", color = textColor, fontWeight = if (index == curChapterIndex) FontWeight.Bold else FontWeight.Normal) }
                     }
                 }
             }
@@ -809,7 +810,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
         })
         if (dlLogs.isNotEmpty() || playerLogs.isNotEmpty()) {
             var showLogs by remember { mutableStateOf(false) }
-            Text(stringResource(R.string.logs), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 16.dp, bottom = 4.dp).clickable { showLogs = !showLogs})
+            Text(stringResource(R.string.logs), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 16.dp, bottom = 4.dp).clickable { showLogs = !showLogs})
             if (showLogs) Column(modifier = Modifier.padding(10.dp)) {
                 for (log in dlLogs) {
                     val message = stringResource(if (!log.isSuccessful) R.string.failed else R.string.download_successful)
@@ -1037,7 +1038,7 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
             var ymdhm by remember { mutableStateOf("${zdt.year}.${zdt.month.number}.${zdt.day}.${zdt.hour}.${zdt.minute}") }
             var setDueTime by remember { mutableStateOf(editDueTime) }
             Row {
-                Text(text = stringResource(R.string.set_due_time), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 10.dp).clickable(onClick = {
+                Text(text = stringResource(R.string.set_due_time), color = buttonColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 10.dp).clickable(onClick = {
                     editDueTime = !editDueTime
                     //                    if (todo != null) dueTime = if (editDueTime) todo.dueTime else 0
                 }))
@@ -1110,7 +1111,7 @@ fun EpisodeTimersDialog(episode: Episode, onDismiss: () -> Unit, cb: (Timer)->Un
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             for (timer in timers) {
                 Row {
-                    Text(fullDateTimeString(timer.triggerTime), modifier = Modifier.clickable {
+                    Text(fullDateTimeString(timer.triggerTime), color = buttonColor, modifier = Modifier.clickable {
                         cb(timer)
                         onDismiss()
                     })

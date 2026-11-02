@@ -456,7 +456,7 @@
   <string name="statistics_total_duration">Durada total (estimada):</string>
   <string name="statistics_episodes_on_device">Episodis al dispositiu:</string>
   <string name="statistics_space_used">Espai utilitzat:</string>
-  <string name="statistics_episodes_started_total">Episodis iniciats/total:</string>
+
 
   <string name="edit_url_menu">Edita l\'enllaç del canal</string>
   <string name="edit_url_confirmation_msg">Canviar l\'adreça RSS pot trencar fàcilment l\'estat de reproducció i les llistes d\'episodis del podcast. NO recomanem canviar-lo i NO oferirem suport si alguna cosa va malament. Això no es pot desfer. La subscripció trencada NO es pot reparar simplement canviant l\'adreça. Us suggerim que creeu una còpia de seguretat abans de continuar.</string>

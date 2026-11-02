@@ -453,7 +453,7 @@
   <string name="statistics_total_duration">Total lengde (estimert):</string>
   <string name="statistics_episodes_on_device">Episoder på enhenten:</string>
   <string name="statistics_space_used">Minne brukt:</string>
-  <string name="statistics_episodes_started_total">Episoder startet/total: </string>
+
 
   <string name="edit_url_menu">Endre feed URL</string>
   <string name="edit_url_confirmation_msg">Å endre RSS adressen kan lett ødelegge avspillingsstatuset og episode køen av podcastene. We anbefaler IKKE å endre den og vil ikke tilby noen som helst støtte hvis noe slutte å virke. Dette kan ikke angres. En ødelagt abonnement kan ikke fikses med å endre adressen tilbake. Vi anbefaler å lage en sikkerhetskopi før du forsetter.</string>

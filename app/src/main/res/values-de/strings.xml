@@ -575,7 +575,7 @@
     <string name="statistics_total_duration">Gesamtdauer (geschätzt):</string>
     <string name="statistics_episodes_on_device">Episoden auf dem Gerät:</string>
     <string name="statistics_space_used">Verwendeter Speicherplatz:</string>
-    <string name="statistics_episodes_started_total">Episoden gestartet/gesamt:</string>
+
 
 
     <string name="feeds_related_to_author">Feeds die wahrscheinlich mit dem Autor verwandt sind »</string>

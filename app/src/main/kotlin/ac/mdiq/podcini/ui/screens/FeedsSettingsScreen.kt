@@ -46,6 +46,7 @@ import ac.mdiq.podcini.ui.compose.TagSettingDialog
 import ac.mdiq.podcini.ui.compose.TagType
 import ac.mdiq.podcini.ui.compose.VideoModeDialog
 import ac.mdiq.podcini.ui.compose.borderColor
+import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.filterChipBorder
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.compose.trackAsTextField
@@ -307,7 +308,7 @@ fun FeedsSettingsScreen() {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(ImageVector.vectorResource(id = R.drawable.rounded_books_movies_and_music_24), "", tint = textColor, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.pref_parent_volume), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog = true })
+                    Text(text = stringResource(R.string.pref_parent_volume), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog = true })
                 }
                 Text(text = curVolumeName + " : " + stringResource(R.string.pref_parent_volume_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
@@ -325,7 +326,7 @@ fun FeedsSettingsScreen() {
                 Row(Modifier.fillMaxWidth()) {
                     Icon(ImageVector.vectorResource(id = R.drawable.ic_tag), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.tags_label), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showTagsSettingDialog = true })
+                    Text(text = stringResource(R.string.tags_label), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showTagsSettingDialog = true })
                 }
                 Text(text = stringResource(R.string.feed_tags_summary), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
@@ -382,7 +383,7 @@ fun FeedsSettingsScreen() {
                 Row(Modifier.fillMaxWidth()) {
                     Icon(ImageVector.vectorResource(id = R.drawable.ic_playlist_play), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.pref_feed_associated_queue), style = CustomTextStyles.titleCustom, color = textColor,
+                    Text(text = stringResource(R.string.pref_feed_associated_queue), style = CustomTextStyles.titleCustom, color = buttonColor,
                         modifier = Modifier.clickable {
                             selectedOption = feedToSet.queueText
                             showDialog = true
@@ -418,7 +419,7 @@ fun FeedsSettingsScreen() {
                     Row(Modifier.fillMaxWidth()) {
                         Icon(ImageVector.vectorResource(id = R.drawable.outline_square_dot_24), "", tint = textColor)
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = stringResource(R.string.pref_feed_type), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog = true })
+                        Text(text = stringResource(R.string.pref_feed_type), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog = true })
                     }
                 }
                 Text(text = (feedType?.name?:"null") + " : " + stringResource(R.string.pref_feed_type_sum), style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.combinedClickable(onClick = {}, onLongClick = { showDialog = true }))
@@ -496,7 +497,7 @@ fun FeedsSettingsScreen() {
                 Row(Modifier.fillMaxWidth()) {
                     Icon(ImageVector.vectorResource(id = R.drawable.baseline_audiotrack_24), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.pref_feed_audio_type), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog = true })
+                    Text(text = stringResource(R.string.pref_feed_audio_type), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog = true })
                     Spacer(modifier = Modifier.width(30.dp))
                     Text(audioType, style = MaterialTheme.typography.bodyMedium, color = textColor)
                 }
@@ -535,7 +536,7 @@ fun FeedsSettingsScreen() {
                         }
                         Icon(Icons.Filled.Delete, "", tint = textColor)
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = stringResource(R.string.video_mode), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog = true })
+                        Text(text = stringResource(R.string.video_mode), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog = true })
                         Spacer(modifier = Modifier.width(30.dp))
                         Text(text = stringResource(videoModeSummaryResId), style = MaterialTheme.typography.bodyMedium, color = textColor)
                     }
@@ -570,7 +571,7 @@ fun FeedsSettingsScreen() {
                     Row(Modifier.fillMaxWidth()) {
                         Icon(ImageVector.vectorResource(id = R.drawable.baseline_audiotrack_24), "", tint = textColor)
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = stringResource(R.string.pref_feed_audio_quality), style = CustomTextStyles.titleCustom, color = textColor,
+                        Text(text = stringResource(R.string.pref_feed_audio_quality), style = CustomTextStyles.titleCustom, color = buttonColor,
                             modifier = Modifier.clickable {
 //                                audioQuality = feed.audioQualitySetting.tag
                                 showDialog = true
@@ -604,7 +605,7 @@ fun FeedsSettingsScreen() {
                         Row(Modifier.fillMaxWidth()) {
                             Icon(ImageVector.vectorResource(id = R.drawable.ic_videocam), "", tint = textColor)
                             Spacer(modifier = Modifier.width(20.dp))
-                            Text(text = stringResource(R.string.pref_feed_video_quality), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog = true })
+                            Text(text = stringResource(R.string.pref_feed_video_quality), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog = true })
                             Spacer(modifier = Modifier.width(30.dp))
                             Text(videoQuality, style = MaterialTheme.typography.bodyMedium, color = textColor)
                         }
@@ -678,7 +679,7 @@ fun FeedsSettingsScreen() {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(ImageVector.vectorResource(id = R.drawable.play_stream_svgrepo_com), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.preferred_action), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showChooseAction = true })
+                    Text(text = stringResource(R.string.preferred_action), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showChooseAction = true })
                 }
                 Text(text = stringResource(R.string.preferred_action_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
@@ -691,7 +692,7 @@ fun FeedsSettingsScreen() {
                         onDismiss = { showDialog.value = false }) { newSpeed -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.playSpeed = newSpeed } } } }
                     Icon(ImageVector.vectorResource(id = R.drawable.ic_playback_speed), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.playback_speed), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                    Text(text = stringResource(R.string.playback_speed), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                 }
                 Text(text = stringResource(R.string.pref_feed_playback_speed_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
@@ -749,7 +750,7 @@ fun FeedsSettingsScreen() {
                     if (showDialog.value) AutoSkipDialog(onDismiss = { showDialog.value = false })
                     Icon(ImageVector.vectorResource(id = R.drawable.ic_skip_24dp), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.pref_feed_skip), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                    Text(text = stringResource(R.string.pref_feed_skip), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                 }
                 Text(text = stringResource(R.string.pref_feed_skip_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
@@ -783,7 +784,7 @@ fun FeedsSettingsScreen() {
                     if (showDialog.value) VolumeAdaptionDialog(onDismiss = { showDialog.value = false })
                     Icon(ImageVector.vectorResource(id = R.drawable.ic_volume_adaption), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.volume_adaptation), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                    Text(text = stringResource(R.string.volume_adaptation), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                 }
                 Text(text = stringResource(R.string.volume_adaptation_summary), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
@@ -869,7 +870,7 @@ fun FeedsSettingsScreen() {
                 Row(Modifier.fillMaxWidth()) {
                     Icon(ImageVector.vectorResource(id = R.drawable.arrows_sort), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.sort), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showSortDialog = true })
+                    Text(text = stringResource(R.string.sort), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showSortDialog = true })
                 }
                 Text(text = stringResource(R.string.sort_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
@@ -884,7 +885,7 @@ fun FeedsSettingsScreen() {
                 Row(Modifier.fillMaxWidth()) {
                     Icon(ImageVector.vectorResource(id = R.drawable.ic_filter), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
-                    Text(text = stringResource(R.string.filter), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showFilterDialog = true })
+                    Text(text = stringResource(R.string.filter), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showFilterDialog = true })
                 }
                 Text(text = stringResource(R.string.filter_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
@@ -981,7 +982,7 @@ fun FeedsSettingsScreen() {
                     Row(Modifier.fillMaxWidth()) {
                         val showDialog = remember { mutableStateOf(false) }
                         if (showDialog.value) SetAutoDLEQCacheDialog(onDismiss = { showDialog.value = false })
-                        Text(text = stringResource(R.string.pref_episode_cache_title), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                        Text(text = stringResource(R.string.pref_episode_cache_title), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                         Spacer(modifier = Modifier.width(30.dp))
                         Text(newCache.toString(), style = MaterialTheme.typography.bodyMedium, color = textColor)
                     }
@@ -1062,7 +1063,7 @@ fun FeedsSettingsScreen() {
                         Row(Modifier.fillMaxWidth()) {
                             val showDialog = remember { mutableStateOf(false) }
                             if (showDialog.value) AutoDLEQPolicyDialog(onDismiss = { showDialog.value = false })
-                            Text(text = stringResource(R.string.feed_automation_policy) + ":", style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                            Text(text = stringResource(R.string.feed_automation_policy) + ":", style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                             Text(stringResource(selectedPolicy.resId), modifier = Modifier.padding(start = 20.dp))
                         }
                     }
@@ -1188,7 +1189,7 @@ fun FeedsSettingsScreen() {
                             Row(Modifier.fillMaxWidth()) {
                                 val showDialog = remember { mutableStateOf(false) }
                                 if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.INCLUDE, onDismiss = { showDialog.value = false }) { filter -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
-                                Text(text = stringResource(R.string.episode_inclusive_filters_label), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                                Text(text = stringResource(R.string.episode_inclusive_filters_label), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                             }
                             Text(text = stringResource(R.string.episode_filters_description), style = MaterialTheme.typography.bodyMedium, color = textColor)
                         }
@@ -1197,7 +1198,7 @@ fun FeedsSettingsScreen() {
                             Row(Modifier.fillMaxWidth()) {
                                 val showDialog = remember { mutableStateOf(false) }
                                 if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.EXCLUDE, onDismiss = { showDialog.value = false }) { filter -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
-                                Text(text = stringResource(R.string.episode_exclusive_filters_label), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                                Text(text = stringResource(R.string.episode_exclusive_filters_label), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                             }
                             Text(text = stringResource(R.string.episode_filters_description), style = MaterialTheme.typography.bodyMedium, color = textColor)
                         }
@@ -1284,7 +1285,7 @@ fun FeedsSettingsScreen() {
                         if (showDialog.value) AutoDeleteDialog(onDismiss = { showDialog.value = false })
                         Icon(Icons.Filled.Delete, "", tint = textColor)
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = stringResource(R.string.auto_delete_episode), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                        Text(text = stringResource(R.string.auto_delete_episode), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                     }
                     Text(text = stringResource(R.string.auto_delete_sum) + ": " + stringResource(autoDeleteSummaryResId), style = MaterialTheme.typography.bodyMedium, color = textColor)
                 }
@@ -1314,7 +1315,7 @@ fun FeedsSettingsScreen() {
                 if (showDialog.value) RepeatIntervalsDialog(onDismiss = { showDialog.value = false })
                 Icon(ImageVector.vectorResource(id = R.drawable.outline_repeat_24), "", tint = textColor)
                 Spacer(modifier = Modifier.width(20.dp))
-                Text(text = stringResource(R.string.pref_feed_intervals), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                Text(text = stringResource(R.string.pref_feed_intervals), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
             }
             Text(text = stringResource(R.string.pref_feed_intervals_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
 
@@ -1351,7 +1352,7 @@ fun FeedsSettingsScreen() {
                         if (showDialog.value) AuthenticationDialog(onDismiss = { showDialog.value = false })
                         Icon(ImageVector.vectorResource(id = R.drawable.ic_key), "", tint = textColor)
                         Spacer(modifier = Modifier.width(20.dp))
-                        Text(text = stringResource(R.string.authentication_label), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showDialog.value = true })
+                        Text(text = stringResource(R.string.authentication_label), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                     }
                     Text(text = stringResource(R.string.authentication_descr), style = MaterialTheme.typography.bodyMedium, color = textColor)
                 }

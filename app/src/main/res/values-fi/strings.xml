@@ -573,7 +573,7 @@
     <string name="statistics_total_duration">Koknaiskesto (arvio):</string>
     <string name="statistics_episodes_on_device">Jaksoja laitteella:</string>
     <string name="statistics_space_used">Tilaa käytetty:</string>
-    <string name="statistics_episodes_started_total">Aloitettuja jaksoja/yhteensä:</string>
+
 
 
     <string name="feeds_related_to_author">Syötteet, jotka todennäköisesti liittyvät tekijään »</string>

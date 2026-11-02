@@ -12,6 +12,7 @@ import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.toIPC
 import ac.mdiq.podcini.storage.specs.AVQuality
 import ac.mdiq.podcini.ui.compose.borderColor
+import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.filterChipBorder
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
@@ -343,12 +344,12 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
             Card(modifier = Modifier.width(300.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
                 Column(modifier = Modifier.padding(8.dp)) {
                     Text(stringResource(R.string.stream_composer), color = textColor, style = MaterialTheme.typography.titleLarge)
-                    if (client?.attributes?.hasVideo == true) Text(stringResource(R.string.use_muxed), color = if (useMuxed) Color.Yellow else textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { useMuxed = !useMuxed })
+                    if (client?.attributes?.hasVideo == true) Text(stringResource(R.string.use_muxed), color = if (useMuxed) Color.Yellow else buttonColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { useMuxed = !useMuxed })
                     if (client?.attributes?.hasVideo != true || (!useMuxed && client.attributes?.hasSeparateAVs == true)) {
                         var showLocales by remember { mutableStateOf(false) }
                         Text(stringResource(R.string.audio)+":", color = textColor, style = MaterialTheme.typography.titleMedium)
                         Text(stringResource(R.string.audio_stream_set_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
-                        Text("${stringResource(R.string.locale)}: ${locale ?: "null"}", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showLocales = !showLocales })
+                        Text("${stringResource(R.string.locale)}: ${locale ?: "null"}", color = buttonColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showLocales = !showLocales })
                         if (showLocales && locales.size > 1) FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                             val langs = remember { curLocales.toList() }
                             for (index in langs.indices) {
@@ -371,7 +372,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                             }
                         }
                         var showProts by remember { mutableStateOf(false) }
-                        Text("${stringResource(R.string.protocol)}: $prot", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showProts = !showProts })
+                        Text("${stringResource(R.string.protocol)}: $prot", color = buttonColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showProts = !showProts })
                         if (showProts && prots.size > 1) {
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                 for (index in prots.indices) {
@@ -391,7 +392,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                             }
                         }
                         var showCodecs by remember { mutableStateOf(false) }
-                        Text("${stringResource(R.string.codec)}: $codec", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showCodecs = !showCodecs })
+                        Text("${stringResource(R.string.codec)}: $codec", color = buttonColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showCodecs = !showCodecs })
                         if (showCodecs && codecs.size > 1) {
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                 for (index in codecs.indices) {
@@ -420,7 +421,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                         Text(stringResource(R.string.video)+":", color = textColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 3.dp))
                         Text(stringResource(R.string.video_stream_set_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                         var showProts by remember { mutableStateOf(false) }
-                        Text("${stringResource(R.string.protocol)}: $vprot", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showProts = !showProts })
+                        Text("${stringResource(R.string.protocol)}: $vprot", color = buttonColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showProts = !showProts })
                         if (showProts && vprots.size > 1) {
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                 for (index in vprots.indices) {
@@ -442,7 +443,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                             }
                         }
                         var showCodecs by remember { mutableStateOf(false) }
-                        Text("${stringResource(R.string.video)} ${stringResource(R.string.codec)}: $vcodec", color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showCodecs = !showCodecs })
+                        Text("${stringResource(R.string.video)} ${stringResource(R.string.codec)}: $vcodec", color = buttonColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { showCodecs = !showCodecs })
                         if (showCodecs && vcodecs.size > 1) {
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                 for (index in vcodecs.indices) {

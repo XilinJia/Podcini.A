@@ -8,7 +8,6 @@ import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.playback.PlaybackService
 import ac.mdiq.podcini.playback.PlaybackService.Companion.mediaBrowser
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
-
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.buildListInfo
@@ -773,7 +772,7 @@ fun QueuesScreen(id: Long = -1L) {
                 }
             }
         }
-        if (episodeForInfo != null) EpisodeScreen(episodeForInfo!!, listFlow = vm.episodesSortedFlow, allowOpenFeed = true)
+        if (episodeForInfo != null) EpisodeScreen(episodeForInfo!!, listFlow = if (vm.queuesMode == QueuesScreenMode.Bin) vm.binEpisodesFlow else vm.episodesSortedFlow, allowOpenFeed = true)
     }
 }
 

@@ -55,6 +55,7 @@ import ac.mdiq.podcini.ui.compose.SendToDevice
 import ac.mdiq.podcini.ui.compose.TagSettingDialog
 import ac.mdiq.podcini.ui.compose.TagType
 import ac.mdiq.podcini.ui.compose.borderColor
+import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.episodeForInfo
 import ac.mdiq.podcini.ui.compose.feedOperationText
 import ac.mdiq.podcini.ui.compose.textColor
@@ -565,12 +566,12 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                     }
                     if (feed?.inNormalVolume != true) Text(stringResource(R.string.archived_feed), color = textColor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp, bottom = 4.dp))
                     if (deletionLogs.isNotEmpty()) {
-                        Text(stringResource(R.string.feed_likely_removed), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 5.dp))
+                        Text(stringResource(R.string.feed_likely_removed), color = textColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 5.dp))
                         for (sLog in deletionLogs) {
                             Text(sLog.comment, color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 15.dp, bottom = 5.dp))
                             val ratingRes = remember(sLog.id) { fromCode(sLog.rating).res }
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 15.dp, bottom = 5.dp)) {
-                                Text(stringResource(R.string.rating_label), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(end = 5.dp))
+                                Text(stringResource(R.string.rating_label), color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(end = 5.dp))
                                 Icon(imageVector = ImageVector.vectorResource(ratingRes), tint = MaterialTheme.colorScheme.tertiary, contentDescription = null)
                             }
                             if (!sLog.description.isNullOrBlank()) Text(sLog.description ?: "", color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 15.dp, bottom = 5.dp))
@@ -588,18 +589,18 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
 
             Text("Associated queue: ${feed?.queue?.name?:"None"}", color = textColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 10.dp, bottom = 5.dp))
 
-            Text("Tags: ${feed?.tagsAsString?:""}", color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(top = 10.dp, bottom = 5.dp).clickable { showTagsSettingDialog = true })
-            Text(stringResource(R.string.comments) + if (feed?.comment.isNullOrBlank()) " (Add)" else "", color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom,
+            Text("Tags: ${feed?.tagsAsString?:""}", color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(top = 10.dp, bottom = 5.dp).clickable { showTagsSettingDialog = true })
+            Text(stringResource(R.string.comments) + if (feed?.comment.isNullOrBlank()) " (Add)" else "", color = buttonColor, style = CustomTextStyles.titleCustom,
                 modifier = Modifier.padding(top = 10.dp, bottom = 5.dp).clickable {
                     editCommentText = TextFieldValue((if (feed?.comment.isNullOrBlank()) "" else feed!!.comment + "\n") + fullDateTimeString(localTime) + ":\n")
                     showEditComment = true
                 })
             if (!feed?.comment.isNullOrBlank()) SelectionContainer { Text(feed?.comment ?: "", color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 15.dp, bottom = 10.dp)) }
 
-            Text(stringResource(R.string.statistics_label), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp, bottom = 4.dp).clickable { showFeedStats = true } )
+            Text(stringResource(R.string.statistics_label), color = buttonColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp, bottom = 4.dp).clickable { showFeedStats = true } )
 
             if (feed?.isSynthetic() == false) {
-                Text(stringResource(R.string.feeds_related_to_author), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                if (!feed?.author.isNullOrBlank()) Text(stringResource(R.string.feeds_related_to_author), color = buttonColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 10.dp).clickable {
                         searchFeedsOnline(query = "${feed?.author} podcasts")
                         navTo(FindFeeds)
@@ -607,7 +608,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                 Text(stringResource(R.string.full_update) + ": ${formatDateTimeFlex(feed?.lastFullUpdateTime?:0L)}", modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
                 if (vm.logs.isNotEmpty()) {
                     var showLogs by remember { mutableStateOf(false) }
-                    Text(stringResource(R.string.logs), color = MaterialTheme.colorScheme.primary, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp).clickable { showLogs = !showLogs})
+                    Text(stringResource(R.string.logs), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp).clickable { showLogs = !showLogs})
                     if (showLogs) Column(modifier = Modifier.padding(10.dp)) {
                         for (log in vm.logs) {
                             val message = stringResource(if (!log.isSuccessful) R.string.failed else R.string.download_successful)
@@ -624,14 +625,14 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                     }
                 }
                 AsyncImage(model = feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
-                Text(text = feed?.downloadUrl ?: "", color = textColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 15.dp).combinedClickable(
+                Text(text = feed?.downloadUrl ?: "", color = buttonColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 15.dp).combinedClickable(
                     onClick = { feed?.downloadUrl.takeIf { !it.isNullOrBlank() }?.let { openInSystemDefault(it) } },
                     onLongClick = { feed?.downloadUrl.takeIf { !it.isNullOrBlank() }?.let { copyToClipboard(it, it) } }
                 ))
                 if (!feed?.fundings.isNullOrEmpty()) {
                     for (fund in feed!!.fundings) {
                         val url = fund.url.takeIf { !it.isNullOrBlank() } ?: continue
-                        Text("${fund.content?:""} $url", color = textColor, modifier = Modifier.clickable {
+                        Text("${fund.content?:""} $url", color = buttonColor, modifier = Modifier.clickable {
                             val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                             try { context.startActivity(intent) } catch (e: ActivityNotFoundException) { Loge(TAG, e,"No app found to handle this link") }
                         })

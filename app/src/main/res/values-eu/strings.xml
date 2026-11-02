@@ -422,7 +422,7 @@
   <string name="statistics_total_duration">Iraupena guztira (zenbatespena):</string>
   <string name="statistics_episodes_on_device">Gailuko saioak:</string>
   <string name="statistics_space_used">Erabilitako espazioa:</string>
-  <string name="statistics_episodes_started_total">Hasitako kapituluak/guztira:</string>
+
 
   <string name="edit_url_menu">Editatu jarioaren URLa</string>
   <!--PodciniSP-->

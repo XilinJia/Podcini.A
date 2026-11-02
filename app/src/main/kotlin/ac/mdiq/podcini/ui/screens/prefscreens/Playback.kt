@@ -19,6 +19,7 @@ import ac.mdiq.podcini.ui.compose.SetAVQuality
 import ac.mdiq.podcini.ui.compose.TitleSummaryActionColumn
 import ac.mdiq.podcini.ui.compose.TitleSummarySwitchRow
 import ac.mdiq.podcini.ui.compose.VideoModeDialog
+import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.compose.trackAsTextField
@@ -207,7 +208,7 @@ fun PlaybackScreen() {
             }
             Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Row(Modifier.fillMaxWidth()) {
-                    Text(text = stringResource(R.string.pref_feed_audio_quality), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showAudioDialog = true })
+                    Text(text = stringResource(R.string.pref_feed_audio_quality), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showAudioDialog = true })
                     Spacer(modifier = Modifier.width(30.dp))
                     Text(audioQuality.tag, style = MaterialTheme.typography.bodyMedium, color = textColor)
                 }
@@ -220,7 +221,7 @@ fun PlaybackScreen() {
             }
             Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Row(Modifier.fillMaxWidth()) {
-                    Text(text = stringResource(R.string.pref_feed_video_quality), style = CustomTextStyles.titleCustom, color = textColor, modifier = Modifier.clickable { showVideoDialog = true })
+                    Text(text = stringResource(R.string.pref_feed_video_quality), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showVideoDialog = true })
                     Spacer(modifier = Modifier.width(30.dp))
                     Text(videoQuality.tag, style = MaterialTheme.typography.bodyMedium, color = textColor)
                 }

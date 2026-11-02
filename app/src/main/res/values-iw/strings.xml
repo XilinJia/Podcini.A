@@ -482,7 +482,7 @@
   <string name="statistics_total_duration">משך זמן כולל (הערכה):</string>
   <string name="statistics_episodes_on_device">פרקים על המכשיר הזה:</string>
   <string name="statistics_space_used">מקום תפוס:</string>
-  <string name="statistics_episodes_started_total">פרקים שהותחלו/סך הכול:</string>
+
 
   <string name="edit_url_menu">עריכת כתובת ערוץ</string>
   <string name="edit_url_confirmation_msg">החלפת כתובת ה־RSS יכולה בקלות לפגוע במצב הנגינה והצגת הפרקים של הפודקאסט. אנו לא ממליצים להחליף אותה ולא נספק תמיכה אם משהו ישתבש. זאת פעולה בלתי הפיעה. לא ניתן לשקם מינויים פגומים על ידי החזרת הכתובת הקודמת. אנו מציעים לגבות באופן יסודי בטרם בחירה להמשיך בתהליך.</string>

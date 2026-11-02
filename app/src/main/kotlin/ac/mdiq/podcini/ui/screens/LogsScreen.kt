@@ -28,6 +28,7 @@ import ac.mdiq.podcini.ui.compose.EpisodeLazyColumn
 import ac.mdiq.podcini.ui.compose.EpisodeScreen
 import ac.mdiq.podcini.ui.compose.LayoutMode
 import ac.mdiq.podcini.ui.compose.borderColor
+import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.episodeForInfo
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
@@ -216,9 +217,9 @@ fun LogsScreen() {
                 Text(message, color = textColor)
                 Row(Modifier.padding(top = 10.dp)) {
                     Spacer(Modifier.weight(0.5f))
-                    Text(stringResource(R.string.copy_to_clipboard), color = textColor, modifier = Modifier.clickable { copyToClipboard("Shared status", message) })
+                    Text(stringResource(R.string.copy_to_clipboard), color = buttonColor, modifier = Modifier.clickable { copyToClipboard("Shared status", message) })
                     Spacer(Modifier.weight(0.3f))
-                    Text("OK", color = textColor, modifier = Modifier.clickable { onDismiss() })
+                    Text("OK", color = buttonColor, modifier = Modifier.clickable { onDismiss() })
                     Spacer(Modifier.weight(0.2f))
                 }
             }
@@ -370,7 +371,7 @@ fun LogsScreen() {
                 Text(log.link ?: "None", color = textColor, style = MaterialTheme.typography.labelSmall)
                 Row(Modifier.padding(top = 10.dp)) {
                     Spacer(Modifier.weight(0.3f))
-                    Text("OK", color = textColor, modifier = Modifier.clickable { onDismiss() })
+                    Text("OK", color = buttonColor, modifier = Modifier.clickable { onDismiss() })
                     Spacer(Modifier.weight(0.2f))
                 }
             }
@@ -438,9 +439,9 @@ fun LogsScreen() {
                 Row(Modifier.padding(top = 10.dp)) {
                     Spacer(Modifier.weight(0.2f))
                     val message = stringResource(status.reason?.res ?: R.string.download_error_error_unknown) + "\n" + status.reasonDetailed + "\n" + url
-                    Text(stringResource(R.string.copy_to_clipboard), color = textColor, modifier = Modifier.clickable { copyToClipboard(context.getString(R.string.download_error_details), message) })
+                    Text(stringResource(R.string.copy_to_clipboard), color = buttonColor, modifier = Modifier.clickable { copyToClipboard(context.getString(R.string.download_error_details), message) })
                     Spacer(Modifier.weight(0.3f))
-                    if (!status.isSuccessful) Text(stringResource(R.string.retry), color = textColor, modifier = Modifier.clickable {
+                    if (!status.isSuccessful) Text(stringResource(R.string.retry), color = buttonColor, modifier = Modifier.clickable {
                         if (feed != null) runOnIOScope { FeedUpdater(listOf(feed!!)).start() }
                         else if (media != null) {
                             ActionButton(media!!, typeInit = ButtonTypes.DOWNLOAD).onClick()
@@ -450,7 +451,7 @@ fun LogsScreen() {
                     })
                     Spacer(Modifier.weight(0.2f))
                     val bynText = if (feed != null || media != null) stringResource(R.string.open) else "OK"
-                    Text(bynText, color = textColor, modifier = Modifier.clickable {
+                    Text(bynText, color = buttonColor, modifier = Modifier.clickable {
                         if (feed != null) navTo(FeedDetails(feedId = feed!!.id, modeName = FeedScreenMode.Info.name))
                         else if (media != null) navTo(EpisodeInfo(episodeId = media!!.id))
                         onDismiss()

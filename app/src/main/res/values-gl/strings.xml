@@ -478,7 +478,7 @@
   <string name="statistics_total_duration">Duración total (estimada):</string>
   <string name="statistics_episodes_on_device">Episodios no dispositivo:</string>
   <string name="statistics_space_used">Espazo utilizado:</string>
-  <string name="statistics_episodes_started_total">Episodios iniciados/total:</string>
+
 
   <string name="edit_url_menu">Editar URL da fonte</string>
   <string name="edit_url_confirmation_msg">Ao mudar o enderezo RSS podes quebrar o estado da reprodución e as listas de episodios do podcast. Non recomendamos cambialo e NON proporcionamos axuda se algo vai mal. Non ten volta atrás. Unha subscrición mal configurada NON PODE ser reparada simplemente volvendo ao enderezo anterior. Suxerimos crear unha copia de apoio antes de continuar.</string>

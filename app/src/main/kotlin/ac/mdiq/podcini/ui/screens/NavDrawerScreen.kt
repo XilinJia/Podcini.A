@@ -136,7 +136,7 @@ fun NavDrawerScreen() {
             for ((key, value) in navMap) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 15.dp)) {
                     Icon(imageVector = ImageVector.vectorResource(value.iconRes), tint = textColor, contentDescription = key, modifier = Modifier.padding(start = 10.dp))
-                    Text(stringResource(value.nameRes), color = textColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 20.dp).clickable {
+                    Text(stringResource(value.nameRes), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 20.dp).clickable {
                         Logd(TAG) { "nav.key: $key" }
                         if (key == Screens.Library.name) feedIdsToUse = listOf()
                         navTo(value.navKey, PopMode.Clear)

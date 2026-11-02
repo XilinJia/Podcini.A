@@ -582,7 +582,7 @@
     <string name="statistics_total_duration">الزمن الكامل(تقريبيا):</string>
     <string name="statistics_episodes_on_device">حلقات مسجلة على هذا الجهاز:</string>
     <string name="statistics_space_used">المساحة المستخدمة:</string>
-    <string name="statistics_episodes_started_total">الحلقات التي بدأت / المجموع:</string>
+
 
 
     <string name="feeds_related_to_author">التغذية التي يرجح أن تكون ذات صلة بالمؤلف ”</string>

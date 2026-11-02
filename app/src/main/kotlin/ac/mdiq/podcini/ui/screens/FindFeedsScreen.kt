@@ -26,6 +26,7 @@ import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.OnlineFeedItem
 import ac.mdiq.podcini.ui.compose.OpmlImportSelectionDialog
 import ac.mdiq.podcini.ui.compose.SearchBarRow
+import ac.mdiq.podcini.ui.compose.buttonColor
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Logs
@@ -184,7 +185,6 @@ fun FindFeedsScreen() {
         }
     }
 
-    val actionColor = MaterialTheme.colorScheme.tertiary
     ConfirmDialog(R.string.restore_subscriptions_label, stringResource(R.string.restore_subscriptions_summary, vm.numberOPMLFeedsToRestore.intValue), vm.showOPMLRestoreDialog) {
         vm.showProgress = true
         performRestore()
@@ -202,26 +202,26 @@ fun FindFeedsScreen() {
     var showAdvanced by remember { mutableStateOf(false) }
     if (showAdvanced) CommonPopupCard({ showAdvanced = false }) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.search_combined_label), color = actionColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
+            Text(stringResource(R.string.search_combined_label), color = buttonColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
                 searchFeedsOnline()
                 showAdvanced = false
             })
             for (client in sourceClients) {
                 val searchName = remember { client.feedSearcher?.name }
-                if (!searchName.isNullOrBlank()) Text(searchName, color = actionColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
+                if (!searchName.isNullOrBlank()) Text(searchName, color = buttonColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
                     searchFeedsOnline(searchName)
                     showAdvanced = false
                 })
             }
-            Text(stringResource(R.string.search_itunes_label), color = actionColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
+            Text(stringResource(R.string.search_itunes_label), color = buttonColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
                 searchFeedsOnline(FeedSearchers.Apple.name)
                 showAdvanced = false
             })
-            Text(stringResource(R.string.deep_search_itunes), color = actionColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
+            Text(stringResource(R.string.deep_search_itunes), color = buttonColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
                 searchFeedsOnline(FeedSearchers.AppleDeep.name)
                 showAdvanced = false
             })
-            Text(stringResource(R.string.search_podcastindex_label), color = actionColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
+            Text(stringResource(R.string.search_podcastindex_label), color = buttonColor, modifier = Modifier.padding(start = 10.dp, top = 10.dp).clickable {
                 searchFeedsOnline(FeedSearchers.PodcastIndex.name)
                 showAdvanced = false
             })
@@ -257,11 +257,11 @@ fun FindFeedsScreen() {
         ConstraintLayout(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
             val (controlRow, gridView, progressBar, empty, txtvError, butRetry, powered) = createRefs()
             Row(modifier = Modifier.padding(vertical = 8.dp, horizontal = 20.dp).fillMaxWidth().constrainAs(controlRow) { top.linkTo(parent.top) }) {
-                Text(stringResource(R.string.top_chart), color = actionColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { navTo(TopChart) })
+                Text(stringResource(R.string.top_chart), color = buttonColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { navTo(TopChart) })
                 Spacer(Modifier.weight(1f))
                 Text(searchResults.size.toString(), color = textColor, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.weight(1f))
-                Text(stringResource(R.string.local_folder),color = actionColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.clickable {
+                Text(stringResource(R.string.local_folder),color = buttonColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.clickable {
                     try { addLocalFolderLauncher.launch(null) } catch (e: ActivityNotFoundException) { Logs(TAG, e, context.getString(R.string.unable_to_start_system_file_manager)) }
                 })
             }

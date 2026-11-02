@@ -698,7 +698,7 @@
     <string name="statistics_total_duration">总期限(估计数)：</string>
     <string name="statistics_episodes_on_device">设备上的集：</string>
     <string name="statistics_space_used">使用的空间：</string>
-    <string name="statistics_episodes_started_total">剧集开始/总计：</string>
+
     <string name="feeds_related_to_author">可能与作者相关的Feeds »</string>
     <string name="edit_url_menu">编辑新闻源URL</string>
     <string name="edit_url_confirmation_msg">更改 RSS 地址可以轻松地破坏播客的播放状态和剧集列表。 我们不建议更改它，如果有任何错误，我们将不会提供支持。 此操作无法撤销。已损坏的订阅无法修复，只需更改地址就无法修复。我们建议在继续之前先创建一个备份。</string>
