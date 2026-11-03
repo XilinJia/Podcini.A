@@ -4,7 +4,6 @@ import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.FeedSearcher
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.USER_AGENT
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.sourceClients

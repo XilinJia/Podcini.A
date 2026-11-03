@@ -3,7 +3,6 @@ package ac.mdiq.podcini.sourcing.searcher
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.MediaSearcher
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.storage.utils.parseDate
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge

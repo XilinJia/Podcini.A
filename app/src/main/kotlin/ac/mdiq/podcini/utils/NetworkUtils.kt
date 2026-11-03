@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.utils
 
+import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
@@ -38,7 +39,9 @@ import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.net.URI
 
-const val PODCINI_USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+const val BROWSER_USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+
+const val PODCINI_USER_AGENT = "Podcini/${BuildConfig.VERSION_NAME} (+https://github.com/XilinJia/Podcini.A)"
 
 @Suppress("EnumEntryName")
 enum class MobileUpdateOptions(val res: Int) {

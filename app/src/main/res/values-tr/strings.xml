@@ -685,12 +685,12 @@
 
 
     <string name="auto_download_disabled_sum">Burada otomatik indirme, genel ayarlarda otomatik indirme etkinleştirildiğinde ve beslemede akış tercih edilmediğinde etkinleştirilebilir.</string>
-    <string name="statistics_length_played">Başlatılanların toplam süresi:</string>
-    <string name="statistics_time_played">Oynatılan süre:</string>
-    <string name="statistics_time_spent">Harcanan süre:</string>
-    <string name="statistics_total_duration">Toplam süre (tahmini):</string>
-    <string name="statistics_episodes_on_device">Cihazdaki bölümler:</string>
-    <string name="statistics_space_used">Kullanılan alan:</string>
+
+
+
+
+
+
 
 
     <string name="feeds_related_to_author">Yazarla ilişkili olabilecek beslemeler »</string>

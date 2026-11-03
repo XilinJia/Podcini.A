@@ -46,6 +46,7 @@ import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.NetworkUtils
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
+import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.openInSystemDefault
 import androidx.compose.foundation.clickable
@@ -254,8 +255,12 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                         val request = requestFor(item)?: return@runOnIOScope
                         val downloader = downloaderFor(request)
                         var at = HTTPAttribs()
-                        clientByEpisode(item)?.let { c-> c.withProviderBlocking { it.httpAtribsFor(request.source) }?.let { at = it } }
-                        downloader?.downloadMedia(at.useragent.takeIf { it.isNotBlank() }?: PODCINI_USER_AGENT)
+                        at.useragent = PODCINI_USER_AGENT
+                        clientByEpisode(item)?.let { c->
+                            at.useragent = BROWSER_USER_AGENT
+                            c.withProviderBlocking { it.httpAtribsFor(request.source) }?.let { at = it }
+                        }
+                        downloader?.downloadMedia(at.useragent)
                         val status = downloader?.result
                         if (status?.isSuccessful == true) updateDB(request)
                     }

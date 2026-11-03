@@ -38,6 +38,7 @@ import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
+import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import android.app.Notification
 import android.app.NotificationManager
@@ -316,8 +317,12 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
         Logd(TAG) { "starting downloader" }
         try {
             var at = HTTPAttribs()
-            clientByEpisode(media)?.let { c-> c.withProviderBlocking { it.httpAtribsFor(request.source) }?.let { at = it } }
-            downloader!!.downloadMedia(at.useragent.takeIf { it.isNotBlank() }?: PODCINI_USER_AGENT)
+            at.useragent = PODCINI_USER_AGENT
+            clientByEpisode(media)?.let { c->
+                at.useragent = BROWSER_USER_AGENT
+                c.withProviderBlocking { it.httpAtribsFor(request.source) }?.let { at = it }
+            }
+            downloader!!.downloadMedia(at.useragent)
         } catch (e: Exception) {
             Logs(TAG, e, "failed performDownload exception on downloader!!.call()")
             logDownloadResult(downloader!!.result)
@@ -353,7 +358,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
     }
     private fun generateProgressNotification(): Notification {
         val sb = StringBuilder()
-        var progressCopy: Map<String, Int>
+        var progressCopy: Map<String, Int> = mapOf()
         synchronized(notificationProgress) { progressCopy = notificationProgress.toMap() }
         for ((key, value) in progressCopy) sb.append("$key ($value%)\n")
         val bigText = sb.toString().trim { it <= ' ' }

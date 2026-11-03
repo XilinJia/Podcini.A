@@ -1,7 +1,6 @@
 package ac.mdiq.podcini.storage.utils
 
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.mediaKtor
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
 import ac.mdiq.podcini.storage.database.upsert
@@ -11,19 +10,17 @@ import ac.mdiq.podcini.storage.parser.FrameHeader
 import ac.mdiq.podcini.storage.parser.ID3Reader
 import ac.mdiq.podcini.storage.parser.VorbisCommentReader
 import ac.mdiq.podcini.storage.parser.VorbisCommentReaderException
+import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import android.content.ContentResolver
 import io.ktor.client.call.body
-import io.ktor.client.plugins.HttpTimeoutConfig
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
-import io.ktor.client.request.head
 import io.ktor.client.request.header
 import io.ktor.client.request.prepareGet
-import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.client.statement.request
 import io.ktor.http.HttpHeaders
@@ -400,7 +397,7 @@ suspend fun loadChaptersFromMedia(episode: Episode): List<Chapter> {
                 if (streamurl.isNullOrEmpty()) throw Exception("Failed loading chapters for ${episode.title}: stream url is null of empty")
                 Logd(TAG) { "loadChaptersFromMedia openSource open streaming source" }
                 mediaKtor.prepareGet(streamurl) {
-                    userAgent(PODCINI_USER_AGENT)
+                    userAgent(BROWSER_USER_AGENT)
                     header(HttpHeaders.Accept, "*/*")
                     header(HttpHeaders.Range, "bytes=0-131071")
                     timeout { requestTimeoutMillis = 30_000 }
@@ -426,33 +423,6 @@ suspend fun loadChaptersFromMedia(episode: Episode): List<Chapter> {
                     fs.source(tempPath).buffer().use { fileSource -> cb(fileSource, null) }
                 }
             }
-        }
-    }
-
-    // TODO: likely overkill
-    suspend fun openNetSourceTail(cb: (BufferedSource)->Unit) {
-        val client = getKtorClient()
-        val contentLength = client.head(streamurl!!).headers[HttpHeaders.ContentLength]?.toLong() ?: 0L
-        if (contentLength > 1_000_000L) {
-            val tailSize = 128_000L // 128KB is usually enough for the 'moov' atom
-            val startRange = contentLength - tailSize
-            try {
-                client.prepareGet(streamurl) {
-                    userAgent(PODCINI_USER_AGENT)
-                    header(HttpHeaders.Range, "bytes=$startRange-$contentLength") }.execute { response ->
-                    val channel = response.bodyAsChannel()
-                    fs.appendingSink(tempPath).buffer().use { sink ->
-                        val buffer = ByteArray(8192)
-                        while (!channel.isClosedForRead) {
-                            val read = channel.readAvailable(buffer, 0, buffer.size)
-                            if (read == -1) break
-                            sink.write(buffer, 0, read)
-                        }
-                        sink.flush()
-                    }
-                    fs.source(tempPath).buffer().use { fileSource -> cb(fileSource) }
-                }
-            } catch (e: Exception) { Logs(TAG, e, "Tail download failed") }
         }
     }
 

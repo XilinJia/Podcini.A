@@ -449,10 +449,10 @@
   <string name="keep_updated">Hold oppdatert</string>
   <string name="keep_updated_summary">Inkluder denne podkasten når alle podkaster oppdateres</string>
 
-  <string name="statistics_time_played">Avspillingstid:</string>
-  <string name="statistics_total_duration">Total lengde (estimert):</string>
-  <string name="statistics_episodes_on_device">Episoder på enhenten:</string>
-  <string name="statistics_space_used">Minne brukt:</string>
+
+
+
+
 
 
   <string name="edit_url_menu">Endre feed URL</string>

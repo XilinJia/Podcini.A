@@ -34,6 +34,7 @@ import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.LogsFor
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.NetworkUtils.isImageDownloadAllowed
+import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.fullDateTimeString
 import io.github.xilinjia.krdb.ext.realmListOf
@@ -488,7 +489,7 @@ class Episode : RealmObject {
         Logd(TAG) { "fetchCaption url: ${trans.url}" }
         val text = try {
             documentKtor.get(trans.url!!) {
-                userAgent(PODCINI_USER_AGENT)
+                userAgent(BROWSER_USER_AGENT)
                 expectSuccess = true
             }.bodyAsText()
         } catch (e: Exception) {

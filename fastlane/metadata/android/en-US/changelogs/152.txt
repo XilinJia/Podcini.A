@@ -1,0 +1,5 @@
+* further amended Statistics overview. fixed average numbers, hide 0 measures
+* improved slow start of Statistics screen
+* in Library, ensure again not persisting sort on init
+* use Podcini user agent for non-external sources, fixed some podcasts not updating
+* PodciniLib upped to 1.1.7, external apps (if used) need to be updated for compatibility

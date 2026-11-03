@@ -452,10 +452,10 @@
   <string name="keep_updated">Mantenir actualitzat</string>
   <string name="keep_updated_summary">Incloure aquest podcast quan (auto-)actualitzen tots els podcasts</string>
 
-  <string name="statistics_time_played">Temps reproducció:</string>
-  <string name="statistics_total_duration">Durada total (estimada):</string>
-  <string name="statistics_episodes_on_device">Episodis al dispositiu:</string>
-  <string name="statistics_space_used">Espai utilitzat:</string>
+
+
+
+
 
 
   <string name="edit_url_menu">Edita l\'enllaç del canal</string>

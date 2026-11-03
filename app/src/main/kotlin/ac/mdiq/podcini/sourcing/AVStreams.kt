@@ -93,7 +93,12 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
         if (!mediaSpecs.isInit) {
             Logd(TAG) { "getAVSpecs do init"}
             if (client == null) client = clientByEpisode(media)
-            client?.withProvider { it.getMediaSpecs(media.toIPC(), forceFetch) }?.let { ms->
+            client?.withProvider {
+                try { it.getMediaSpecs(media.toIPC(), (preferredLocales(media)?:setOf()).toList(), forceFetch) } catch (e: Exception) {
+                    Loge(TAG, e,"media source provides too many audio locales, try set your preferred languages in feed or app setting")
+                    MediaSpecs()
+                }
+            }?.let { ms->
                 mediaSpecs = ms
                 Logd(TAG) { "getAVSpecs audios: ${mediaSpecs.audioSpecs?.size} videos: ${mediaSpecs.videoSpecs?.size} muxed: ${mediaSpecs.muxedSpecs?.size}"}
                 forceFetch = false
@@ -113,23 +118,27 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
         useABPS = aveBitrate
     }
 
+    private fun preferredLocales(media: Episode): Set<String>? {
+        Logd(TAG) { "preferredLocales media.feed?.preferredLnaguages: [${media.feed?.preferredLnaguages?.joinToString()}]" }
+        Logd(TAG) { "preferredLocales appAttribs.langsPreferred: [${appAttribsFlow!!.value.langsPreferred.joinToString()}]" }
+        return media.feed?.preferredLnaguages?.ifEmpty { appAttribsFlow!!.value.langsPreferred }
+    }
+
     internal suspend fun chooseAudioSpec() {
         getAVSpecs()
         val asl = mutableListOf<AudioSpec>()
         //        Logd(TAG) { "useLocale: $useLocale useCodex: $useCodex useABPS: $useABPS audioIndex: $audioIndex" }
-        Logd(TAG) { "chooseAudioSpec media.feed?.preferredLnaguages: [${media.feed?.preferredLnaguages?.joinToString()}]" }
-        Logd(TAG) { "chooseAudioSpec appAttribs.langsPreferred: [${appAttribsFlow!!.value.langsPreferred.joinToString()}]" }
-        useLocales = media.feed?.preferredLnaguages?.ifEmpty { appAttribsFlow!!.value.langsPreferred }?.ifEmpty { setOf("en-US", "en-GB", "en") } ?: setOf("en-US", "en-GB", "en")
+        useLocales = preferredLocales(media)?.ifEmpty { setOf("en-US", "en-GB", "en") } ?: setOf("en-US", "en-GB", "en")
         Logd(TAG) { "chooseAudioSpec useLocales: ${useLocales.joinToString()}" }
         curLocales.clear()
         for (s in mediaSpecs.audioSpecs ?: listOf()) {
             Logd(TAG) { "chooseAudioSpec s.audioLocale [${s.audioLocale}] ${s.codec} ${s.averageBitrate}" }
             curLocales.add(s.audioLocale ?: "")
-            if ((useLocale == null || useLocale == s.audioLocale) && (useProt == null || s.deliveryMethod == useProt) && (useCodex == "Any" || s.codec == useCodex) && (useABPS == 0 || s.averageBitrate == useABPS)) {
+            if ((useLocale == null || useLocale.equals(s.audioLocale, ignoreCase = true)) && (useProt == null || s.deliveryMethod == useProt) && (useCodex == "Any" || s.codec == useCodex) && (useABPS == 0 || s.averageBitrate == useABPS)) {
                 when {
                     s.audioLocale == null -> asl.add(s)
                     useLocale != null -> asl.add(s)
-                    s.audioLocale in useLocales -> asl.add(s)
+                    useLocales.any { it.equals(s.audioLocale, ignoreCase = true) } -> asl.add(s)
                 }
             }
         }

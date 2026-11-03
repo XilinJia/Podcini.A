@@ -40,6 +40,7 @@ import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.LogsFor
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.LogtFor
+import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.timeIt
 import android.annotation.SuppressLint
@@ -663,7 +664,10 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         val uaFactory = ResolvingDataSource.Factory(httpDataSourceFactory) { dataSpec ->
             var at = HTTPAttribs()
             at.useragent = PODCINI_USER_AGENT
-            curClient?.let { c-> c.withProviderBlocking { it.httpAtribsFor(dataSpec.uri.toString()) }?.let { at = it } }
+            curClient?.let { c->
+                at.useragent = BROWSER_USER_AGENT
+                c.withProviderBlocking { it.httpAtribsFor(dataSpec.uri.toString()) }?.let { at = it }
+            }
             Logd(TAG) { "uaFactory curClient: ${curClient!=null} ua: ${at.useragent}"}
             val headers = buildMap {
                 if (at.useragent.isNotBlank()) put("User-Agent", at.useragent )

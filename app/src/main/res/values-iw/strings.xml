@@ -478,10 +478,10 @@
   <string name="keep_updated">לשמור על עדכניות</string>
   <string name="keep_updated_summary">לכלול את הפודקאסט בעת רענון (אוטומטי) של כל הפודקאסטים</string>
 
-  <string name="statistics_time_played">זמן הנגינה:</string>
-  <string name="statistics_total_duration">משך זמן כולל (הערכה):</string>
-  <string name="statistics_episodes_on_device">פרקים על המכשיר הזה:</string>
-  <string name="statistics_space_used">מקום תפוס:</string>
+
+
+
+
 
 
   <string name="edit_url_menu">עריכת כתובת ערוץ</string>

@@ -1,3 +1,13 @@
+# 12.18.0
+
+* further amended Statistics overview. fixed average numbers, hide 0 measures
+* improved slow start of Statistics screen
+* in Library, ensure again not persisting sort on init
+* use Podcini user agent for non-external sources, fixed some podcasts not updating
+* PodciniLib upped to 1.1.7, external apps (if used) need to be updated for compatibility
+	* some external media provides audio streams with lots of locales, causing error in app communications, in such case, only preferred languages are fetched
+* some dependencies update
+
 # 12.17.7
 
 * in Library, avoid persisting sort on init
@@ -11,7 +21,7 @@
 
 # 12.17.6
 
-* in Library, if show feed score on when scoreCount is above 0
+* in Library, show feed score only when scoreCount is above 0
 * ensure separate x-86_64 build
 
 # 12.17.5

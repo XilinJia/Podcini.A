@@ -31,8 +31,8 @@ configure<ApplicationExtension> {
         minSdk = 26
         targetSdk = 37
 
-        versionCode = 151
-        versionName = "12.17.7"
+        versionCode = 152
+        versionName = "12.18.0"
 
         ndkVersion = "30.0.16248370"
 
@@ -253,20 +253,20 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin_version")}")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
     implementation("org.jetbrains.kotlinx:atomicfu:0.33.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.9.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.9.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
 
-    implementation("com.github.XilinJia:PodciniLib:1.1.6")
+    implementation("com.github.XilinJia:PodciniLib:1.1.7")
     implementation("io.github.xilinjia.krdb:library-base:${project.property("krdb_version")}")
 
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")
     implementation("io.coil-kt.coil3:coil-network-ktor3:3.6.3")
 
-    implementation("io.ktor:ktor-http:3.6.0")
-    implementation("io.ktor:ktor-client-core:3.6.0")
-    implementation("io.ktor:ktor-client-okhttp:3.6.0")
+    implementation("io.ktor:ktor-http:3.6.1")
+    implementation("io.ktor:ktor-client-core:3.6.1")
+    implementation("io.ktor:ktor-client-okhttp:3.6.1")
 //    implementation("io.ktor:ktor-client-encoding:3.6.0")
-    implementation("io.ktor:ktor-utils:3.6.0")
+    implementation("io.ktor:ktor-utils:3.6.1")
 
     implementation("com.fleeksoft.ksoup:ksoup:0.2.6")
     implementation("com.fleeksoft.ksoup:ksoup-network:0.2.6")

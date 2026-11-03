@@ -418,10 +418,10 @@
   <string name="keep_updated">Mantendu eguneratuta</string>
   <string name="keep_updated_summary">Eguneratu podcast hau ere podcast guztiak (auto-)eguneratzean</string>
 
-  <string name="statistics_time_played">Jokatutako denbora:</string>
-  <string name="statistics_total_duration">Iraupena guztira (zenbatespena):</string>
-  <string name="statistics_episodes_on_device">Gailuko saioak:</string>
-  <string name="statistics_space_used">Erabilitako espazioa:</string>
+
+
+
+
 
 
   <string name="edit_url_menu">Editatu jarioaren URLa</string>

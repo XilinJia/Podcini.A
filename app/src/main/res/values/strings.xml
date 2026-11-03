@@ -14,7 +14,7 @@
     <string name="pafeeds" translatable="false">PAFeeds</string>
 
     <string name="preferred_languages">Preferred languages</string>
-    <string name="preferred_languages_sum">When media contains multiple language tracks, the player uses this setting to select proper tracks. The player checks on this feed setting first, if not set, uses the global setting, if still not set, default to [en-US, en-GB, en].</string>
+    <string name="preferred_languages_sum">When media contains multiple language tracks, the player uses this setting to select proper tracks. The player checks on feed setting first, if not set, uses the global setting, case insensitive, if still not set, default to [en-US, en-GB, en].</string>
 
     <string name="statistics_label">Statistics</string>
     <string name="add_feed_label">Add feeds</string>
@@ -982,15 +982,10 @@
     <string name="accept_tiny_episodes_sum">Some episodes can have duration less than 1 second. These are normally rejected during feed updates. Turning on this will accept them.</string>
 
     <string name="auto_download_disabled_sum">Auto download can be enabled here when auto-download is enabled in the global settings and streaming is not preferred in the feed.</string>
-    <string name="statistics_length_played">Duration of all started:</string>
-    <string name="statistics_time_played">Time played:</string>
-    <string name="statistics_time_spent">Time spent:</string>
-    <string name="statistics_total_duration">Total duration (estimate):</string>
-    <string name="statistics_episodes_on_device">Episodes on the device:</string>
-    <string name="statistics_space_used">Space used:</string>
 
-    <string name="statistics_started_total">Started/total:</string>
-    <string name="statistics_spent_total">Time spent/total:</string>
+
+    <string name="statistics_started_total">Started/total</string>
+    <string name="statistics_spent_total">Time spent/total</string>
 
 
     <string name="feeds_related_to_author">Feeds likely related to the author »</string>

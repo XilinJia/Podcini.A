@@ -98,6 +98,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -485,7 +486,7 @@ fun EpisodeWebView(episode: Episode) {
         var expanded by remember { mutableStateOf(false) }
         val context = LocalContext.current
         Row(modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Back or drawer", modifier = Modifier.padding(7.dp).clickable { navBack() })
+            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Back or drawer", modifier = Modifier.padding(7.dp).rotate(180f).clickable { navBack() })
             Spacer(Modifier.weight(1f))
             if (readMode && tts != null) {
                 val iconRes = if (ttsPlaying) R.drawable.ic_pause else R.drawable.ic_play_24dp

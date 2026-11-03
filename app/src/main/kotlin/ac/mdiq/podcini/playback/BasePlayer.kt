@@ -451,6 +451,7 @@ abstract class BasePlayer {
             } catch (e: Throwable) {
                 withContext(Dispatchers.Main) { handlePlayerStatus(PlayerStatus.STOPPED, curMediaFlow.value) }
                 LogsFor(TAG, curMediaFlow.value?.id, e, "prepareMedia error: [${e.localizedMessage}]")
+                forcePlaybackReset = true
             } finally { }
         }
     }

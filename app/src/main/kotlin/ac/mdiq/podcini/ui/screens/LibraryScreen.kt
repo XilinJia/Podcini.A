@@ -219,7 +219,6 @@ private const val TAG = "LibraryScreen"
 var feedIdsToUse by mutableStateOf<List<Long>>(listOf())
 
 class LibraryVM : ViewModel() {
-    var inited = false
     private val subPrefs_ = realm.query(SubscriptionsPrefs::class).query("id == 0").first().find() ?: SubscriptionsPrefs().apply { this.queueSelIds.add(0L) }
     val prefsFlow: StateFlow<SubscriptionsPrefs> = realm.query(SubscriptionsPrefs::class).query("id == 0").first().asFlow().map { it.obj ?: subPrefs_ }
         .distinctUntilChanged().stateIn(scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = subPrefs_ )
@@ -401,7 +400,7 @@ class LibraryVM : ViewModel() {
         } else return realm.query(Feed::class).query("id IN $0", feedIdsToUse).sort(sortPair).asFlow().map  { it.list}
     }
 
-    fun preparePropertySort(feeds: List<Feed>, subIndex: FeedPropertySortIndex? = null) {
+    fun persistPropertySort(feeds: List<Feed>, subIndex: FeedPropertySortIndex? = null) {
         val subIndexOrdinal = subIndex?.code ?: prefsFlow.value.propertySortIndex
         Logd(TAG) { "preparePropertySort subIndexOrdinal: $subIndexOrdinal" }
         runOnIOScope {
@@ -445,10 +444,10 @@ class LibraryVM : ViewModel() {
             }
         }
     }
-    fun prepareDateSort(feeds: List<Feed>, subIndex: FeedDateSortIndex? = null) {
+    fun persistDateSort(feeds: List<Feed>, subIndex: FeedDateSortIndex? = null) {
         val subIndexOrdinal = subIndex?.code ?: prefsFlow.value.dateSortIndex
         Logd(TAG) { "prepareDateSort" }
-        suspend fun persistDateSort() {
+        suspend fun upsertForDateSort() {
             upsert(prefsFlow.value) {
                 it.sortIndex = FeedSortIndex.Date.code
                 it.dateSortIndex = subIndexOrdinal
@@ -471,7 +470,7 @@ class LibraryVM : ViewModel() {
                             f.sortInfo = formatDateTimeFlex(d)
                         }
                     }
-                    persistDateSort()
+                    upsertForDateSort()
                 }
                 FeedDateSortIndex.Downloaded.code -> {  // date downloaded
                     val queryString = "feedId == $0 SORT(downloadTime DESC)"
@@ -484,7 +483,7 @@ class LibraryVM : ViewModel() {
                         }
                     }
                     Logd(TAG) { "prepareSort queryString: $queryString" }
-                    persistDateSort()
+                    upsertForDateSort()
                 }
                 FeedDateSortIndex.Played.code -> {  // date last played
                     val queryString = "feedId == $0 SORT(lastPlayedTime DESC)"
@@ -497,7 +496,7 @@ class LibraryVM : ViewModel() {
                         }
                     }
                     Logd(TAG) { "prepareSort queryString: $queryString" }
-                    persistDateSort()
+                    upsertForDateSort()
                 }
                 FeedDateSortIndex.Commented.code -> {  // date last commented
                     val queryString = "feedId == $0 SORT(commentTime DESC)"
@@ -510,7 +509,7 @@ class LibraryVM : ViewModel() {
                         }
                     }
                     Logd(TAG) { "prepareSort queryString: $queryString" }
-                    persistDateSort()
+                    upsertForDateSort()
                 }
                 FeedDateSortIndex.Rated.code -> {  // date last rated
                     val queryString = "feedId == $0 SORT(ratingTime DESC)"
@@ -523,17 +522,17 @@ class LibraryVM : ViewModel() {
                         }
                     }
                     Logd(TAG) { "prepareSort queryString: $queryString" }
-                    persistDateSort()
+                    upsertForDateSort()
                 }
                 else -> Loge(TAG, "No such date sorting ${prefsFlow.value.dateSortIndex}")
             }
         }
     }
 
-    fun prepareTimeSort(feeds: List<Feed>, subIndex: FeedTimeSortIndex? = null) {
+    fun persistTimeSort(feeds: List<Feed>, subIndex: FeedTimeSortIndex? = null) {
         val subIndexOrdinal = subIndex?.code ?: prefsFlow.value.timeSortIndex
         Logd(TAG) { "prepareTimeSort" }
-        suspend fun persistTimeSort() {
+        suspend fun upsertForTimeSort() {
             upsert(prefsFlow.value) {
                 it.sortIndex = FeedSortIndex.Time.code
                 it.timeSortIndex = subIndexOrdinal
@@ -552,7 +551,7 @@ class LibraryVM : ViewModel() {
                             f.sortInfo = "Total D: ${durationStringShort(f.totleDuration, true)}"
                         }
                     }
-                    persistTimeSort()
+                    upsertForTimeSort()
                 }
                 FeedTimeSortIndex.Min.code -> {  // min duration
                     val queryString = "feedId == $0 SORT(duration ASC)"
@@ -565,7 +564,7 @@ class LibraryVM : ViewModel() {
                         }
                     }
                     Logd(TAG) { "prepareSort queryString: $queryString" }
-                    persistTimeSort()
+                    upsertForTimeSort()
                 }
                 FeedTimeSortIndex.Max.code -> {  // max duration
                     val queryString = "feedId == $0 SORT(duration DESC)"
@@ -578,7 +577,7 @@ class LibraryVM : ViewModel() {
                         }
                     }
                     Logd(TAG) { "prepareSort queryString: $queryString" }
-                    persistTimeSort()
+                    upsertForTimeSort()
                 }
                 FeedTimeSortIndex.Average.code -> {  // average duration
                     realm.write {
@@ -590,14 +589,14 @@ class LibraryVM : ViewModel() {
                             f.sortInfo = "Ave D: ${durationStringShort(aveDur, true)}"
                         }
                     }
-                    persistTimeSort()
+                    upsertForTimeSort()
                 }
                 else -> Loge(TAG, "No such time sorting ${prefsFlow.value.timeSortIndex}")
             }
         }
     }
 
-    fun prepareCountSort(feeds: List<Feed>) {
+    fun persistCountSort(feeds: List<Feed>) {
         Logd(TAG) { "prepareCountSort" }
         runOnIOScope {
             val sb = StringBuilder("feedId == $0")
@@ -786,16 +785,17 @@ fun LibraryScreen() {
 
     BackHandler(enabled = handleBackSubScreens.contains(TAG)) { vm.curVolume = realm.query(Volume::class).query("id == ${vm.curVolume?.parentId ?: -1L}").first().find() }
 
+    var inited by remember { mutableStateOf(false) }
     LaunchedEffect(subPrefs.sortIndex, feedOperationText, feedList.size, vm.curVolume?.id) {
         Logd(TAG) { "combine(feedsFlow, snapshotFlow {feedOperationText}) sortIndex: ${subPrefs.sortIndex}" }
-        if (feedOperationText.isBlank() && vm.inited) when (subPrefs.sortIndex) {
-            FeedSortIndex.Feed.code -> vm.preparePropertySort(feedList)
-            FeedSortIndex.Date.code -> vm.prepareDateSort(feedList)
-            FeedSortIndex.Time.code -> vm.prepareTimeSort(feedList)
-            FeedSortIndex.Count.code -> vm.prepareCountSort(feedList)
+        if (feedOperationText.isBlank() && inited) when (subPrefs.sortIndex) {
+            FeedSortIndex.Feed.code -> vm.persistPropertySort(feedList)
+            FeedSortIndex.Date.code -> vm.persistDateSort(feedList)
+            FeedSortIndex.Time.code -> vm.persistTimeSort(feedList)
+            FeedSortIndex.Count.code -> vm.persistCountSort(feedList)
             else -> {}
         }
-        vm.inited = true
+        inited = true
     }
 
     @Composable
@@ -929,7 +929,7 @@ fun LibraryScreen() {
                                                 it.feedsSortedInc()
                                             }
                                         }
-                                    else vm.preparePropertySort(feedList)
+                                    else vm.persistPropertySort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Feed.res) + if (subPrefs.propertyAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
                             OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Date.code) borderColor else buttonAltColor),
@@ -942,7 +942,7 @@ fun LibraryScreen() {
                                                 it.feedsSortedInc()
                                             }
                                         }
-                                    else vm.prepareDateSort(feedList)
+                                    else vm.persistDateSort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Date.res) + if (subPrefs.dateAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
                             OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Time.code) borderColor else buttonAltColor),
@@ -955,7 +955,7 @@ fun LibraryScreen() {
                                                 it.feedsSortedInc()
                                             }
                                         }
-                                    else vm.prepareTimeSort(feedList)
+                                    else vm.persistTimeSort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Time.res) + if (subPrefs.timeAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
                             OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Count.code) borderColor else buttonAltColor),
@@ -968,7 +968,7 @@ fun LibraryScreen() {
                                                 it.feedsSortedInc()
                                             }
                                         }
-                                    else vm.prepareCountSort(feedList)
+                                    else vm.persistCountSort(feedList)
                                 }
                             ) { Text(text = stringResource(FeedSortIndex.Count.res) + if (subPrefs.countAscending) "\u00A0▲" else "\u00A0▼", color = textColor) }
                         }
@@ -978,7 +978,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.feed_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedPropertySortIndex.entries) {
-                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.propertySortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.propertySortIndex != sd.code) vm.preparePropertySort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.propertySortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.propertySortIndex != sd.code) vm.persistPropertySort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             }
@@ -986,7 +986,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.feed_date_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedDateSortIndex.entries) {
-                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.dateSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.dateSortIndex != sd.code) vm.prepareDateSort(feedList,sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.dateSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.dateSortIndex != sd.code) vm.persistDateSort(feedList,sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             }
@@ -994,7 +994,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.feed_time_sort_sum), style = MaterialTheme.typography.labelSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                                     for (sd in FeedTimeSortIndex.entries) {
-                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.timeSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.timeSortIndex != sd.code) vm.prepareTimeSort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
+                                        OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.timeSortIndex != sd.code) borderColor else buttonAltColor), onClick = { if (subPrefs.timeSortIndex != sd.code) vm.persistTimeSort(feedList, sd) }) { Text(stringResource(sd.res), style = MaterialTheme.typography.bodySmall) }
                                     }
                                 }
                             }
@@ -1015,7 +1015,7 @@ fun LibraryScreen() {
                                                         1 -> " fileUrl == nil "
                                                         else -> ""
                                                     }
-                                                    vm.prepareCountSort(feedList)
+                                                    vm.persistCountSort(feedList)
                                                 }
                                             }
                                             OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.downlaodedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistDLSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
@@ -1036,7 +1036,7 @@ fun LibraryScreen() {
                                                         1 -> " comment == '' "
                                                         else -> ""
                                                     }
-                                                    vm.prepareCountSort(feedList)
+                                                    vm.persistCountSort(feedList)
                                                 }
                                             }
                                             OutlinedButton(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.commentedSortIndex != 0) borderColor else buttonAltColor), onClick = { persistCommentSort(0) }) { Text(text = stringResource(item.properties[0].displayName), color = textColor, style = MaterialTheme.typography.bodySmall) }
@@ -1072,8 +1072,8 @@ fun LibraryScreen() {
                                                 it.playStateCodeSet.addAll(playStateCodeSet)
                                             }
                                             when (subPrefs.sortIndex) {
-                                                FeedSortIndex.Date.code -> vm.prepareDateSort(feedList)
-                                                FeedSortIndex.Count.code -> vm.prepareCountSort(feedList)
+                                                FeedSortIndex.Date.code -> vm.persistDateSort(feedList)
+                                                FeedSortIndex.Count.code -> vm.persistCountSort(feedList)
                                                 else -> {}
                                             }
                                         }
@@ -1172,7 +1172,7 @@ fun LibraryScreen() {
                                                 it.ratingCodeSet.addAll(ratingCodeSet)
                                             }
                                             when (subPrefs.sortIndex) {
-                                                FeedSortIndex.Count.code -> vm.prepareCountSort(feedList)
+                                                FeedSortIndex.Count.code -> vm.persistCountSort(feedList)
                                                 else -> {}
                                             }
                                         }

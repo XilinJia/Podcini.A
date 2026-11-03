@@ -474,10 +474,10 @@
   <string name="keep_updated">Manter actualizado</string>
   <string name="keep_updated_summary">Incluír este podcast ao (auto-)actualizar todos os podcast</string>
 
-  <string name="statistics_time_played">Tempo de reprodución:</string>
-  <string name="statistics_total_duration">Duración total (estimada):</string>
-  <string name="statistics_episodes_on_device">Episodios no dispositivo:</string>
-  <string name="statistics_space_used">Espazo utilizado:</string>
+
+
+
+
 
 
   <string name="edit_url_menu">Editar URL da fonte</string>

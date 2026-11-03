@@ -336,8 +336,8 @@
   <string name="episode_filters_description">Terminite loetelu, mille alusel otsustada, kas saade tuleks arvata sisse või välja automaatsel allalaadimisel</string>
   <string name="keep_updated_summary">Uuenda koos teiste taskuhäälingute (automaatse) värskendamisega ka seda</string>
 
-  <string name="statistics_episodes_on_device">Saated seadmes:</string>
-  <string name="statistics_space_used">Kasutatud kettaruum:</string>
+
+
 
   <!--PodciniSP-->
 
