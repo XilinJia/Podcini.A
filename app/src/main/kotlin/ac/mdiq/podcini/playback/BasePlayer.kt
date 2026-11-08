@@ -48,10 +48,8 @@ import ac.mdiq.podcini.utils.LogtFor
 import ac.mdiq.podcini.utils.NetworkUtils.isNetworkUrl
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
 import ac.mdiq.podcini.utils.showStackTrace
-import android.content.ComponentName
 import android.media.MediaCodecList
 import android.os.Build
-import android.service.quicksettings.TileService
 import androidx.media3.common.Player
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
@@ -259,7 +257,6 @@ abstract class BasePlayer {
 //            }
             else -> {}
         }
-        TileService.requestListeningState(context, ComponentName(context, QuickSettingsTileService::class.java))
     }
 
     fun saveCurState(episode: Episode? = null, status_: PlayerStatus? = null) {

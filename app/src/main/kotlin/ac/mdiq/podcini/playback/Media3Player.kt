@@ -335,7 +335,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
                         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
                         PlaybackException.ERROR_CODE_TIMEOUT -> {
-                            LogtFor(TAG, curMediaFlow.value?.id, "onPlayerError: ${error.localizedMessage}, retrying...")
+                            Logt(TAG,  "onPlayerError: ${error.localizedMessage}, retrying...")
                             val lastPosition = exoPlayer?.currentPosition ?: 0L
                             forcePlaybackReset = true
                             exoPlayer?.prepare()
@@ -725,7 +725,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         if (curClient == null)  return null
 
         if (curClient!!.attributes?.hasTranscripts == true && media.transcriptMetas.isEmpty() && media.captionCues.isEmpty()) runOnIOScope {
-            val specs = curClient!!.withProvider { it.getCaptionSpecs(media.toIPC()) }
+            val specs = curClient!!.withProvider { it.getCaptionSpecs(media.downloadUrl) }
             if (!specs.isNullOrEmpty()) {
                 val tm = specs.map { it.toTranscriptMeta() }.toRealmList()
                 upsert(media) { it.transcriptMetas = tm }
@@ -1116,7 +1116,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 clipStartByte = (startPositionMs * bitrate / 8 / 1000)
                 clipBytesWritten = 0L
                 Logd(TAG) { "Started recording at byte offset $clipStartByte" }
-            } else LogeFor(TAG, mediaId.toLongOrNull(), "Cannot start recording: tempDir not set or already recording")
+            } else Loge(TAG, "Cannot start recording: tempDir not set or already recording")
         }
 
         fun stopRecording(endPositionMs: Long): UnifiedFile? {
@@ -1273,7 +1273,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
 
     private fun adjustMp4Clip(bytes: ByteArray, key: String, startByte: Long, endByte: Long): ByteArray {
         if (startByte > 0 || endByte < spansTotalLength(key)) {
-            LogtFor(TAG, curMediaFlow.value?.id, "MP4 clip may not be playable without re-muxing.")
+            Logt(TAG,  "MP4 clip may not be playable without re-muxing.")
             val fullFileBytes = getFullFileFromCache(key)
             return fullFileBytes ?: bytes
         }
@@ -1281,7 +1281,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
     }
     private fun adjustLocalOggClip(bytes: ByteArray): ByteArray = bytes
     private fun adjustLocalMp4Clip(bytes: ByteArray): ByteArray {
-        LogtFor(TAG, curMediaFlow.value?.id, "Local MP4 clip may not be playable without re-muxing.")
+        Logt(TAG,  "Local MP4 clip may not be playable without re-muxing.")
         return bytes
     }
 

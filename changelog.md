@@ -1,3 +1,12 @@
+# 12.19.0
+
+* fixed app taking full space of a window
+* fixed keycode 85 not properly handled in older devices
+* Tile service access is removed
+* avoid fetch chapters when downlaoding external media
+* PodciniLib upped to 1.1.8, external apps (if used) need to be updated for compatibility
+* AGP upped to 9.5.1
+
 # 12.18.0
 
 * further amended Statistics overview. fixed average numbers, hide 0 measures

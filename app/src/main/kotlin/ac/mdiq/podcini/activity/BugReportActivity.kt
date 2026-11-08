@@ -81,7 +81,7 @@ class BugReportActivity : ComponentActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+//        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         initialize()
 

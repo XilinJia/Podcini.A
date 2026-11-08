@@ -137,7 +137,7 @@ class MainActivity : BaseActivity() {
 
 
     public override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+//        enableEdgeToEdge()    // not useful, and blocks window topbar in Waydroid
         if (BuildConfig.DEBUG) {
             val builder = StrictMode.ThreadPolicy.Builder()
                 .detectAll()  // Enable all detections

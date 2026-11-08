@@ -94,7 +94,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
             Logd(TAG) { "getAVSpecs do init"}
             if (client == null) client = clientByEpisode(media)
             client?.withProvider {
-                try { it.getMediaSpecs(media.toIPC(), (preferredLocales(media)?:setOf()).toList(), forceFetch) } catch (e: Exception) {
+                try { it.getMediaSpecs(media.downloadUrl, (preferredLocales(media)?:setOf()).toList(), forceFetch) } catch (e: Exception) {
                     Loge(TAG, e,"media source provides too many audio locales, try set your preferred languages in feed or app setting")
                     MediaSpecs()
                 }

@@ -10,7 +10,6 @@ import ac.mdiq.podcini.storage.parser.FrameHeader
 import ac.mdiq.podcini.storage.parser.ID3Reader
 import ac.mdiq.podcini.storage.parser.VorbisCommentReader
 import ac.mdiq.podcini.storage.parser.VorbisCommentReaderException
-import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
@@ -44,6 +43,7 @@ import kotlin.time.Duration.Companion.seconds
 private const val TAG: String = "ChapterUtils"
 
 suspend fun fetchChapters(episode: Episode): List<Chapter> {
+    if (!canCheckMediaSize(episode)) return listOf()
     Logd(TAG) { "fetchChapters for ${episode.title}" }
     var chaptersFromDatabase: List<Chapter>? = null
     var chaptersFromPodcastIndex: List<Chapter>? = null
@@ -397,7 +397,7 @@ suspend fun loadChaptersFromMedia(episode: Episode): List<Chapter> {
                 if (streamurl.isNullOrEmpty()) throw Exception("Failed loading chapters for ${episode.title}: stream url is null of empty")
                 Logd(TAG) { "loadChaptersFromMedia openSource open streaming source" }
                 mediaKtor.prepareGet(streamurl) {
-                    userAgent(BROWSER_USER_AGENT)
+                    userAgent(PODCINI_USER_AGENT)
                     header(HttpHeaders.Accept, "*/*")
                     header(HttpHeaders.Range, "bytes=0-131071")
                     timeout { requestTimeoutMillis = 30_000 }

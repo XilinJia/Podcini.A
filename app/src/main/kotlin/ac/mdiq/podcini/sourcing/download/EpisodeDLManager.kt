@@ -33,12 +33,12 @@ import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
 import ac.mdiq.podcini.sync.model.EpisodeAction
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
+import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
-import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import android.app.Notification
 import android.app.NotificationManager
@@ -68,7 +68,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
-import kotlin.collections.plus
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 

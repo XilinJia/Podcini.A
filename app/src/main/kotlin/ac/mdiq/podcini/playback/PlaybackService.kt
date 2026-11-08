@@ -8,7 +8,6 @@ import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.storage.database.fastForwardSecs
-import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.queuesLive
@@ -21,9 +20,8 @@ import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
-import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.LogsFor
-import ac.mdiq.podcini.utils.LogtFor
+import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.logProcess
 import ac.mdiq.podcini.utils.timeIt
 import android.Manifest
@@ -276,6 +274,7 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         override fun onMediaButtonEvent(mediaSession: MediaSession, controller: MediaSession.ControllerInfo, intent: Intent): Boolean {
+            // appears only needed for older devices or physical buttons
             val keyEvent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent.extras!!.getParcelable(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
             else {
                 @Suppress("DEPRECATION")
@@ -305,7 +304,7 @@ class PlaybackService : MediaLibraryService() {
 //            return super.onGetItem(session, browser, mediaId)
 //        }
         override fun onGetLibraryRoot(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, params: LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> {
-    Logd(TAG) { "MyMediaSessionCallback onGetLibraryRoot called" }
+            Logd(TAG) { "MyMediaSessionCallback onGetLibraryRoot called" }
             val rootItem = MediaItem.Builder().setMediaId(ROOT_ID).setMediaMetadata(MediaMetadata.Builder().setIsBrowsable(true).setIsPlayable(false).build()).build()
             return Futures.immediateFuture(LibraryResult.ofItem(rootItem, params))
         }
@@ -424,6 +423,18 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+//    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+//        val player = theatres[0].mPlayerFlow.value
+//        when (intent?.action) {
+//            "PLAY" -> player?.play()
+//            "PAUSE" -> player?.pause(false)
+//            "TOGGLE" -> if (player?.isPlaying == true) player.pause(false) else player?.play()
+//        }
+//
+////        androidx.media3.session.MediaButtonReceiver.handleIntent(mediaSession, intent)
+//        return super.onStartCommand(intent, flags, startId)
+//    }
+
     fun switchPlayersMode() {
         recreateMediaPlayers()
         startTheatres()
@@ -471,7 +482,7 @@ class PlaybackService : MediaLibraryService() {
 
     private fun handleKeycode(keycode: Int, notificationButton: Boolean): Boolean {
         val player = theatres[0].mPlayerFlow.value ?: return false
-        LogtFor(TAG, player.curMediaFlow.value?.id, "Handling keycode: $keycode")
+        Logt(TAG, "Handling keycode: $keycode")
         // TODO: check out this
         fun startPlayingFromPreferences() {
             if (mediaLibrarySession == null) createMediaSessionAndPlayers()
@@ -486,7 +497,7 @@ class PlaybackService : MediaLibraryService() {
             KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
                 when {
                     player.isPlaying -> player.pause(false)
-                    player.isPlaying || player.isPrepared -> player.play()
+                    player.isPaused || player.isPrepared -> player.play()
                     player.isInitialized -> {
                         player.isStartWhenPrepared = true
                         player.prepareInitialized()
@@ -555,7 +566,7 @@ class PlaybackService : MediaLibraryService() {
             else -> {
                 Logd(TAG) { "Unhandled key code: $keycode" }
                 // only notify the user about an unknown key event if it is actually doing something
-                if (player.curMediaFlow.value != null && player.isPlaying) LogeFor(TAG, player.curMediaFlow.value?.id, resources.getString(R.string.unknown_media_key, keycode))
+                if (player.curMediaFlow.value != null && player.isPlaying) Loge(TAG, resources.getString(R.string.unknown_media_key, keycode))
             }
         }
         return false

@@ -264,7 +264,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                             if (client == null) { Logt(TAG, "can not find service app for episode"); return@IconButton }
                             showTransMetaDialog = true
                             runOnIOScope {
-                                val captions = client.withProvider { it.getCaptionSpecs(episode.toIPC()) }
+                                val captions = client.withProvider { it.getCaptionSpecs(episode.downloadUrl) }
                                 if (!captions.isNullOrEmpty()) {
                                     val tm = captions.map { it.toTranscriptMeta() }.toRealmList()
                                     upsert(episode) { it.transcriptMetas = tm }
