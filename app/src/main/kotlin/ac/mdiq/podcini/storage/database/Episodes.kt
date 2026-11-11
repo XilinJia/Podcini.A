@@ -3,13 +3,10 @@ package ac.mdiq.podcini.storage.database
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.NotificationIds
-import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
-import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
-import ac.mdiq.podcini.sync.model.EpisodeAction
-import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.clientByEpisode
+import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.SubscriptionLog
@@ -22,7 +19,11 @@ import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.sortPairOf
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.DATE_DESC
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.durationStringShort
+import ac.mdiq.podcini.storage.utils.parent
 import ac.mdiq.podcini.storage.utils.toUF
+import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
+import ac.mdiq.podcini.sync.model.EpisodeAction
+import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
@@ -196,13 +197,23 @@ suspend fun eraseEpisodes(episodes: List<Episode>, msg: String = "") {
 }
 
 suspend fun deleteMedia(episode: Episode): Episode {
+//    showStackTrace()
     val context = getAppContext()
     val url = episode.fileUrl
     Logd(TAG) { "deleteMedia [id=${episode.id}, title=${episode.titleOrIdv()}, downloaded=${episode.downloaded} $url" }
     var episode = episode
     if (!url.isNullOrBlank()) {
         try {
-            url.toUF().delete()
+            val uf = url.toUF()
+            uf.parent()?.let { dir-> dir.listChildren().filter {
+                Logd(TAG) { "deleteMedia dir has file ${it.name}" }
+                it.name.startsWith(episode.id.toString())
+            }.forEach {
+                Logd(TAG) { "deleteMedia deleting segment file ${it.name}"}
+                it.delete()
+            } }
+            Logd(TAG) { "deleteMedia deleting file ${uf.name}"}
+            uf.delete()
             episode = upsert(episode) {
                 it.fileUrl = null
                 it.hasEmbeddedPicture = false

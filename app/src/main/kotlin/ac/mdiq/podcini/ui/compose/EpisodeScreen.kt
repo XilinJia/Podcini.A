@@ -15,7 +15,6 @@ import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Timer
-import ac.mdiq.podcini.storage.model.toIPC
 import ac.mdiq.podcini.storage.model.toTranscriptMeta
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.Rating
@@ -143,7 +142,7 @@ private val notesCache = LruCache<Long, String>(10)
 var episodeForInfo by mutableStateOf<Episode?>(null)
 
 @Composable
-fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = MutableStateFlow(emptyList()), allowOpenFeed: Boolean = false, showClose: Boolean = true) {
+fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = MutableStateFlow(emptyList()), isExternal: Boolean = false, allowOpenFeed: Boolean = false, showClose: Boolean = true) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context by rememberUpdatedState(LocalContext.current)
     val episodeFlow = remember(episode_.id) { listFlow.flatMapLatest { list -> list.firstOrNull { it.id == episode_.id }?.let { flowOf(it) } ?: realm.query(Episode::class).query("id == ${episode_.id}").asFlow().map { it.list.firstOrNull() } } }
@@ -228,7 +227,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
 
     var showAltActionsDialog by remember { mutableStateOf(false) }
     var actionButton by remember { mutableStateOf<ActionButton?>(null) }
-    if (showAltActionsDialog) actionButton?.AltActionsDialog(onDismiss = { showAltActionsDialog = false })
+    if (showAltActionsDialog) actionButton?.AltActionsDialog(isExternal, onDismiss = { showAltActionsDialog = false })
     val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
     val player1 by theatres[1].mPlayerFlow.collectAsStateWithLifecycle()
     val playWhenReady0 by player0?.playWhenReadyFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf( false) }
@@ -238,8 +237,8 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
         actionButton?.type = when {
             isPlaying(episode) -> ButtonTypes.PAUSE
             episodeFeed != null && episodeFeed.isLocal -> ButtonTypes.PLAY_LOCAL
-            episode.downloaded -> ButtonTypes.PLAY
-            !episode.downloadUrl.isNullOrBlank() -> ButtonTypes.STREAM
+            episode.downloaded -> ButtonTypes.PLAY_ONE
+            !episode.downloadUrl.isNullOrBlank() -> ButtonTypes.STREAM_ONE
             else -> ButtonTypes.NULL
         }
     }

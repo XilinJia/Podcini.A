@@ -94,12 +94,14 @@ class EpisodeDLManager {
         WorkManager.getInstance(getAppContext()).enqueueUniqueWork("DownloadEpisodes", ExistingWorkPolicy.APPEND_OR_REPLACE, workRequest.build())
     }
 
-    suspend fun cancel(media: Episode) {
+    suspend fun cancel(media: Episode, delete: Boolean = false) {
         Logd(TAG) { "starting cancel" }
         // This needs to be done here, not in the worker. Reason: The worker might or might not be running.
         // Remove partially downloaded file
-        val episode_ = deleteMedia(media)
-        if (appPrefsFlow!!.value.deleteRemovesFromQueue) removeFromAllQueues(listOf(episode_))
+        if (delete) {
+            val episode_ = deleteMedia(media)
+            if (appPrefsFlow!!.value.deleteRemovesFromQueue) removeFromAllQueues(listOf(episode_))
+        }
         val tag = WORK_TAG_EPISODE_URL + media.downloadUrl
         val future: Future<List<WorkInfo>> = WorkManager.getInstance(getAppContext()).getWorkInfosByTag(tag)
 

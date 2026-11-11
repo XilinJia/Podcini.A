@@ -361,6 +361,7 @@ class FacetsVM(modeName_: String): ViewModel() {
         }
     }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    // TODO: need to handle segment files of playlist with names starting with episode id
     fun reconcile() {
         val nameEpisodeMap: MutableMap<String, Episode> = mutableMapOf()
         val filesRemoved: MutableList<String> = mutableListOf()
@@ -426,10 +427,10 @@ class FacetsVM(modeName_: String): ViewModel() {
             }
 
             val ids = realm.query(Episode::class).find().mapNotNull { it.feedId }.toSet()
-            for (id in ids) {
-                val f = feedsMap[id]
-                if (f == null) {
-                    realm.write {
+            realm.write {
+                for (id in ids) {
+                    val f = feedsMap[id]
+                    if (f == null) {
                         val el = query(Episode::class, "feedId == $id").find()
                         if (el.isNotEmpty()) {
                             val size = el.size
@@ -547,7 +548,11 @@ fun FacetsScreen(modeName: String = "") {
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                     DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
                         if (episodes.isNotEmpty() && facetsMode == QuickAccess.History) DropdownMenuItem(text = { Text(stringResource(R.string.between_dates)) }, onClick = { showDatesFilterDialog = true; expanded = false })
-                        if (facetsMode == QuickAccess.Downloaded) DropdownMenuItem(text = { Text(stringResource(R.string.reconcile_label)) }, onClick = { vm.reconcile(); expanded = false })
+                        if (facetsMode == QuickAccess.Downloaded) DropdownMenuItem(text = { Text(stringResource(R.string.reconcile_label)) }, onClick = {
+                            Logt(TAG, "Reconcile will need improvements, disabled for now.")
+//                            vm.reconcile()
+                            expanded = false
+                        })
                         if (episodes.isNotEmpty() && facetsMode == QuickAccess.New) DropdownMenuItem(text = { Text(stringResource(R.string.clear_new_label)) }, onClick = {
                             vm.progressing = true
                             runOnIOScope {

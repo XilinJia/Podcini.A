@@ -31,6 +31,7 @@ import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
+import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.tmpQueue
@@ -38,15 +39,16 @@ import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.confirm
+import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.LogeFor
+import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.NetworkUtils
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
-import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.openInSystemDefault
 import androidx.compose.foundation.clickable
@@ -154,7 +156,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             ButtonTypes.CANCEL -> {
                 if (typeToCancel == ButtonTypes.DOWNLOAD) {
                     downloadJob?.cancel()
-                    runBlocking { EpisodeDLManager.manager.cancel(item) }
+                    runBlocking { EpisodeDLManager.manager.cancel(item, delete = true) }
                     if (appPrefsFlow!!.value.enableAutoDl) runOnIOScope { upsert(item) { it.isAutoDownloadEnabled = false } }
                     type = ButtonTypes.DOWNLOAD
                 } else if (typeToCancel == ButtonTypes.TTS) {
@@ -260,9 +262,16 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                             at.useragent = BROWSER_USER_AGENT
                             c.withProviderBlocking { it.httpAtribsFor(request.source) }?.let { at = it }
                         }
-                        downloader?.downloadMedia(at.useragent)
-                        val status = downloader?.result
-                        if (status?.isSuccessful == true) updateDB(request)
+                        try {
+                            downloader?.downloadMedia(at.useragent)
+                            if (downloader?.result?.isSuccessful == true) {
+                                updateDB(request)
+                                logDownloadResult(downloader.result)
+                            }
+                        } catch (e: Exception) {
+                            Logs(TAG, e, "failed performDownload exception on downloader!!.call()")
+                            logDownloadResult(downloader!!.result)
+                        }
                     }
                 }
                 fun shouldNotDownload(): Boolean {
@@ -402,7 +411,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
     }
 
     @Composable
-    fun AltActionsDialog(onDismiss: () -> Unit) {
+    fun AltActionsDialog(isExternal: Boolean, onDismiss: () -> Unit) {
         CommonPopupCard(onDismiss = onDismiss) {
             @Composable
             fun OptionRow(type_:  ButtonTypes, reset: Boolean = false) {
@@ -418,7 +427,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
             }
             Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(15.dp)) {
                 Logd(TAG) { "button label: $type" }
-                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.TTS)) {
+                if (!isExternal && type !in listOf(ButtonTypes.PAUSE, ButtonTypes.TTS)) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
                         type = ButtonTypes.TTS
                         onClick()
@@ -428,7 +437,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                         Text(stringResource(ButtonTypes.TTS.labelRes))
                     }
                 }
-                if (type !in listOf(ButtonTypes.PAUSE,  ButtonTypes.TTS_NOW)) {
+                if (!isExternal && type !in listOf(ButtonTypes.PAUSE,  ButtonTypes.TTS_NOW)) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
                         type = ButtonTypes.TTS_NOW
                         onClick()
@@ -438,17 +447,17 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                         Text(stringResource(ButtonTypes.TTS_NOW.labelRes))
                     }
                 }
-                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.DELETE, ButtonTypes.CANCEL)) {
+                if (!isExternal && type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.DELETE, ButtonTypes.CANCEL)) {
                     val client = clientByEpisode(item)
                     if (client?.supportDownload != false) OptionRow(ButtonTypes.DOWNLOAD, true)
                 }
-                if (type !in listOf(ButtonTypes.STREAM, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL, ButtonTypes.DELETE)) OptionRow(ButtonTypes.DELETE, true)
-                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY_REPEAT, true)
-                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY, true)
-                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY_ONE, true)
-                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DELETE)) OptionRow(ButtonTypes.STREAM_REPEAT, true)
-                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DELETE)) OptionRow(ButtonTypes.STREAM, true)
-                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.DELETE)) OptionRow(ButtonTypes.STREAM_ONE, true)
+                if (!isExternal && type !in listOf(ButtonTypes.STREAM, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL, ButtonTypes.DELETE)) OptionRow(ButtonTypes.DELETE, true)
+                if (!isExternal && type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.PLAY_REPEAT, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY_REPEAT, true)
+                if (!isExternal && type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY, true)
+                if (!isExternal && type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.PLAY_ONE, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY_ONE, true)
+                if (!isExternal && type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DELETE)) OptionRow(ButtonTypes.STREAM, true)
+                if (type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DELETE, ButtonTypes.STREAM_REPEAT)) OptionRow(ButtonTypes.STREAM_REPEAT, true)
+                if (type !in listOf(ButtonTypes.PAUSE, ButtonTypes.DELETE, ButtonTypes.STREAM_ONE)) OptionRow(ButtonTypes.STREAM_ONE, true)
                 if (type == ButtonTypes.PAUSE) OptionRow(ButtonTypes.REPEAT_THIS)
                 if (type != ButtonTypes.WEBSITE) OptionRow(ButtonTypes.WEBSITE)
             }

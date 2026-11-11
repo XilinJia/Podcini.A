@@ -3,7 +3,6 @@ package ac.mdiq.podcini.playback
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.playback.BasePlayer.Companion.isStreamingCapable
 import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
-import ac.mdiq.podcini.playback.SleepManager.Companion.sleepManager
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.checkAndMarkDuplicates
 import ac.mdiq.podcini.storage.database.isDownloadable
@@ -99,7 +98,6 @@ class PlaybackStarter(private val media: Episode) {
                         if (!sameMedia) {
                             player.isSkipping = true
                             player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
-                            sleepManager?.restart()
                         }
                     }
                     player.isPaused || player.isPrepared -> {
@@ -108,24 +106,20 @@ class PlaybackStarter(private val media: Episode) {
                             player.isSkipping = true
                             player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
                         }
-                        sleepManager?.restart()
                     }
                     player.isStopped -> {
                         //                    ContextCompat.startForegroundService(getAppContext(), Intent(getAppContext(), PlaybackService::class.java))
                         player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
-                        sleepManager?.restart()
                     }
                     // TODO: test
                     player.isInitialized -> {
                         Logt(TAG, "processTask player.isInitialized")
                         player.prepareMedia(media_, shouldStreamThisTime, startWhenPrepared = startImmediately, prepareImmediately = true, audioOnly = audioOnly, forceReset = forcePlaybackReset)
-                        sleepManager?.restart()
                     }
                     else -> {
                         player.playWhenReadyFlow.value = true
                         player.setAsCurMedia(media_)
                         player.reprepareMedia()
-                        sleepManager?.restart()
                     }
                 }
                 forcePlaybackReset = false

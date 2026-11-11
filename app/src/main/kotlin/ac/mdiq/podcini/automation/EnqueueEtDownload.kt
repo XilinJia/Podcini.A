@@ -56,7 +56,7 @@ class AutoDownloadAlgorithm {
                         if (episode.downloaded) deleteMedia(episode)
                     }
                 }
-                removeFromAllQueues(toReplace)
+                if (appPrefsFlow!!.value.deleteRemovesFromQueue) removeFromAllQueues(toReplace)
             }
             val downloadedCount = getEpisodesCount(EpisodeFilter(EpisodeFilter.States.downloaded.name))
             val deletedCount = toReplace.size + cleanupAlgorithm().makeRoomForEpisodes(autoDownloadableCount - toReplace.size)

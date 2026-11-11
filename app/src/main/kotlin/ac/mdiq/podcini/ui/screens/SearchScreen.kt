@@ -90,7 +90,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -156,6 +155,13 @@ private fun saveToSearchHistory() {
 
 private val remoteMediaCache = LruCache<String, List<Episode>>(1)
 
+enum class SearchTabs(val titleRes: Int) {
+    Episodes(R.string.episodes_label),
+    Feeds(R.string.feeds),
+    Remote(R.string.remote),
+    PAFeeds(R.string.pafeeds)
+}
+
 class SearchVM: ViewModel() {
     val algo = SearchAlgo()
 
@@ -171,8 +177,7 @@ class SearchVM: ViewModel() {
 
     var episodeSortOrder by mutableStateOf(EpisodeSortOrder.DATE_DESC)
 
-    val tabTitles = listOf(R.string.episodes_label, R.string.feeds, R.string.remote, R.string.pafeeds)
-    var selectedTabIndex by mutableIntStateOf(0)
+    var selectedTab by mutableStateOf(SearchTabs.Episodes)
 
     var listIdentity by mutableStateOf("")
 
@@ -187,14 +192,14 @@ class SearchVM: ViewModel() {
             remoteMediaCache.remove(curSearchString)
             remoteMedia = listOf()
         } }
-        viewModelScope.launch { snapshotFlow { selectedTabIndex }.collectLatest {
-            if (selectedTabIndex == 2) {
+        viewModelScope.launch { snapshotFlow { selectedTab }.collectLatest {
+            if (selectedTab == SearchTabs.Remote) {
                 val fromCache = remoteMediaCache[curSearchString]
                 if (!fromCache.isNullOrEmpty()) remoteMedia = fromCache
             }
         } }
         viewModelScope.launch { snapshotFlow { episodeSortOrder }.collectLatest {
-            if (selectedTabIndex == 2 && remoteMedia.isNotEmpty()) {
+            if (selectedTab == SearchTabs.Remote && remoteMedia.isNotEmpty()) {
                 val list = remoteMedia.toMutableList()
                 list.reorderWith(episodeSortOrder)
                 remoteMedia = list
@@ -276,9 +281,7 @@ fun SearchScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
     val drawerController = LocalDrawerController.current
     val scope = rememberCoroutineScope()
-
     val vm: SearchVM = viewModel()
-
     var swipeActions by remember { mutableStateOf(SwipeActions(TAG)) }
 
     DisposableEffect(lifecycleOwner) {
@@ -351,44 +354,29 @@ fun SearchScreen() {
             TopAppBar(
                 title = { Row(verticalAlignment = Alignment.CenterVertically) {
                     SearchBarRow(R.string.search_hint, defaultText = curSearchString, modifier = Modifier.weight(1f) , history = appAttribs.searchHistory) { str ->
-                        if (str.isBlank()) {
-                            Logt(TAG, "A query string is needed.")
-                            return@SearchBarRow
-                        }
+                        if (str.isBlank()) { Logt(TAG, "A query string is needed."); return@SearchBarRow }
                         curSearchString = str
-                        if (vm.selectedTabIndex == 2) scope.launch(Dispatchers.IO) { vm.searchRemoteMedia() }
+                        if (vm.selectedTab == SearchTabs.Remote) scope.launch(Dispatchers.IO) { vm.searchRemoteMedia() }
                         saveToSearchHistory()
                     }
-                    if (vm.selectedTabIndex in listOf(0, 2)) Icon(imageVector = ImageVector.vectorResource(R.drawable.arrows_sort), contentDescription = "butSort", modifier = Modifier.padding(start = 7.dp).clickable { showSortDialog = true })
+                    if (vm.selectedTab in listOf(SearchTabs.Episodes, SearchTabs.Remote)) Icon(imageVector = ImageVector.vectorResource(R.drawable.arrows_sort), contentDescription = "butSort", modifier = Modifier.padding(start = 7.dp).clickable { showSortDialog = true })
                 } },
                 navigationIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back or drawer", modifier = Modifier.padding(horizontal = 7.dp).clickable { if (!navBack()) drawerController?.open()  }) },
                 actions = {
                     var expanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                     DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
-                        if (vm.selectedTabIndex != 2) DropdownMenuItem(text = { Text(stringResource(R.string.show_criteria)) }, onClick = {
-                            showSearchBy = true
-                            expanded = false
-                        })
+                        if (vm.selectedTab != SearchTabs.Remote) DropdownMenuItem(text = { Text(stringResource(R.string.show_criteria)) }, onClick = { showSearchBy = true; expanded = false })
                         DropdownMenuItem(text = { Text(stringResource(R.string.feeds_online)) }, onClick = {
                             val query = curSearchString
-                            if (query.matches("http[s]?://.*".toRegex())) {
-                                navTo(OnlineFeed(url = query))
-                                return@DropdownMenuItem
-                            }
+                            if (query.matches("http[s]?://.*".toRegex())) { navTo(OnlineFeed(url = query)); return@DropdownMenuItem }
                             searchFeedsOnline(query = query)
                             navTo(FindFeeds)
                             expanded = false
                         })
-                        if (vm.selectedTabIndex == 2) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.remote_searchers)) }, onClick = {
-                                showRemoteSearchers = true
-                                expanded = false
-                            })
-                            if (!vm.searchingRemote) DropdownMenuItem(text = { Text(stringResource(R.string.reserve_all)) }, onClick = {
-                                showReserveAllDialog = true
-                                expanded = false
-                            })
+                        if (vm.selectedTab == SearchTabs.Remote) {
+                            DropdownMenuItem(text = { Text(stringResource(R.string.remote_searchers)) }, onClick = { showRemoteSearchers = true; expanded = false })
+                            if (!vm.searchingRemote && vm.remoteMedia.isNotEmpty()) DropdownMenuItem(text = { Text(stringResource(R.string.reserve_all)) }, onClick = { showReserveAllDialog = true; expanded = false })
                         }
                     }
                 })
@@ -400,18 +388,22 @@ fun SearchScreen() {
     val assFeeds by vm.assFeedsFlow.collectAsStateWithLifecycle()
 
     val infoBarText = remember(episodes.size) { mutableStateOf("${episodes.size} episodes") }
-    val tabCounts = remember(episodes.size, assFeeds.size, vm.feeds.size, vm.remoteMedia.size, vm.pafeeds.size) { listOf(episodes.size, vm.feeds.size + assFeeds.size, vm.remoteMedia.size, vm.pafeeds.size) }
     swipeActions.ActionOptionsDialog()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(topBar = { TopBar() }) { innerPadding ->
             Column(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
                 Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                    vm.tabTitles.forEachIndexed { index, titleRes ->
-                        if (index != 2 || vm.searchersAll.isNotEmpty()) Tab(modifier = Modifier.wrapContentWidth().padding(horizontal = 2.dp, vertical = 4.dp).background(shape = RoundedCornerShape(8.dp), color = if (vm.selectedTabIndex == index) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else { Color.Transparent }),
-                            selected = vm.selectedTabIndex == index, onClick = { vm.selectedTabIndex = index }, text = {
-                            Text(text = stringResource(titleRes) + "(${tabCounts[index]})", maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium, color = if (vm.selectedTabIndex == index) MaterialTheme.colorScheme.primary else { MaterialTheme.colorScheme.onSurface })
-                        })
+                    SearchTabs.entries.forEach { tab ->
+                        val count = when (tab) {
+                            SearchTabs.Episodes -> episodes.size
+                            SearchTabs.Feeds -> vm.feeds.size + assFeeds.size
+                            SearchTabs.Remote -> vm.remoteMedia.size
+                            SearchTabs.PAFeeds -> vm.pafeeds.size
+                        }
+                        if (tab != SearchTabs.PAFeeds || vm.pafeeds.isNotEmpty()) Tab(modifier = Modifier.wrapContentWidth().padding(horizontal = 2.dp, vertical = 4.dp).background(shape = RoundedCornerShape(8.dp), color = if (vm.selectedTab == tab) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else { Color.Transparent }),
+                            text = { Text(text = stringResource(tab.titleRes) + "($count)", maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium, color = if (vm.selectedTab == tab) MaterialTheme.colorScheme.primary else { MaterialTheme.colorScheme.onSurface }) },
+                            selected = vm.selectedTab == tab, onClick = { vm.selectedTab = tab })
                     }
                 }
                 @Composable
@@ -473,8 +465,8 @@ fun SearchScreen() {
                     }
                 }
 
-                when (vm.selectedTabIndex) {
-                    0 -> {
+                when (vm.selectedTab) {
+                    SearchTabs.Episodes -> {
                         InforBar(swipeActions) {
                             Text(infoBarText.value, style = MaterialTheme.typography.bodyMedium)
                             Spacer(modifier = Modifier.weight(0.1f))
@@ -482,8 +474,8 @@ fun SearchScreen() {
                         }
                         EpisodeLazyColumn(episodes, swipeActions = swipeActions, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) runOnIOScope { queueToVirtual(e, episodes, vm.listIdentity, EpisodeSortOrder.DATE_DESC) } })
                     }
-                    1 -> FeedsColumn()
-                    2 -> {
+                    SearchTabs.Feeds -> FeedsColumn()
+                    SearchTabs.Remote -> {
                         InforBar(null) {
                             if (vm.searchingRemote) CircularProgressIndicator(strokeWidth = 4.dp, color = textColor, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.weight(0.1f))
@@ -491,13 +483,13 @@ fun SearchScreen() {
                             Spacer(modifier = Modifier.weight(0.1f))
                             PlayRandom(vm.remoteMedia)
                         }
-                        EpisodeLazyColumn(vm.remoteMedia, isExternal = true, layoutMode = LayoutMode.WideImage.code, swipeActions = null, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) actQueueFlow.value = tmpQueue() })
+                        EpisodeLazyColumn(vm.remoteMedia, isExternal = true, layoutMode = LayoutMode.WideImage.code, swipeActions = null, preferSingleAction = true, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.STREAM_ONE, ButtonTypes.STREAM_REPEAT)) actQueueFlow.value = tmpQueue() })
                     }
-                    3 -> PAFeedsColumn()
+                    SearchTabs.PAFeeds -> PAFeedsColumn()
                 }
             }
         }
-        if (episodeForInfo != null) EpisodeScreen(episodeForInfo!!, listFlow = vm.episodesFlow, allowOpenFeed = true)
+        if (episodeForInfo != null) EpisodeScreen(episodeForInfo!!, listFlow = vm.episodesFlow, isExternal = vm.selectedTab == SearchTabs.Remote, allowOpenFeed = true)
     }
 }
 

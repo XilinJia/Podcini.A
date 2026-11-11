@@ -253,7 +253,7 @@ object AppGatewayRegistry {
                         val versionMatched = attr.apiVersion == PROVIDER_API_VERSION
                         if (recognized && versionMatched) {
                             client.attributes = attr
-                            if (attr.feedType == FeedType.SoundCloud.name) client.supportDownload = false
+//                            if (attr.feedType == FeedType.SoundCloud.name) client.supportDownload = false
                             client.gateway = remote
                             client.connection = this
                             val aidlSearchProvider = client.gateway?.searchProvider
@@ -279,12 +279,10 @@ object AppGatewayRegistry {
                 }
                 override fun onServiceDisconnected(name: ComponentName?) {
                     Logt(TAG, "${formatDateTimeFlex(nowInMillis())}: Service ${client.attributes?.name} disconnected")
-//                    removeClient(client)
                     reconnectClient(client, explicitIntent)
                 }
                 override fun onBindingDied(name: ComponentName?) {
                     Logt(TAG, "${client.attributes?.name} binding died, trying to rebind service")
-//                    removeClient(client)
                     if (continuation.isActive) continuation.resumeWith(Result.success(null))
                     runCatching { context.unbindService(this) }
                     reconnectClient(client, explicitIntent)

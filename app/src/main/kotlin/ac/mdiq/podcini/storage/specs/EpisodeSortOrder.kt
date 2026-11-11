@@ -236,8 +236,8 @@ enum class EpisodeSortOrder(val code: Int, val res: Int, val conditional: Boolea
 
         private fun likeCount(item: Episode?): Int = item?.likeCount ?: 0
 
-        // per minute
-        private fun viewSpeed(item: Episode?): Double = 60.0 * (item?.viewCount ?: 0) / ((nowInMillis() - (item?.pubDate ?: 0L)).milliseconds.coerceAtLeast(1.days).inWholeSeconds)
+        private fun viewSpeed(item: Episode?): Double = 1.0 * (item?.viewCount ?: 0) / ((nowInMillis() - (item?.pubDate ?: 0L)).milliseconds.coerceAtLeast(5.days).inWholeSeconds)
+
         /**
          * Implements a reordering by pubdate that avoids consecutive episodes from the same feed in the queue.
          * A listener might want to hear episodes from any given feed in pubdate order, but would

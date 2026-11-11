@@ -143,11 +143,6 @@ fun MainScreen() {
 
     val bottomInsets = WindowInsets.ime.union(WindowInsets.navigationBars)
     val bottomInsetPadding = bottomInsets.asPaddingValues().calculateBottomPadding()
-    val dynamicBottomPadding = when (sheetState.bottomSheetState.targetValue) {
-        SheetValue.Expanded -> bottomInsetPadding + 300.dp
-        SheetValue.PartiallyExpanded -> bottomInsetPadding + playerMinHeight.dp
-        else -> bottomInsetPadding
-    }
     var savedDrawerValue by rememberSaveable { mutableStateOf(DrawerValue.Closed) }
 
     val drawerState = rememberDrawerState(initialValue = savedDrawerValue)
@@ -204,9 +199,15 @@ fun MainScreen() {
     CompositionLocalProvider(LocalDrawerController provides drawerCtrl, LocalDrawerState provides drawerState) {
         ModalNavigationDrawer(drawerState = drawerState, modifier = Modifier.fillMaxHeight(), drawerContent = { NavDrawerScreen() }) {
             BottomSheetScaffold(sheetContent = { AVPlayerScreen() }, scaffoldState = sheetState, sheetMaxWidth = screenWidth, sheetPeekHeight = bottomInsetPadding + playerMinHeight.dp, sheetDragHandle = {}, sheetShape = RectangleShape, topBar = {}) { paddingValues ->
+                val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                val dynamicBottomPadding = when (sheetState.bottomSheetState.targetValue) {
+                    SheetValue.Expanded -> 300.dp + navigationBarBottom
+                    SheetValue.PartiallyExpanded -> playerMinHeight.dp
+                    else -> 0.dp
+                }
                 Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize().padding(top = paddingValues.calculateTopPadding(), bottom = dynamicBottomPadding)) {
                     NavDisplay(backStack = backStack, onBack = { navBack() }, entryProvider = myEntryProvider, entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()))
-                    if ((curMedia0?.id ?: -1L) > 0 && psState == PSState.Hidden) Text(stringResource(R.string.player_in_drawer), color = Color.Yellow, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.DarkGray).align(Alignment.BottomCenter).clickable { psState = PSState.PartiallyExpanded })
+                    if ((curMedia0?.id ?: -1L) > 0 && psState == PSState.Hidden) Text(stringResource(R.string.player_in_drawer), color = Color.Yellow, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = navigationBarBottom).background(Color.DarkGray).clickable { psState = PSState.PartiallyExpanded })
                 }
             }
         }
@@ -220,14 +221,8 @@ fun MainScreen() {
         when {
             drawerState.isOpen -> drawerCtrl.close()
             psState == PSState.Expanded -> psState = PSState.PartiallyExpanded
-            backStack.size > 1 -> {
-                Logd(TAG) { "BackHandler nav to back" }
-                navBack()
-            }
-            backStack.size == 1 && defPage != backStack[0] -> {
-                Logd(TAG) { "BackHandler nav to defPage: $defPage" }
-                navTo(defPage)
-            }
+            backStack.size > 1 -> navBack()
+            backStack.size == 1 && defPage != backStack[0] -> navTo(defPage)
             openDrawer -> drawerCtrl.open()
             else -> Logt(TAG, context.getString(R.string.no_more_screens_back))
         }

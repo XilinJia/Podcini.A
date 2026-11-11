@@ -583,7 +583,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
         }) { innerPadding ->
             if (vm.showEpisodes) Column(modifier = Modifier.padding(innerPadding).fillMaxSize().padding(start = 5.dp, end = 5.dp).background(MaterialTheme.colorScheme.surface)) {
                 InforBar(swipeActions) { Text(vm.infoBarText.value, style = MaterialTheme.typography.bodyMedium) }
-                EpisodeLazyColumn(vm.episodes, isExternal = true, swipeActions = swipeActions, actionButtonCB = { _, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) actQueueFlow.value = tmpQueue() })
+                EpisodeLazyColumn(vm.episodes, isExternal = true, swipeActions = swipeActions, preferSingleAction = true, actionButtonCB = { _, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) actQueueFlow.value = tmpQueue() })
             } else Column(modifier = Modifier.padding(innerPadding).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 10.dp, end = 10.dp).background(MaterialTheme.colorScheme.surface)) {
                 ConstraintLayout(modifier = Modifier.fillMaxWidth().height(110.dp).background(MaterialTheme.colorScheme.surface)) {
                     val (coverImage, taColumn, buttons) = createRefs()
@@ -712,7 +712,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                 CircularProgressIndicator(strokeWidth = 10.dp, color = textColor, modifier = Modifier.size(50.dp).align(Alignment.Center))
             }
         }
-        if (episodeForInfo != null) EpisodeScreen(episodeForInfo!!)
+        if (episodeForInfo != null) EpisodeScreen(episodeForInfo!!, isExternal = true)
     }
 }
 

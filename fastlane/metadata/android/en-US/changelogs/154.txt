@@ -1,0 +1,8 @@
+* enabled experimental feature of downloading media from CloudSound
+* likely fixed bottom padding for some soft navigation bars
+* enabled some altButtons on remote episodes
+* in a remote list, ensure playing an episode does not change the image
+* when searching media from Apple, ensure to not get duplicates
+* Stream buttons in remote lists are set to Single
+* action button in EpisodeInfo is set to Single
+* episodes Trending sort has a minimum time interval of 5 day

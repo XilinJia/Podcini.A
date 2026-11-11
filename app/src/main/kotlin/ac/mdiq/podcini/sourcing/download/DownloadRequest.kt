@@ -136,12 +136,12 @@ class DownloadRequest: HasCredentials {
     suspend fun ensureMediaFileExists() {
         val destinationPath = destination
         Logd(TAG) { "ensureMediaFileExists destinationUri: $destinationPath " }
-        var file = destinationPath.toUF()
-        if (!file.exists()) file = file.createFile()
-        if (!file.exists()) Loge(TAG, "ensureMediaFileExists no: ${file.absPath}")
+        var uf = destinationPath.toUF()
+        if (!uf.exists()) uf = uf.createFile()
+        if (!uf.exists()) Loge(TAG, "ensureMediaFileExists no: ${uf.absPath}")
         Logd(TAG) { "ensureMediaFileExists request.destination: $destination" }
-        Logd(TAG) { "ensureMediaFileExists file.absPath: ${file.absPath}" }
-        destination = file.absPath
+        Logd(TAG) { "ensureMediaFileExists file.absPath: ${uf.absPath}" }
+        destination = uf.absPath
     }
 
     companion object {

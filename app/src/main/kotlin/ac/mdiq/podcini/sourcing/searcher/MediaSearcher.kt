@@ -21,7 +21,7 @@ class AppleMediaSearcher : MediaSearcher {
 
     override val name: String = "Apple"
 
-    fun fromItunes(json: JSONObject): EpisodeIPC {
+    private fun fromItunes(json: JSONObject): EpisodeIPC {
         val e = EpisodeIPC()
         e.link = json.optString("trackViewUrl", "")
         e.title = json.optString("trackName", "")
@@ -33,6 +33,10 @@ class AppleMediaSearcher : MediaSearcher {
         e.downloadUrl = json.optString("episodeUrl", "")
         e.duration = json.optInt("trackTimeMillis", 0)
         return e
+    }
+
+    private fun EpisodeIPC.equal(e: EpisodeIPC): Boolean {
+        return downloadUrl ==  e.downloadUrl || (title == e.title && duration == e.duration)
     }
 
     // https://itunes.apple.com/search?term=Android&media=podcast&entity=podcastEpisode
@@ -56,7 +60,7 @@ class AppleMediaSearcher : MediaSearcher {
                 for (i in 0 until j.length()) {
                     val podcastJson = j.getJSONObject(i)
                     val media = fromItunes(podcastJson)
-                    if (media.title?.contains(query, ignoreCase = true) == true) medias.add(media)
+                    if (media.title?.contains(query, ignoreCase = true) == true) medias.find { it.equal(media) } ?: medias.add(media)
                 }
             } else Loge(TAG, "Failed finding media: HttpClient returns failure")
         } catch (e: Exception) { Loge(TAG, e, "Failed finding media on $query") }

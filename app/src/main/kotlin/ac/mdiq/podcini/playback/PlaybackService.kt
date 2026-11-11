@@ -228,7 +228,7 @@ class PlaybackService : MediaLibraryService() {
                 }
                 else -> {
                     Logd(TAG) { "MyMediaSessionCallback onConnect other controller: $controller" }
-                    return MediaSession.ConnectionResult.AcceptedResultBuilder(session).build()
+                    return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller).build()
                 }
             }
         }

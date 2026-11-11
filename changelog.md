@@ -1,3 +1,20 @@
+# 12.20.0
+
+* enabled experimental feature of downloading media from CloudSound
+* Reconcile in Download mode of Facets screen is temporarily disabled
+* likely fixed bottom padding for some soft navigation bars
+* episodes altButtons list not include duplicates, enabled some altButtons on remote episodes
+* in a remote list, ensure playing an episode does not change the image
+* when searching media from Apple, ensure to not get duplicates
+* in Search screen
+	* Stream buttons are set to Single in Remote tab
+	* PAFeeds tab is not shown when empty
+* Stream buttons in OnlineFeed are also set to Single
+* action button in EpisodeInfo is set to Single
+* episodes Trending sort has a minimum time interval of 5 day
+* Kotlin upped to 2.4.21, krdb to 3.3.7
+* gradle upped to 9.9.1
+
 # 12.19.0
 
 * fixed app taking full space of a window

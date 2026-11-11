@@ -531,7 +531,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                     }
                                     Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.size(50.dp).align(Alignment.BottomEnd).pointerInput(Unit) {
                                         detectTapGestures(
-                                            onLongPress = { if (!isExternal) showAltActionsDialog = true },
+                                            onLongPress = { showAltActionsDialog = true },
                                             onTap = {
                                                 val actType = actionButton.type
                                                 actionButton.onClick()
@@ -540,7 +540,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                         Icon(imageVector = ImageVector.vectorResource(actionButton.drawable), tint = buttonColor, contentDescription = null, modifier = Modifier.size(33.dp))
                                         if (actionButton.processing.intValue > -1) CircularProgressIndicator(progress = { 0.01f * actionButton.processing.intValue }, strokeWidth = 4.dp, color = textColor, modifier = Modifier.size(37.dp).offset(y = 4.dp))
                                     }
-                                    if (showAltActionsDialog) actionButton.AltActionsDialog(onDismiss = { showAltActionsDialog = false })
+                                    if (showAltActionsDialog) actionButton.AltActionsDialog(isExternal, onDismiss = { showAltActionsDialog = false })
                                 }
                             }
                         }
@@ -636,28 +636,16 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         selectMode = false
                     }
                     val options = mutableListOf<@Composable () -> Unit>(
-                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            showPlayStateDialog = true
-                            onOperation()
-                        }) {
+                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { showPlayStateDialog = true; onOperation() }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_mark_played), contentDescription = "Set played state")
                             Text(stringResource(id = R.string.set_play_state_label)) } },
-                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            showChooseRatingDialog = true
-                        }) {
+                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); showChooseRatingDialog = true }) {
                             Icon(imageVector = Icons.Filled.Star, contentDescription = "Set rating")
                             Text(stringResource(id = R.string.set_rating_label)) } },
-                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            showEditTagsDialog = true
-                        }) {
+                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); showEditTagsDialog = true }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.baseline_label_24), contentDescription = "Edit tags")
                             Text(stringResource(id = R.string.edit_tags)) } },
-                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            showAddCommentDialog = true
-                        }) {
+                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); showAddCommentDialog = true }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.baseline_comment_24), contentDescription = "Add comment")
                             Text(stringResource(id = R.string.add_comments)) } },
                         { if (!isExternal && areDownloadable) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
@@ -675,38 +663,23 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_download), contentDescription = "Download")
                             Text(stringResource(id = R.string.download_label)) } },
-                        { if (!isExternal && canAddToAssQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            runOnIOScope { selected.forEach { addToAssQueue(listOf(it)) } }
-                        }) {
+                        { if (!isExternal && canAddToAssQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); runOnIOScope { selected.forEach { addToAssQueue(listOf(it)) } } }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_play), contentDescription = "Add to associated or active queue")
                             Text(stringResource(id = R.string.add_to_associated_queue)) } },
-                        { if (!isExternal && canAddToActQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            runOnIOScope { addToQueue(selected, actQueueFlow.value) }
-                        }) {
+                        { if (!isExternal && canAddToActQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); runOnIOScope { addToQueue(selected, actQueueFlow.value) } }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_play), contentDescription = "Add to active queue")
                             Text(stringResource(id = R.string.add_to_active_queue)) } },
-                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            showPutToQueueDialog = true
-                        }) {
+                        { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); showPutToQueueDialog = true }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_play), contentDescription = "Add to queue...")
                             Text(stringResource(id = R.string.add_to_queue)) } },
-                        { if (!isExternal && areInAnyQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            runOnIOScope { for (e in selected) smartRemoveFromQueues(e) }
-                        }) {
+                        { if (!isExternal && areInAnyQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); runOnIOScope { for (e in selected) smartRemoveFromQueues(e) } }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_remove), contentDescription = "Remove from active queue")
                             Text(stringResource(id = R.string.remove_from_all_queues)) } }
                     )
                     if (selected.isNotEmpty()) {
                         if (curQueue != null && !isExternal) {
                             options.add {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                                    onOperation()
-                                    runOnIOScope { for (e in selected) smartRemoveFromQueues(e, listOf(curQueue)) }
-                                }) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); runOnIOScope { for (e in selected) smartRemoveFromQueues(e, listOf(curQueue)) } }) {
                                     Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_remove), contentDescription = "Remove from active queue")
                                     Text(stringResource(id = R.string.remove_from_cur_queue))
                                 }
@@ -731,10 +704,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                                 Icon(imageVector = Icons.Filled.Delete, contentDescription = "Set related")
                                 Text(stringResource(id = R.string.set_related)) }
                         }
-                        if (!isExternal) options.add { Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            showShelveDialog = true
-                        }) {
+                        if (!isExternal) options.add { Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); showShelveDialog = true }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.baseline_shelves_24), contentDescription = "Shelve")
                             Text(stringResource(id = R.string.shelve_label)) }
                         }
@@ -781,25 +751,16 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             }
                         }
                         if (feed != null && !isExternal) options.add {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                                onOperation()
-                                showEraseDialog = true
-                            }) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); showEraseDialog = true }) {
                                 Icon(imageVector = ImageVector.vectorResource(id = R.drawable.baseline_delete_forever_24), contentDescription = "Erase episodes")
                                 Text(stringResource(id = R.string.erase_episodes))
                             }
                         }
-                        if (!isExternal && haveCaptions) options.add { Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            showDeleteCaptionsDialog = true
-                        }) {
+                        if (!isExternal && haveCaptions) options.add { Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); showDeleteCaptionsDialog = true }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.baseline_delete_forever_24), contentDescription = "Delete captions")
                             Text(stringResource(id = R.string.delete_captions)) }
                         }
-                        if (!isExternal) options.add { Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
-                            onOperation()
-                            showMulticastDialog = true
-                        }) {
+                        if (!isExternal) options.add { Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); showMulticastDialog = true }) {
                             Icon(imageVector = Icons.Filled.Share, contentDescription = "Multicast")
                             Text(stringResource(id = R.string.multicast_to_devices)) }
                         }

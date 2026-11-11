@@ -8,6 +8,7 @@ import ac.mdiq.podcini.playback.PlaybackService.Companion.isCasting
 import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
 import ac.mdiq.podcini.playback.PlaybackService.Companion.serviceIOScope
 import ac.mdiq.podcini.playback.SleepManager.Companion.setIfAutoEnable
+import ac.mdiq.podcini.playback.SleepManager.Companion.sleepManager
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AVStreams
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
@@ -97,8 +98,6 @@ abstract class BasePlayer {
         get() = status == PlayerStatus.INITIALIZED
     val isStopped: Boolean
         get() = status == PlayerStatus.STOPPED
-//    val isError: Boolean
-//        get() = status == PlayerStatus.ERROR
 
     internal var isSkipping = false
 
@@ -235,7 +234,6 @@ abstract class BasePlayer {
         //        showStackTrace()
         oldStatus = status
         status = newStatus
-//        playWhenReadyFlow.value = isPlaying
 
         //        currentMediaType = mediaType
         Logd(TAG) { "handlePlayerStatus $status" }
@@ -251,10 +249,6 @@ abstract class BasePlayer {
                 saveCurState(status_ = newStatus)
                 if (oldStatus != null) setIfAutoEnable()
             }
-//            isError -> {
-//                saveCurState()
-//                pause(reprepare = false)
-//            }
             else -> {}
         }
     }
@@ -411,7 +405,7 @@ abstract class BasePlayer {
         if (isCasting) setCastPlayImmediately()
         Logd(TAG) { "prepareMedia preparing for playable:${playable.id} ${playable.titleOrIdv()}" }
         if (playable.playState < EpisodeState.PROGRESS.code) runOnIOScope { upsert(playable) { it.setPlayState(EpisodeState.PROGRESS) } }
-        val sameMedia = playable.id == curMediaFlow.value?.id
+//        val sameMedia = playable.id == curMediaFlow.value?.id
         setAsCurMedia(playable)
         if (forceReset) {
             curMediaFlow.value = playable
@@ -451,6 +445,7 @@ abstract class BasePlayer {
                 forcePlaybackReset = true
             } finally { }
         }
+        sleepManager?.restart()
     }
 
     open fun shouldSetSource(): Boolean = true
@@ -465,7 +460,7 @@ abstract class BasePlayer {
             setVolume(1.0f, 1.0f, volAdpFac)
             Logd(TAG) { "play(): position: ${curMediaFlow.value?.position}" }
             castPlayer?.play()
-            SleepManager.sleepManager?.restart()
+            sleepManager?.restart()
         } else Logd(TAG) { "Call to play() was ignored because current state of PSMP object is $status" }
     }
 
@@ -618,7 +613,7 @@ abstract class BasePlayer {
     }
 
     internal fun endPlayback(hasEnded: Boolean, wasSkipped: Boolean, shouldContinue: Boolean = true) {
-        showStackTrace()
+//        showStackTrace()
         Logd(TAG) { "endPlayback ${curMediaFlow.value?.title}" }
         cancelPositionSaver()
         val currentMedia = curMediaFlow.value ?: return

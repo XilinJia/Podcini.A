@@ -312,16 +312,15 @@ class Episode : RealmObject {
     }
 
     fun imageLocation(forceFeed: Boolean = false): String? {
+        if (forceFeed || feed?.useFeedImage() == true) {
+            val url = feed?.images?.firstOrNull()?.href
+            if (!url.isNullOrBlank()) return url
+        }
         return when {
-            forceFeed || feed?.useFeedImage() == true -> feed?.images?.firstOrNull()?.href
-            else -> {
-                when {
-                    images.isNotEmpty() -> images[0].href
-                    feed != null -> feed!!.images.firstOrNull()?.href
-                    hasEmbeddedPicture == true -> fileUrl
-                    else -> null
-                }
-            }
+            images.isNotEmpty() -> images[0].href
+            feed != null -> feed!!.images.firstOrNull()?.href
+            hasEmbeddedPicture == true -> fileUrl
+            else -> null
         }
     }
 
@@ -332,11 +331,6 @@ class Episode : RealmObject {
             if (playState == EpisodeState.PLAYED.code) EpisodeState.UNPLAYED.code
             else EpisodeState.PLAYED.code
         }
-        // not sure if this is proper
-        //        if (playState == EpisodeState.UNPLAYED.code) {
-        //            lastPlayedTime = 0L
-        //            playbackCompletionTime = 0L
-        //        }
         if (resetPosition || playState in listOf(EpisodeState.PLAYED.code, EpisodeState.IGNORED.code)) position = 0
         if (state in listOf(EpisodeState.QUEUE, EpisodeState.SKIPPED, EpisodeState.PLAYED, EpisodeState.PASSED, EpisodeState.IGNORED)) isAutoDownloadEnabled = false
         if (state in listOf(EpisodeState.AGAIN, EpisodeState.FOREVER)) hasSetRepeat = true
@@ -417,7 +411,8 @@ class Episode : RealmObject {
         var baseFilename = if (titleBaseFilename != "") titleBaseFilename else urlBaseFilename
         val filenameMaxLength = 220
         if (baseFilename.length > filenameMaxLength) baseFilename = baseFilename.take(filenameMaxLength)
-        return baseFilename + "." + id + "." + urlBaseFilename.substringAfterLast('.', "")
+        val ext = urlBaseFilename.substringAfterLast('.', "").takeIf { !it.contains("*") } ?: ""
+        return baseFilename + "." + id + "." + ext
     }
 
     fun isDownloaded(): Boolean {
