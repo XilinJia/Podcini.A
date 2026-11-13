@@ -48,14 +48,11 @@ Podcini.A requests for permission for unrestricted background activities for uni
 #### For Podcini to show up on car's HUD with Android Auto, please read AnroidAuto.md for instructions.
 #### If you need to cast to an external speaker or screen, you should install the "play" apk, not the "free" apk, that's about the difference between the two.
 
-#### Since 12.9.2, each of the Free and Play builds in the releases here is accompanied with a "Legacy" release. 
-
-<Legacy> <summary>Legacy?</summary>
+#### Since 12.9.2, each of the Free and Play builds in the releases here is accompanied with a "Legacy" release. <details> <summary>Legacy?</summary>
 It's the same app as the standard build, the difference is that in a Legacy apk dependency libs are compressed therefore reducing the size of the apk.
 The downsize is install size of the app will be somewhat larger (keeping both the compressed and uncompressed libs). 
 All variants in a release are inter-changeable, so you can download/install any one and re-try another one.
-
-</Legacy>
+</details>
 
 ### [Warning: Your Android device will become a locked-down platform soon](https://keepandroidopen.org/)
 
