@@ -1,6 +1,6 @@
 # 12.20.1
 
-* expanded download HLS functiona
+* expanded download HLS function
 * when downloading muxed video from external source, if not available, try audio stream
 * in Error mode of Downlaods Logs screen, added "Retry all" in menu
 * in FindFeed screen, navback icon on topbar navigates back or open drawer

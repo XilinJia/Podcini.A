@@ -386,6 +386,9 @@ For more details of the changes, see the [Changelog](changelog.md)
 ### Media and player details
 <img src="./images/Episode.jpg" width="238" /> <img src="./images/Player-details.jpg" width="238" /> 
 
+### Transcript details
+<img src="./images/Transcript.jpg" width="238" /> 
+
 ### Double players
 <img src="./images/Double-players.jpg" width="238" /> 
 
