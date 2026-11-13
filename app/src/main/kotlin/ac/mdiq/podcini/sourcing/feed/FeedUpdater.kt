@@ -13,7 +13,7 @@ import ac.mdiq.podcini.sourcing.EPISODE_BATCH_SIZE
 import ac.mdiq.podcini.sourcing.download.DownloadError
 import ac.mdiq.podcini.sourcing.download.DownloadRequest
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
-import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
+import ac.mdiq.podcini.sourcing.download.Downloader
 import ac.mdiq.podcini.sourcing.feed.PodcastHandler.FeedHandlerResult
 import ac.mdiq.podcini.sourcing.typeClientMap
 import ac.mdiq.podcini.storage.database.addNewFeed
@@ -201,7 +201,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         if (force || feed.lastUpdateFailed) request.lastModified = null
         if (nextPage) request.source = feed.nextPageLink
         Logd(TAG) { "downloadPodcast nextPage: $nextPage ${feed.nextPageLink}"}
-        val downloader = downloaderFor(request) ?: throw Exception("Unable to create downloader")
+        val downloader = Downloader(request)
         var downloadResult: DownloadResult? = null
         var isSuccessful = true
         var reason: DownloadError? = null

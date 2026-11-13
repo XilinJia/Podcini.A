@@ -50,6 +50,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -103,7 +104,6 @@ fun searchFeedsOnline(searcherName: String = "", query: String? = null) {
 }
 
 class FindFeedsVM: ViewModel() {
-
     internal var readElements by mutableStateOf<List<OpmlElement>>(listOf())
 
     var showOpmlImportSelectionDialog by mutableStateOf(false)
@@ -164,7 +164,6 @@ fun FindFeedsScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context by rememberUpdatedState(LocalContext.current)
     val drawerController = LocalDrawerController.current
-
     val vm: FindFeedsVM = viewModel()
 
     DisposableEffect(lifecycleOwner) {
@@ -233,7 +232,7 @@ fun FindFeedsScreen() {
         val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
         Column(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
             Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_cloud_download_24), contentDescription = "Open Drawer", modifier = Modifier.padding(end = 7.dp).clickable { drawerController?.open() })
+                Icon(ImageVector.vectorResource(R.drawable.outline_cloud_download_24), contentDescription = "Back or drawer", modifier = Modifier.padding(horizontal = 7.dp).clickable { if (!navBack()) drawerController?.open()  })
                 SearchBarRow(R.string.search_podcast_hint, modifier = Modifier.weight(1f), defaultText = searchText, history = appAttribs.onlineSearchHistory) { str ->
                     if (str.isBlank()) return@SearchBarRow
                     searchText = str

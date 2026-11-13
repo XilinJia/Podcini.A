@@ -573,7 +573,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                     if (vm.showEpisodes) Icon(imageVector = ImageVector.vectorResource(R.drawable.arrows_sort), contentDescription = "butSort", modifier = Modifier.padding(start = 7.dp).clickable { showSortDialog = true })
                 } },
                     navigationIcon = {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back or drawer", modifier = Modifier.padding(7.dp).clickable {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back or drawer", modifier = Modifier.padding(horizontal = 7.dp).clickable {
                             if (vm.showEpisodes) vm.showEpisodes = false
                             else if (!navBack()) drawerController?.open()
                         })

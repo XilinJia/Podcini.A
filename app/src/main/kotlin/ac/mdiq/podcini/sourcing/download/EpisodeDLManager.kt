@@ -282,11 +282,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
 
         Logd(TAG) { "request.destination: ${request.destination}" }
         request.ensureMediaFileExists()
-        downloader = Downloader.downloaderFor(request)
-        if (downloader == null) {
-            Loge(TAG, "performDownload Unable to create downloader")
-            return Result.failure()
-        }
+        downloader = Downloader(request)
 
         fun sendErrorNotification(title: String) {
             val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID.error.name)

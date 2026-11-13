@@ -500,31 +500,34 @@ fun LogsScreen() {
     @Composable
      fun MyTopAppBar() {
         Box {
-            TopAppBar(title = { Text(vm.count.toString() ) }, navigationIcon = { Icon(imageVector = ImageVector.vectorResource(vm.mode.res), contentDescription = "Open Drawer", modifier = Modifier.padding(7.dp).clickable { drawerController?.open() }) },
+            TopAppBar(title = { Text(vm.count.toString() ) }, navigationIcon = { Icon(imageVector = ImageVector.vectorResource(vm.mode.res), contentDescription = "Open Drawer", modifier = Modifier.padding(horizontal = 7.dp).clickable { drawerController?.open() }) },
                 actions = {
                     if (vm.mode in listOf(LogsModes.Session, LogsModes.Downloads, LogsModes.Shares)) Switch(checked = vm.showSuccessLogs, onCheckedChange = { vm.showSuccessLogs = !vm.showSuccessLogs },
                         thumbContent = { Icon(imageVector = if (vm.showSuccessLogs) Icons.Filled.Info else Icons.Filled.Warning, contentDescription = null, tint = if (vm.showSuccessLogs) Color.Green else Color.Yellow , modifier = Modifier.size(SwitchDefaults.IconSize)) })
-                    if (vm.mode != LogsModes.Session) IconButton(onClick = {
-                        vm.clearAllLogs()
-                        vm.mode = LogsModes.Session
-                    }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Session.res), contentDescription = "session") }
-                    if (vm.mode != LogsModes.Downloads) IconButton(onClick = {
-                        vm.clearAllLogs()
-                        vm.mode = LogsModes.Downloads
-                    }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Downloads.res), contentDescription = "download") }
-                    if (vm.mode != LogsModes.Shares) IconButton(onClick = {
-                        vm.clearAllLogs()
-                        vm.mode = LogsModes.Shares
-                    }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Shares.res), contentDescription = "share") }
-                    if (vm.mode != LogsModes.Deletions) IconButton(onClick = {
-                        vm.clearAllLogs()
-                        vm.mode = LogsModes.Deletions
-                    }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Deletions.res), contentDescription = "Deletions") }
+                    if (vm.mode != LogsModes.Session) IconButton(onClick = { vm.clearAllLogs(); vm.mode = LogsModes.Session }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Session.res), contentDescription = "session") }
+                    if (vm.mode != LogsModes.Downloads) IconButton(onClick = { vm.clearAllLogs(); vm.mode = LogsModes.Downloads }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Downloads.res), contentDescription = "download") }
+                    if (vm.mode != LogsModes.Shares) IconButton(onClick = { vm.clearAllLogs(); vm.mode = LogsModes.Shares }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Shares.res), contentDescription = "share") }
+                    if (vm.mode != LogsModes.Deletions) IconButton(onClick = { vm.clearAllLogs(); vm.mode = LogsModes.Deletions }) { Icon(imageVector = ImageVector.vectorResource(LogsModes.Deletions.res), contentDescription = "Deletions") }
                     var expanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                     if (vm.mode != LogsModes.Deletions) DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.clear_logs)) }, onClick = {
-                            showDeleteConfirmDialog.value = true
+                        DropdownMenuItem(text = { Text(stringResource(R.string.clear_logs)) }, onClick = { showDeleteConfirmDialog.value = true; expanded = false })
+                        if (vm.mode == LogsModes.Downloads && !vm.showSuccessLogs && vm.count > 0) DropdownMenuItem(text = { Text(stringResource(R.string.retry_all)) }, onClick = {
+                            val logs = vm.downloadLogs.filter { !it.isSuccessful }.toList()
+                            runOnIOScope {
+                                logs.forEach { status ->
+                                    when (status.feedfileType) {
+                                        RequestType.FEEDMEDIA.code -> {
+                                            val media = realm.query(Episode::class).query("id == $0", status.feedfileId).first().find()
+                                            if (media != null) ActionButton(media, typeInit = ButtonTypes.DOWNLOAD).onClick()
+                                        }
+                                        RequestType.FEED.code -> {
+                                            val feed = feedsMap[status.feedfileId]
+                                            if (feed != null) FeedUpdater(listOf(feed)).start()
+                                        }
+                                    }
+                                }
+                            }
                             expanded = false
                         })
                     }

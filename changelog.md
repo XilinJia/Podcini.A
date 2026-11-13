@@ -1,3 +1,11 @@
+# 12.20.1
+
+* expanded download HLS functiona
+* when downloading muxed video from external source, if not available, try audio stream
+* in Error mode of Downlaods Logs screen, added "Retry all" in menu
+* in FindFeed screen, navback icon on topbar navigates back or open drawer
+* amended padding of navback icons
+
 # 12.20.0
 
 * enabled experimental feature of downloading media from CloudSound

@@ -17,7 +17,6 @@ import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.NetworkUtils.getURIFromRequestUrl
-import ac.mdiq.podcini.utils.NetworkUtils.isNetworkUrl
 import ac.mdiq.podcini.utils.NetworkUtils.wasDownloadBlocked
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import android.os.SystemClock
@@ -29,6 +28,7 @@ import io.ktor.client.request.header
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.client.statement.bodyAsText
 import io.ktor.client.statement.request
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -36,7 +36,6 @@ import io.ktor.http.contentLength
 import io.ktor.http.isSuccess
 import io.ktor.http.userAgent
 import io.ktor.util.network.UnresolvedAddressException
-import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.asSource
 import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.toByteArray
@@ -48,7 +47,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlinx.io.Source
 import kotlinx.io.buffered
-import okio.BufferedSink
 import okio.buffer
 import java.net.URI
 import kotlin.coroutines.cancellation.CancellationException
@@ -77,7 +75,10 @@ class Downloader(val request: DownloadRequest) {
 
     suspend fun downloadFeed(cb: suspend (Source)->Unit) {
         Logd(TAG) { "starting downloadFeed() source: ${request.source} dest: ${request.destination}" }
-        if (request.source == null) return
+        if (request.source.isNullOrBlank()) {
+            Loge(TAG, "downloadFeed url is null or empty: ${request.title}")
+            return
+        }
 
         val destFile = request.destination.toUF()
         val fileExists = destFile.exists()
@@ -114,7 +115,7 @@ class Downloader(val request: DownloadRequest) {
                 }
                 header(HttpHeaders.AcceptEncoding, "identity")
             }.execute { response ->
-                val contentEncodingHeader = response.headers[HttpHeaders.ContentEncoding]
+//                val contentEncodingHeader = response.headers[HttpHeaders.ContentEncoding]
                 Logd(TAG) { "response.status: ${response.status}" }
 
                 when {
@@ -206,7 +207,10 @@ class Downloader(val request: DownloadRequest) {
 
     suspend fun downloadMedia(userAgent: String) {
         Logd(TAG) { "downloadMedia" }
-        if (request.source.isNullOrBlank()) return
+        if (request.source.isNullOrBlank()) {
+            Loge(TAG, "downloadMedia url is null or empty: ${request.title}")
+            return
+        }
 
         downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Running(5)) }
 
@@ -240,132 +244,90 @@ class Downloader(val request: DownloadRequest) {
 
         when (probe) {
             is Probe.Playlist -> {
-                downloadHls(playlistText = probe.text, playlistUrl = probe.url, userAgent = userAgent)
-//                downloadPlaylist(playlist = probe.text, playlistUrl = probe.url, userAgent = userAgent)
+                val (text, url) = resolveMediaPlaylist(probe.text, probe.url, userAgent)
+                downloadHLS(playlistText = text, playlistUrl = url, userAgent = userAgent)
             }
             is Probe.Media -> downloadDirect(userAgent)
         }
     }
 
+    private suspend fun resolveMediaPlaylist(text: String, url: String, userAgent: String): Pair<String, String> {
+        if (!text.contains("#EXT-X-STREAM-INF")) return text to url
+        val lines = text.lines().map { it.trim() }
+        var best: Pair<Long, String>? = null
+        lines.forEachIndexed { i, l ->
+            if (l.startsWith("#EXT-X-STREAM-INF")) {
+                val bw = Regex("""BANDWIDTH=(\d+)""").find(l)?.groupValues?.get(1)?.toLong() ?: 0L
+                val uri = lines.drop(i + 1).first { it.isNotEmpty() && !it.startsWith("#") }
+                if (best == null || bw > best.first) best = bw to uri
+            }
+        }
+        val variantUrl = URI(url).resolve(requireNotNull(best) { "no variants" }.second).toString()
+        val variantText = mediaKtor.get(variantUrl) { header(HttpHeaders.UserAgent, userAgent) }.bodyAsText()
+        return variantText to variantUrl
+    }
+
     private val uriAttr = Regex("""URI="([^"]+)"""")
 
-    suspend fun downloadHls(playlistText: String, playlistUrl: String, userAgent: String?) {
+    private suspend fun downloadHLS(playlistText: String, playlistUrl: String, userAgent: String) {
         val out = StringBuilder()
-
-        var absPath = request.destination
+        val absPath = request.destination
+        val dir = absPath.toUF().parent()
+        require(dir != null) { "downloadHLS directory is null" }
         val withoutExtension = absPath.substringBeforeLast(".")
         val id = withoutExtension.substringAfterLast(".")
-        val dir = absPath.toUF().parent()
-        require(dir != null) { "downloadHls directory is null" }
 
         suspend fun fetch(ref: String, name: String) {
-            val abs = URI(playlistUrl).resolve(ref).toString()   // handles relative refs
-            (dir / name).sink().buffer().use { appendUrl(abs, it, userAgent) }
-        }
-
-        var index = 0
-        val lineCount = playlistText.lines().size
-        for (raw in playlistText.lineSequence()) {
-            val line = raw.trim()
-            when {
-                line.startsWith("#EXT-X-MAP") -> {
-                    val m = uriAttr.find(line) ?: error("EXT-X-MAP without URI")
-                    val name = "$id.init.mp4"
-                    fetch(m.groupValues[1], name)
-                    out.appendLine(line.replace(m.value, "URI=\"$name\""))
-                }
-                line.isEmpty() || line.startsWith("#") -> out.appendLine(raw)
-                else -> {
-                    val name = "$id.seg%05d.m4s".format(index++)
-                    fetch(line, name)
-                    out.appendLine(name)
+            val abs = URI(playlistUrl).resolve(ref).toString()
+            (dir / name).sink().buffer().use { sink->
+                val response = mediaKtor.get(abs) { header(HttpHeaders.UserAgent, userAgent) }
+                check(response.status.value in 200..299) { "HTTP error downloading segment: ${response.status}" }
+                val channel = response.bodyAsChannel()
+                val buffer = ByteArray(BUFFER_SIZE)
+                while (true) {
+                    val n = channel.readAvailable(buffer, 0, buffer.size)
+                    if (n < 0) break
+                    if (n == 0) continue
+                    sink.write(buffer, 0, n)
                 }
             }
-            request.soFar = (++index).toLong()
-            reportProgress(lineCount.toLong())
         }
-        Logd(TAG) { "downloadHls out: $out"}
-        val fileUrl = absPath + "m3u8"
-        Logd(TAG) { "downloadHls fileUrl: $fileUrl"}
-        fileUrl.toUF().writeString(out.toString())
-        request.destination = fileUrl
-        result.setSuccessful()
-        request.progressPercent = 100
-    }
-
-    private suspend fun downloadPlaylist(playlist: String, playlistUrl: String, userAgent: String?) {
-        Logd(TAG) { "downloadPlaylist playlist: $playlist" }
-        val lines = playlist.lines().map { it.trim() }.filter { it.isNotEmpty() }
-
-        require(lines.any { it == "#EXT-X-ENDLIST" } || lines.any { it.startsWith("#EXT-X-PLAYLIST-TYPE:VOD") }) { "Live HLS playlists are not supported" }
-        require(lines.none { it.startsWith("#EXT-X-STREAM-INF:") }) { "Master HLS playlists are not supported" }
-        require(lines.none { it.startsWith("#EXT-X-KEY:") && !it.contains("METHOD=NONE") }) { "Encrypted HLS is not supported" }
-        require(lines.none { it.startsWith("#EXT-X-BYTERANGE:") }) { "HLS byte-range segments are not supported" }
-
-        val mapLine = lines.firstOrNull { it.startsWith("#EXT-X-MAP:") } ?: error("Missing EXT-X-MAP")
-        val initUri = Regex("""URI="([^"]+)"""").find(mapLine)?.groupValues?.get(1) ?: error("Missing initialization URI")
-        val initUrl = resolveUrl(playlistUrl, initUri)
-        val segments = lines.filter { !it.startsWith("#") }.map { resolveUrl(playlistUrl, it) }
-        require(segments.isNotEmpty()) { "No media segments found" }
-        val destFile = request.destination.toUF()
-        destFile.sink(append = true).buffer().use { sink ->
-            appendUrl(initUrl, sink, userAgent)
-            segments.forEachIndexed { index, segment ->
-                Logd(TAG) { "downloadPlaylist index: $index ${segments.size}"}
-                appendUrl(segment, sink, userAgent)
-                request.soFar = (index + 1).toLong()
-                reportProgress(segments.size.toLong())
+        try {
+            var index = 0
+            val lineCount = playlistText.lines().size
+            for (raw in playlistText.lineSequence()) {
+                if (cancelled) throw CancellationException()
+                val line = raw.trim()
+                when {
+                    line.startsWith("#EXT-X-MAP") -> {
+                        val m = uriAttr.find(line) ?: error("EXT-X-MAP without URI")
+                        val name = "$id.init.mp4"
+                        fetch(m.groupValues[1], name)
+                        out.appendLine(line.replace(m.value, "URI=\"$name\""))
+                    }
+                    line.isEmpty() || line.startsWith("#") -> out.appendLine(raw)
+                    else -> {
+                        val name = "$id.seg%05d.m4s".format(index++)
+                        fetch(line, name)
+                        out.appendLine(name)
+                    }
+                }
+                request.soFar = (++index).toLong()
+                reportProgress(lineCount.toLong())
             }
+//            Logd(TAG) { "downloadHls out: $out" }
+            val fileUrl = absPath + "m3u8"
+            Logd(TAG) { "downloadHLS fileUrl: $fileUrl" }
+            fileUrl.toUF().writeString(out.toString())
+            request.destination = fileUrl
             result.setSuccessful()
             request.progressPercent = 100
-        }
+        } catch (e: Exception) {
+            dir.listChildren().filter { it.name.startsWith(id) }.forEach { it.delete() }
+            onFail(DownloadError.ERROR_MISC, e.message)
+            throw e
+        } finally { downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Completed) } }
     }
-
-    private suspend fun appendUrl(url: String, sink: BufferedSink, userAgent: String?) {
-        val response = mediaKtor.get(url) { userAgent?.let { header(HttpHeaders.UserAgent, it) } }
-        check(response.status.value in 200..299) { "HTTP error downloading segment: ${response.status}" }
-        copyChannel(response.bodyAsChannel(), sink)
-    }
-
-    private suspend fun copyChannel(channel: ByteReadChannel, sink: BufferedSink) {
-        val buffer = ByteArray(BUFFER_SIZE)
-        while (true) {
-            val n = channel.readAvailable(buffer, 0, buffer.size)
-            if (n < 0) break
-            if (n == 0) continue
-            sink.write(buffer, 0, n)
-        }
-    }
-
-    private fun resolveUrl(base: String, reference: String): String {
-        if (Regex("""^[a-zA-Z][a-zA-Z0-9+.-]*:""").containsMatchIn(reference)) return reference
-        val schemeEnd = base.indexOf("://")
-        require(schemeEnd > 0) { "Invalid base URL: $base" }
-        val originEnd = base.indexOf('/', schemeEnd + 3).let { if (it < 0) base.length else it }
-        val origin = base.substring(0, originEnd)
-        val scheme = base.substring(0, schemeEnd)
-        if (reference.startsWith("//")) return "$scheme:$reference"
-        val basePath = base.substring(originEnd).substringBefore('#').substringBefore('?').ifEmpty { "/" }
-        if (reference.startsWith("/")) return origin + normalizePath(reference)
-        if (reference.startsWith("?")) return origin + basePath + reference
-        val directory = basePath.substringBeforeLast('/', "")
-        val path = if (directory.isEmpty()) "/$reference" else "$directory/$reference"
-        return origin + normalizePath(path)
-    }
-
-    private fun normalizePath(path: String): String {
-        val trailingSlash = path.endsWith("/")
-        val parts = mutableListOf<String>()
-        for (part in path.split('/')) {
-            when (part) {
-                "", "." -> Unit
-                ".." -> if (parts.isNotEmpty()) parts.removeAt(parts.lastIndex)
-                else -> parts.add(part)
-            }
-        }
-        return "/" + parts.joinToString("/") + if (trailingSlash && parts.isNotEmpty()) "/" else ""
-    }
-
 
     private suspend fun downloadDirect(useragent: String) {
         Logd(TAG) { "downloadDirect called" }
@@ -418,7 +380,6 @@ class Downloader(val request: DownloadRequest) {
             var url = getURIFromRequestUrl(request.source!!).toString()
             var total: Long? = null
             var failuresInRow = 0
-
             if (appPrefsFlow!!.value.checkAvailableSpace) {
                 val freeSpace = freeSpaceAvailable
                 Logd(TAG) { "Free space is $freeSpace" }
@@ -442,6 +403,7 @@ class Downloader(val request: DownloadRequest) {
                 val t0 = SystemClock.elapsedRealtime()
                 Logd(TAG) { "downloadChunked chunk start=$start url=$url" }
                 try {
+                    if (cancelled) throw CancellationException()
                     mediaKtor.prepareGet(url) {
                         userAgent(useragent)
                         header(HttpHeaders.AcceptEncoding, "identity")
@@ -577,14 +539,6 @@ class Downloader(val request: DownloadRequest) {
             val url = url_ ?: return false
             val st = downloadStatesFlow.value[url] ?: return false
             return st is DownloadStatus.Queued || st is DownloadStatus.Running
-        }
-
-        fun downloaderFor(request: DownloadRequest): Downloader? {
-            if (!isNetworkUrl(request.source)) {
-                Loge(TAG, "Could not find appropriate downloader for " + request.source)
-                return null
-            }
-            return if (request.feedfileType == RequestType.FEED.code) Downloader(request) else Downloader(request)
         }
     }
 }

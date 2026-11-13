@@ -14,6 +14,7 @@ import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.LogeFor
+import ac.mdiq.podcini.utils.Logt
 import android.os.Bundle
 import io.ktor.util.AttributeKey
 import kotlinx.coroutines.runBlocking
@@ -51,10 +52,13 @@ class DownloadRequest: HasCredentials {
             val streams = AVStreams(media, false)
             streams.forceFetch = true
             val useVideo = if (c.attributes?.hasSeparateAVs == true) media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY else c.attributes?.hasVideo == true
+            var gotMuxed = false
             if (useVideo) {
                 runBlocking { streams.chooseVideoSpec(true) }
-                streams.curMuxedSpec?.let { url = it.url }
-            } else {
+                streams.curMuxedSpec?.let { gotMuxed = true; url = it.url }
+            }
+            if (!gotMuxed) {
+                if (useVideo) Logt(TAG, "muxed video is not available, try audio only: $title")
                 runBlocking { streams.chooseAudioSpec() }
                 streams.curAudioSpec?.let { url = it.url }
             }

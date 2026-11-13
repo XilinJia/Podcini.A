@@ -221,7 +221,7 @@ fun FeedsSettingsScreen() {
     fun MyTopAppBar() {
         Box {
             TopAppBar(title = { Text(text = stringResource(R.string.feed_settings_label), fontSize = 20.sp, fontWeight = FontWeight.Bold) },
-                navigationIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back or drawer", modifier = Modifier.padding(7.dp).clickable { if (!navBack()) drawerController?.open() }) } )
+                navigationIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back or drawer", modifier = Modifier.padding(horizontal = 7.dp).clickable { if (!navBack()) drawerController?.open() }) } )
             HorizontalDivider(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
         }
     }

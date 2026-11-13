@@ -4,7 +4,6 @@ import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.Downloader
-import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
 import ac.mdiq.podcini.shared.FeedIPC
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.shared.prepareUrl
@@ -110,7 +109,7 @@ class FeedBuilder(val showError: (String?, String)->Unit) {
         selectedDownloadUrl = prepareUrl(url)
         val request = requestFor(Feed(selectedDownloadUrl, null)).withAuthentication(username, password).withInitiatedByUser(true)
         try {
-            downloader = downloaderFor(request)
+            downloader = Downloader(request)
             downloader?.downloadFeed { source ->
                 //                        Logd(TAG) { "buildPodcast destination: $destination" }
                 val feed = Feed(selectedDownloadUrl, null)

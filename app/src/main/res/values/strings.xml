@@ -96,6 +96,7 @@
 
     <string name="clear_log">Clear the log</string>
     <string name="clear_logs">Clear the logs</string>
+    <string name="retry_all">Retry all</string>
 
     <!-- Playback history -->
     <string name="clear_history_label">Clear history</string>

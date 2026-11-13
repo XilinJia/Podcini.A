@@ -147,7 +147,7 @@ fun PrefsScreen() {
     val drawerController = LocalDrawerController.current
 
     Scaffold(topBar = { TopAppBar(title = { Text(topAppBarTitle) },
-        navigationIcon = { Icon(imageVector = Icons.Filled.Settings, contentDescription = "Back", modifier = Modifier.padding(7.dp).clickable { if (!pfNavBack()) drawerController?.open() } ) }) }) { innerPadding ->
+        navigationIcon = { Icon(imageVector = Icons.Filled.Settings, contentDescription = "Back", modifier = Modifier.padding(horizontal = 7.dp).clickable { if (!pfNavBack()) drawerController?.open() } ) }) }) { innerPadding ->
         CompositionLocalProvider(LocalViewModelStoreOwner provides viewModelStoreOwner) {
             NavDisplay(backStack = pfBackStack, onBack = { pfNavBack() }, entryProvider = pfAnyEntryProvider, modifier = Modifier.padding(innerPadding))
         }

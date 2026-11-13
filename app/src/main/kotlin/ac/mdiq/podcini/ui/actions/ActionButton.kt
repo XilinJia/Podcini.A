@@ -20,7 +20,7 @@ import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.HTTPAttribs
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
-import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloaderFor
+import ac.mdiq.podcini.sourcing.download.Downloader
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.isDownloading
 import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
 import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
@@ -255,7 +255,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 fun downloadNow() {
                     downloadJob = runOnIOScope {
                         val request = requestFor(item)?: return@runOnIOScope
-                        val downloader = downloaderFor(request)
+                        val downloader = Downloader(request)
                         var at = HTTPAttribs()
                         at.useragent = PODCINI_USER_AGENT
                         clientByEpisode(item)?.let { c->
@@ -263,14 +263,14 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                             c.withProviderBlocking { it.httpAtribsFor(request.source) }?.let { at = it }
                         }
                         try {
-                            downloader?.downloadMedia(at.useragent)
-                            if (downloader?.result?.isSuccessful == true) {
+                            downloader.downloadMedia(at.useragent)
+                            if (downloader.result.isSuccessful) {
                                 updateDB(request)
                                 logDownloadResult(downloader.result)
                             }
                         } catch (e: Exception) {
-                            Logs(TAG, e, "failed performDownload exception on downloader!!.call()")
-                            logDownloadResult(downloader!!.result)
+                            Logs(TAG, e, "failed performDownload exception on downloader.call()")
+                            logDownloadResult(downloader.result)
                         }
                     }
                 }
