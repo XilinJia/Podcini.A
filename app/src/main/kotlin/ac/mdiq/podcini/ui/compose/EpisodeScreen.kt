@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.compose
 
+import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.isPlaying
 import ac.mdiq.podcini.playback.playerOf
@@ -7,6 +8,7 @@ import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.DownloadStatus
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
+import ac.mdiq.podcini.sourcing.download.exportMediaFiles
 import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
@@ -22,6 +24,8 @@ import ac.mdiq.podcini.storage.utils.div
 import ac.mdiq.podcini.storage.utils.durationStringFull
 import ac.mdiq.podcini.storage.utils.durationStringShort
 import ac.mdiq.podcini.storage.utils.internalDir
+import ac.mdiq.podcini.storage.utils.persistedTrees
+import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.ui.actions.ActionButton
 import ac.mdiq.podcini.ui.actions.ButtonTypes
 import ac.mdiq.podcini.ui.actions.Combo
@@ -42,6 +46,8 @@ import ac.mdiq.podcini.utils.formatDateTimeFlex
 import ac.mdiq.podcini.utils.formatShortFileSize
 import ac.mdiq.podcini.utils.openInSystemDefault
 import ac.mdiq.podcini.utils.shareText
+import android.app.Activity.RESULT_OK
+import android.content.Intent
 import android.speech.tts.TextToSpeech
 import android.view.ViewGroup
 import android.webkit.RenderProcessGoneDetail
@@ -50,6 +56,9 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.collection.LruCache
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -209,6 +218,15 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
         }
     }
 
+    val mediaExportPathLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+        if (result.resultCode != RESULT_OK || result.data?.data == null) return@rememberLauncherForActivityResult
+        val uri = result.data!!.data!!
+        persistedTrees.add(uri)
+//        val flags = result.data!!.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        getAppContext().contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        runOnIOScope { exportMediaFiles(episode, uri.toUF()) }
+    }
+
     @Composable
     fun OpenDialogs() {
         if (futureState in listOf(EpisodeState.AGAIN, EpisodeState.FOREVER, EpisodeState.LATER)) FutureStateDialog(listOf(episode), futureState, onDismiss = { futureState = EpisodeState.UNSPECIFIED })
@@ -260,7 +278,6 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                     }
                     if (episode.transcriptMetas.isEmpty() && client?.attributes?.hasTranscripts == true) {
                         IconButton(onClick = {
-                            if (client == null) { Logt(TAG, "can not find service app for episode"); return@IconButton }
                             showTransMetaDialog = true
                             runOnIOScope {
                                 val captions = client.withProvider { it.getCaptionSpecs(episode.downloadUrl) }
@@ -297,6 +314,13 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                         DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.share_label)) }, onClick = {
                                 showShareDialog = true
+                                expanded = false
+                            })
+                            if (!episode.fileUrl.isNullOrBlank()) DropdownMenuItem(text = { Text(stringResource(R.string.export_media)) }, onClick = {
+                                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                                }
+                                mediaExportPathLauncher.launch(intent)
                                 expanded = false
                             })
                         }

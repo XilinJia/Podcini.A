@@ -1,3 +1,12 @@
+# 12.21.0
+
+* downlaoding video is no longer forced to muxed video, av files (if available) are downlaoded according to quality settings in the feed
+* straightened media file extension setting
+* added experimental feature of exporting media files, accessible in menu of EpisodeInfo
+* in MediaPlayer,
+	* when deleting file of current media, is pause, will not auto-prepare for next
+	* added routine to play separately downloaded audio/video files
+
 # 12.20.1
 
 * expanded download HLS function

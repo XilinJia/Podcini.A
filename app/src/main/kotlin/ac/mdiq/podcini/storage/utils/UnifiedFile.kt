@@ -68,8 +68,9 @@ interface UnifiedFile {
     }
 
     suspend fun copyTo(target: UnifiedFile) {
-        if (!target.exists()) target.createFile()
-        source().buffer().use { src -> target.sink().buffer().use { dst -> dst.writeAll(src) } }
+        var t = target
+        if (!target.exists()) t = target.createFile()
+        source().buffer().use { src -> t.sink().buffer().use { dst -> dst.writeAll(src) } }
     }
 
     suspend fun moveTo(target: UnifiedFile) {

@@ -434,7 +434,6 @@ fun ImportExportScreen() {
         exportWithWriter(writer, null, exportType)
     }
 
-
     if (processingText.isNotBlank()) {
         CommonPopupCard(onDismiss = { processingText = "" }) {
             Column {

@@ -127,8 +127,8 @@ object OKHTTP {
             fun getUserInfo(request: Request): String {
                 val downloadRequest = request.tag(DownloadRequest::class.java)
                 if (downloadRequest != null) {
-                    if (downloadRequest.source != null) {
-                        var userInfo = getURIFromRequestUrl(downloadRequest.source!!).userInfo
+                    if (downloadRequest.sources[0].isNullOrBlank()) {
+                        var userInfo = getURIFromRequestUrl(downloadRequest.sources[0]!!).userInfo
                         if (userInfo.isEmpty() && (!downloadRequest.username.isNullOrEmpty() || !downloadRequest.password.isNullOrEmpty()))
                             userInfo = "${downloadRequest.username}:${downloadRequest.password}"
                         return userInfo

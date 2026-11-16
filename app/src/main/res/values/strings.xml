@@ -250,6 +250,12 @@
     <string name="share_transcript">Share transcript</string>
     <string name="share_captions">Share captions</string>
 
+    <string name="export_media">Export media</string>
+    <string name="export_av_message">The media has separate audio/video files. If they have unmatched encoding, transcoding will be performed before exporting, which can take time. What do you want to do?</string>
+    <string name="export_both">Export both</string>
+    <string name="audio_only">Audio only</string>
+    <string name="video_only">Video only</string>
+
     <string name="repeat_episodes_msg">Please specify a repeat interval for the episodes.</string>
     <string name="ignore_episodes_confirmation_msg">Please confirm that you want to ignore episodes.</string>
     <string name="erase_episodes_confirmation_msg">Please confirm that you want to erase episodes.</string>

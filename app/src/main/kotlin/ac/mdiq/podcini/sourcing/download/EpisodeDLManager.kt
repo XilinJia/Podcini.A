@@ -6,9 +6,7 @@ import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.config.CHANNEL_ID
 import ac.mdiq.podcini.config.NotificationIds
 import ac.mdiq.podcini.playback.actQueueFlow
-import ac.mdiq.podcini.shared.HTTPAttribs
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
-import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.WORK_DATA_PROGRESS
@@ -33,13 +31,11 @@ import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
 import ac.mdiq.podcini.sync.model.EpisodeAction
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
-import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logm
 import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
-import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
@@ -70,6 +66,7 @@ import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class EpisodeDLManager {
     private val constraints: Constraints
@@ -236,8 +233,8 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
                             nm.notify(NotificationIds.downloading, generateProgressNotification())
                         }
                         delay(1000.milliseconds)
-                    } catch (e: CancellationException) { return@launch
-                    } catch (e: Exception) {
+                    } catch (e: CancellationException) { return@launch }
+                    catch (e: Exception) {
                         Loge(TAG, e, "Episode download progressUpdaterJob exception")
                         return@launch
                     }
@@ -312,15 +309,8 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
             }
         }
         Logd(TAG) { "starting downloader" }
-        try {
-            var at = HTTPAttribs()
-            at.useragent = PODCINI_USER_AGENT
-            clientByEpisode(media)?.let { c->
-                at.useragent = BROWSER_USER_AGENT
-                c.withProviderBlocking { it.httpAtribsFor(request.source) }?.let { at = it }
-            }
-            downloader!!.downloadMedia(at.useragent)
-        } catch (e: Exception) {
+        try { downloader!!.downloadMedia() }
+        catch (e: Exception) {
             Logs(TAG, e, "failed performDownload exception on downloader!!.call()")
             logDownloadResult(downloader!!.result)
             sendErrorNotification(request.title?:"")

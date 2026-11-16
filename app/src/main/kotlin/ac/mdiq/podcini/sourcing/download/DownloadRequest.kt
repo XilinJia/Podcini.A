@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.sourcing.download
 
+import ac.mdiq.podcini.shared.HTTPAttribs
 import ac.mdiq.podcini.shared.HasCredentials
 import ac.mdiq.podcini.shared.prepareUrl
 import ac.mdiq.podcini.sourcing.AVStreams
@@ -11,10 +12,11 @@ import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.storage.utils.cacheDir
 import ac.mdiq.podcini.storage.utils.div
 import ac.mdiq.podcini.storage.utils.toUF
+import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.LogeFor
-import ac.mdiq.podcini.utils.Logt
+import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import android.os.Bundle
 import io.ktor.util.AttributeKey
 import kotlinx.coroutines.runBlocking
@@ -25,18 +27,22 @@ enum class RequestType(val code: Int) {
 }
 
 class DownloadRequest: HasCredentials {
+    var useragent: String = ""
+
     var destination: String = ""
-    var source: String? = null
+
+    val sources = MutableList<String?>(2) { null }
+
+    var urlOrig: String? = null
         set(value) {
             field = value
-            urlOrig = value
+            sources[0] = value
         }
-    var urlOrig: String? = null
+
     var title: String? = null
     var feedfileId: Long = 0L
     var feedfileType: Int = 0
     var lastModified: String? = null
-    var mediaEnqueued: Boolean = false
     var arguments: Bundle = Bundle()
     var initiatedByUser: Boolean = false
 
@@ -47,25 +53,48 @@ class DownloadRequest: HasCredentials {
 
     constructor(destination: String, media: Episode): super("", "") {
         this.destination = destination
-        var url = media.downloadUrl
+        this.urlOrig = media.downloadUrl
+        var at = HTTPAttribs()
+        at.useragent = PODCINI_USER_AGENT
         clientByEpisode(media)?.let { c->
             val streams = AVStreams(media, false)
             streams.forceFetch = true
-            val useVideo = if (c.attributes?.hasSeparateAVs == true) media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY else c.attributes?.hasVideo == true
-            var gotMuxed = false
-            if (useVideo) {
-                runBlocking { streams.chooseVideoSpec(true) }
-                streams.curMuxedSpec?.let { gotMuxed = true; url = it.url }
-            }
-            if (!gotMuxed) {
-                if (useVideo) Logt(TAG, "muxed video is not available, try audio only: $title")
+            if (c.attributes?.hasSeparateAVs == true) {
                 runBlocking { streams.chooseAudioSpec() }
-                streams.curAudioSpec?.let { url = it.url }
+                streams.curAudioSpec?.let {
+                    val url = it.url
+                    this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url) else null
+                }
+                if (!this.sources[0].isNullOrBlank() && media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY) {
+                    runBlocking { streams.chooseVideoSpec(false) }
+                    streams.curVideoSpec?.let {
+                        val url = it.url
+                        this.sources[1] = if (!url.isNullOrBlank()) prepareUrl(url) else null
+                    }
+                } else if (this.sources[0].isNullOrBlank()) {
+                    runBlocking { streams.chooseVideoSpec(true) }
+                    streams.curMuxedSpec?.let {
+                        val url = it.url
+                        this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url) else null
+                    }
+                }
+                Logd(TAG) { "sources[0]: ${sources[0]}" }
+                Logd(TAG) { "sources[1]: ${sources[1]}" }
+            } else {
+                var url: String? = ""
+                if (c.attributes?.hasVideo == true) {
+                    runBlocking { streams.chooseVideoSpec(true) }
+                    streams.curMuxedSpec?.let { url = it.url }
+                } else {
+                    runBlocking { streams.chooseAudioSpec() }
+                    streams.curAudioSpec?.let { url = it.url }
+                }
+                this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url!!) else null
             }
+            at.useragent = BROWSER_USER_AGENT
+            c.withProviderBlocking { it.httpAtribsFor(sources[0]) }?.let { at = it }
         }
-        Logd(TAG) { "Builder: url: $url"}
-        this.source = if (!url.isNullOrBlank()) prepareUrl(url) else null
-        this.urlOrig = media.downloadUrl
+        this.useragent = at.useragent
         this.title = media.title ?: media.downloadUrl
         this.feedfileId = media.id
         this.feedfileType = RequestType.FEEDMEDIA.code
@@ -73,7 +102,7 @@ class DownloadRequest: HasCredentials {
 
     constructor(destination: String, feed: Feed): super("", "") {
         this.destination = destination
-        this.source = when {
+        this.urlOrig = when {
             feed.isLocal -> feed.downloadUrl
             feed.downloadUrl != null -> prepareUrl(feed.downloadUrl!!)
             else -> null
@@ -111,17 +140,17 @@ class DownloadRequest: HasCredentials {
         if (statusMsg != other.statusMsg) return false
         if (destination != other.destination) return false
         if (if (password != null) password != other.password else other.password != null) return false
-        if (source != other.source) return false
+        if (sources != other.sources) return false
         if (if (title != null) title != other.title else other.title != null) return false
         if (if (username != null) username != other.username else other.username != null) return false
-        if (mediaEnqueued != other.mediaEnqueued) return false
+//        if (mediaEnqueued != other.mediaEnqueued) return false
         if (initiatedByUser != other.initiatedByUser) return false
         return true
     }
 
     override fun hashCode(): Int {
         var result = destination.hashCode()
-        result = 31 * result + source.hashCode()
+        result = 31 * result + sources.hashCode()
         result = 31 * result + title.hashCode()
         result = 31 * result + username.hashCode()
         result = 31 * result + password.hashCode()
@@ -133,7 +162,7 @@ class DownloadRequest: HasCredentials {
         result = 31 * result + (soFar xor (soFar ushr 32)).toInt()
         result = 31 * result + (size xor (size ushr 32)).toInt()
         result = 31 * result + statusMsg
-        result = 31 * result + (if (mediaEnqueued) 1 else 0)
+//        result = 31 * result + (if (mediaEnqueued) 1 else 0)
         return result
     }
 

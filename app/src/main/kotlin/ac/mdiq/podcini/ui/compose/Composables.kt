@@ -313,11 +313,12 @@ data class CommonConfirmAttrib(
     val cancelRes: Int = 0,
     val onCancel: ()->Unit = {  },
     val neutralRes: Int = 0,
-    val onNeutral: (()->Unit)? = null
+    val onNeutral: (()->Unit)? = null,
+    val OptionRow:  @Composable ((CommonConfirmAttrib)->Unit) = {  }
 )
 
-fun confirm(title: String, message: String, confirmRes: Int, onConfirm: ()->Unit, cancelRes: Int = 0, onCancel: ()->Unit = {  }, neutralRes: Int = 0, onNeutral: (()->Unit)? = null) {
-    appMainScope.launch { commonConfirms.add(CommonConfirmAttrib(title = title, message = message, confirmRes = confirmRes, onConfirm = onConfirm, cancelRes = cancelRes, onCancel = onCancel, neutralRes = neutralRes, onNeutral = onNeutral)) }
+fun confirm(title: String, message: String, confirmRes: Int, onConfirm: ()->Unit, cancelRes: Int = 0, onCancel: ()->Unit = {  }, neutralRes: Int = 0, onNeutral: (()->Unit)? = null, OptionRow:  @Composable ((CommonConfirmAttrib)->Unit) = {  }) {
+    appMainScope.launch { commonConfirms.add(CommonConfirmAttrib(title = title, message = message, confirmRes = confirmRes, onConfirm = onConfirm, cancelRes = cancelRes, onCancel = onCancel, neutralRes = neutralRes, onNeutral = onNeutral, OptionRow = OptionRow)) }
 }
 
 @Composable
@@ -326,6 +327,7 @@ fun CommonConfirmDialog(c: CommonConfirmAttrib) {
         Column {
             Text(c.title, style = MaterialTheme.typography.titleMedium)
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) { Text(c.message) }
+            c.OptionRow(c)
             Row {
                 Spacer(Modifier.weight(0.2f))
                 if (c.cancelRes > 0) TextButton(onClick = {

@@ -81,7 +81,7 @@ class AutoDownloadAlgorithm {
 
 class AutoEnqueueAlgorithm {
     suspend fun run(feeds: List<Feed>?, noRefreshing: Boolean = false) {
-        Logd(TAG) { "Performing auto-enqueue of undownloaded episodes" }
+        Logd(TAG) { "Performing auto-enqueue of undownloaded episodes for ${feeds?.size} feeds" }
 //        showStackTrace()
         val toReplace: MutableSet<Episode> = mutableSetOf()
         val candidates: MutableSet<Episode> = mutableSetOf()

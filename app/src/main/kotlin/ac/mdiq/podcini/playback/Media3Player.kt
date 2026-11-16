@@ -13,6 +13,7 @@ import ac.mdiq.podcini.shared.ProxyConfig
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.sourcing.clientByEpisode
+import ac.mdiq.podcini.sourcing.download.AVJsonPkg
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
@@ -31,6 +32,7 @@ import ac.mdiq.podcini.storage.utils.div
 import ac.mdiq.podcini.storage.utils.durationStringFull
 import ac.mdiq.podcini.storage.utils.durationStringShort
 import ac.mdiq.podcini.storage.utils.parent
+import ac.mdiq.podcini.storage.utils.toAndroidUri
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
@@ -147,6 +149,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import kotlin.text.substringAfterLast
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -818,6 +821,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         mediaItem?.let { deferredMediaItem?.complete(it) }
     }
 
+
     override fun prepareDataSource(mediaUrl: String, user: String?, password: String?) {
         val media = curMediaFlow.value ?: return
         mediaItem = null
@@ -825,9 +829,24 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         mediaSource = null
         val metadata = buildMetadata(media)
         Logd(TAG) { "prepareDataSource: $mediaUrl" }
-        val uri = mediaUrl.toSafeUri()
-        Logd(TAG) { "prepareDataSource position: ${media.position} uri: $uri" }
-        mediaItem = MediaItem.Builder().setUri(uri).setCustomCacheKey(media.id.toString()).setMediaMetadata(metadata).build()
+        val ext = mediaUrl.substringAfterLast(".")
+        if (ext == "json") {
+            val uf = mediaUrl.toUF()
+            var dir = uf.parent()!!
+            runOnIOScope {
+                val json = uf.readString()
+                val pkg = Json.decodeFromString<AVJsonPkg>(json)
+                val audioUri = (dir / pkg.audio).toAndroidUri()
+                val videoUri = (dir / pkg.video).toAndroidUri()
+                val audioSource = DefaultMediaSourceFactory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(audioUri).setCustomCacheKey(media.id.toString()).build())
+                val videoSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(videoUri).build())
+                mediaSource = MergingMediaSource(videoSource, audioSource)
+            }
+        } else {
+            val uri = mediaUrl.toSafeUri()
+            Logd(TAG) { "prepareDataSource position: ${media.position} uri: $uri" }
+            mediaItem = MediaItem.Builder().setUri(uri).setCustomCacheKey(media.id.toString()).setMediaMetadata(metadata).build()
+        }
         setSourceCredentials(user, password)
     }
 

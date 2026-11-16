@@ -199,7 +199,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         if (nextPage) feed.pageNr += 1
         val request = requestFor(feed)
         if (force || feed.lastUpdateFailed) request.lastModified = null
-        if (nextPage) request.source = feed.nextPageLink
+        if (nextPage) request.urlOrig = feed.nextPageLink
         Logd(TAG) { "downloadPodcast nextPage: $nextPage ${feed.nextPageLink}"}
         val downloader = Downloader(request)
         var downloadResult: DownloadResult? = null
@@ -209,7 +209,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
         var feedHandlerResult: FeedHandlerResult? = null
         var feed_: Feed? = null
         downloader.downloadFeed { source ->
-            val feedRaw = Feed(request.source, request.lastModified)
+            val feedRaw = Feed(request.sources[0], request.lastModified)
             if (nextPage) feedRaw.episodes = feed.episodes
             Logd(TAG) { "downloadPodcast feedRaw.episodes: ${feedRaw.episodes.size}"}
             feedRaw.id = request.feedfileId
@@ -259,7 +259,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
             }
             if (isSuccessful) downloadResult = DownloadResult(feedRaw, DownloadError.SUCCESS, true, "")
 
-            if (!request.source.isNullOrEmpty()) {
+            if (!request.sources[0].isNullOrEmpty()) {
                 suspend fun updateFeedDownloadURL(original: String, updated: String) {
                     Logd(TAG) { "updateFeedDownloadURL(original: $original, updated: $updated)" }
                     val feed = realm.query(Feed::class).query("downloadUrl == $0", original).first().find()
@@ -267,8 +267,8 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                 }
                 val redirectUrl: String? = feedHandlerResult?.redirectUrl
                 when {
-                    !downloader.permanentRedirectUrl.isNullOrEmpty() -> updateFeedDownloadURL(request.source!!, downloader.permanentRedirectUrl!!)
-                    !redirectUrl.isNullOrBlank() && redirectUrl != request.source -> updateFeedDownloadURL(request.source!!, redirectUrl)
+                    !downloader.permanentRedirectUrl.isNullOrEmpty() -> updateFeedDownloadURL(request.sources[0]!!, downloader.permanentRedirectUrl!!)
+                    !redirectUrl.isNullOrBlank() && redirectUrl != request.sources[0] -> updateFeedDownloadURL(request.sources[0]!!, redirectUrl)
                 }
             }
             if (downloadResult?.isSuccessful != true) {
@@ -390,7 +390,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
             val newestDate = realm.query(Episode::class).query("feedId == ${savedFeed.id} SORT (pubDate DESC)").first().find()?.pubDate ?: 0L
             realm.write {
                 for (episode in newFeed.episodes) {
-                    var existings = guessDuplicates(episode, savedFeed)
+                    val existings = guessDuplicates(episode, savedFeed)
                     if (existings.isNotEmpty()) {
                         if (existings.size > 1) {
                             Loge(TAG, "found duplicate episodes in feed: ${savedFeed.title}")

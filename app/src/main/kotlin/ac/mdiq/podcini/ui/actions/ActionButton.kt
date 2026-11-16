@@ -17,7 +17,6 @@ import ac.mdiq.podcini.playback.activeTheatresCount
 import ac.mdiq.podcini.playback.isCurMedia
 import ac.mdiq.podcini.playback.isPlaying
 import ac.mdiq.podcini.playback.theatres
-import ac.mdiq.podcini.shared.HTTPAttribs
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.Downloader
@@ -39,7 +38,6 @@ import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.toUF
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.confirm
-import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.EventFlow
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
@@ -49,7 +47,6 @@ import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.NetworkUtils
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
-import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import ac.mdiq.podcini.utils.openInSystemDefault
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -256,14 +253,8 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     downloadJob = runOnIOScope {
                         val request = requestFor(item)?: return@runOnIOScope
                         val downloader = Downloader(request)
-                        var at = HTTPAttribs()
-                        at.useragent = PODCINI_USER_AGENT
-                        clientByEpisode(item)?.let { c->
-                            at.useragent = BROWSER_USER_AGENT
-                            c.withProviderBlocking { it.httpAtribsFor(request.source) }?.let { at = it }
-                        }
                         try {
-                            downloader.downloadMedia(at.useragent)
+                            downloader.downloadMedia()
                             if (downloader.result.isSuccessful) {
                                 updateDB(request)
                                 logDownloadResult(downloader.result)

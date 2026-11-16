@@ -56,13 +56,7 @@ class EpisodesProgressWriter : ExportWriter {
             try {
                 Logd(TAG) { "Saving ${queuedEpisodeActions.size} actions: ${queuedEpisodeActions.joinToString(", ")}"}
                 val list = JSONArray()
-                for (episodeAction in queuedEpisodeActions) {
-                    val obj = episodeAction.writeToJsonObject()
-                    if (obj != null) {
-                        Logd(TAG) { "saving EpisodeAction: $obj" }
-                        list.put(obj)
-                    }
-                }
+                for (episodeAction in queuedEpisodeActions) episodeAction.writeToJsonObject()?.let { list.put(it) }
                 writer.writeString(list.toString())
             } catch (e: Exception) {
                 Logs(TAG, e)
@@ -90,7 +84,8 @@ class FavoritesWriter : ExportWriter {
         val favTemplate = context.assets.open(FAVORITE_TEMPLATE).asSource().buffered().use { it.readString() }
         val feedTemplate = context.assets.open(FEED_TEMPLATE).asSource().buffered().use { it.readString() }
         val allFavorites = getEpisodes(EpisodeFilter(EpisodeFilter.States.superb.name), EpisodeSortOrder.DATE_DESC, copy = false)
-        val favoritesByFeed = buildFeedMap(allFavorites)
+        val favoritesByFeed: MutableMap<Long, MutableList<Episode>> = mutableMapOf()
+        for (item in allFavorites) item.feedId?.let { feedId -> favoritesByFeed.getOrPut(feedId) { mutableListOf() }.add(item) }
         writer.sink(append = false).buffer().use { sink ->
             sink.writeString(templateParts[0], Charsets.UTF_8)
             for (feedId in favoritesByFeed.keys) {
@@ -107,8 +102,7 @@ class FavoritesWriter : ExportWriter {
                 sink.writeString("<ul>\n", Charsets.UTF_8)
                 for (item in favorites) {
                     var favItem = favTemplate.replace("{FAV_TITLE}", item.title!!.trim { it <= ' ' })
-                    favItem = if (item.link != null) favItem.replace("{FAV_WEBSITE}", item.link!!)
-                    else favItem.replace("{FAV_WEBSITE}", "")
+                    favItem = if (item.link != null) favItem.replace("{FAV_WEBSITE}", item.link!!) else favItem.replace("{FAV_WEBSITE}", "")
                     favItem = if (item.downloadUrl != null) favItem.replace("{FAV_MEDIA}", item.downloadUrl!!) else favItem.replace("{FAV_MEDIA}", "")
                     sink.writeString(favItem, Charsets.UTF_8)
                 }
@@ -117,19 +111,6 @@ class FavoritesWriter : ExportWriter {
             sink.writeString(templateParts[1], Charsets.UTF_8)
         }
         Logd(TAG) { "Finished writing document" }
-    }
-
-    private fun buildFeedMap(favoritesList: List<Episode>): Map<Long, MutableList<Episode>> {
-        val feedMap: MutableMap<Long, MutableList<Episode>> = mutableMapOf()
-        for (item in favoritesList) {
-            var feedEpisodes = feedMap[item.feedId]
-            if (feedEpisodes == null) {
-                feedEpisodes = mutableListOf()
-                if (item.feedId != null) feedMap[item.feedId!!] = feedEpisodes
-            }
-            feedEpisodes.add(item)
-        }
-        return feedMap
     }
     override fun fileExtension(): String {
         return "html"

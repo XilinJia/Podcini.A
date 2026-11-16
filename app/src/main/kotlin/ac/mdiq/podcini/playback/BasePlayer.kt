@@ -793,7 +793,7 @@ abstract class BasePlayer {
     }
 
     fun onEpisodeMediaEvent(event: FlowEvent.EpisodeMediaEvent) {
-        if (event.action == FlowEvent.EpisodeMediaEvent.Action.REMOVED) {
+        if (event.action == FlowEvent.EpisodeMediaEvent.Action.REMOVED && isPlaying) {
             for (e in event.episodes) {
                 if (e.id == curMediaFlow.value?.id) {
                     startNext()
