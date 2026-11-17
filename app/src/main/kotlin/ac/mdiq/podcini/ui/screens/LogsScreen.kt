@@ -416,7 +416,7 @@ fun LogsScreen() {
         Logd(TAG) { "DownlaodDetailDialog ${status.feedfileType} status.feedfileId: ${status.feedfileId}" }
         LaunchedEffect(status.feedfileId) {
             when (status.feedfileType) {
-                RequestType.FEEDMEDIA.code -> {
+                RequestType.MEDIA.code -> {
                     media = realm.query(Episode::class).query("id == $0", status.feedfileId).first().find()
                     if (media != null) url = media!!.downloadUrl ?: ""
                 }
@@ -482,7 +482,7 @@ fun LogsScreen() {
                         val statusText = remember(status.id) {
                             "" + when (status.feedfileType) {
                                 RequestType.FEED.code -> context.getString(R.string.download_type_feed)
-                                RequestType.FEEDMEDIA.code -> context.getString(R.string.download_type_media)
+                                RequestType.MEDIA.code -> context.getString(R.string.download_type_media)
                                 else -> ""
                             } + " · " + formatDateTimeFlex(status.completionTime)
                         }
@@ -517,7 +517,7 @@ fun LogsScreen() {
                             runOnIOScope {
                                 logs.forEach { status ->
                                     when (status.feedfileType) {
-                                        RequestType.FEEDMEDIA.code -> {
+                                        RequestType.MEDIA.code -> {
                                             val media = realm.query(Episode::class).query("id == $0", status.feedfileId).first().find()
                                             if (media != null) ActionButton(media, typeInit = ButtonTypes.DOWNLOAD).onClick()
                                         }

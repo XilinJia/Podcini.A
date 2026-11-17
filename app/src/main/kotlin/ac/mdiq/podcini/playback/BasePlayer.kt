@@ -10,7 +10,7 @@ import ac.mdiq.podcini.playback.PlaybackService.Companion.serviceIOScope
 import ac.mdiq.podcini.playback.SleepManager.Companion.setIfAutoEnable
 import ac.mdiq.podcini.playback.SleepManager.Companion.sleepManager
 import ac.mdiq.podcini.shared.nowInMillis
-import ac.mdiq.podcini.sourcing.AVStreams
+import ac.mdiq.podcini.sourcing.StreamsManager
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
 import ac.mdiq.podcini.storage.database.allowForAutoDelete
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -48,7 +48,6 @@ import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.LogtFor
 import ac.mdiq.podcini.utils.NetworkUtils.isNetworkUrl
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
-import ac.mdiq.podcini.utils.showStackTrace
 import android.media.MediaCodecList
 import android.os.Build
 import androidx.media3.common.Player
@@ -123,7 +122,7 @@ abstract class BasePlayer {
 
     var widgetId: String = ""
 
-    var avStreams: AVStreams = AVStreams(Episode())
+    var streamsManager: StreamsManager = StreamsManager(Episode())
 
     private var prevPosition: Int = -1
     private var samePositionCount: Int = 0
@@ -204,7 +203,7 @@ abstract class BasePlayer {
         when {
             episode_ != null -> {
                 playingMuxedVideo = false
-                avStreams = AVStreams(episode_)
+                streamsManager = StreamsManager(episode_)
                 curMediaFlow.value = episode_
                 playingVideoFlow.value = !isAutoController && (episode_.forceVideo || (episode_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && episode_.mediaType == MediaType.VIDEO))
                 skipSilence = null

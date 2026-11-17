@@ -6,6 +6,7 @@ import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.upsert
+import ac.mdiq.podcini.ui.compose.AnyDialog
 import ac.mdiq.podcini.ui.compose.CommonConfirmDialog
 import ac.mdiq.podcini.ui.compose.CommonToast
 import ac.mdiq.podcini.ui.compose.LargePoster
@@ -173,10 +174,6 @@ fun MainScreen() {
         }
     }
 
-    CommonToast(onDismiss = { })
-    if (commonConfirms.isNotEmpty()) CommonConfirmDialog(commonConfirms[0])
-    if (commonMessage != null) LargePoster(commonMessage!!)
-
     var lastLogTime by remember { mutableLongStateOf(0L) }
     if (appPrefs.customFolderUnavailable) {
         val currentTime = nowInMillis()
@@ -212,6 +209,11 @@ fun MainScreen() {
             }
         }
     }
+
+    CommonToast(onDismiss = { })
+    AnyDialog?.invoke()
+    if (commonConfirms.isNotEmpty()) CommonConfirmDialog(commonConfirms[0])
+    if (commonMessage != null) LargePoster(commonMessage!!)
 
     BackHandler(enabled = handleBackSubScreens.isEmpty()) {
         Logd(TAG) { "BackHandler isBSExpanded: $psState" }

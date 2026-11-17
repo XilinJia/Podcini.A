@@ -17,14 +17,15 @@ import ac.mdiq.podcini.playback.activeTheatresCount
 import ac.mdiq.podcini.playback.isCurMedia
 import ac.mdiq.podcini.playback.isPlaying
 import ac.mdiq.podcini.playback.theatres
+import ac.mdiq.podcini.sourcing.StreamsManager
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.Downloader
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.isDownloading
 import ac.mdiq.podcini.sourcing.download.EpisodeDLManager
-import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
+import ac.mdiq.podcini.storage.database.deleteMedia
 import ac.mdiq.podcini.storage.database.isDownloadable
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.database.runOnIOScope
@@ -36,6 +37,7 @@ import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.tmpQueue
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.utils.toUF
+import ac.mdiq.podcini.ui.compose.AnyDialog
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.confirm
 import ac.mdiq.podcini.utils.EventFlow
@@ -44,6 +46,7 @@ import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.LogeFor
 import ac.mdiq.podcini.utils.Logs
+import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.NetworkUtils
 import ac.mdiq.podcini.utils.NetworkUtils.mobileAllowEpisodeDownload
 import ac.mdiq.podcini.utils.NetworkUtils.networkMonitor
@@ -69,6 +72,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.cancellation.CancellationException
 
 class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: Boolean = false, typeInit: ButtonTypes = ButtonTypes.NULL) {
     private val TAG = this::class.simpleName ?: "ActionButton"
@@ -147,11 +151,19 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 })
             return
         }
+        fun shouldNotDownload(): Boolean {
+            if (item.downloadUrl.isNullOrBlank()) {
+                LogeFor(TAG, item.id, "episode downloadUrl is null or blank")
+                return true
+            }
+            val isDownloading = isDownloading(item.downloadUrl!!)
+            return isDownloading || item.downloaded
+        }
         Logd(TAG) { "onClick type: $type" }
         when (type) {
             ButtonTypes.WEBSITE -> if (!item.link.isNullOrEmpty()) openInSystemDefault(item.link!!)
             ButtonTypes.CANCEL -> {
-                if (typeToCancel == ButtonTypes.DOWNLOAD) {
+                if (typeToCancel == ButtonTypes.DOWNLOAD || typeToCancel == ButtonTypes.DOWNLOAD_DIY) {
                     downloadJob?.cancel()
                     runBlocking { EpisodeDLManager.manager.cancel(item, delete = true) }
                     if (appPrefsFlow!!.value.enableAutoDl) runOnIOScope { upsert(item) { it.isAutoDownloadEnabled = false } }
@@ -249,6 +261,10 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 if (tts?.isSpeaking == true) tts?.stop()
             }
             ButtonTypes.DOWNLOAD -> {
+                if (shouldNotDownload()) {
+                    Logt(TAG, "not suitable for download")
+                    return
+                }
                 fun downloadNow() {
                     downloadJob = runOnIOScope {
                         val request = requestFor(item)?: return@runOnIOScope
@@ -256,29 +272,21 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                         try {
                             downloader.downloadMedia()
                             if (downloader.result.isSuccessful) {
-                                updateDB(request)
+                                request.updateDB()
                                 logDownloadResult(downloader.result)
                             }
-                        } catch (e: Exception) {
+                        } catch (e: CancellationException) { deleteMedia(item) }
+                        catch (e: Exception) {
                             Logs(TAG, e, "failed performDownload exception on downloader.call()")
                             logDownloadResult(downloader.result)
                         }
                     }
+                    typeToCancel = ButtonTypes.DOWNLOAD
+                    type = ButtonTypes.CANCEL
                 }
-                fun shouldNotDownload(): Boolean {
-                    if (item.downloadUrl.isNullOrBlank()) {
-                        LogeFor(TAG, item.id, "episode downloadUrl is null or blank")
-                        return true
-                    }
-                    val isDownloading = isDownloading(item.downloadUrl!!)
-                    return isDownloading || item.downloaded
-                }
-                if (shouldNotDownload()) return
                 if (mobileAllowEpisodeDownload || !networkMonitor.isNetworkRestricted) {
                     downloadNow()
                     Logd(TAG) { "downloading ${item.title}" }
-                    typeToCancel = ButtonTypes.DOWNLOAD
-                    type = ButtonTypes.CANCEL
                     return
                 }
                 confirm(title = context.getString(R.string.confirm_mobile_download_dialog_title),
@@ -288,6 +296,47 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     neutralRes = R.string.confirm_mobile_download_dialog_allow_this_time,
                     onConfirm = { EpisodeDLManager.manager.download( listOf(item)) },
                     onNeutral = { downloadNow() })
+            }
+            ButtonTypes.DOWNLOAD_DIY -> {
+                if (shouldNotDownload()) {
+                    Logt(TAG, "not suitable for download")
+                    return
+                }
+                val client = clientByEpisode(item) ?: return
+                val sm = StreamsManager(item)
+                fun downloadSpecial() {
+                    downloadJob = runOnIOScope {
+                        val request = requestFor(item, sm)?: return@runOnIOScope
+                        val downloader = Downloader(request)
+                        try {
+                            downloader.downloadMedia()
+                            if (downloader.result.isSuccessful) {
+                                request.updateDB()
+                                logDownloadResult(downloader.result)
+                            }
+                        } catch (e: CancellationException) { deleteMedia(item) }
+                        catch (e: Exception) {
+                            Logs(TAG, e, "failed performDownload exception on downloader.call()")
+                            logDownloadResult(downloader.result)
+                        }
+                    }
+                    typeToCancel = ButtonTypes.DOWNLOAD_DIY
+                    type = ButtonTypes.CANCEL
+                }
+                if (mobileAllowEpisodeDownload || !networkMonitor.isNetworkRestricted) {
+                    runOnIOScope { sm.getAVSpecs() }
+                    AnyDialog = { sm.StreamChanger(client.attributes?.hasVideo==true, false,  onDismiss={ AnyDialog = null }) { _, _ -> downloadSpecial() } }
+                    return
+                }
+                confirm(title = context.getString(R.string.confirm_mobile_download_dialog_title),
+                    message = context.getString(if (networkMonitor.isNetworkRestricted && networkMonitor.isVpnOverWifi) R.string.confirm_mobile_download_dialog_message_vpn else R.string.confirm_mobile_download_dialog_message),
+                    confirmRes = R.string.confirm_mobile_download_dialog_allow_this_time,
+                    cancelRes = R.string.cancel_label,
+                    onConfirm = {
+                        runOnIOScope { sm.getAVSpecs() }
+                        AnyDialog = { sm.StreamChanger(client.attributes?.hasVideo==true, false,  onDismiss={ AnyDialog = null }) { _, _ -> downloadSpecial() } }
+                    },
+                )
             }
             ButtonTypes.TTS_NOW -> {
                 Logd("JUSTTTSButton") { "onClick called" }
@@ -442,6 +491,10 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     val client = clientByEpisode(item)
                     if (client?.supportDownload != false) OptionRow(ButtonTypes.DOWNLOAD, true)
                 }
+                if (!isExternal && type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.DELETE, ButtonTypes.CANCEL)) {
+                    val client = clientByEpisode(item)
+                    if (client?.supportDownload == true && client.attributes?.hasMultiQualities == true) OptionRow(ButtonTypes.DOWNLOAD_DIY, true)
+                }
                 if (!isExternal && type !in listOf(ButtonTypes.STREAM, ButtonTypes.PAUSE, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL, ButtonTypes.DELETE)) OptionRow(ButtonTypes.DELETE, true)
                 if (!isExternal && type !in listOf(ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.PLAY_REPEAT, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY_REPEAT, true)
                 if (!isExternal && type !in listOf(ButtonTypes.PLAY, ButtonTypes.PAUSE, ButtonTypes.STREAM, ButtonTypes.DOWNLOAD, ButtonTypes.CANCEL)) OptionRow(ButtonTypes.PLAY, true)
@@ -473,6 +526,7 @@ enum class ButtonTypes(val labelRes: Int, val drawable: Int) {
 
     PAUSE(R.string.pause_label, R.drawable.ic_pause),
     DOWNLOAD(R.string.download_label, R.drawable.ic_download),
+    DOWNLOAD_DIY(R.string.download_diy, R.drawable.outline_download_2_24),
     CANCEL(R.string.cancel_download_label, R.drawable.ic_cancel),
     DELETE(R.string.delete_label, R.drawable.ic_delete),
     TTS(R.string.TTS_label, R.drawable.text_to_speech),

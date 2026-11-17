@@ -9,7 +9,6 @@ import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
-import ac.mdiq.podcini.storage.model.toIPC
 import ac.mdiq.podcini.storage.specs.AVQuality
 import ac.mdiq.podcini.ui.compose.borderColor
 import ac.mdiq.podcini.ui.compose.buttonColor
@@ -53,11 +52,12 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toUri
 import kotlinx.coroutines.flow.MutableStateFlow
 
-class AVStreams(val media: Episode, val useCache: Boolean = true) {
+class StreamsManager(val media: Episode, val useCache: Boolean = true) {
 
     private var client: SourceGatewayClient? = null
 
-    private var mediaSpecs: MediaSpecs = MediaSpecs()
+    private var mediaSpecs by mutableStateOf(MediaSpecs() )
+    var useVideo by mutableStateOf(false)
 
     private val curLocales = mutableSetOf<String>()
     private var useLocales: Set<String> = setOf()
@@ -88,7 +88,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
 //        if (client != null) specsFromCache()
     }
 
-    private suspend fun getAVSpecs() {
+    suspend fun getAVSpecs() {
         specsFromCache()
         if (!mediaSpecs.isInit) {
             Logd(TAG) { "getAVSpecs do init"}
@@ -163,6 +163,8 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
             if (audioSpec != null) {
                 bitrateFlow.value = audioSpec.bitrate
                 curAudioSpec = audioSpec
+                Logd(TAG) { "chooseAudioSpec useABPS use audio quality: ${audioSpec.bitrate} codec: ${audioSpec.codec}" }
+                Logd(TAG) { "chooseAudioSpec: useABPS ${audioSpec.url}" }
                 return
             } else Logt(TAG, "chooseAudioSpec Requested audio doesn't exist ($useLocale, $useCodex, $useABPS), getting one based on settings.")
         }
@@ -215,11 +217,11 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
             }
             if (videoSpec != null) {
                 resolutionFlow.value = videoSpec.resolution ?: ""
-                Logd(TAG) { "setVideoSpec use video quality: ${videoSpec.resolution}" }
+                Logd(TAG) { "chooseVideoSpec useResolution use video quality: ${videoSpec.resolution} vcodec: ${videoSpec.codec}" }
                 if (muxed) curMuxedSpec = videoSpec
                 else curVideoSpec = videoSpec
                 return
-            } else Logt(TAG, "setVideoSpec Requested video with ($useVCodex and $useResolution) doesn't exist, getting one based on settings")
+            } else Logt(TAG, "chooseVideoSpec Requested video with ($useVCodex and $useResolution) doesn't exist, getting one based on settings")
         }
         val videoIndex =
             if (networkMonitor.isNetworkRestricted && appPrefsFlow!!.value.lowQualityOnMobile && media.feed?.videoQualitySetting == AVQuality.GLOBAL) 0
@@ -239,14 +241,14 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
                 }
             }
 
-        for (i in vSpecs.indices) Logd(TAG) { "setVideoSpec $i ${vSpecs[i].bitrate} ${vSpecs[i].fps} ${vSpecs[i].codec} ${vSpecs[i].deliveryMethod} ${vSpecs[i].resolution} ${vSpecs[i].url}" }
+        for (i in vSpecs.indices) Logd(TAG) { "chooseVideoSpec $i ${vSpecs[i].bitrate} ${vSpecs[i].fps} ${vSpecs[i].codec} ${vSpecs[i].deliveryMethod} ${vSpecs[i].resolution} ${vSpecs[i].url}" }
 
         val videoSpec = vSpecs[videoIndex]
         resolutionFlow.value = videoSpec.resolution ?: ""
-        Logd(TAG) { "setVideoSpec use video quality: ${videoSpec.resolution}" }
+        Logd(TAG) { "chooseVideoSpec use video quality: ${videoSpec.resolution} vcodec: ${videoSpec.codec}" }
         if (muxed) curMuxedSpec = videoSpec
         else curVideoSpec = videoSpec
-        Logd(TAG) { "setVideoSpec vSource set to: ${videoSpec.url}" }
+        Logd(TAG) { "chooseVideoSpec vSource set to: ${videoSpec.url}" }
     }
 
     private fun specsFromCache() {
@@ -273,7 +275,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
     @Composable
     fun StreamChanger(needVideo: Boolean, needMuxed: Boolean, onDismiss: ()->Unit, confirmCB: (Boolean, Boolean)->Unit) {
         var reset by remember { mutableStateOf(false) }
-        var useVideo by remember { mutableStateOf(needVideo) }
+//        var useVideo by remember { mutableStateOf(needVideo) }
         var useMuxed by remember { mutableStateOf(needMuxed) }
         var locales by remember { mutableStateOf<List<String>>(listOf()) }
         var locale by remember(media.id) { mutableStateOf(useLocale ?: curAudioSpec?.audioLocale) }
@@ -295,7 +297,7 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
             if (vprot == null || vprot == "Any" || s.deliveryMethod == vprot) cSet.add(s.codec?:"Any")
         }
         fun buildResoSet(s: VideoSpec, rSet: MutableSet<String>) {
-            Logd(TAG) { "buildResoSet vprot: $vprot vcodec: $vcodec"}
+//            Logd(TAG) { "buildResoSet vprot: $vprot vcodec: $vcodec"}
             s.resolution?.let {
                 if (vprot == null || vprot == "Any" || s.deliveryMethod == vprot) {
                     if (vcodec == "Any" || s.codec == vcodec) rSet.add(it)
@@ -311,14 +313,15 @@ class AVStreams(val media: Episode, val useCache: Boolean = true) {
             }
         }
         fun buildBRSet(s: AudioSpec, bSet: MutableSet<Int>) {
-            Logd(TAG) { "buildBRSet prot: $prot locale: $locale codec: $codec"}
+//            Logd(TAG) { "buildBRSet prot: $prot locale: $locale codec: $codec"}
             if (prot == null || prot == "Any" || s.deliveryMethod == prot) {
                 if (locale == null || s.audioLocale == locale) {
                     if (codec == "Any" || s.codec == codec) bSet.add(s.averageBitrate)
                 }
             }
         }
-        LaunchedEffect(media.id, useMuxed) {
+        LaunchedEffect(media.id, useMuxed, mediaSpecs) {
+            useVideo = needVideo
             val lSet = mutableSetOf<String>()
             val pSet = mutableSetOf<String>()
             val bSet = mutableSetOf<Int>()

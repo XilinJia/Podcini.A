@@ -3,27 +3,39 @@ package ac.mdiq.podcini.sourcing.download
 import ac.mdiq.podcini.shared.HTTPAttribs
 import ac.mdiq.podcini.shared.HasCredentials
 import ac.mdiq.podcini.shared.prepareUrl
-import ac.mdiq.podcini.sourcing.AVStreams
+import ac.mdiq.podcini.sourcing.StreamsManager
 import ac.mdiq.podcini.sourcing.clientByEpisode
+import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
+import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.runOnIOScope
+import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.storage.utils.cacheDir
 import ac.mdiq.podcini.storage.utils.div
+import ac.mdiq.podcini.storage.utils.fetchChapters
+import ac.mdiq.podcini.storage.utils.parent
 import ac.mdiq.podcini.storage.utils.toUF
+import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
+import ac.mdiq.podcini.sync.model.EpisodeAction
+import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.utils.BROWSER_USER_AGENT
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.LogeFor
+import ac.mdiq.podcini.utils.Logs
 import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import android.os.Bundle
 import io.ktor.util.AttributeKey
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
+import kotlin.collections.forEach
+import kotlin.collections.plus
 
 enum class RequestType(val code: Int) {
     FEED(0),
-    FEEDMEDIA(1);
+    MEDIA(1);
 }
 
 class DownloadRequest: HasCredentials {
@@ -51,29 +63,29 @@ class DownloadRequest: HasCredentials {
     var size: Long = 0
     var statusMsg = 0
 
-    constructor(destination: String, media: Episode): super("", "") {
+    constructor(destination: String, media: Episode, sm_: StreamsManager? = null): super("", "") {
         this.destination = destination
         this.urlOrig = media.downloadUrl
         var at = HTTPAttribs()
         at.useragent = PODCINI_USER_AGENT
         clientByEpisode(media)?.let { c->
-            val streams = AVStreams(media, false)
-            streams.forceFetch = true
+            val sm = sm_ ?: StreamsManager(media, false)
+            sm.forceFetch = true
             if (c.attributes?.hasSeparateAVs == true) {
-                runBlocking { streams.chooseAudioSpec() }
-                streams.curAudioSpec?.let {
+                runBlocking { sm.chooseAudioSpec() }
+                sm.curAudioSpec?.let {
                     val url = it.url
                     this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url) else null
                 }
-                if (!this.sources[0].isNullOrBlank() && media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY) {
-                    runBlocking { streams.chooseVideoSpec(false) }
-                    streams.curVideoSpec?.let {
+                if (!this.sources[0].isNullOrBlank() && (media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY || sm.useVideo)) {
+                    runBlocking { sm.chooseVideoSpec(false) }
+                    sm.curVideoSpec?.let {
                         val url = it.url
                         this.sources[1] = if (!url.isNullOrBlank()) prepareUrl(url) else null
                     }
                 } else if (this.sources[0].isNullOrBlank()) {
-                    runBlocking { streams.chooseVideoSpec(true) }
-                    streams.curMuxedSpec?.let {
+                    runBlocking { sm.chooseVideoSpec(true) }
+                    sm.curMuxedSpec?.let {
                         val url = it.url
                         this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url) else null
                     }
@@ -83,11 +95,11 @@ class DownloadRequest: HasCredentials {
             } else {
                 var url: String? = ""
                 if (c.attributes?.hasVideo == true) {
-                    runBlocking { streams.chooseVideoSpec(true) }
-                    streams.curMuxedSpec?.let { url = it.url }
+                    runBlocking { sm.chooseVideoSpec(true) }
+                    sm.curMuxedSpec?.let { url = it.url }
                 } else {
-                    runBlocking { streams.chooseAudioSpec() }
-                    streams.curAudioSpec?.let { url = it.url }
+                    runBlocking { sm.chooseAudioSpec() }
+                    sm.curAudioSpec?.let { url = it.url }
                 }
                 this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url!!) else null
             }
@@ -97,7 +109,10 @@ class DownloadRequest: HasCredentials {
         this.useragent = at.useragent
         this.title = media.title ?: media.downloadUrl
         this.feedfileId = media.id
-        this.feedfileType = RequestType.FEEDMEDIA.code
+        this.feedfileType = RequestType.MEDIA.code
+        val feed = media.feed
+        username = feed?.username
+        password = feed?.password
     }
 
     constructor(destination: String, feed: Feed): super("", "") {
@@ -111,16 +126,19 @@ class DownloadRequest: HasCredentials {
         this.feedfileId = feed.id
         this.feedfileType = RequestType.FEED.code
         arguments.putInt(REQUEST_ARG_PAGE_NR, feed.pageNr)
+        username = feed.username
+        password = feed.password
+        lastModified = feed.lastUpdate
     }
 
     fun withInitiatedByUser(initiatedByUser: Boolean): DownloadRequest {
         this.initiatedByUser = initiatedByUser
         return this
     }
-    fun lastModified(lastModified: String?): DownloadRequest {
-        this.lastModified = lastModified
-        return this
-    }
+//    fun lastModified(lastModified: String?): DownloadRequest {
+//        this.lastModified = lastModified
+//        return this
+//    }
     fun withAuthentication(username: String?, password: String?): DownloadRequest {
         this.username = username
         this.password = password
@@ -172,9 +190,45 @@ class DownloadRequest: HasCredentials {
         var uf = destinationPath.toUF()
         if (!uf.exists()) uf = uf.createFile()
         if (!uf.exists()) Loge(TAG, "ensureMediaFileExists no: ${uf.absPath}")
-        Logd(TAG) { "ensureMediaFileExists request.destination: $destination" }
+        Logd(TAG) { "ensureMediaFileExists destination: $destination" }
         Logd(TAG) { "ensureMediaFileExists file.absPath: ${uf.absPath}" }
         destination = uf.absPath
+    }
+
+    suspend fun updateDB() {
+        downloadStatesFlow.update { it + (urlOrig!! to DownloadStatus.Completed) }
+
+        var item = realm.query(Episode::class).query("id == $feedfileId").first().find()
+        if (item == null) {
+            Loge(TAG, "Could not find downloaded episode object in database")
+            return
+        }
+        //                val broadcastUnreadStateUpdate = item.isNew
+        val chapters = if (!item.chaptersLoaded) try { fetchChapters(item) } catch (e: Exception) { Logs(TAG, e, "Get chapters failed for ${item.title}");listOf() } else listOf()
+        item = upsert(item) { e->
+            e.downloaded = true
+            e.fileUrl = destination
+            Logd(TAG) { "run() set destination: $destination" }
+            if (destination.isNotBlank()) {
+                val file = destination.toUF()
+                runBlocking {
+                    e.size = if (file.exists()) file.size()?: 0 else 0
+                    val ext = destination.substringAfterLast(".")
+                    if (ext in listOf("json", "m3u8")) file.parent()?.let { dir -> dir.listChildren().filter { f -> f.name.startsWith(e.id.toString()) }.forEach { f -> e.size += (f.size() ?: 0) } }
+                }
+                Logd(TAG) { "run() set size: ${e.size}" }
+            }
+            if (chapters.isNotEmpty()) e.setChapters(chapters)
+            e.isAutoDownloadEnabled = false
+        }
+        // TODO: need to post two events?
+        //                if (broadcastUnreadStateUpdate) EventFlow.postEvent(FlowEvent.EpisodeMediaEvent.updated(item))
+        if (isSyncProviderConnected) {
+            Logd(TAG) { "enqueue synch" }
+            val action = EpisodeAction.Builder(item, EpisodeAction.DOWNLOAD).currentTimestamp().build()
+            SynchronizationQueueSink.enqueueEpisodeActionIfSyncActive(action)
+        }
+        //                Logd(TAG) { "episode.isNew: ${item.isNew} ${item.playState}" }
     }
 
     companion object {
@@ -187,12 +241,10 @@ class DownloadRequest: HasCredentials {
             val dest = cacheDir / feed.getFeedfileName()
             if (dest.exists()) runOnIOScope { dest.delete() }
             Logd(TAG) { "requestFor download feed from url " + feed.downloadUrl }
-            val username = feed.username
-            val password = feed.password
-            return DownloadRequest(dest.absPath, feed).withAuthentication(username, password).lastModified(feed.lastUpdate)
+            return DownloadRequest(dest.absPath, feed)
         }
 
-        suspend fun requestFor(media: Episode): DownloadRequest? {
+        suspend fun requestFor(media: Episode, streams_: StreamsManager? = null): DownloadRequest? {
             Logd(TAG) { "requestFor: ${media.fileUrl} ${media.title}" }
             val destUriString = try { media.mediaFileUriString() } catch (e: Throwable ) { "" }
             Logd(TAG) { "requestFor destUriString: $destUriString" }
@@ -200,10 +252,7 @@ class DownloadRequest: HasCredentials {
                 LogeFor(TAG, media.id, "destUriString is invalid: [$destUriString] for media: ${media.title}")
                 return null
             }
-            val feed = media.feed
-            val username = feed?.username
-            val password = feed?.password
-            return DownloadRequest(destUriString, media).withAuthentication(username, password)
+            return DownloadRequest(destUriString, media, streams_)
         }
     }
 }

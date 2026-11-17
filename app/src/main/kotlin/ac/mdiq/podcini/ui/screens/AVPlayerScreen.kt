@@ -544,8 +544,8 @@ fun ProgressBar(vm: AVPlayerVM) {
         val pastText = remember(episode?.position) { if (episode == null) "" else durationStringAdapt(episode!!.position) + " *" + durationStringAdapt(episode!!.timeSpent.toInt()) }
         Text(pastText, color = textColor, style = MaterialTheme.typography.labelSmall)
         Spacer(Modifier.weight(1f))
-        val bitrate by player?.avStreams?.bitrateFlow?.collectAsStateWithLifecycle() ?: remember { mutableIntStateOf(0) }
-        val resolution by player?.avStreams?.resolutionFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf("") }
+        val bitrate by player?.streamsManager?.bitrateFlow?.collectAsStateWithLifecycle() ?: remember { mutableIntStateOf(0) }
+        val resolution by player?.streamsManager?.resolutionFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf("") }
         val mimeType by player?.mimeTypeFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf("") }
         val channelCount by player?.channelCountFlow?.collectAsStateWithLifecycle() ?: remember { mutableIntStateOf(0) }
         val info = remember(mimeType, channelCount, bitrate, resolution) {
@@ -901,7 +901,7 @@ fun AVPlayerScreen() {
             }
         }
 
-        if (showAVChooser && player != null) player.avStreams.StreamChanger(needVideo = playingVideo, needMuxed = player.playingMuxedVideo, onDismiss = { showAVChooser = false}) { useVideo, useMuxed->
+        if (showAVChooser && player != null) player.streamsManager.StreamChanger(needVideo = playingVideo, needMuxed = player.playingMuxedVideo, onDismiss = { showAVChooser = false}) { useVideo, useMuxed->
             appMainScope.launch {
                 Logd(TAG) { "before restart episode ${episode.forceVideo}" }
                 player.pause(false)

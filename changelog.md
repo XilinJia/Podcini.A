@@ -1,3 +1,13 @@
+# 12.22.0
+
+* ensure downlaoded separate av files don't take the same name
+* added option "Separately" when exporting media with separate av files
+* added progress toast for transcoding on export
+* fixed cancel download
+* added "Download DIY" action button (shown only in alt buttons menu), allowing choosing desired streams
+* after download, ensure media size includes all related files
+* some code refactoring
+
 # 12.21.0
 
 * downlaoding video is no longer forced to muxed video, av files (if available) are downlaoded according to quality settings in the feed

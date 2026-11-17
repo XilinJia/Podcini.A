@@ -412,7 +412,7 @@ class Episode : RealmObject {
         val filenameMaxLength = 220
         if (baseFilename.length > filenameMaxLength) baseFilename = baseFilename.take(filenameMaxLength)
         val ext = urlBaseFilename.substringAfterLast('.', "").takeIf { !it.contains("*") } ?: ""
-        return baseFilename + "." + id + "." + ext
+        return "$baseFilename.$id.$ext"
     }
 
     fun isDownloaded(): Boolean {

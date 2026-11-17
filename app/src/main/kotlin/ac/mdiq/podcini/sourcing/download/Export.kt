@@ -20,6 +20,7 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.net.Uri
+import android.os.Handler
 import android.os.Looper
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +34,7 @@ import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
+import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -62,7 +64,7 @@ suspend fun exportMediaFiles(media: Episode, outputDir: UnifiedFile) {
                 val audioUF = (dir / pkg.audio)
                 val videoUF = (dir / pkg.video)
                 val ctx = getAppContext()
-                confirm(title = ctx.getString(R.string.export_media), message = ctx.getString(R.string.export_av_message), confirmRes = R.string.export_both,
+                confirm(title = ctx.getString(R.string.export_media), message = ctx.getString(R.string.export_av_message), confirmRes = R.string.export_combined,
                     OptionRow = {c->
                         Row {
                             Spacer(Modifier.weight(0.2f))
@@ -84,10 +86,21 @@ suspend fun exportMediaFiles(media: Episode, outputDir: UnifiedFile) {
                                 commonConfirms.remove(c)
                             }) { Text(stringResource(R.string.video_only)) }
                             Spacer(Modifier.weight(0.2f))
+                            TextButton(onClick = {
+                                runOnIOScope {
+                                    val vout = outputDir / ("${name.substringBeforeLast(".")}.${pkg.video}")
+                                    videoUF.copyTo(vout)
+                                    val aout = outputDir / ("${name.substringBeforeLast(".")}.${pkg.audio}")
+                                    audioUF.copyTo(aout)
+                                    Logt(TAG, "audio and video files exported separately: ${media.title}")
+                                }
+                                commonConfirms.remove(c)
+                            }) { Text(stringResource(R.string.separately)) }
+                            Spacer(Modifier.weight(0.2f))
                         }
                     },
                     onConfirm = {
-                        val outputPath = (outputDir / "$name").absPath
+                        val outputPath = (outputDir / name).absPath
                         runOnIOScope {
                             exportMuxed(audioUF, videoUF, outputPath)
                             Logt(TAG, "audio/video container file exported: ${media.title}")
@@ -120,10 +133,8 @@ data class Plan(
 )
 
 suspend fun exportMuxed(audioUF: UnifiedFile, videoUF: UnifiedFile, outputPath: String) {
-    val ctx = getAppContext()
     val videoPath = videoUF.absPath
     val audioPath = audioUF.absPath
-
     fun plan(v: String, a: String): Plan {
         val webmV = setOf(MimeTypes.VIDEO_VP8, MimeTypes.VIDEO_VP9)
         val webmA = setOf(MimeTypes.AUDIO_OPUS, MimeTypes.AUDIO_VORBIS)
@@ -146,32 +157,56 @@ suspend fun exportMuxed(audioUF: UnifiedFile, videoUF: UnifiedFile, outputPath: 
             error("No $prefix track in $path")
         } finally { ex.release() }
     }
-    suspend fun transcode(input: Uri, out: String, video: Boolean, mime: String) =
-        suspendCancellableCoroutine { cont ->
-            val item = EditedMediaItem.Builder(MediaItem.fromUri(input)).apply { if (video) setRemoveAudio(true) else setRemoveVideo(true) }.build()
-            val builder = Transformer.Builder(ctx).setLooper(Looper.getMainLooper())
-            if (video) builder.setVideoMimeType(mime) else builder.setAudioMimeType(mime)
-            val t = builder.addListener(object : Transformer.Listener {
-                override fun onCompleted(c: Composition, r: ExportResult) = cont.resume(Unit)
-                override fun onError(c: Composition, r: ExportResult, e: ExportException) = cont.resumeWithException(e)
-            }).build()
-            cont.invokeOnCancellation { t.cancel() }
-            t.start(item, out)
+    suspend fun transcode(input: Uri, out: String, video: Boolean, mime: String, onProgress: (Int) -> Unit = {}) = suspendCancellableCoroutine { cont ->
+        val item = EditedMediaItem.Builder(MediaItem.fromUri(input)).apply { if (video) setRemoveAudio(true) else setRemoveVideo(true) }.build()
+        val handler = Handler(Looper.getMainLooper())
+        val holder = ProgressHolder()
+        lateinit var t: Transformer
+        var finished = false
+        val poller = object : Runnable {
+            override fun run() {
+                if (finished) return
+                if (t.getProgress(holder) != Transformer.PROGRESS_STATE_NOT_STARTED) onProgress(holder.progress)
+                handler.postDelayed(this, 10000)
+            }
         }
+        val builder = Transformer.Builder(getAppContext()).setLooper(Looper.getMainLooper())
+        if (video) builder.setVideoMimeType(mime) else builder.setAudioMimeType(mime)
+        t = builder.addListener(object : Transformer.Listener {
+            override fun onCompleted(c: Composition, r: ExportResult) {
+                finished = true
+                handler.removeCallbacks(poller)
+                onProgress(100)
+                cont.resume(Unit)
+            }
+            override fun onError(c: Composition, r: ExportResult, e: ExportException) {
+                finished = true
+                handler.removeCallbacks(poller)
+                cont.resumeWithException(e)
+            }
+        }).build()
+        cont.invokeOnCancellation {
+            finished = true
+            handler.removeCallbacks(poller)
+            handler.post { t.cancel() }
+        }
+        t.start(item, out)
+        handler.post(poller)
+    }
     val p = plan(probe(videoPath, "video/"), probe(audioPath, "audio/"))
     var v = videoPath
     var a = audioPath
     p.transcodeVideoTo?.let {
         v = (cacheDir / "v_tc.mp4").absPath
-        withContext(Dispatchers.Main) { transcode(videoUF.toAndroidUri()!!, v, true, it) }
+        withContext(Dispatchers.Main) { transcode(videoUF.toAndroidUri()!!, v, true, it) { p-> Logt(TAG, "transcode video $p%") } }
     }
     p.transcodeAudioTo?.let {
         a = (cacheDir / "a_tc.m4a").absPath
-        withContext(Dispatchers.Main) { transcode(audioUF.toAndroidUri()!!, a, false, it) }
+        withContext(Dispatchers.Main) { transcode(audioUF.toAndroidUri()!!, a, false, it) { p-> Logt(TAG, "transcode audio $p%") } }
     }
     withContext(Dispatchers.IO) {
         val output = "$outputPath.${p.target.ext}".toUF()
-        output.delete()
+        if (output.exists()) output.delete()
         mux(a,v,  p.target.muxerFormat).copyTo(output)
     }
 }
@@ -187,7 +222,6 @@ fun mux(audioPath: String, videoPath: String, format: Int): UnifiedFile {
     val tmpfile = cacheDir / "mux_${System.currentTimeMillis()}.mp4"
     val muxer = MediaMuxer(tmpfile.absPath, format)
     Logd(TAG) { "mux audio file ${File(audioPath).length()} bytes"}
-//    dump(audioPath)
     val vEx = MediaExtractor().apply { setDataSource(videoPath) }
     val aEx = MediaExtractor().apply { setDataSource(audioPath) }
     try {

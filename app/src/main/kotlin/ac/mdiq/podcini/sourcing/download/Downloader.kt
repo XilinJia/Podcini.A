@@ -219,42 +219,40 @@ class Downloader(val request: DownloadRequest) {
         val userAgent = request.useragent
         downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Running(5)) }
         val filenames = MutableList<String?>(2) { null }
-        for (i in 0..1) {
-            var ext = ""
-            Logd(TAG) { "downloadMedia i:$i ${request.sources[i]}" }
-            if (request.sources[i].isNullOrBlank()) continue
-            val probe: Probe = mediaKtor.prepareGet(requireNotNull(request.sources[i]) { "source is null" }) {
-                userAgent(userAgent)
-                header(HttpHeaders.AcceptEncoding, "identity")
-                header(HttpHeaders.Range, "bytes=0-4095")
-            }.execute { response ->
-                check(response.status.isSuccess()) { "HTTP error: ${response.status}" }
-                val finalUrl = response.call.request.url.toString()
-                Logd(TAG) { "downloadMedia finalUrl: $finalUrl" }
-                val channel = response.bodyAsChannel()
-                val prefix = ByteArray(64)
-                var count = 0
-                while (count < prefix.size) {
-                    val n = channel.readAvailable(prefix, count, prefix.size - count)
-                    if (n < 0) break
-                    count += n
+        try {
+            for (i in 0..1) {
+                var ext = ""
+                Logd(TAG) { "downloadMedia i:$i ${request.sources[i]}" }
+                if (request.sources[i].isNullOrBlank()) continue
+                val probe: Probe = mediaKtor.prepareGet(requireNotNull(request.sources[i]) { "source is null" }) {
+                    userAgent(userAgent)
+                    header(HttpHeaders.AcceptEncoding, "identity")
+                    header(HttpHeaders.Range, "bytes=0-4095")
+                }.execute { response ->
+                    check(response.status.isSuccess()) { "HTTP error: ${response.status}" }
+                    val finalUrl = response.call.request.url.toString()
+                    Logd(TAG) { "downloadMedia finalUrl: $finalUrl" }
+                    val channel = response.bodyAsChannel()
+                    val prefix = ByteArray(64)
+                    var count = 0
+                    while (count < prefix.size) {
+                        val n = channel.readAvailable(prefix, count, prefix.size - count)
+                        if (n < 0) break
+                        count += n
+                    }
+                    Logd(TAG) { "downloadMedia count: $count" }
+
+                    val header = prefix.decodeToString(0, count).trimStart('\uFEFF', ' ', '\t', '\r', '\n')
+                    val contentType = response.headers[HttpHeaders.ContentType]?.substringBefore(';')?.trim()?.lowercase()
+                    ext = extensionFor(contentType, i==1) ?: "part"
+                    Logd(TAG) { "downloadMedia $i contentType: $contentType ext: $ext" }
+                    val playlistTypes = setOf("application/vnd.apple.mpegurl", "application/x-mpegurl", "application/mpegurl", "audio/mpegurl", "audio/x-mpegurl", "audio/x-scpls")
+                    val isPlaylist = header.startsWith("#EXTM3U", ignoreCase = true) || header.startsWith("[playlist]", ignoreCase = true) || contentType in playlistTypes
+                    Logd(TAG) { "downloadMedia isPlaylist: $isPlaylist" }
+
+                    if (isPlaylist) Probe.Playlist(finalUrl, prefix.decodeToString(0, count) + channel.toByteArray().decodeToString())
+                    else Probe.Media(finalUrl)
                 }
-                Logd(TAG) { "downloadMedia count: $count" }
-
-                val header = prefix.decodeToString(0, count).trimStart('\uFEFF', ' ', '\t', '\r', '\n')
-                val contentType = response.headers[HttpHeaders.ContentType]?.substringBefore(';')?.trim()?.lowercase()
-                ext = extensionFor(contentType, i==1) ?: "part"
-                Logd(TAG) { "downloadMedia $i contentType: $contentType ext: $ext" }
-
-                val playlistTypes = setOf("application/vnd.apple.mpegurl", "application/x-mpegurl", "application/mpegurl", "audio/mpegurl", "audio/x-mpegurl", "audio/x-scpls")
-                val isPlaylist = header.startsWith("#EXTM3U", ignoreCase = true) || header.startsWith("[playlist]", ignoreCase = true) || contentType in playlistTypes
-                Logd(TAG) { "downloadMedia isPlaylist: $isPlaylist" }
-
-                if (isPlaylist) Probe.Playlist(finalUrl, prefix.decodeToString(0, count) + channel.toByteArray().decodeToString())
-                else Probe.Media(finalUrl)
-            }
-
-            try {
                 when (probe) {
                     is Probe.Playlist -> {
                         val (text, url) = resolveMediaPlaylist(probe.text, probe.url)
@@ -262,7 +260,7 @@ class Downloader(val request: DownloadRequest) {
                     }
                     is Probe.Media -> {
                         downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Running(5)) }
-                        filenames[i] = downloadChunked(request.sources[i]!!, ext)
+                        filenames[i] = downloadChunked(i, ext)
                         if (filenames[i] != null) {
                             Logd(TAG) { "downloadChunked $i complete with success" }
                             result.setSuccessful()
@@ -271,21 +269,20 @@ class Downloader(val request: DownloadRequest) {
                     }
                 }
             }
-            catch (e: CancellationException) { }
-            catch (e: IllegalArgumentException) { onFail(DownloadError.ERROR_MALFORMED_URL, e.message) }
-            catch (e: SocketTimeoutException) { onFail(DownloadError.ERROR_CONNECTION_ERROR, e.message) }
-            catch (e: UnresolvedAddressException) { onFail(DownloadError.ERROR_UNKNOWN_HOST, e.message) }
-            catch (e: IOException) { if (wasDownloadBlocked(e)) { onFail(DownloadError.ERROR_IO_BLOCKED, e.message); return }; val message = e.message; if (message != null && message.contains("Trust anchor for certification path not found")) { onFail(DownloadError.ERROR_CERTIFICATE, e.message); return }; onFail(DownloadError.ERROR_IO_ERROR, e.message) } catch (e: Exception) { onFail(DownloadError.ERROR_MISC, e.message) }
+            if (!request.sources[1].isNullOrBlank() && filenames[0] != null && filenames[1] != null) {
+                val absPath = request.destination
+                val fileurl = absPath + "json"
+                val pkg = AVJsonPkg(filenames[0]!!, filenames[1]!!)
+                fileurl.toUF().writeString(Json.encodeToString(pkg))
+                request.destination = fileurl
+            }
         }
-        if (!request.sources[1].isNullOrBlank() && filenames[0] != null && filenames[1] != null) {
-            val absPath = request.destination
-//            val id = absPath.substringBeforeLast(".").substringAfterLast(".")
-            val fileurl = absPath + "json"
-            val pkg = AVJsonPkg(filenames[0]!!, filenames[1]!!)
-            fileurl.toUF().writeString(Json.encodeToString(pkg))
-            request.destination = fileurl
-        }
-        downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Completed) }
+        catch (e: CancellationException) { }
+        catch (e: IllegalArgumentException) { onFail(DownloadError.ERROR_MALFORMED_URL, e.message) }
+        catch (e: SocketTimeoutException) { onFail(DownloadError.ERROR_CONNECTION_ERROR, e.message) }
+        catch (e: UnresolvedAddressException) { onFail(DownloadError.ERROR_UNKNOWN_HOST, e.message) }
+        catch (e: IOException) { if (wasDownloadBlocked(e)) { onFail(DownloadError.ERROR_IO_BLOCKED, e.message); return }; val message = e.message; if (message != null && message.contains("Trust anchor for certification path not found")) { onFail(DownloadError.ERROR_CERTIFICATE, e.message); return }; onFail(DownloadError.ERROR_IO_ERROR, e.message) } catch (e: Exception) { onFail(DownloadError.ERROR_MISC, e.message) }
+        finally { downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Completed) } }
     }
 
     fun extensionFor(contentType: String?, isVideo: Boolean): String? = when (contentType) {
@@ -390,9 +387,10 @@ class Downloader(val request: DownloadRequest) {
         downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Running(p)) }
     }
 
-    private suspend fun downloadChunked(source: String, ext: String): String? {
+    private suspend fun downloadChunked(index: Int, ext: String): String? {
         val chunkSize: Long = 8L * 1024 * 1024
         var reachedEnd = false
+        val source = request.sources[index] ?: return null
         return withContext(downloadDispatcher) {
             val buffer = ByteArray(64 * 1024)
             var url = getURIFromRequestUrl(source).toString()
@@ -414,7 +412,7 @@ class Downloader(val request: DownloadRequest) {
             } else {
                 val dir = absPath.toUF().parent()
                 require(dir != null) { "downloadChunked directory is null" }
-                (dir / "$id.$ext")
+                (dir / "$id.${if (index==0) "a" else "v"}.$ext")
             }
             request.ensureMediaFileExists()
             while (true) {

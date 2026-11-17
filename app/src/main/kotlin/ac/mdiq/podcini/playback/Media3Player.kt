@@ -320,7 +320,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 override fun onPlayerError(error: PlaybackException) {
                     fun handleTerminalError(message: String) {
                         forcePlaybackReset = true
-                        curMediaFlow.value?.let { avStreams.clearSpecs() }
+                        curMediaFlow.value?.let { streamsManager.clearSpecs() }
                         LogeFor(TAG, curMediaFlow.value?.id, message)
                         castPlayer?.stop()
                         castPlayer?.clearMediaItems()
@@ -384,7 +384,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                         PlaybackException.ERROR_CODE_DECODING_FAILED,
                         PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED -> handleTerminalError("onPlayerError This device cannot play this file format.")
                         PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED-> {
-                            curMediaFlow.value?.let { avStreams.clearSpecs() }
+                            curMediaFlow.value?.let { streamsManager.clearSpecs() }
                             forcePlaybackReset = true
                             Logt(TAG, context.getString(R.string.parsing_unsupported))
                         }
@@ -401,7 +401,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                                 }
                                 error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND || (cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 404) -> handleTerminalError("onPlayerError Episode not found on server (404).")
                                 cause is HttpDataSource.InvalidResponseCodeException && cause.responseCode == 403 -> {
-                                    curMediaFlow.value?.let { avStreams.clearSpecs() }
+                                    curMediaFlow.value?.let { streamsManager.clearSpecs() }
                                     Logt(TAG, context.getString(R.string.access_denied))
 //                                    Logt(TAG, "onPlayerError Access denied somehow. Retrying... ")
                                     Logd(TAG) { "onPlayerError Access denied (403) headers=${cause.headerFields} url: ${cause.dataSpec.uri}" }
@@ -470,7 +470,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                                 }
                                 channelCountFlow.value = format.channelCount
                                 Logd(TAG) { "exoplayerListener onTracksChanged $i ${format.averageBitrate} ${format.bitrate}" }
-                                if (format.averageBitrate != Format.NO_VALUE) avStreams.bitrateFlow.value = format.averageBitrate
+                                if (format.averageBitrate != Format.NO_VALUE) streamsManager.bitrateFlow.value = format.averageBitrate
                                 return@forEach
                             }
                         }
@@ -737,9 +737,9 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         val metadata = buildMetadata(media)
 
         suspend fun setMuxedVideo() {
-            avStreams.chooseVideoSpec(muxed = true)
-            if (!avStreams.curMuxedSpec?.url.isNullOrBlank()) {
-                val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(avStreams.curMuxedSpec!!.url!!.toSafeUri()).build())
+            streamsManager.chooseVideoSpec(muxed = true)
+            if (!streamsManager.curMuxedSpec?.url.isNullOrBlank()) {
+                val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(streamsManager.curMuxedSpec!!.url!!.toSafeUri()).build())
                 mSource = vSource
                 playingVideoFlow.value = true
                 playingMuxedVideo = true
@@ -758,8 +758,8 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
 
         Logd(TAG) { "mediaSourceFromClient audioSpecs url: ${media.downloadUrl}" }
         var aSource: MediaSource? = null
-        avStreams.chooseAudioSpec()
-        avStreams.curAudioSpec?.let {
+        streamsManager.chooseAudioSpec()
+        streamsManager.curAudioSpec?.let {
             Logd(TAG) { "mediaSourceFromClient deliveryMethod: ${it.deliveryMethod}" }
             if (!it.url.isNullOrBlank()) aSource = DefaultMediaSourceFactory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(it.url!!.toSafeUri()).setCustomCacheKey(media.id.toString()).build())
             else Loge(TAG, "eligible audioStream or its url is null or blank")
@@ -770,9 +770,9 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 setMuxedVideo()
                 return mSource
             }
-            avStreams.chooseVideoSpec(muxed = false)
-            if (!avStreams.curVideoSpec?.url.isNullOrBlank()) {
-                val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(avStreams.curVideoSpec!!.url!!.toSafeUri()).build())
+            streamsManager.chooseVideoSpec(muxed = false)
+            if (!streamsManager.curVideoSpec?.url.isNullOrBlank()) {
+                val vSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(streamsManager.curVideoSpec!!.url!!.toSafeUri()).build())
                 val mediaSources: MutableList<MediaSource> = mutableListOf()
                 mediaSources.add(vSource)
                 mediaSources.add(aSource)
@@ -799,8 +799,8 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         val feed = media.feed
         val user = feed?.username
         val password = feed?.password
-        avStreams.bitrateFlow.value = 0
-        avStreams.resolutionFlow.value = ""
+        streamsManager.bitrateFlow.value = 0
+        streamsManager.resolutionFlow.value = ""
         curClient = clientByEpisode(media)
         if (curClient != null) {
             mediaSource = mediaSourceFromClient(!isAutoController && !audioOnly && (media.forceVideo || media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY))
@@ -809,7 +809,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 mediaItem = mediaSource!!.mediaItem
                 setSourceCredentials(user, password)
             } else {
-                avStreams.clearSpecs()
+                streamsManager.clearSpecs()
                 forcePlaybackReset = true
                 throw Exception(context.getString(R.string.error_media_not_accessible))
             }
@@ -841,6 +841,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 val audioSource = DefaultMediaSourceFactory(recordingFactory!!).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(audioUri).setCustomCacheKey(media.id.toString()).build())
                 val videoSource = DefaultMediaSourceFactory(context).createMediaSource(MediaItem.Builder().setMediaMetadata(metadata).setTag(metadata).setUri(videoUri).build())
                 mediaSource = MergingMediaSource(videoSource, audioSource)
+                playingVideoFlow.value = true
             }
         } else {
             val uri = mediaUrl.toSafeUri()
@@ -1199,7 +1200,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 return
             }
             curDataSource = recordingFactory?.currentDataSource
-            curDataSource?.startRecording(startPositionMs, avStreams.bitrateFlow.value, cacheDir)
+            curDataSource?.startRecording(startPositionMs, streamsManager.bitrateFlow.value, cacheDir)
             val currentPos = exoPlayer!!.currentPosition
             val seekTarget = (currentPos - 1000L).coerceAtLeast(0L)
             exoPlayer?.seekTo(seekTarget)
@@ -1211,7 +1212,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
             val outputFile = curMediaFlow.value!!.getClipFile(clipname)
             when {
                 uri.scheme == "file" || uri.scheme == "content" -> {
-                    val bytesPerSecond = avStreams.bitrateFlow.value / 8.0
+                    val bytesPerSecond = streamsManager.bitrateFlow.value / 8.0
                     val startByte = (startPositionMs * bytesPerSecond / 1000).toLong()
                     val endByte = (endPositionMs * bytesPerSecond / 1000).toLong()
                     val bytesToRead = endByte - startByte
@@ -1243,7 +1244,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
 
                     if (tempFileDS != null) {
                         Logd(TAG) { "Segment not available in cache or full file extraction. Trying with player extract" }
-                        val bytesPerSecond = avStreams.bitrateFlow.value / 8.0
+                        val bytesPerSecond = streamsManager.bitrateFlow.value / 8.0
                         val startByte = (startPositionMs * bytesPerSecond / 1000).toLong()
                         val endByte = (endPositionMs * bytesPerSecond / 1000).toLong()
                         val bytesToRead = endByte - startByte

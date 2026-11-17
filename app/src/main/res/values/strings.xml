@@ -251,10 +251,11 @@
     <string name="share_captions">Share captions</string>
 
     <string name="export_media">Export media</string>
-    <string name="export_av_message">The media has separate audio/video files. If they have unmatched encoding, transcoding will be performed before exporting, which can take time. What do you want to do?</string>
-    <string name="export_both">Export both</string>
+    <string name="export_av_message">The media has separate audio/video files. If they have unmatched encodings, to export both into a container file, transcoding will be performed, which can take time. What do you want to do now?</string>
+    <string name="export_combined">Export combined</string>
     <string name="audio_only">Audio only</string>
     <string name="video_only">Video only</string>
+    <string name="separately">Separately</string>
 
     <string name="repeat_episodes_msg">Please specify a repeat interval for the episodes.</string>
     <string name="ignore_episodes_confirmation_msg">Please confirm that you want to ignore episodes.</string>
@@ -295,6 +296,7 @@
 
     <!-- actions on feeditems -->
     <string name="download_label">Download</string>
+    <string name="download_diy">Download DIY</string>
     <string name="TTS_now">TTS now</string>
     <string name="TTS_label">Speak</string>
     <string name="play_label">Play</string>

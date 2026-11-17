@@ -8,9 +8,7 @@ import ac.mdiq.podcini.config.NotificationIds
 import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
-import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.WORK_DATA_PROGRESS
-import ac.mdiq.podcini.sourcing.download.EpisodeDLManager.Companion.updateDB
 import ac.mdiq.podcini.storage.database.addToAssQueue
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
@@ -24,13 +22,8 @@ import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.takeCodePoints
 import ac.mdiq.podcini.storage.specs.EpisodeState
-import ac.mdiq.podcini.storage.utils.fetchChapters
 import ac.mdiq.podcini.storage.utils.quietlyDeleteFile
 import ac.mdiq.podcini.storage.utils.toSafeUri
-import ac.mdiq.podcini.storage.utils.toUF
-import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
-import ac.mdiq.podcini.sync.model.EpisodeAction
-import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logm
@@ -56,7 +49,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -66,7 +58,6 @@ import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 class EpisodeDLManager {
     private val constraints: Constraints
@@ -146,59 +137,6 @@ class EpisodeDLManager {
         const val WORK_DATA_WAS_QUEUED: String = "was_queued"
 
         val manager: EpisodeDLManager by lazy { EpisodeDLManager() }
-
-        suspend fun updateDB(request: DownloadRequest) {
-            downloadStatesFlow.update { it + (request.urlOrig!! to DownloadStatus.Completed) }
-
-            var item = realm.query(Episode::class).query("id == ${request.feedfileId}").first().find()
-            if (item == null) {
-                Loge(TAG, "Could not find downloaded episode object in database")
-                return
-            }
-            //                val broadcastUnreadStateUpdate = item.isNew
-            val chapters = if (!item.chaptersLoaded) try { fetchChapters(item) } catch (e: Exception) { Logs(TAG, e, "Get chapters failed for ${item.title}");listOf() } else listOf()
-            item = upsert(item) {
-                it.downloaded = true
-                it.fileUrl = request.destination
-                Logd(TAG) { "run() set request.destination: ${request.destination}" }
-                if (request.destination.isNotBlank()) {
-                    val file = request.destination.toUF()
-                    runBlocking { it.size = if (file.exists()) file.size()?: 0 else 0 }
-                    Logd(TAG) { "run() set size: ${it.size}" }
-                }
-                if (chapters.isNotEmpty()) it.setChapters(chapters)
-
-                // TODO: this seems not really needed
-                //                if (!it.fileUrl.isNullOrBlank() && it.size > 0) {
-                //                    Logd(TAG) { "run() it.fileUrl: ${it.fileUrl}" }
-                //                    try {
-                //                        MediaMetadataRetrieverCompat().use { mmr ->
-                //                            mmr.setDataSource(it.fileUrl!!)
-                //                            val image = mmr.embeddedPicture
-                //                            it.hasEmbeddedPicture = image != null
-                //                            val duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toIntOrNull()
-                //                            if (duration != null) it.duration = duration
-                //                            val mimeType = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
-                //                            if (mimeType != null) it.mimeType = mimeType
-                //                        }
-                //                    } catch (e: Exception) {
-                //                        Logs(TAG, e, "Get duration failed. current duration is ${it.duration}. If lower than 30sc or higher than 5h, reset to 30sc")
-                //                        if (it.duration !in 30000..18000000) it.duration = 30000
-                //                        it.hasEmbeddedPicture = false
-                //                    }
-                //                } else Loge(TAG, "Get metadata failed for ${it.title}: fileUrl: ${it.fileUrl}")
-                //                Logd(TAG) { "run() set duration: ${it.duration}" }
-                it.isAutoDownloadEnabled = false
-            }
-            // TODO: need to post two events?
-            //                if (broadcastUnreadStateUpdate) EventFlow.postEvent(FlowEvent.EpisodeMediaEvent.updated(item))
-            if (isSyncProviderConnected) {
-                Logd(TAG) { "enqueue synch" }
-                val action = EpisodeAction.Builder(item, EpisodeAction.DOWNLOAD).currentTimestamp().build()
-                SynchronizationQueueSink.enqueueEpisodeActionIfSyncActive(action)
-            }
-            //                Logd(TAG) { "episode.isNew: ${item.isNew} ${item.playState}" }
-        }
     }
 }
 
@@ -321,7 +259,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
         val status = downloader!!.result
 
         if (status.isSuccessful) {
-            updateDB(request)
+            request.updateDB()
             logDownloadResult(downloader!!.result)
             return Result.success()
         }

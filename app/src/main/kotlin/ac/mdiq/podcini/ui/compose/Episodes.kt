@@ -543,7 +543,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
 
     val sessionLogs by sessionLogsFlow.collectAsStateWithLifecycle()
     val playerLogs = remember(episode.id) { sessionLogs.filter { it.contains(episode.id.toString()) } }
-    val dlLogs = remember(episode.id) { realm.query(DownloadResult::class).query("feedfileId == ${episode.id} AND feedfileType == ${RequestType.FEEDMEDIA.code}").sort("completionTime",  Sort.DESCENDING).find() }
+    val dlLogs = remember(episode.id) { realm.query(DownloadResult::class).query("feedfileId == ${episode.id} AND feedfileType == ${RequestType.MEDIA.code}").sort("completionTime",  Sort.DESCENDING).find() }
 
     LaunchedEffect(episode.id) {
         Logd(TAG) { "LaunchedEffect(episode, episodeId)" }

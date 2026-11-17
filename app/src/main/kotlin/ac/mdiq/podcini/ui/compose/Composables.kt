@@ -303,6 +303,8 @@ fun CommonToast(onDismiss: () -> Unit) {
     }
 }
 
+var AnyDialog by mutableStateOf<(@Composable () -> Unit)?>(null)
+
 var commonConfirms = mutableStateListOf<CommonConfirmAttrib>()
 data class CommonConfirmAttrib(
     val id: Long = nowInMillis(),
