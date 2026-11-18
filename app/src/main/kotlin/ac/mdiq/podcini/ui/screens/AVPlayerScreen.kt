@@ -256,6 +256,7 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
 
     var showPlayButton by mutableStateOf(true)
 
+    private var videoJob: Job? = null
     private var curIdJob: Job? = null
     private var curStateJob: Job? = null
 
@@ -263,6 +264,12 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
 
     fun start() {
         timeIt("$TAG start of init vm $playerId")
+        videoJob = viewModelScope.launch {
+            theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.playingVideoFlow ?: flowOf(false) }.collect { playVideo ->
+                forceVideo = playVideo
+                Logd(TAG) { "playerId: $playerId forceVideo=$playVideo" }
+            }
+        }
         curIdJob = viewModelScope.launch {
             theatres[playerId].mPlayerFlow.flatMapLatest { player -> player?.curMediaFlow?.map { media -> player to media } ?: flowOf(null) }
                 .distinctUntilChanged { old, new -> old?.second?.id == new?.second?.id }.collect { playerAndMedia ->
@@ -287,6 +294,8 @@ class AVPlayerVM(val playerId: Int): ViewModel() {
     }
 
     fun stop() {
+        videoJob?.cancel()
+        videoJob = null
         curIdJob?.cancel()
         curIdJob = null
         curStateJob?.cancel()

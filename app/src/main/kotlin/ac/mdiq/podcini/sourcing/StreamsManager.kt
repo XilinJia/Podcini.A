@@ -25,16 +25,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -43,13 +46,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class StreamsManager(val media: Episode, val useCache: Boolean = true) {
@@ -58,6 +63,7 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
 
     private var mediaSpecs by mutableStateOf(MediaSpecs() )
     var useVideo by mutableStateOf(false)
+    var useMuxed by mutableStateOf(false)
 
     private val curLocales = mutableSetOf<String>()
     private var useLocales: Set<String> = setOf()
@@ -255,7 +261,7 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
         mediaSpecs.audioSpecs = audioSpecsCache[media.id]
         mediaSpecs.videoSpecs = videoSpecsCache[media.id]
         mediaSpecs.muxedSpecs = muxedSpecsCache[media.id]
-        Logd(TAG) { "specsFromCache mediaSpecs.videoSpecs: ${mediaSpecs.videoSpecs?.size}"}
+        Logd(TAG) { "specsFromCache mediaSpecs.videoSpecs: ${mediaSpecs.videoSpecs?.size} mediaSpecs.muxedSpecs: ${mediaSpecs.muxedSpecs?.size}"}
         val url = if (!mediaSpecs.audioSpecs.isNullOrEmpty()) mediaSpecs.audioSpecs!![0].url else if (!mediaSpecs.muxedSpecs.isNullOrEmpty()) mediaSpecs.muxedSpecs!![0].url else null
         if (!url.isNullOrBlank()) {
             val expireTime = url.toUri().getQueryParameter("expire")?.toLongOrNull()
@@ -275,8 +281,6 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
     @Composable
     fun StreamChanger(needVideo: Boolean, needMuxed: Boolean, onDismiss: ()->Unit, confirmCB: (Boolean, Boolean)->Unit) {
         var reset by remember { mutableStateOf(false) }
-//        var useVideo by remember { mutableStateOf(needVideo) }
-        var useMuxed by remember { mutableStateOf(needMuxed) }
         var locales by remember { mutableStateOf<List<String>>(listOf()) }
         var locale by remember(media.id) { mutableStateOf(useLocale ?: curAudioSpec?.audioLocale) }
         var codecs by remember { mutableStateOf<List<String>>(listOf()) }
@@ -292,6 +296,25 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
         var resolutions by remember { mutableStateOf<List<String>>(listOf()) }
         var resolution by remember(media.id) { mutableStateOf(useResolution) }
         val client = remember(media.id) { clientByEpisode(media) }
+
+        val lifecycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_CREATE -> {
+                        useVideo = needVideo
+                        useMuxed = needMuxed
+                    }
+                    Lifecycle.Event.ON_START -> {}
+                    Lifecycle.Event.ON_RESUME -> {}
+                    Lifecycle.Event.ON_STOP -> {}
+                    Lifecycle.Event.ON_DESTROY -> {}
+                    else -> {}
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
 
         fun buildVCodecSet(s: VideoSpec, cSet: MutableSet<String>) {
             if (vprot == null || vprot == "Any" || s.deliveryMethod == vprot) cSet.add(s.codec?:"Any")
@@ -321,7 +344,6 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
             }
         }
         LaunchedEffect(media.id, useMuxed, mediaSpecs) {
-            useVideo = needVideo
             val lSet = mutableSetOf<String>()
             val pSet = mutableSetOf<String>()
             val bSet = mutableSetOf<Int>()
@@ -356,7 +378,11 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
             Card(modifier = Modifier.width(300.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
                 Column(modifier = Modifier.padding(8.dp)) {
                     Text(stringResource(R.string.stream_composer), color = textColor, style = MaterialTheme.typography.titleLarge)
-                    if (client?.attributes?.hasVideo == true) Text(stringResource(R.string.use_muxed), color = if (useMuxed) Color.Yellow else buttonColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp).clickable { useMuxed = !useMuxed })
+                    Logd(TAG) { "mediaSpecs.muxedSpecs: ${mediaSpecs.muxedSpecs?.size}"}
+                    if (client?.attributes?.hasVideo == true && client.attributes?.hasSeparateAVs == true && !mediaSpecs.muxedSpecs.isNullOrEmpty()) Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.use_muxed), color = textColor, modifier = Modifier.padding(top = 5.dp, start = 10.dp, end = 10.dp))
+                        Checkbox(checked = useMuxed, onCheckedChange = { useMuxed = it })
+                    }
                     if (client?.attributes?.hasVideo != true || (!useMuxed && client.attributes?.hasSeparateAVs == true)) {
                         var showLocales by remember { mutableStateOf(false) }
                         Text(stringResource(R.string.audio)+":", color = textColor, style = MaterialTheme.typography.titleMedium)

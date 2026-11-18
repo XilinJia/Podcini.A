@@ -12,7 +12,6 @@ import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.EPISODE_BATCH_SIZE
 import ac.mdiq.podcini.sourcing.download.DownloadError
 import ac.mdiq.podcini.sourcing.download.DownloadRequest
-import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
 import ac.mdiq.podcini.sourcing.download.Downloader
 import ac.mdiq.podcini.sourcing.feed.PodcastHandler.FeedHandlerResult
 import ac.mdiq.podcini.sourcing.typeClientMap
@@ -197,7 +196,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
 
     private suspend fun downloadPodcast(feed: Feed, nextPage: Boolean = false): Feed? {
         if (nextPage) feed.pageNr += 1
-        val request = requestFor(feed)
+        val request = DownloadRequest(feed)
         if (force || feed.lastUpdateFailed) request.lastModified = null
         if (nextPage) request.urlOrig = feed.nextPageLink
         Logd(TAG) { "downloadPodcast nextPage: $nextPage ${feed.nextPageLink}"}

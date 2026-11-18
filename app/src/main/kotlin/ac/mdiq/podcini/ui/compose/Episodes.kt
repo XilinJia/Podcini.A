@@ -17,7 +17,9 @@ import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.clientByFeed
 import ac.mdiq.podcini.sourcing.clientsHaveLikeCounts
 import ac.mdiq.podcini.sourcing.clientsHaveViewCounts
+import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.sourcing.download.RequestType
+import ac.mdiq.podcini.sourcing.download.transcodeProgFlow
 import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.sourcing.listenForUDPBroadcasts
 import ac.mdiq.podcini.sourcing.sendEpisodes
@@ -599,7 +601,13 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
         }
     }
 
+    val transcodeProg by transcodeProgFlow.collectAsStateWithLifecycle()
     Column {
+        val exportProg = transcodeProg[episode.id]
+        if (!exportProg.isNullOrBlank()) {
+            val prog = exportProg.substringAfter(": ").toIntOrNull() ?: 0
+            if (prog in 1..<100) Text("Exporting $exportProg")
+        }
         if (episode.lastPlayedTime > 0L) {
             val playTimeText = remember(episode.lastPlayedTime) { formatDateTimeFlex(episode.lastPlayedTime) }
             Text(stringResource(R.string.last_played_date) + ": " + playTimeText, color = textColor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, top = 10.dp, bottom = 4.dp))

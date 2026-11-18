@@ -71,37 +71,53 @@ class DownloadRequest: HasCredentials {
         clientByEpisode(media)?.let { c->
             val sm = sm_ ?: StreamsManager(media, false)
             sm.forceFetch = true
-            if (c.attributes?.hasSeparateAVs == true) {
-                runBlocking { sm.chooseAudioSpec() }
-                sm.curAudioSpec?.let {
-                    val url = it.url
-                    this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url) else null
-                }
-                if (!this.sources[0].isNullOrBlank() && (media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY || sm.useVideo)) {
-                    runBlocking { sm.chooseVideoSpec(false) }
-                    sm.curVideoSpec?.let {
-                        val url = it.url
-                        this.sources[1] = if (!url.isNullOrBlank()) prepareUrl(url) else null
-                    }
-                } else if (this.sources[0].isNullOrBlank()) {
+            when {
+                sm.useMuxed -> {
+                    var url: String? = ""
                     runBlocking { sm.chooseVideoSpec(true) }
-                    sm.curMuxedSpec?.let {
+                    sm.curMuxedSpec?.let { url = it.url }
+                    this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url!!) else null
+                    if (!this.sources[0].isNullOrBlank()) {
+                        runBlocking { sm.chooseAudioSpec() }
+                        sm.curAudioSpec?.let {
+                            val url = it.url
+                            this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url) else null
+                        }
+                    }
+                }
+                c.attributes?.hasSeparateAVs == true -> {
+                    runBlocking { sm.chooseAudioSpec() }
+                    sm.curAudioSpec?.let {
                         val url = it.url
                         this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url) else null
                     }
+                    if (!this.sources[0].isNullOrBlank() && (media.feed?.videoModePolicy != VideoMode.AUDIO_ONLY || sm.useVideo)) {
+                        runBlocking { sm.chooseVideoSpec(false) }
+                        sm.curVideoSpec?.let {
+                            val url = it.url
+                            this.sources[1] = if (!url.isNullOrBlank()) prepareUrl(url) else null
+                        }
+                    } else if (this.sources[0].isNullOrBlank()) {
+                        runBlocking { sm.chooseVideoSpec(true) }
+                        sm.curMuxedSpec?.let {
+                            val url = it.url
+                            this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url) else null
+                        }
+                    }
+                    Logd(TAG) { "sources[0]: ${sources[0]}" }
+                    Logd(TAG) { "sources[1]: ${sources[1]}" }
                 }
-                Logd(TAG) { "sources[0]: ${sources[0]}" }
-                Logd(TAG) { "sources[1]: ${sources[1]}" }
-            } else {
-                var url: String? = ""
-                if (c.attributes?.hasVideo == true) {
-                    runBlocking { sm.chooseVideoSpec(true) }
-                    sm.curMuxedSpec?.let { url = it.url }
-                } else {
-                    runBlocking { sm.chooseAudioSpec() }
-                    sm.curAudioSpec?.let { url = it.url }
+                else -> {
+                    var url: String? = ""
+                    if (c.attributes?.hasVideo == true) {
+                        runBlocking { sm.chooseVideoSpec(true) }
+                        sm.curMuxedSpec?.let { url = it.url }
+                    } else {
+                        runBlocking { sm.chooseAudioSpec() }
+                        sm.curAudioSpec?.let { url = it.url }
+                    }
+                    this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url!!) else null
                 }
-                this.sources[0] = if (!url.isNullOrBlank()) prepareUrl(url!!) else null
             }
             at.useragent = BROWSER_USER_AGENT
             c.withProviderBlocking { it.httpAtribsFor(sources[0]) }?.let { at = it }
@@ -115,8 +131,10 @@ class DownloadRequest: HasCredentials {
         password = feed?.password
     }
 
-    constructor(destination: String, feed: Feed): super("", "") {
-        this.destination = destination
+    constructor(feed: Feed): super("", "") {
+        val dest = cacheDir / feed.getFeedfileName()
+        runOnIOScope { if (dest.exists()) dest.delete() }
+        this.destination = dest.absPath
         this.urlOrig = when {
             feed.isLocal -> feed.downloadUrl
             feed.downloadUrl != null -> prepareUrl(feed.downloadUrl!!)
@@ -237,14 +255,7 @@ class DownloadRequest: HasCredentials {
 
         val CredentialsKey = AttributeKey<HasCredentials>("Credentials")
 
-        suspend fun requestFor(feed: Feed): DownloadRequest {
-            val dest = cacheDir / feed.getFeedfileName()
-            if (dest.exists()) runOnIOScope { dest.delete() }
-            Logd(TAG) { "requestFor download feed from url " + feed.downloadUrl }
-            return DownloadRequest(dest.absPath, feed)
-        }
-
-        suspend fun requestFor(media: Episode, streams_: StreamsManager? = null): DownloadRequest? {
+        suspend fun requestFor(media: Episode, sm: StreamsManager? = null): DownloadRequest? {
             Logd(TAG) { "requestFor: ${media.fileUrl} ${media.title}" }
             val destUriString = try { media.mediaFileUriString() } catch (e: Throwable ) { "" }
             Logd(TAG) { "requestFor destUriString: $destUriString" }
@@ -252,7 +263,7 @@ class DownloadRequest: HasCredentials {
                 LogeFor(TAG, media.id, "destUriString is invalid: [$destUriString] for media: ${media.title}")
                 return null
             }
-            return DownloadRequest(destUriString, media, streams_)
+            return DownloadRequest(destUriString, media, sm)
         }
     }
 }

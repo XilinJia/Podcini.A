@@ -37,15 +37,20 @@ import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.nio.ByteBuffer
+import kotlin.collections.plus
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 private const val TAG = "Export"
+
+val transcodeProgFlow = MutableStateFlow<Map<Long, String>>(emptyMap())
 
 suspend fun exportMediaFiles(media: Episode, outputDir: UnifiedFile) {
     val fileUrl = media.fileUrl ?: run {
@@ -102,7 +107,7 @@ suspend fun exportMediaFiles(media: Episode, outputDir: UnifiedFile) {
                     onConfirm = {
                         val outputPath = (outputDir / name).absPath
                         runOnIOScope {
-                            exportMuxed(audioUF, videoUF, outputPath)
+                            exportMuxed(audioUF, videoUF, outputPath) { prog-> transcodeProgFlow.update { it + (media.id to prog) } }
                             Logt(TAG, "audio/video container file exported: ${media.title}")
                         }
                     })
@@ -132,7 +137,7 @@ data class Plan(
     val transcodeAudioTo: String?
 )
 
-suspend fun exportMuxed(audioUF: UnifiedFile, videoUF: UnifiedFile, outputPath: String) {
+suspend fun exportMuxed(audioUF: UnifiedFile, videoUF: UnifiedFile, outputPath: String, onProgress: (String)->Unit) {
     val videoPath = videoUF.absPath
     val audioPath = audioUF.absPath
     fun plan(v: String, a: String): Plan {
@@ -157,7 +162,8 @@ suspend fun exportMuxed(audioUF: UnifiedFile, videoUF: UnifiedFile, outputPath: 
             error("No $prefix track in $path")
         } finally { ex.release() }
     }
-    suspend fun transcode(input: Uri, out: String, video: Boolean, mime: String, onProgress: (Int) -> Unit = {}) = suspendCancellableCoroutine { cont ->
+    var tcType = ""
+    suspend fun transcode(input: Uri, out: String, video: Boolean, mime: String) = suspendCancellableCoroutine { cont ->
         val item = EditedMediaItem.Builder(MediaItem.fromUri(input)).apply { if (video) setRemoveAudio(true) else setRemoveVideo(true) }.build()
         val handler = Handler(Looper.getMainLooper())
         val holder = ProgressHolder()
@@ -166,7 +172,7 @@ suspend fun exportMuxed(audioUF: UnifiedFile, videoUF: UnifiedFile, outputPath: 
         val poller = object : Runnable {
             override fun run() {
                 if (finished) return
-                if (t.getProgress(holder) != Transformer.PROGRESS_STATE_NOT_STARTED) onProgress(holder.progress)
+                if (t.getProgress(holder) != Transformer.PROGRESS_STATE_NOT_STARTED) onProgress("$tcType: ${holder.progress}")
                 handler.postDelayed(this, 10000)
             }
         }
@@ -176,7 +182,7 @@ suspend fun exportMuxed(audioUF: UnifiedFile, videoUF: UnifiedFile, outputPath: 
             override fun onCompleted(c: Composition, r: ExportResult) {
                 finished = true
                 handler.removeCallbacks(poller)
-                onProgress(100)
+                onProgress("$tcType: 100")
                 cont.resume(Unit)
             }
             override fun onError(c: Composition, r: ExportResult, e: ExportException) {
@@ -198,11 +204,13 @@ suspend fun exportMuxed(audioUF: UnifiedFile, videoUF: UnifiedFile, outputPath: 
     var a = audioPath
     p.transcodeVideoTo?.let {
         v = (cacheDir / "v_tc.mp4").absPath
-        withContext(Dispatchers.Main) { transcode(videoUF.toAndroidUri()!!, v, true, it) { p-> Logt(TAG, "transcode video $p%") } }
+        tcType = "Video"
+        withContext(Dispatchers.Main) { transcode(videoUF.toAndroidUri()!!, v, true, it) }
     }
     p.transcodeAudioTo?.let {
         a = (cacheDir / "a_tc.m4a").absPath
-        withContext(Dispatchers.Main) { transcode(audioUF.toAndroidUri()!!, a, false, it) { p-> Logt(TAG, "transcode audio $p%") } }
+        tcType = "Audio"
+        withContext(Dispatchers.Main) { transcode(audioUF.toAndroidUri()!!, a, false, it) }
     }
     withContext(Dispatchers.IO) {
         val output = "$outputPath.${p.target.ext}".toUF()
@@ -218,7 +226,7 @@ private fun sampleToBufferFlags(sampleFlags: Int): Int {
     return flags
 }
 
-fun mux(audioPath: String, videoPath: String, format: Int): UnifiedFile {
+private fun mux(audioPath: String, videoPath: String, format: Int): UnifiedFile {
     val tmpfile = cacheDir / "mux_${System.currentTimeMillis()}.mp4"
     val muxer = MediaMuxer(tmpfile.absPath, format)
     Logd(TAG) { "mux audio file ${File(audioPath).length()} bytes"}

@@ -2,11 +2,11 @@ package ac.mdiq.podcini.sourcing.feed
 
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.sourcing.download.DownloadRequest.Companion.requestFor
-import ac.mdiq.podcini.sourcing.download.Downloader
 import ac.mdiq.podcini.shared.FeedIPC
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.shared.prepareUrl
+import ac.mdiq.podcini.sourcing.download.DownloadRequest
+import ac.mdiq.podcini.sourcing.download.Downloader
 import ac.mdiq.podcini.storage.database.addNewFeed
 import ac.mdiq.podcini.storage.database.feedByIdentityOrID
 import ac.mdiq.podcini.storage.model.Feed
@@ -107,7 +107,7 @@ class FeedBuilder(val showError: (String?, String)->Unit) {
             }
         }
         selectedDownloadUrl = prepareUrl(url)
-        val request = requestFor(Feed(selectedDownloadUrl, null)).withAuthentication(username, password).withInitiatedByUser(true)
+        val request = DownloadRequest(Feed(selectedDownloadUrl, null)).withAuthentication(username, password).withInitiatedByUser(true)
         try {
             downloader = Downloader(request)
             downloader?.downloadFeed { source ->

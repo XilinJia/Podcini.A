@@ -250,6 +250,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                     if (reason == Player.DISCONTINUITY_REASON_SEEK) isSeeking = true
                 }
                 override fun onEvents(player: Player, events: Player.Events) {
+                    Logd(TAG) { "onEvents events: ${events.size()}" }
                     if (isCasting) {
                         if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) || events.contains(Player.EVENT_IS_PLAYING_CHANGED)) {
                             val currentPos = player.currentPosition
@@ -279,8 +280,12 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                         bufferedPercentFlow.value = player.bufferedPercentage
                         Logd(TAG) { "onEvents buffered: ${bufferedPercentFlow.value}" }
                         curMediaFlow.value?.let { media->
-                            val dur = getDuration()
-                            if (bufferedPercentFlow.value == 100 && media.duration <= 0 && dur > 0) runOnIOScope { upsert(media) { it.duration = dur } }
+                            val curDuration = media.duration
+                            val duration = player.duration
+                            if (bufferedPercentFlow.value == 100 && duration > 0 && abs(duration - curDuration) > 5000) {
+                                runOnIOScope { upsert(media) { it.duration = curDuration } }
+                                Logt(TAG, context.getString(R.string.media_duration_adjusted, durationStringFull(duration.toInt())))
+                            }
                         }
 
                     }

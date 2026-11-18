@@ -1,3 +1,10 @@
+# 12.22.1
+
+* transcoding progress is no longer toasted but shown in EpisodeInfo or PlayerDetailed instead
+* when playing downloaded video file, ensure PlayerDetailed to show up
+* in Download DIY, ensure use muxed is taken
+* in Stream chooser, "Use muxed video" is turned to a checkbox, and is shown only when applicable
+
 # 12.22.0
 
 * ensure downlaoded separate av files don't take the same name
