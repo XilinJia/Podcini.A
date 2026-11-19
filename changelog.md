@@ -1,3 +1,7 @@
+# 12.22.2
+
+* amended Stream changer, fixed video not shown in PlayerDetailed
+
 # 12.22.1
 
 * transcoding progress is no longer toasted but shown in EpisodeInfo or PlayerDetailed instead

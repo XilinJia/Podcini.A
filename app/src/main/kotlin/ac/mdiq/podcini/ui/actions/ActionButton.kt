@@ -302,7 +302,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     Logt(TAG, "not suitable for download")
                     return
                 }
-                val client = clientByEpisode(item) ?: return
+//                val client = clientByEpisode(item) ?: return
                 val sm = StreamsManager(item)
                 fun downloadSpecial() {
                     downloadJob = runOnIOScope {
@@ -325,7 +325,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 }
                 if (mobileAllowEpisodeDownload || !networkMonitor.isNetworkRestricted) {
                     runOnIOScope { sm.getAVSpecs() }
-                    AnyDialog = { sm.StreamChanger(client.attributes?.hasVideo==true, false,  onDismiss={ AnyDialog = null }) { _, _ -> downloadSpecial() } }
+                    AnyDialog = { sm.StreamChanger(onDismiss={ AnyDialog = null }) { _, _ -> downloadSpecial() } }
                     return
                 }
                 confirm(title = context.getString(R.string.confirm_mobile_download_dialog_title),
@@ -334,7 +334,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     cancelRes = R.string.cancel_label,
                     onConfirm = {
                         runOnIOScope { sm.getAVSpecs() }
-                        AnyDialog = { sm.StreamChanger(client.attributes?.hasVideo==true, false,  onDismiss={ AnyDialog = null }) { _, _ -> downloadSpecial() } }
+                        AnyDialog = { sm.StreamChanger(onDismiss={ AnyDialog = null }) { _, _ -> downloadSpecial() } }
                     },
                 )
             }

@@ -37,7 +37,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,9 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toUri
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class StreamsManager(val media: Episode, val useCache: Boolean = true) {
@@ -279,7 +275,7 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
     }
 
     @Composable
-    fun StreamChanger(needVideo: Boolean, needMuxed: Boolean, onDismiss: ()->Unit, confirmCB: (Boolean, Boolean)->Unit) {
+    fun StreamChanger(onDismiss: ()->Unit, confirmCB: (Boolean, Boolean)->Unit) {
         var reset by remember { mutableStateOf(false) }
         var locales by remember { mutableStateOf<List<String>>(listOf()) }
         var locale by remember(media.id) { mutableStateOf(useLocale ?: curAudioSpec?.audioLocale) }
@@ -292,29 +288,10 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
         var vcodecs by remember { mutableStateOf<List<String>>(listOf()) }
         var vcodec by remember(media.id) { mutableStateOf(useVCodex) }
         var vprots by remember { mutableStateOf<List<String>>(listOf()) }
-        var vprot by remember(media.id) { mutableStateOf(useVProt ?: if (needMuxed) curMuxedSpec?.deliveryMethod else curVideoSpec?.deliveryMethod) }
+        var vprot by remember(media.id, useMuxed) { mutableStateOf(useVProt ?: if (useMuxed) curMuxedSpec?.deliveryMethod else curVideoSpec?.deliveryMethod) }
         var resolutions by remember { mutableStateOf<List<String>>(listOf()) }
         var resolution by remember(media.id) { mutableStateOf(useResolution) }
         val client = remember(media.id) { clientByEpisode(media) }
-
-        val lifecycleOwner = LocalLifecycleOwner.current
-        DisposableEffect(lifecycleOwner) {
-            val observer = LifecycleEventObserver { _, event ->
-                when (event) {
-                    Lifecycle.Event.ON_CREATE -> {
-                        useVideo = needVideo
-                        useMuxed = needMuxed
-                    }
-                    Lifecycle.Event.ON_START -> {}
-                    Lifecycle.Event.ON_RESUME -> {}
-                    Lifecycle.Event.ON_STOP -> {}
-                    Lifecycle.Event.ON_DESTROY -> {}
-                    else -> {}
-                }
-            }
-            lifecycleOwner.lifecycle.addObserver(observer)
-            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-        }
 
         fun buildVCodecSet(s: VideoSpec, cSet: MutableSet<String>) {
             if (vprot == null || vprot == "Any" || s.deliveryMethod == vprot) cSet.add(s.codec?:"Any")
@@ -455,7 +432,7 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
                             }
                         }
                     }
-                    if (useMuxed || needVideo) {
+                    if (client?.attributes?.hasVideo == true ) {
                         Text(stringResource(R.string.video)+":", color = textColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 3.dp))
                         Text(stringResource(R.string.video_stream_set_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                         var showProts by remember { mutableStateOf(false) }

@@ -910,7 +910,7 @@ fun AVPlayerScreen() {
             }
         }
 
-        if (showAVChooser && player != null) player.streamsManager.StreamChanger(needVideo = playingVideo, needMuxed = player.playingMuxedVideo, onDismiss = { showAVChooser = false}) { useVideo, useMuxed->
+        if (showAVChooser && player != null) player.streamsManager.StreamChanger(onDismiss = { showAVChooser = false}) { useVideo, useMuxed->
             appMainScope.launch {
                 Logd(TAG) { "before restart episode ${episode.forceVideo}" }
                 player.pause(false)
