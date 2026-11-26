@@ -40,7 +40,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-private const val TAG: String = "ChapterUtils"
+private const val TAG = "ChapterUtils"
 
 suspend fun fetchChapters(episode: Episode): List<Chapter> {
     if (!canCheckMediaSize(episode)) return listOf()
@@ -207,7 +207,7 @@ class ChapterReader(input: CountingSource) : ID3Reader(input) {
     }
 
     companion object {
-        private val TAG: String = ChapterReader::class.simpleName ?: "Anonymous"
+        private const val TAG = "ChapterReader"
 
         const val FRAME_ID_CHAPTER: String = "CHAP"
         const val FRAME_ID_TITLE: String = "TIT2"
@@ -357,7 +357,7 @@ class VorbisCommentChapterReader(source: CountingSource) : VorbisCommentReader(s
     }
 
     companion object {
-        private val TAG: String = VorbisCommentChapterReader::class.simpleName ?: "Anonymous"
+        private const val TAG = "VorbisCommentChapterReader"
 
         private const val CHAPTER_KEY = "chapter\\d\\d\\d.*"
         private const val CHAPTER_ATTRIBUTE_TITLE = "name"

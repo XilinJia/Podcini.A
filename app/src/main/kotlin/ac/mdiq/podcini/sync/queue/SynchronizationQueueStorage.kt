@@ -1,11 +1,13 @@
 package ac.mdiq.podcini.sync.queue
 
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.storage.database.syncPrefs
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.sync.SynchronizationSettings
 import ac.mdiq.podcini.sync.model.EpisodeAction
 import ac.mdiq.podcini.utils.Logs
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONException
 
@@ -49,11 +51,11 @@ class SynchronizationQueueStorage() {
         }
 
     fun clearEpisodeActionQueue() {
-        runOnIOScope {  upsert(syncPrefs) { it.QUEUED_EPISODE_ACTIONS = "[]"} }
+        appIOScope.launch {  upsert(syncPrefs) { it.QUEUED_EPISODE_ACTIONS = "[]"} }
     }
 
     fun clearFeedQueues() {
-        runOnIOScope {
+        appIOScope.launch {
             upsert(syncPrefs) {
                 it.QUEUED_FEEDS_ADDED = "[]"
                 it.QUEUED_FEEDS_REMOVED = "[]"
@@ -63,7 +65,7 @@ class SynchronizationQueueStorage() {
 
     fun clearQueue() {
         SynchronizationSettings.resetTimestamps()
-        runOnIOScope {
+        appIOScope.launch {
             upsert(syncPrefs) {
                 it.QUEUED_EPISODE_ACTIONS = "[]"
                 it.QUEUED_FEEDS_ADDED = "[]"
@@ -78,7 +80,7 @@ class SynchronizationQueueStorage() {
             addedQueue.put(downloadUrl)
             val removedQueue = JSONArray(syncPrefs.QUEUED_FEEDS_REMOVED)
             removedQueue.remove(indexOf(downloadUrl, removedQueue))
-            runOnIOScope {
+            appIOScope.launch {
                 upsert(syncPrefs) {
                     it.QUEUED_FEEDS_ADDED = addedQueue.toString()
                     it.QUEUED_FEEDS_REMOVED = removedQueue.toString()
@@ -93,7 +95,7 @@ class SynchronizationQueueStorage() {
             removedQueue.put(downloadUrl)
             val addedQueue = JSONArray(syncPrefs.QUEUED_FEEDS_ADDED)
             addedQueue.remove(indexOf(downloadUrl, addedQueue))
-            runOnIOScope {
+            appIOScope.launch {
                 upsert(syncPrefs) {
                     it.QUEUED_FEEDS_ADDED = addedQueue.toString()
                     it.QUEUED_FEEDS_REMOVED = removedQueue.toString()
@@ -112,7 +114,7 @@ class SynchronizationQueueStorage() {
         try {
             val queue = JSONArray(json)
             queue.put(action.writeToJsonObjectForServer())
-            runOnIOScope { upsert(syncPrefs) { it.QUEUED_EPISODE_ACTIONS = queue.toString() } }
+            appIOScope.launch { upsert(syncPrefs) { it.QUEUED_EPISODE_ACTIONS = queue.toString() } }
         } catch (jsonException: JSONException) { Logs("SynchronizationQueueStorage", jsonException) }
     }
 }

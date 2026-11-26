@@ -15,10 +15,6 @@ sealed class FlowEvent {
     val TAG = this::class.simpleName ?: "FlowEvent"
     val id: Long = nowInMillis()
 
-//    data class PlaybackServiceEvent(val action: Action) : FlowEvent() {
-//        enum class Action { SERVICE_STARTED, SERVICE_SHUT_DOWN, }
-//    }
-
     data class QueueEvent(val action: Action, val episodes: List<Episode>, val position: Int) : FlowEvent() {
         enum class Action { REMOVED, CLEARED }
         companion object {

@@ -168,13 +168,6 @@ class PlaybackService : MediaLibraryService() {
 //        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {}
 //    }
 
-//    private val shutdownReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-//        override fun onReceive(context: Context, intent: Intent) {
-//            Logd(TAG) { "shutdownReceiver onReceive called with action: ${intent.action}" }
-////            if (intent.action == ACTION_SHUTDOWN_PLAYBACK_SERVICE) EventFlow.postEvent(FlowEvent.PlaybackServiceEvent(FlowEvent.PlaybackServiceEvent.Action.SERVICE_SHUT_DOWN))
-//        }
-//    }
-
     object MediaRepository {
         data class MediaCategory(val id: String, val type: String, val title: String)
 //        val actQueueCategory = actQueueFlow.value.let { MediaCategory(id = it.id.toString(), type = "Queue", title = it.name) }
@@ -368,12 +361,6 @@ class PlaybackService : MediaLibraryService() {
         isRunning = true
         playbackService = this
 
-//        if (Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
-//            registerReceiver(shutdownReceiver, IntentFilter(ACTION_SHUTDOWN_PLAYBACK_SERVICE), RECEIVER_NOT_EXPORTED)
-//        } else {
-//            registerReceiver(shutdownReceiver, IntentFilter(ACTION_SHUTDOWN_PLAYBACK_SERVICE))
-//        }
-
         registerReceiver(headsetDisconnected, IntentFilter(Intent.ACTION_HEADSET_PLUG))
         registerReceiver(bluetoothStateUpdated, IntentFilter(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED))
         registerReceiver(audioBecomingNoisy, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
@@ -382,8 +369,6 @@ class PlaybackService : MediaLibraryService() {
         SleepManager.sleepManager = SleepManager()
 
         if (mediaLibrarySession == null) createMediaSessionAndPlayers()
-
-//        EventFlow.postEvent(FlowEvent.PlaybackServiceEvent(FlowEvent.PlaybackServiceEvent.Action.SERVICE_STARTED))
         timeIt("$TAG onCreate Service end")
     }
 
@@ -690,7 +675,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     companion object {
-        private val TAG: String = PlaybackService::class.simpleName ?: "Anonymous"
+        private const val TAG = "PlaybackService"
 
         val serviceMainScope = CoroutineScope(Dispatchers.Main)
         val serviceIOScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

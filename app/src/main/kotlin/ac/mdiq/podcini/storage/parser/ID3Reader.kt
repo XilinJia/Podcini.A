@@ -313,7 +313,7 @@ open class ID3Reader(private val source: CountingSource) {
     }
 
     companion object {
-        private val TAG: String = ID3Reader::class.simpleName ?: "Anonymous"
+        private const val TAG = "ID3Reader"
         private const val FRAME_ID_LENGTH = 4
         const val ENCODING_ISO: Byte = 0
         const val ENCODING_UTF16_WITH_BOM: Byte = 1

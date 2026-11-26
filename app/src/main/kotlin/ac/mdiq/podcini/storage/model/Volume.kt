@@ -1,6 +1,7 @@
 package ac.mdiq.podcini.storage.model
 
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getFeedList
@@ -113,7 +114,7 @@ fun cancelMonitorVolumes() {
 }
 
 fun createVolumes() {
-    CoroutineScope(Dispatchers.IO).launch {
+    appIOScope.launch {
         val archived = realm.query(Volume::class).query("id == $ARCHIVED_VOLUME_ID").first().find() ?: run {
             val v = Volume()
             v.id = ARCHIVED_VOLUME_ID
@@ -140,7 +141,7 @@ fun createVolumes() {
 
 fun monitorVolumes() {
     if (volumeMonitorJob != null) return
-    volumeMonitorJob = CoroutineScope(Dispatchers.IO).launch {
+    volumeMonitorJob = appIOScope.launch {
         realm.query(Volume::class).asFlow().collect { changes: ResultsChange<Volume> ->
             allVolumes = changes.list
             Logd(TAG) { "monitorVolumes volumes size: ${allVolumes.size}" }

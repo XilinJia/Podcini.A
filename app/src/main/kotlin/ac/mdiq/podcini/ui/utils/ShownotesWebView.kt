@@ -28,30 +28,17 @@ import androidx.core.view.size
 import kotlin.math.max
 
 class ShownotesWebView : WebView, View.OnLongClickListener {
-
     private var selectedUrl: String? = null
-    private var timecodeSelectedListener: ((Int) -> Unit)? = null
-    private var pageFinishedListener: (()->Unit)? = null
+    var timecodeSelectedListener: ((Int) -> Unit)? = null
+    var pageFinishedListener: (()->Unit)? = null
 
-    constructor(context: Context) : super(context) {
-        setup()
-    }
-
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        setup()
-    }
-
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        setup()
-    }
-
-    private fun setup() {
+    constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : super(context, attrs, defStyleAttr) {
         setBackgroundColor(Color.TRANSPARENT)
         // Use cached resources, even if they have expired
-//        if (!NetworkUtils.networkAvailable()) getSettings().cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
-//        settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+        //        if (!NetworkUtils.networkAvailable()) getSettings().cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+        //        settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
 
-//        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        //        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         settings.useWideViewPort = false
         settings.loadWithOverviewMode = true
@@ -66,7 +53,7 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
             }
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
-//                Logd(TAG) { "Page finished" }
+                //                Logd(TAG) { "Page finished" }
                 pageFinishedListener?.invoke()
             }
             override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
@@ -80,7 +67,7 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
         }
     }
 
-     override fun onLongClick(v: View): Boolean {
+    override fun onLongClick(v: View): Boolean {
         val r: HitTestResult = hitTestResult
         when (r.type) {
             HitTestResult.SRC_ANCHOR_TYPE -> {
@@ -101,27 +88,6 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
         }
     }
 
-    private fun onContextItemSelected(item: MenuItem): Boolean {
-        if (selectedUrl == null) return false
-        val itemId = item.itemId
-        when (itemId) {
-            ContextAction.OPEN_IN_BROWSER.id -> openInSystemDefault(selectedUrl!!)
-            ContextAction.SHARE_URL.id -> context.shareText(selectedUrl!!, R.string.share_url_label)
-            ContextAction.COPY_URL.id -> selectedUrl?.let { copyToClipboard(it, it) }
-            ContextAction.GOTO.id -> {
-                if ((ShownotesCleaner.isTimecodeLink(selectedUrl) || ShownotesCleaner.isHTTPTimecodeLink(selectedUrl)) && timecodeSelectedListener != null)
-                    timecodeSelectedListener!!(ShownotesCleaner.getTimecodeLinkTime(selectedUrl))
-                else Loge(TAG, "Selected go_to_position_item, but URL was not timecode link: $selectedUrl")
-            }
-            else -> {
-                selectedUrl = null
-                return false
-            }
-        }
-        selectedUrl = null
-        return true
-    }
-
     override fun onCreateContextMenu(menu: ContextMenu) {
         super.onCreateContextMenu(menu)
         if (selectedUrl == null) return
@@ -136,7 +102,26 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
             menu.add(Menu.NONE, ContextAction.SHARE_URL.id, Menu.NONE, ContextAction.SHARE_URL.titleRes)
             menu.setHeaderTitle(selectedUrl)
         }
-        setOnClickListeners(menu) { item: MenuItem -> this.onContextItemSelected(item) }
+        setOnClickListeners(menu) { item: MenuItem ->
+            if (selectedUrl == null) return@setOnClickListeners false
+            val itemId = item.itemId
+            when (itemId) {
+                ContextAction.OPEN_IN_BROWSER.id -> openInSystemDefault(selectedUrl!!)
+                ContextAction.SHARE_URL.id -> context.shareText(selectedUrl!!, R.string.share_url_label)
+                ContextAction.COPY_URL.id -> selectedUrl?.let { copyToClipboard(it, it) }
+                ContextAction.GOTO.id -> {
+                    if ((ShownotesCleaner.isTimecodeLink(selectedUrl) || ShownotesCleaner.isHTTPTimecodeLink(selectedUrl)) && timecodeSelectedListener != null)
+                        timecodeSelectedListener!!(ShownotesCleaner.getTimecodeLinkTime(selectedUrl))
+                    else Loge(TAG, "Selected go_to_position_item, but URL was not timecode link: $selectedUrl")
+                }
+                else -> {
+                    selectedUrl = null
+                    return@setOnClickListeners false
+                }
+            }
+            selectedUrl = null
+            return@setOnClickListeners true
+        }
     }
 
     /**
@@ -155,14 +140,6 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
         }
     }
 
-    fun setTimecodeSelectedListener(timecodeSelectedListener: ((Int) -> Unit)?) {
-        this.timecodeSelectedListener = timecodeSelectedListener
-    }
-
-    fun setPageFinishedListener(pageFinishedListener: (()->Unit)?) {
-        this.pageFinishedListener = pageFinishedListener
-    }
-
     @Deprecated("Deprecated in Java")
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -170,7 +147,7 @@ class ShownotesWebView : WebView, View.OnLongClickListener {
     }
 
     companion object {
-        private val TAG: String = ShownotesWebView::class.simpleName ?: "Anonymous"
+        private const val TAG = "ShownotesWebView"
 
         enum class ContextAction(@StringRes val titleRes: Int) {
             GOTO(R.string.go_to_position_label),

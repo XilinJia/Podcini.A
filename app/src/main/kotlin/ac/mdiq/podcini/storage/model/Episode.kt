@@ -703,7 +703,7 @@ class Episode : RealmObject {
     }
 
     companion object {
-        private val TAG: String = Episode::class.simpleName ?: "Anonymous"
+        private const val TAG = "Episode"
 
         const val INVALID_TIME: Int = -1
 

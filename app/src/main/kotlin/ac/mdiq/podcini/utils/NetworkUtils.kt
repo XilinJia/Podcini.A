@@ -1,12 +1,13 @@
 package ac.mdiq.podcini.utils
 
 import ac.mdiq.podcini.BuildConfig
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.shared.PodciniHttpClient.mediaKtor
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import android.annotation.SuppressLint
 import android.content.Context
@@ -109,7 +110,7 @@ object NetworkUtils {
         val allowed: MutableSet<String> = HashSet(getValueStringSet)
         if (allow) allowed.add(type)
         else allowed.remove(type)
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.mobileUpdateTypes = allowed.toRealmSet() } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.mobileUpdateTypes = allowed.toRealmSet() } }
     }
 
     fun wasDownloadBlocked(throwable: Throwable?): Boolean {

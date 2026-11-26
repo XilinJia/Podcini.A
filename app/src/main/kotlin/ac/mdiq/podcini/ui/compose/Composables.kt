@@ -1,10 +1,10 @@
 package ac.mdiq.podcini.ui.compose
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.toastMessagesFlow
@@ -28,8 +28,10 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -43,7 +45,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -67,6 +69,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,7 +83,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -93,6 +95,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -140,27 +144,30 @@ fun filterChipBorder(selected: Boolean): BorderStroke {
     )
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Spinner(items: List<String>, selectedItem: String, modifier: Modifier = Modifier, onItemSelected: (Int) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    var currentSelectedItem by remember { mutableStateOf(selectedItem) }
     ExposedDropdownMenuBox(expanded = expanded, modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.large), onExpandedChange = { expanded = it }) {
-        BasicTextField(readOnly = true, value = currentSelectedItem, onValueChange = { currentSelectedItem = it},
-            textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = MaterialTheme.typography.bodyLarge.fontSize, fontWeight = FontWeight.Bold),
-            modifier = modifier.trackAsTextField().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true), // Material3 requirement
-            decorationBox = { innerTextField ->
+        val currentSelectedItem = rememberTextFieldState(initialText = selectedItem)
+        BasicTextField(readOnly = true, state = currentSelectedItem, lineLimits = TextFieldLineLimits.SingleLine, // Recommended for dropdown anchors
+            textStyle = LocalTextStyle.current.copy(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                fontWeight = FontWeight.Bold
+            ),
+            modifier = modifier.trackAsTextField().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+            decorator = { innerTextField -> // Changed from 'decorationBox' to 'decorator'
                 Row(modifier, verticalAlignment = Alignment.CenterVertically) {
                     innerTextField()
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 }
-            })
+            }
+        )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             for (i in items.indices) {
                 DropdownMenuItem(text = { Text(items[i]) },
                     onClick = {
-                        currentSelectedItem = items[i]
+                        currentSelectedItem.edit { replace(0, length, items[i]) }
                         onItemSelected(i)
                         expanded = false
                     }
@@ -171,23 +178,22 @@ fun Spinner(items: List<String>, selectedItem: String, modifier: Modifier = Modi
 }
 
 @Composable
-fun CommentEditingDialog(textState: TextFieldValue, autoSave: Boolean = true, onTextChange: (TextFieldValue) -> Unit, onDismiss: () -> Unit, onSave: suspend () -> Unit) {
+fun CommentEditingDialog(textState: TextFieldState, autoSave: Boolean = true, onDismiss: () -> Unit, onSave: suspend () -> Unit) {
     Dialog(onDismissRequest = { onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         var textChanged by remember { mutableStateOf(false) }
+        LaunchedEffect(textState) {
+            snapshotFlow { textState.text.toString() }.drop(1).debounce(300.milliseconds).collect { textChanged = true }
+        }
         Surface(modifier = Modifier.fillMaxWidth().padding(16.dp), shape = MaterialTheme.shapes.medium, border = BorderStroke(1.dp, borderColor)) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.add_comment), color = textColor, style = CustomTextStyles.titleCustom)
                 Spacer(modifier = Modifier.height(16.dp))
-                BasicTextField(value = textState, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().height(300.dp).padding(10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small),
-                    onValueChange = {
-                    textChanged = true
-                    onTextChange(it)
-                })
+                BasicTextField(state = textState, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().height(300.dp).padding(10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                     TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
                     TextButton(onClick = {
-                        runOnIOScope { onSave() }
+                        appIOScope.launch { onSave() }
                         textChanged = false
                         onDismiss()
                     }) { Text("Save") }
@@ -390,13 +396,13 @@ fun ConfirmDialog(titleRes: Int, message: String, showDialog: MutableState<Boole
 @Composable
 fun SearchBarRow(hintTextRes: Int, defaultText: String, modifier: Modifier = Modifier, history: List<String> = listOf(), performSearch: (String) -> Unit) {
     var showHistory by remember { mutableStateOf(false) }
-    var queryText by remember { mutableStateOf(defaultText) }
+    val queryText = rememberTextFieldState(initialText = defaultText)
     DropdownMenu(expanded = showHistory, onDismissRequest = { showHistory = false }) {
         for (i in history.indices) {
             DropdownMenuItem(text = { Text(history[i]) },
                 onClick = {
-                    queryText = history[i]
-                    performSearch(queryText)
+                    queryText.edit { replace(0, length, history[i])}
+                    performSearch(queryText.text.toString())
                     showHistory = false
                 }
             )
@@ -404,19 +410,14 @@ fun SearchBarRow(hintTextRes: Int, defaultText: String, modifier: Modifier = Mod
     }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         val focusManager = LocalFocusManager.current
-        TextField(value = queryText, singleLine = true, textStyle = TextStyle(fontSize = 14.sp), label = { Text(stringResource(hintTextRes), style = MaterialTheme.typography.labelSmall) }, modifier = Modifier.trackAsTextField().weight(1f),
+        TextField(state = queryText, lineLimits = TextFieldLineLimits.SingleLine, textStyle = TextStyle(fontSize = 14.sp), label = { Text(stringResource(hintTextRes), style = MaterialTheme.typography.labelSmall) }, modifier = Modifier.trackAsTextField().weight(1f),
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-            onValueChange = { queryText = it },
-            keyboardActions = KeyboardActions(onDone = {
-                performSearch(queryText)
-                focusManager.clearFocus()
-            }),
+            onKeyboardAction = { performSearch(queryText.text.toString()); focusManager.clearFocus() },
             leadingIcon = if (history.isNotEmpty()) { { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_history), tint = buttonColor, contentDescription = "history",
                 modifier = Modifier.padding(start = 5.dp).width(40.dp).height(40.dp).clickable { showHistory = true }) } } else null,
             trailingIcon = { Icon(imageVector = Icons.Filled.Search, tint = buttonColor, contentDescription = "search",
                 modifier = Modifier.padding(start = 5.dp).width(40.dp).height(40.dp).clickable {
-                    performSearch(queryText)
-                    focusManager.clearFocus()
+                    performSearch(queryText.text.toString()); focusManager.clearFocus()
                 }) }
         )
     }
@@ -424,40 +425,36 @@ fun SearchBarRow(hintTextRes: Int, defaultText: String, modifier: Modifier = Mod
 
 @Composable
 fun NumberEditor(initVal: Int, label: String = "seconds", nz: Boolean = true, instant: Boolean = false, modifier: Modifier, cb: (Int)->Unit) {
-    var inputVal by remember(initVal) { mutableStateOf(initVal.toString()) }
+//    var inputVal by remember(initVal) { mutableStateOf(initVal.toString()) }
+    val inputVal = rememberTextFieldState(initialText = initVal.toString())
+    val value = remember(inputVal.text) {  inputVal.text.toString().toIntOrNull() }
     var showSet by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     fun set() {
         if (nz) {
-            if (inputVal.isNotBlank()) {
-                cb(inputVal.toInt())
+            if (value != null) {
+                cb(value)
                 showSet = false
             }
         } else {
-            val v = if (inputVal.isNotBlank()) inputVal.toInt() else 0
+            val v = value ?: 0
             cb(v)
             showSet = false
         }
     }
-    if (instant)
-        TextField(value = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.labelSmall) }, singleLine = true, modifier = modifier.trackAsTextField(),
-            onValueChange = {
-                if (it.isEmpty() || it.toIntOrNull() != null) inputVal = it
-                if (it.toIntOrNull() != null) showSet = true
+    if (instant) {
+        LaunchedEffect(Unit) {
+            snapshotFlow { inputVal.text }.drop(1).collect {
+                if (it.toString().toIntOrNull() != null) showSet = true
                 if (showSet) set()
-            },
-        )
-    else
-        TextField(value = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.labelSmall) }, singleLine = true, modifier = modifier.trackAsTextField(),
-            onValueChange = {
-                if (it.isEmpty() || it.toIntOrNull() != null) inputVal = it
-                if (it.toIntOrNull() != null) showSet = true
-            },
-            trailingIcon = { if (showSet) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable {
-                set()
-                focusManager.clearFocus()
-            }) }
-        )
+            }
+        }
+        TextField(state = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.labelSmall) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = modifier.trackAsTextField())
+    } else {
+        LaunchedEffect(Unit) { snapshotFlow { inputVal.text }.drop(1).collect { if (it.toString().toIntOrNull() != null) showSet = true } }
+        TextField(state = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.labelSmall) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = modifier.trackAsTextField(),
+            trailingIcon = { if (showSet) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable { set(); focusManager.clearFocus() }) })
+    }
 }
 
 @Composable
@@ -513,47 +510,44 @@ fun SelectLowerAllUpper(selectedList: MutableList<MutableState<Boolean>>, lowerC
 
 enum class TagType { Feed, Episode }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TagSettingDialog(tagType: TagType, existingTags: Set<String>, multiples: Boolean = false, onDismiss: () -> Unit, cb: (List<String>)->Unit) {
     val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
     CommonPopupCard(onDismiss = onDismiss) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.tags_label), fontSize = MaterialTheme.typography.headlineSmall.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
-            var text by remember { mutableStateOf("") }
+            val text = rememberTextFieldState(initialText = "")
             val allTags = remember { if (tagType == TagType.Feed) appAttribs.feedTagSet else appAttribs.episodeTagSet }
             var suggestedTags by remember { mutableStateOf(listOf<String>()) }
             var showSuggestions by remember { mutableStateOf(false) }
             val tags = remember { existingTags.toMutableStateList() }
-
             if (multiples) Text(stringResource(R.string.tagging_multiple_sum))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 tags.forEach { FilterChip(onClick = {  }, label = { Text(it) }, selected = false, trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon",
                     modifier = Modifier.padding(start = 3.dp).size(FilterChipDefaults.IconSize).clickable { tags.remove(it) }) }) }
             }
             val focusManager = LocalFocusManager.current
+            LaunchedEffect(Unit) {
+                snapshotFlow { text.text }.drop(1).collect {
+                    suggestedTags = tags.filter { item -> item.contains(it, ignoreCase = true) && item !in tags }
+                    showSuggestions = it.isNotEmpty() && suggestedTags.isNotEmpty()
+                }
+            }
             ExposedDropdownMenuBox(expanded = showSuggestions, onExpandedChange = { }) {
-                TextField(value = text, placeholder = { Text("Type something...") }, keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                TextField(state = text, placeholder = { Text("Type something...") }, keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                     textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = MaterialTheme.typography.bodyLarge.fontSize, fontWeight = FontWeight.Bold),
                     modifier = Modifier.fillMaxWidth().trackAsTextField().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true), // Material3 requirement
-                    onValueChange = {
-                        text = it
-                        suggestedTags = tags.filter { item -> item.contains(text, ignoreCase = true) && item !in tags }
-                        showSuggestions = text.isNotEmpty() && suggestedTags.isNotEmpty()
-                    },
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            if (text.isNotBlank()) {
-                                if (text !in tags) tags.add(text)
-                                text = ""
+                    onKeyboardAction =  {
+                            if (text.text.isNotBlank()) {
+                                if (text.text !in tags) tags.add(text.text.toString())
+                                text.edit { replace(0, length, "")}
                             }
-                        }
-                    ),
+                        },
                     trailingIcon = { Icon(imageVector = Icons.Filled.Add, contentDescription = "Add icon",
                         modifier = Modifier.size(30.dp).clickable {
-                            if (text.isNotBlank()) {
-                                if (text !in tags) tags.add(text)
-                                text = ""
+                            if (text.text.isNotBlank()) {
+                                if (text.text !in tags) tags.add(text.text.toString())
+                                text.edit { replace(0, length, "")}
                             }
                             focusManager.clearFocus()
                         }) }
@@ -562,7 +556,7 @@ fun TagSettingDialog(tagType: TagType, existingTags: Set<String>, multiples: Boo
                     for (i in suggestedTags.indices) {
                         DropdownMenuItem(text = { Text(suggestedTags[i]) },
                             onClick = {
-                                text = suggestedTags[i]
+                                text.edit { replace(0, length, suggestedTags[i])}
                                 showSuggestions = false
                             }
                         )
@@ -578,7 +572,7 @@ fun TagSettingDialog(tagType: TagType, existingTags: Set<String>, multiples: Boo
                 Button(onClick = {
                     Logd("TagsSettingDialog") { "tags: [${tags.joinToString()}] commonTags: [${existingTags.joinToString()}]" }
                     cb(tags)
-                    runOnIOScope {
+                    appIOScope.launch {
                         if (tagType == TagType.Feed) {
                             val tagsSet = appAttribs.feedTagSet.toMutableSet() + tags
                             upsert(appAttribs) {

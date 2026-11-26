@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackStarter
 import ac.mdiq.podcini.playback.theatres
@@ -13,7 +14,7 @@ import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.AutoDLEQ
 import ac.mdiq.podcini.storage.model.Feed
@@ -71,6 +72,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -86,7 +89,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -138,13 +140,13 @@ import io.github.xilinjia.krdb.notifications.SingleQueryChange
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "FeedSettingsScreen"
 
 var feedsToSet: List<Feed> = listOf()
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedsSettingsScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -274,7 +276,7 @@ fun FeedsSettingsScreen() {
                                 Checkbox(checked = none == selected,
                                     onCheckedChange = {
                                         selected = none
-                                        runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.volumeId = -1L } } }
+                                        appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.volumeId = -1L } } }
                                         curVolumeName = selected
                                         onDismiss()
                                     })
@@ -292,7 +294,7 @@ fun FeedsSettingsScreen() {
                                         FilterChip(label = { Text(sortedVols[i].name) }, selected = false, border = BorderStroke(1.dp, borderColor),
                                             onClick = {
                                                 val v = sortedVols[i]
-                                                runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.volumeId = v.id } } }
+                                                appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.volumeId = v.id } } }
                                                 curVolumeName = v.name
                                                 onDismiss()
                                             })
@@ -315,7 +317,7 @@ fun FeedsSettingsScreen() {
             //                    tags
             var showTagsSettingDialog by remember { mutableStateOf(false) }
             if (showTagsSettingDialog) TagSettingDialog(TagType.Feed, feedToSet.tags, onDismiss = { showTagsSettingDialog = false }) { tags ->
-                runOnIOScope {
+                appIOScope.launch {
                     realm.write { for (f in feedsToSet) { findLatest(f)?.let {
                         it.tags.clear()
                         it.tags.addAll(tags)
@@ -345,7 +347,7 @@ fun FeedsSettingsScreen() {
                                 Checkbox(checked = none == selected,
                                     onCheckedChange = {
                                         selected = none
-                                        runOnIOScope {
+                                        appIOScope.launch {
                                             realm.write { for (f in feedsToSet) { findLatest(f)?.let {
                                                 it.queue = null
                                                 it.autoDownload = false
@@ -367,7 +369,7 @@ fun FeedsSettingsScreen() {
                                         FilterChip(label = { Text(queuesLive[i].name) }, selected = false, border = BorderStroke(1.dp, borderColor),
                                             onClick = {
                                                 val q = queuesLive[i]
-                                                runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.queue = q } } }
+                                                appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.queue = q } } }
                                                 curPrefQueue = q.name
                                                 onDismiss()
                                             })
@@ -409,7 +411,7 @@ fun FeedsSettingsScreen() {
                             Button({ showDialog = false }) { Text(stringResource(R.string.cancel_label)) }
                             Spacer(Modifier.weight(1f))
                             Button({
-                                runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.type = feedType?.name } } }
+                                appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.type = feedType?.name } } }
                                 showDialog = false
                             }) { Text(stringResource(R.string.confirm_label)) }
                         }
@@ -430,35 +432,32 @@ fun FeedsSettingsScreen() {
                 Column(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.preferred_languages), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-                        var showIcon by remember { mutableStateOf(false) }
-                        var newName by remember { mutableStateOf(feedToSet.preferredLnaguages.joinToString(", ")) }
-                        TextField(value = newName, singleLine = true, label = { Text("Case sensitive. Separate with ,", style = MaterialTheme.typography.labelSmall) }, modifier = Modifier.trackAsTextField(),
-                            onValueChange = {
-                                newName = it
-                                showIcon = true
-                            },
+                        val name = remember { feedToSet.preferredLnaguages.joinToString(", ") }
+                        val newName = rememberTextFieldState(initialText = name)
+                        var showIcon by remember(newName.text) { mutableStateOf(newName.text != name) }
+                        TextField(state = newName, lineLimits = TextFieldLineLimits.SingleLine, label = { Text("Case sensitive. Separate with ,", style = MaterialTheme.typography.labelSmall) }, modifier = Modifier.trackAsTextField(),
                             trailingIcon = {
-                            if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable(onClick = {
-                                runOnIOScope {
-                                    realm.write {
-                                        for (f in feedsToSet) {
-                                            findLatest(f)?.let { att ->
-                                                att.preferredLnaguages.clear()
-                                                att.preferredLnaguages.addAll(newName.split(',').map { it.trim() }.filter { it.isNotEmpty() })
+                                if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable(onClick = {
+                                    appIOScope.launch {
+                                        realm.write {
+                                            for (f in feedsToSet) {
+                                                findLatest(f)?.let { att ->
+                                                    att.preferredLnaguages.clear()
+                                                    att.preferredLnaguages.addAll(newName.text.split(',').map { it.trim() }.filter { it.isNotEmpty() })
+                                                }
                                             }
                                         }
+                                        val player0 = theatres[0].mPlayerFlow.value
+                                        val episode0 = player0?.curMediaFlow?.value
+                                        if (episode0?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) {
+                                            player0?.pause(false)
+                                            player0?.clearFromCache(episode0!!.id.toString())
+                                            player0?.startPlaying(episode0)
+                                        }
                                     }
-                                    val player0 = theatres[0].mPlayerFlow.value
-                                    val episode0 = player0?.curMediaFlow?.value
-                                    if (episode0?.feedId in feedsToSet.map { it.id }) withContext(Dispatchers.Main) {
-                                        player0?.pause(false)
-                                        player0?.clearFromCache(episode0!!.id.toString())
-                                        player0?.startPlaying(episode0)
-                                    }
-                                }
-                                focusManager.clearFocus()
-                                showIcon = false
-                            }))
+                                    focusManager.clearFocus()
+                                    showIcon = false
+                                }))
                         })
                     }
                     val langs = remember { feedToSet.langSet.joinToString(", ") }
@@ -483,7 +482,7 @@ fun FeedsSettingsScreen() {
                                             if (isChecked) Logd(TAG) { "$option is checked" }
                                             val type = Feed.AudioType.fromTag(selected)
                                             audioType = type.tag
-                                            runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.audioType = type.code } } }
+                                            appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.audioType = type.code } } }
                                             onDismiss()
                                         }
                                     )
@@ -516,7 +515,7 @@ fun FeedsSettingsScreen() {
                                 VideoMode.FULL_SCREEN -> R.string.video_mode_fullscreen
                                 VideoMode.AUDIO_ONLY -> R.string.video_mode_audio_only
                             }
-                            runOnIOScope {
+                            appIOScope.launch {
                                 realm.write {
                                     for (f in feedsToSet) {
                                         if (f.hasVideoMedia) findLatest(f)?.let {
@@ -550,7 +549,7 @@ fun FeedsSettingsScreen() {
                     var showDialog by remember { mutableStateOf(false) }
                     if (showDialog) SetAVQuality(selectedOption = audioQuality, onDismiss = { showDialog = false }) { type ->
                         audioQuality = type.tag
-                        runOnIOScope {
+                        appIOScope.launch {
                             realm.write {
                                 for (f in feedsToSet) {
                                     val client = clientByFeed(f)
@@ -587,7 +586,7 @@ fun FeedsSettingsScreen() {
                         var showDialog by remember { mutableStateOf(false) }
                         if (showDialog) SetAVQuality(selectedOption = videoQuality, onDismiss = { showDialog = false }) { type->
                             videoQuality = type.tag
-                            runOnIOScope {
+                            appIOScope.launch {
                                 realm.write {
                                     for (f in feedsToSet) {
                                         val client = clientByFeed(f)
@@ -628,7 +627,7 @@ fun FeedsSettingsScreen() {
                         prefStreamOverDownload = true
                         if (autoDLEQIndex == 2) autoDLEQIndex = 0
                     }
-                    runOnIOScope {
+                    appIOScope.launch {
                         realm.write { for (f in feedsToSet) {
                             val client = clientByFeed(f)
                             if (client?.supportDownload != false || !preferStreaming) findLatest(f)?.let { f ->
@@ -650,14 +649,14 @@ fun FeedsSettingsScreen() {
                         for (action in actions) {
                             FilterChip(label = { Text(action) }, selected = curAction == action, border = filterChipBorder(curAction == action),
                                 onClick = {
-                                    if (action == "Auto") runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.let { it.prefActionType = null } } } }
+                                    if (action == "Auto") appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.let { it.prefActionType = null } } } }
                                     else {
                                         if (action in streamActions.map { it.name }) preferStreaming = true else if (action in playActions.map { it.name }) preferStreaming = false
                                         if (preferStreaming) {
                                             prefStreamOverDownload = true
                                             if (autoDLEQIndex == 2) autoDLEQIndex = 0
                                         }
-                                        runOnIOScope {
+                                        appIOScope.launch {
                                             realm.write {
                                                 for (f in feedsToSet) {
                                                     findLatest(f)?.let {
@@ -689,7 +688,7 @@ fun FeedsSettingsScreen() {
                 Row(Modifier.fillMaxWidth()) {
                     val showDialog = remember { mutableStateOf(false) }
                     if (showDialog.value) PlaybackSpeedDialog(feedsToSet, initSpeed = feedToSet.playSpeed, maxSpeed = 3f,
-                        onDismiss = { showDialog.value = false }) { newSpeed -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.playSpeed = newSpeed } } } }
+                        onDismiss = { showDialog.value = false }) { newSpeed -> appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.playSpeed = newSpeed } } } }
                     Icon(ImageVector.vectorResource(id = R.drawable.ic_playback_speed), "", tint = textColor)
                     Spacer(modifier = Modifier.width(20.dp))
                     Text(text = stringResource(R.string.playback_speed), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
@@ -712,7 +711,7 @@ fun FeedsSettingsScreen() {
                             shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                             onClick = {
                                 selectedIndex = index
-                                runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.let { f ->
+                                appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.let { f ->
                                     if (selectedIndex == 0) f.skipSilence = null
                                     else f.skipSilence = selectedIndex == 3
                                 } } } }
@@ -736,7 +735,7 @@ fun FeedsSettingsScreen() {
                                 var ending by remember { mutableIntStateOf((feedToSet.endingSkip)) }
                                 NumberEditor(ending, label = stringResource(R.string.skip_last_hint), nz = false, instant = true, modifier = Modifier) { ending = it }
                                 Button(onClick = {
-                                    runOnIOScope {
+                                    appIOScope.launch {
                                         realm.write { for (f in feedsToSet) { findLatest(f)?.let {
                                             it.introSkip = intro
                                             it.endingSkip = ending
@@ -770,7 +769,7 @@ fun FeedsSettingsScreen() {
                                                 Logd(TAG) { "row clicked: $item $selectedOption" }
                                                 if (item != selectedOption) {
                                                     onOptionSelected(item)
-                                                    runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.volumeAdaptionSetting = item } } }
+                                                    appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.volumeAdaptionSetting = item } } }
                                                     onDismiss()
                                                 }
                                             }
@@ -805,7 +804,7 @@ fun FeedsSettingsScreen() {
                         showIcon = true
                     }
                     if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.padding(start = 10.dp).size(30.dp).clickable {
-                        runOnIOScope {
+                        appIOScope.launch {
                             val startms = (minutes * 60 + seconds) * 1000
                             realm.write { for (f in feedsToSet) findLatest(f)?.let { it.transcriptStartPos = startms } }
                         }
@@ -827,7 +826,7 @@ fun FeedsSettingsScreen() {
                         Spacer(modifier = Modifier.weight(1f))
                         NumberEditor(feedToSet.limitEpisodesCount, label = "0 = unlimited", nz = false, modifier = Modifier.width(150.dp)) {
                             episodesLimit = it
-                            runOnIOScope { realm.write { for (f in feedsToSet) if (f.id > MAX_SYNTHETIC_ID) findLatest(f)?.limitEpisodesCount = it } }
+                            appIOScope.launch { realm.write { for (f in feedsToSet) if (f.id > MAX_SYNTHETIC_ID) findLatest(f)?.limitEpisodesCount = it } }
                         }
                     }
                     Text(text = stringResource(R.string.limit_episodes_to_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
@@ -839,7 +838,7 @@ fun FeedsSettingsScreen() {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = (trimOrder != EpisodeSortOrder.DATE_DESC), onCheckedChange = { checked->
                             trimOrder = if (checked) feedToSet.episodeSortOrder else EpisodeSortOrder.DATE_DESC
-                            runOnIOScope { realm.write { for (f in feedsToSet) findLatest(f)?.let { it.sortForTrim = trimOrder } } }
+                            appIOScope.launch { realm.write { for (f in feedsToSet) findLatest(f)?.let { it.sortForTrim = trimOrder } } }
                         })
                         Text(text = stringResource(R.string.Use_current_order), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
                     }
@@ -849,13 +848,13 @@ fun FeedsSettingsScreen() {
             var useEpisodeImage by remember { mutableStateOf(feedToSet.useEpisodeImage) }
             TitleSummarySwitch(R.string.use_episode_image, R.string.use_episode_image_summary, R.drawable.outline_broken_image_24, useEpisodeImage) {
                 useEpisodeImage = it
-                runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.useEpisodeImage = it } } }
+                appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.useEpisodeImage = it } } }
             }
             if (feedsToSet.size > 1 || useEpisodeImage) {
                 var useWideLayout by remember { mutableStateOf(feedToSet.useWideLayout) }
                 TitleSummarySwitch(R.string.use_wide_layout, R.string.use_wide_layout_summary, R.drawable.rounded_responsive_layout_24, useWideLayout) {
                     useWideLayout = it
-                    runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.useWideLayout = it } } }
+                    appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.useWideLayout = it } } }
                 }
             }
 
@@ -863,7 +862,7 @@ fun FeedsSettingsScreen() {
             var showSortDialog by remember { mutableStateOf(false) }
             if (showSortDialog) {
                 EpisodeSortDialog(initOrder = feedToSet.episodeSortOrder, onDismiss = { showSortDialog = false }) { order ->
-                    runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.let { f -> f.episodeSortOrder = order ?: EpisodeSortOrder.DATE_DESC } } } }
+                    appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.let { f -> f.episodeSortOrder = order ?: EpisodeSortOrder.DATE_DESC } } } }
                 }
             }
             Column {
@@ -878,7 +877,7 @@ fun FeedsSettingsScreen() {
             var showFilterDialog by remember {  mutableStateOf(false) }
             if (showFilterDialog) {
                 EpisodesFilterDialog(filter_ = feedToSet.episodeFilter, onDismiss = { showFilterDialog = false }) { filter ->
-                    runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.let { f -> f.episodeFilter = filter } } } }
+                    appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.let { f -> f.episodeFilter = filter } } } }
                 }
             }
             Column {
@@ -903,12 +902,12 @@ fun FeedsSettingsScreen() {
                 var autoUpdate by remember { mutableStateOf(feedToSet.keepUpdated) }
                 TitleSummarySwitch(R.string.keep_updated, R.string.keep_updated_summary, R.drawable.ic_refresh, autoUpdate) {
                     autoUpdate = it
-                    runOnIOScope { realm.write { for (f in feedsToSet) { if (f.id > MAX_SYNTHETIC_ID) findLatest(f)?.keepUpdated = autoUpdate } } }
+                    appIOScope.launch { realm.write { for (f in feedsToSet) { if (f.id > MAX_SYNTHETIC_ID) findLatest(f)?.keepUpdated = autoUpdate } } }
                 }
                 var acceptTiny by remember { mutableStateOf(feedToSet.acceptTinyEpisodes) }
                 TitleSummarySwitch(R.string.accept_tiny_episodes, R.string.accept_tiny_episodes_sum, R.drawable.ic_refresh, acceptTiny) {
                     acceptTiny = it
-                    runOnIOScope { realm.write { for (f in feedsToSet) { if (f.id > MAX_SYNTHETIC_ID) findLatest(f)?.acceptTinyEpisodes = acceptTiny } } }
+                    appIOScope.launch { realm.write { for (f in feedsToSet) { if (f.id > MAX_SYNTHETIC_ID) findLatest(f)?.acceptTinyEpisodes = acceptTiny } } }
                 }
             }
 
@@ -923,7 +922,7 @@ fun FeedsSettingsScreen() {
                     SegmentedButton(shape = SegmentedButtonDefaults.itemShape(index = index, count = dleqOptions.size), enabled = isOptionEnabled,  selected = index == autoDLEQIndex,
                         onClick = {
                             autoDLEQIndex = index
-                            runOnIOScope {
+                            appIOScope.launch {
                                 realm.write { for (f in feedsToSet) { findLatest(f)?.let { f ->
                                     f.autoEnqueue = autoDLEQIndex == 0
                                     f.autoDownload = false
@@ -965,7 +964,7 @@ fun FeedsSettingsScreen() {
                             }
                             Button(onClick = {
                                 if (newCache > 0) {
-                                    runOnIOScope {
+                                    appIOScope.launch {
                                         realm.write { for (f in feedsToSet) { findLatest(f)?.let {
                                             it.autoDLMaxEpisodes = newCache
                                             if (autoDLEQIndex == 2) it.countingPlayed = countingPlayed
@@ -998,7 +997,7 @@ fun FeedsSettingsScreen() {
                         Switch(checked = checked, modifier = Modifier.height(24.dp),
                             onCheckedChange = {
                                 checked = it
-                                runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLSoon = checked } } }
+                                appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLSoon = checked } } }
                             }
                         )
                     }
@@ -1040,7 +1039,7 @@ fun FeedsSettingsScreen() {
                             confirmButton = {
                                 TextButton(onClick = {
                                     Logd(TAG) { "autoDLPolicy: ${selectedPolicy.name} ${selectedPolicy.replace}" }
-                                    runOnIOScope {
+                                    appIOScope.launch {
                                         realm.write { for (f in feedsToSet) { findLatest(f)?.let {
                                             Logd(TAG) { "feed episodeFilter: ${it.episodeFilter} episodeSortOrder: ${it.episodeSortOrder}" }
                                             it.autoDLEQs[index].autoDLPolicy = selectedPolicy
@@ -1104,23 +1103,21 @@ fun FeedsSettingsScreen() {
                                                     trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon", modifier = Modifier.size(FilterChipDefaults.IconSize).clickable { termList.remove(it) }) })
                                             }
                                         }
-                                        var text by remember { mutableStateOf("") }
+                                        val text = rememberTextFieldState(initialText = "")
                                         fun setText() {
-                                            if (text.isNotBlank()) {
-                                                val newWord = text.replace("\"", "").trim { it <= ' ' }
+                                            if (text.text.isNotBlank()) {
+                                                val newWord = text.text.toString().replace("\"", "").trim { it <= ' ' }
                                                 if (newWord.isNotBlank() && newWord !in termList) {
                                                     termList.add(newWord)
-                                                    text = ""
+                                                    text.edit { replace(0, length, "")}
                                                 }
                                                 filtermodifier = isFilterEnabled()
                                             }
                                         }
-                                        TextField(value = text, onValueChange = { newTerm -> text = newTerm },
-                                            placeholder = { Text(stringResource(R.string.add_term_hint)) }, keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                                            keyboardActions = KeyboardActions(onDone = { setText() }),
+                                        TextField(state = text, placeholder = { Text(stringResource(R.string.add_term_hint)) }, keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                                            onKeyboardAction = { setText() },
                                             trailingIcon = { Icon(imageVector = Icons.Filled.Add, contentDescription = "Add term", modifier = Modifier.size(30.dp).clickable {
-                                                setText()
-                                                focusManager.clearFocus()
+                                                setText(); focusManager.clearFocus()
                                             }) },
                                             textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = MaterialTheme.typography.bodyMedium.fontSize, fontWeight = FontWeight.Bold), modifier = Modifier.fillMaxWidth().trackAsTextField()
                                         )
@@ -1188,7 +1185,7 @@ fun FeedsSettingsScreen() {
                         Column(modifier = Modifier.padding(start = 20.dp)) {
                             Row(Modifier.fillMaxWidth()) {
                                 val showDialog = remember { mutableStateOf(false) }
-                                if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.INCLUDE, onDismiss = { showDialog.value = false }) { filter -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
+                                if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.INCLUDE, onDismiss = { showDialog.value = false }) { filter -> appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
                                 Text(text = stringResource(R.string.episode_inclusive_filters_label), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                             }
                             Text(text = stringResource(R.string.episode_filters_description), style = MaterialTheme.typography.bodyMedium, color = textColor)
@@ -1197,7 +1194,7 @@ fun FeedsSettingsScreen() {
                         Column(modifier = Modifier.padding(start = 20.dp)) {
                             Row(Modifier.fillMaxWidth()) {
                                 val showDialog = remember { mutableStateOf(false) }
-                                if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.EXCLUDE, onDismiss = { showDialog.value = false }) { filter -> runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
+                                if (showDialog.value) AutoDownloadFilterDialog(feedToSet.autoDLEQs[index].autoDownloadFilter!!, ADLIncExc.EXCLUDE, onDismiss = { showDialog.value = false }) { filter -> appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.autoDLEQs[index]?.autoDownloadFilter = filter } } } }
                                 Text(text = stringResource(R.string.episode_exclusive_filters_label), style = CustomTextStyles.titleCustom, color = buttonColor, modifier = Modifier.clickable { showDialog.value = true })
                             }
                             Text(text = stringResource(R.string.episode_filters_description), style = MaterialTheme.typography.bodyMedium, color = textColor)
@@ -1224,7 +1221,7 @@ fun FeedsSettingsScreen() {
                         Spacer(modifier = Modifier.weight(1f))
                         Switch(checked = enabledSecond, modifier = Modifier.height(24.dp),
                             onCheckedChange = { checked->
-                                runOnIOScope {
+                                appIOScope.launch {
                                     realm.write { for (f in feedsToSet) {
                                         findLatest(f)?.let { f->
                                             if (checked) {
@@ -1268,7 +1265,7 @@ fun FeedsSettingsScreen() {
                                                             AutoDeleteAction.NEVER.tag -> AutoDeleteAction.NEVER
                                                             else -> AutoDeleteAction.GLOBAL
                                                         }
-                                                        runOnIOScope { realm.write { for (f in feedsToSet) {
+                                                        appIOScope.launch { realm.write { for (f in feedsToSet) {
                                                             val client = clientByFeed(f)
                                                             if (client?.supportDownload != false) findLatest(f)?.autoDeleteAction = action_
                                                         } } }
@@ -1306,7 +1303,7 @@ fun FeedsSettingsScreen() {
                                 NumberEditor(intervals[i], label = "in " + units[i], nz = false, instant = true, modifier = Modifier) { intervals[i] = it }
                             }
                             Button(onClick = {
-                                runOnIOScope { realm.write { for (f in feedsToSet) { findLatest(f)?.repeatIntervals = intervals.toRealmList() } } }
+                                appIOScope.launch { realm.write { for (f in feedsToSet) { findLatest(f)?.repeatIntervals = intervals.toRealmList() } } }
                                 onDismiss()
                             }) { Text(stringResource(R.string.confirm_label)) }
                         }
@@ -1329,17 +1326,17 @@ fun FeedsSettingsScreen() {
                             CommonPopupCard(onDismiss = onDismiss) {
                                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     val oldName = feedToSet.username?:""
-                                    var newName by remember { mutableStateOf(oldName) }
-                                    TextField(value = newName, onValueChange = { newName = it }, label = { Text("Username") }, modifier = Modifier.trackAsTextField())
+                                    val newName = rememberTextFieldState(initialText = oldName)
+                                    TextField(state = newName, label = { Text("Username") }, modifier = Modifier.trackAsTextField())
                                     val oldPW = feedToSet.password?:""
-                                    var newPW by remember { mutableStateOf(oldPW) }
-                                    TextField(value = newPW, onValueChange = { newPW = it }, label = { Text("Password") }, modifier = Modifier.trackAsTextField())
+                                    val newPW = rememberTextFieldState(initialText = oldPW)
+                                    TextField(state = newPW, label = { Text("Password") }, modifier = Modifier.trackAsTextField())
                                     Button(onClick = {
-                                        if (newName.isNotEmpty() && oldName != newName) {
-                                            runOnIOScope {
+                                        if (newName.text.isNotEmpty() && oldName != newName.text) {
+                                            appIOScope.launch {
                                                 realm.write { for (f in feedsToSet) { if (!f.isLocal) findLatest(f)?.let {
-                                                    it.username = newName
-                                                    it.password = newPW
+                                                    it.username = newName.text.toString()
+                                                    it.password = newPW.text.toString()
                                                 } } }
                                                 FeedUpdater(feedsToSet).start()
                                             }
@@ -1365,18 +1362,18 @@ fun FeedsSettingsScreen() {
                         Spacer(Modifier.weight(1f))
                         @Composable
                         fun EditUrlSettingsDialog(onDismiss: () -> Unit) {
-                            var url by remember { mutableStateOf(feedToSet.downloadUrl ?: "") }
+                            val url = rememberTextFieldState(initialText = feedToSet.downloadUrl ?: "")
                             AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = onDismiss, title = { Text(stringResource(R.string.edit_url_menu)) },
                                 text = {
                                     Column {
                                         Text(stringResource(R.string.edit_url_confirmation_msg))
-                                        TextField(value = url, onValueChange = { url = it }, modifier = Modifier.fillMaxWidth().trackAsTextField())
+                                        TextField(state = url, modifier = Modifier.fillMaxWidth().trackAsTextField())
                                     }
                                 },
                                 confirmButton = {
                                     TextButton(onClick = {
-                                        runOnIOScope {
-                                            feedToSet = upsert(feedToSet) { it.downloadUrl = url }
+                                        appIOScope.launch {
+                                            feedToSet = upsert(feedToSet) { it.downloadUrl = url.text.toString() }
                                             FeedUpdater(listOf(feedToSet)).start()
                                         }
                                         onDismiss()

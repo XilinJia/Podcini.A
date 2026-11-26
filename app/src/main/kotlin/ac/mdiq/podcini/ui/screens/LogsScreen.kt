@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.activity.MainActivity
 import ac.mdiq.podcini.shared.nowInMillis
@@ -9,7 +10,7 @@ import ac.mdiq.podcini.sourcing.handleShared
 import ac.mdiq.podcini.storage.database.addToFeed
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult
@@ -258,7 +259,7 @@ fun LogsScreen() {
                         }
                         Row {
                             Button(modifier = Modifier.padding(horizontal = 20.dp), onClick = {
-                                if (theLog != null) runOnIOScope {
+                                if (theLog != null) appIOScope.launch {
                                     upsert(theLog!!) {
                                         it.details = "share log cleared"
                                         it.status = ShareLog.Status.SUCCESS.code
@@ -285,7 +286,7 @@ fun LogsScreen() {
                         existing = null
                         theLog = log
                         Logt(TAG, "Handling shared url...")
-                        runOnIOScope {
+                        appIOScope.launch {
                             handleShared(log.url!!, context as MainActivity, false, log) { e, ex ->
                                 episode = e
                                 sharedUrl = log.url!!
@@ -312,7 +313,7 @@ fun LogsScreen() {
                         }
                     }
                     if (hasError) {
-                        runOnIOScope {
+                        appIOScope.launch {
                             Logt(TAG, "Handling shared url...")
                             val log_ = upsertBlk(log) { it.status = ShareLog.Status.MISSING.code }
                             vm.shareLogs = listOf()
@@ -323,7 +324,7 @@ fun LogsScreen() {
                     val deleteLogDialog = remember { mutableStateOf(false) }
                     var toDelete by remember { mutableStateOf(ShareLog()) }
                     ConfirmDialog(R.string.confirm_delete_logs_label, "Deleting log ${formatDateTimeFlex(log.id)} ${log.title}", deleteLogDialog) {
-                        runOnIOScope { realm.write { query(ShareLog::class).query("id == ${toDelete.id}").first().find()?.let {
+                        appIOScope.launch { realm.write { query(ShareLog::class).query("id == ${toDelete.id}").first().find()?.let {
                             Logd(TAG) { "deleting ${formatDateTimeFlex(log.id)} ${log.title}"}
                             delete(it)
                         } } }
@@ -442,7 +443,7 @@ fun LogsScreen() {
                     Text(stringResource(R.string.copy_to_clipboard), color = buttonColor, modifier = Modifier.clickable { copyToClipboard(context.getString(R.string.download_error_details), message) })
                     Spacer(Modifier.weight(0.3f))
                     if (!status.isSuccessful) Text(stringResource(R.string.retry), color = buttonColor, modifier = Modifier.clickable {
-                        if (feed != null) runOnIOScope { FeedUpdater(listOf(feed!!)).start() }
+                        if (feed != null) appIOScope.launch { FeedUpdater(listOf(feed!!)).start() }
                         else if (media != null) {
                             ActionButton(media!!, typeInit = ButtonTypes.DOWNLOAD).onClick()
                             Logt(TAG, context.getString(R.string.status_downloading_label))
@@ -514,7 +515,7 @@ fun LogsScreen() {
                         DropdownMenuItem(text = { Text(stringResource(R.string.clear_logs)) }, onClick = { showDeleteConfirmDialog.value = true; expanded = false })
                         if (vm.mode == LogsModes.Downloads && !vm.showSuccessLogs && vm.count > 0) DropdownMenuItem(text = { Text(stringResource(R.string.retry_all)) }, onClick = {
                             val logs = vm.downloadLogs.filter { !it.isSuccessful }.toList()
-                            runOnIOScope {
+                            appIOScope.launch {
                                 logs.forEach { status ->
                                     when (status.feedfileType) {
                                         RequestType.MEDIA.code -> {
@@ -539,7 +540,7 @@ fun LogsScreen() {
     Scaffold(topBar = { MyTopAppBar() }) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
             ConfirmDialog(R.string.confirm_delete_logs_label, stringResource(R.string.confirm_delete_logs_message), showDeleteConfirmDialog) {
-                runOnIOScope {
+                appIOScope.launch {
                     when {
                         vm.shareLogs.isNotEmpty() -> {
                             realm.write {
@@ -568,6 +569,6 @@ fun LogsScreen() {
     }
 }
 
-private const val TAG: String = "LogsScreen"
+private const val TAG = "LogsScreen"
 
 

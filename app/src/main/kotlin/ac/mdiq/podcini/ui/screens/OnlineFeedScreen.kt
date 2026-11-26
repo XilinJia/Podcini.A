@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.actQueueFlow
@@ -19,11 +20,10 @@ import ac.mdiq.podcini.sourcing.searcher.FeedUrlNotFoundException
 import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry
 import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
+import ac.mdiq.podcini.storage.database.getEpisodesCount
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -115,7 +115,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
@@ -128,7 +127,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -191,9 +189,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
         preparedUrl = prepareUrl(feedUrl)
 
         Logd(TAG) { "OnlineFeedVM init feedUrl: $feedUrl feedSource: $feedSource isShared: $isShared" }
-
         findExisting(preparedUrl)?.apply { feedId = this.id }
-
         val showError = { message: String?, details: String ->
             errorMessage = message ?: "No message"
             errorDetails = details
@@ -361,7 +357,7 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
 
         numEpisodes = feed_.episodes.size
         if (isShared) {
-            runOnIOScope {
+            appIOScope.launch {
                 val log = realm.query(ShareLog::class).query("url == $0", urlToLog).first().find()
                 if (log != null) upsert(log) {
                     it.title = feed_.title
@@ -413,8 +409,8 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
                 subButTextRes = R.string.open_feed
                 if (subscribePress) {
                     subscribePress = false
-                    runOnIOScope {
-                        val feedExisting = feedById(feedId, true)?: return@runOnIOScope
+                    appIOScope.launch {
+                        val feedExisting = feedById(feedId, true)?: return@launch
                         Logd(TAG) { "handleUpdatedFeedStatus ${feedExisting.title} ${feedExisting.author}" }
                         if (appPrefsFlow!!.value.enableAutoDl && !isExtFeed(feedExisting)) feedExisting.autoDownload = autoDownloadChecked
                         if (!username.isNullOrBlank()) {
@@ -511,7 +507,7 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
             },
             confirmButton = {
                 TextButton(onClick = {
-                    CoroutineScope(Dispatchers.IO).launch {
+                    appIOScope.launch {
                         // TODO: ytTabsMap doesn't handle multiple keys
                         for (i in ytTabsMap.keys) {
                             Logd(TAG) { "Subscribing $i ${vm.feedOptions[i]} ${ytTabsMap[i]}" }
@@ -585,68 +581,57 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
                 InforBar(swipeActions) { Text(vm.infoBarText.value, style = MaterialTheme.typography.bodyMedium) }
                 EpisodeLazyColumn(vm.episodes, isExternal = true, swipeActions = swipeActions, preferSingleAction = true, actionButtonCB = { _, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) actQueueFlow.value = tmpQueue() })
             } else Column(modifier = Modifier.padding(innerPadding).fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 10.dp, end = 10.dp).background(MaterialTheme.colorScheme.surface)) {
-                ConstraintLayout(modifier = Modifier.fillMaxWidth().height(110.dp).background(MaterialTheme.colorScheme.surface)) {
-                    val (coverImage, taColumn, buttons) = createRefs()
-                    AsyncImage(model = vm.feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, contentDescription = "coverImage", error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(80.dp).height(80.dp).constrainAs(coverImage) {
-                        centerVerticallyTo(parent)
-                        start.linkTo(parent.start)
-                    })
-                    Column(Modifier.padding(start = 5.dp).constrainAs(taColumn) {
-                        top.linkTo(parent.top)
-                        start.linkTo(coverImage.end)
-                    }) {
+                Row(modifier = Modifier.fillMaxWidth().height(110.dp).background(MaterialTheme.colorScheme.surface), verticalAlignment = Alignment.CenterVertically) {
+                    AsyncImage(model = vm.feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, contentDescription = "coverImage", error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(80.dp).height(80.dp))
+                    Column(Modifier.padding(start = 5.dp)) {
                         Text(vm.feed?.title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Text(vm.feed?.author ?: "", color = textColor, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                    Row(Modifier.constrainAs(buttons) {
-                        start.linkTo(coverImage.end)
-                        bottom.linkTo(parent.bottom)
-                        end.linkTo(parent.end)
-                    }) {
-                        Spacer(modifier = Modifier.weight(0.2f))
-                        if (!vm.progressing && vm.enableSubscribe) Button(onClick = {
-                            if (vm.feedId != 0L) {
-                                runOnIOScope {
-                                if (vm.isShared) {
-                                        val log = realm.query(ShareLog::class).query("url == $0", vm.feedUrl).first().find()
-                                        if (log != null) upsert(log) { it.status = ShareLog.Status.EXISTING.code }
-                                    }
-                                    if (vm.updatedFeedUrl.isNotBlank() && vm.feed != null) upsert(vm.feed!!) { it.downloadUrl = vm.updatedFeedUrl }
-                                }
-                                navTo(FeedDetails(feedId = vm.feedId, modeName = FeedScreenMode.Info.name))
-                            } else {
-                                if (vm.feed == null) return@Button
-                                vm.enableSubscribe = false
-                                vm.enableEpisodes = false
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    if (vm.limitEpisodesCount > 0) vm.feed?.limitEpisodesCount = vm.limitEpisodesCount
-                                    subscribe(vm.feed!!)
-                                    if (vm.isShared) {
-                                        runOnIOScope {
+                        Row {
+                            Spacer(modifier = Modifier.weight(0.1f))
+                            if (!vm.progressing && vm.enableSubscribe) Button(onClick = {
+                                if (vm.feedId != 0L) {
+                                    appIOScope.launch {
+                                        if (vm.isShared) {
                                             val log = realm.query(ShareLog::class).query("url == $0", vm.feedUrl).first().find()
-                                            if (log != null) upsert(log) { it.status = ShareLog.Status.SUCCESS.code }
+                                            if (log != null) upsert(log) { it.status = ShareLog.Status.EXISTING.code }
                                         }
+                                        if (vm.updatedFeedUrl.isNotBlank() && vm.feed != null) upsert(vm.feed!!) { it.downloadUrl = vm.updatedFeedUrl }
                                     }
-                                    withContext(Dispatchers.Main) {
-                                        runCatching {
-                                            vm.subscribePress = true
-                                            vm.feedId = vm.feed?.id ?: 0L
-                                            vm.enableSubscribe = true
-                                            vm.subButTextRes = R.string.open_feed
-                                            vm.handleSubscribeStatus()
+                                    navTo(FeedDetails(feedId = vm.feedId, modeName = FeedScreenMode.Info.name))
+                                } else {
+                                    if (vm.feed == null) return@Button
+                                    vm.enableSubscribe = false
+                                    vm.enableEpisodes = false
+                                    appIOScope.launch {
+                                        if (vm.limitEpisodesCount > 0) vm.feed?.limitEpisodesCount = vm.limitEpisodesCount
+                                        subscribe(vm.feed!!)
+                                        if (vm.isShared) {
+                                            appIOScope.launch {
+                                                val log = realm.query(ShareLog::class).query("url == $0", vm.feedUrl).first().find()
+                                                if (log != null) upsert(log) { it.status = ShareLog.Status.SUCCESS.code }
+                                            }
+                                        }
+                                        withContext(Dispatchers.Main) {
+                                            runCatching {
+                                                vm.subscribePress = true
+                                                vm.feedId = vm.feed?.id ?: 0L
+                                                vm.enableSubscribe = true
+                                                vm.subButTextRes = R.string.open_feed
+                                                vm.handleSubscribeStatus()
+                                            }
                                         }
                                     }
                                 }
+                            }) { Text(stringResource(vm.subButTextRes)) }
+                            Spacer(modifier = Modifier.weight(0.1f))
+                            when {
+                                vm.updatedFeedUrl.isNotBlank() && vm.feed != null -> Button(onClick = { navTo(FeedDetails(feedId = vm.feedId, modeName = FeedScreenMode.Info.name)) }) { Text(stringResource(R.string.open_feed)) }
+                                vm.showEpisodes -> Button(onClick = { vm.showEpisodes = false }) { Text(stringResource(R.string.feed)) }
+                                vm.enableEpisodes && vm.feed != null && vm.numEpisodes > 0 -> Button(onClick = { vm.showEpisodes() }) { Text(stringResource(R.string.episodes_label)) }
+                                else -> {}
                             }
-                        }) { Text(stringResource(vm.subButTextRes)) }
-                        Spacer(modifier = Modifier.weight(0.1f))
-                        when {
-                            vm.updatedFeedUrl.isNotBlank() && vm.feed != null -> Button(onClick = { navTo(FeedDetails(feedId = vm.feedId, modeName = FeedScreenMode.Info.name)) }) { Text(stringResource(R.string.open_feed)) }
-                            vm.showEpisodes -> Button(onClick = { vm.showEpisodes = false }) { Text(stringResource(R.string.feed)) }
-                            vm.enableEpisodes && vm.feed != null && vm.numEpisodes > 0 -> Button(onClick = { vm.showEpisodes() }) { Text(stringResource(R.string.episodes_label)) }
-                            else -> {}
+                            Spacer(modifier = Modifier.weight(0.1f))
                         }
-                        Spacer(modifier = Modifier.weight(0.2f))
                     }
                 }
                 Column(Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary)) {
@@ -716,4 +701,4 @@ fun OnlineFeedScreen(url: String = "", source: String = "", shared: Boolean = fa
     }
 }
 
-private val TAG: String = Screens.OnlineFeed.name
+private const val TAG = "OnlineFeed"

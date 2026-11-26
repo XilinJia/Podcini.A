@@ -1,12 +1,13 @@
 package ac.mdiq.podcini.sourcing
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.AudioSpec
 import ac.mdiq.podcini.shared.MediaSpecs
 import ac.mdiq.podcini.shared.VideoSpec
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.specs.AVQuality
@@ -52,6 +53,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toUri
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 class StreamsManager(val media: Episode, val useCache: Boolean = true) {
 
@@ -146,7 +148,7 @@ class StreamsManager(val media: Episode, val useCache: Boolean = true) {
         }
         Logd(TAG) { "chooseAudioSpec langset: [${curLocales.joinToString()}]" }
         if (curLocales.isNotEmpty()) {
-            runOnIOScope {
+            appIOScope.launch {
                 if (media.feed != null && !media.feed!!.langSet.containsAll(curLocales)) upsert(media.feed!!) { it.langSet.addAll(curLocales) }
                 if (!appAttribsFlow!!.value.langSet.containsAll(curLocales)) upsert(appAttribsFlow!!.value) { it.langSet.addAll(curLocales) }
             }

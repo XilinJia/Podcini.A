@@ -50,7 +50,7 @@ fun initAppPrefs() {
 
     if (sleepPrefsJob == null) {
         sleepPrefs = realm.query(SleepPrefs::class).query("id == 0").first().find() ?: upsertBlk(SleepPrefs()) {}
-        sleepPrefsJob = CoroutineScope(Dispatchers.IO).launch {
+        sleepPrefsJob = appIOScope.launch {
             val flow = realm.query(SleepPrefs::class).query("id == 0").first().asFlow()
             flow.collect { changes: SingleQueryChange<SleepPrefs> ->
                 Logd(TAG) { "sleepPrefsJob flow.collect" }
@@ -65,7 +65,7 @@ fun initAppPrefs() {
     }
     if (syncPrefsJob == null) {
         syncPrefs = realm.query(SyncPrefs::class).query("id == 0").first().find() ?: upsertBlk(SyncPrefs()) {}
-        syncPrefsJob = CoroutineScope(Dispatchers.IO).launch {
+        syncPrefsJob = appIOScope.launch {
             val flow = realm.query(SyncPrefs::class).query("id == 0").first().asFlow()
             flow.collect { changes: SingleQueryChange<SyncPrefs> ->
                 Logd(TAG) { "syncPrefsJob flow.collect" }
@@ -90,44 +90,44 @@ const val EPISODE_CACHE_SIZE_UNLIMITED: Int = 0
 var isSkipSilence: Boolean
     get() = appPrefsFlow!!.value.skipSilence
     set(value) {
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.skipSilence = value } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.skipSilence = value } }
     }
 
 var speedforwardSpeed: Float
     get() = appPrefsFlow!!.value.speedforwardSpeed
     set(speed) {
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.speedforwardSpeed = speed } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.speedforwardSpeed = speed } }
     }
 
 var skipforwardSpeed: Float
     get() = appPrefsFlow!!.value.skipforwardSpeed
     set(speed) {
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.skipforwardSpeed = speed } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.skipforwardSpeed = speed } }
     }
 
 var fallbackSpeed: Float
     get() = appPrefsFlow!!.value.fallbackSpeed
     set(speed) {
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.fallbackSpeed = speed } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.fallbackSpeed = speed } }
     }
 
 var fastForwardSecs: Int
     get() = appPrefsFlow!!.value.fastForwardSecs
     set(secs) {
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.fastForwardSecs = secs } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.fastForwardSecs = secs } }
     }
 
 var rewindSecs: Int
     get() = appPrefsFlow!!.value.rewindSecs
     set(secs) {
-        runOnIOScope {  upsert(appPrefsFlow!!.value) { it.rewindSecs = secs } }
+        appIOScope.launch {  upsert(appPrefsFlow!!.value) { it.rewindSecs = secs } }
     }
 
 var streamingCacheSizeMB: Int
     get() = appPrefsFlow!!.value.streamingCacheSizeMB
     set(size) {
         val size_ = if (size < 10) 10 else size
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.streamingCacheSizeMB = size_ } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.streamingCacheSizeMB = size_ } }
     }
 
 var proxyConfig: ProxyConfig
@@ -140,7 +140,7 @@ var proxyConfig: ProxyConfig
         return ProxyConfig(type, host, port, username, password)
     }
     set(config) {
-        runOnIOScope {
+        appIOScope.launch {
             upsert(appPrefsFlow!!.value) {
                 it.proxyType = config.type.name
                 it.proxyHost = if (config.host.isNullOrEmpty()) null else config.host
@@ -154,5 +154,5 @@ var proxyConfig: ProxyConfig
 var prefStreamOverDownload: Boolean
     get() = appPrefsFlow!!.value.streamOverDownload
     set(stream) {
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.streamOverDownload = stream } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.streamOverDownload = stream } }
     }

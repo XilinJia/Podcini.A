@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.storage.model
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.automation.AutoDownloadAlgorithm
 import ac.mdiq.podcini.automation.AutoEnqueueAlgorithm
 import ac.mdiq.podcini.shared.nowInMillis
@@ -122,7 +123,7 @@ class PlayQueue : RealmObject {
 
     fun checkAndFill() {
         if (size() == 0 && !isVirtual()) {
-            CoroutineScope(Dispatchers.IO).launch {
+            appIOScope.launch {
                 val feeds = normalFeeds
                 AutoEnqueueAlgorithm().run(feeds, true)
                 if(launchAutoEQDlWhenEmpty && appPrefsFlow!!.value.enableAutoDl) AutoDownloadAlgorithm().run(feeds, false, noRefreshing = true)

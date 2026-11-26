@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.playback
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackService.Companion.isAutoController
@@ -18,7 +19,7 @@ import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
 import ac.mdiq.podcini.storage.database.rewindSecs
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.streamingCacheSizeMB
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
@@ -271,7 +272,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                         curMediaFlow.value?.let { media->
                             val curDuration = media.duration
                             if (duration != C.TIME_UNSET && duration > 0 && abs(duration - curDuration) > 5000) {
-                                runOnIOScope { upsert(media) { it.duration = duration.toInt() } }
+                                appIOScope.launch { upsert(media) { it.duration = duration.toInt() } }
                                 Logt(TAG, context.getString(R.string.media_duration_adjusted, durationStringFull(duration.toInt())))
                             }
                         }
@@ -283,7 +284,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                             val curDuration = media.duration
                             val duration = player.duration
                             if (bufferedPercentFlow.value == 100 && duration > 0 && abs(duration - curDuration) > 5000) {
-                                runOnIOScope { upsert(media) { it.duration = curDuration } }
+                                appIOScope.launch { upsert(media) { it.duration = curDuration } }
                                 Logt(TAG, context.getString(R.string.media_duration_adjusted, durationStringFull(duration.toInt())))
                             }
                         }
@@ -335,7 +336,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                     when (error.errorCode) {
                         PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED -> {
                             exoPlayer?.stop()
-                            curMediaFlow.value?.let { runOnIOScope { getCache().removeResource(it.id.toString()) } }
+                            curMediaFlow.value?.let { appIOScope.launch { getCache().removeResource(it.id.toString()) } }
                             Logt(TAG, context.getString(R.string.corrupted_cache_cleared))
                         }
                         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
@@ -448,7 +449,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
                 }
                 override fun onAudioSessionIdChanged(audioSessionId: Int) {
                     Logd(TAG) { "exoplayerListener onAudioSessionIdChanged $audioSessionId" }
-                    runOnIOScope {
+                    appIOScope.launch {
                         try {
                             val newEnhancer = LoudnessEnhancer(audioSessionId)
                             loudnessEnhancer?.let {
@@ -730,7 +731,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         curClient = clientByEpisode(media)
         if (curClient == null)  return null
 
-        if (curClient!!.attributes?.hasTranscripts == true && media.transcriptMetas.isEmpty() && media.captionCues.isEmpty()) runOnIOScope {
+        if (curClient!!.attributes?.hasTranscripts == true && media.transcriptMetas.isEmpty() && media.captionCues.isEmpty()) appIOScope.launch {
             val specs = curClient!!.withProvider { it.getCaptionSpecs(media.downloadUrl) }
             if (!specs.isNullOrEmpty()) {
                 val tm = specs.map { it.toTranscriptMeta() }.toRealmList()
@@ -798,7 +799,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         val url = media.downloadUrl
         if (url.isNullOrBlank()) {
             LogeFor(TAG, media.id, "prepareDataSource: media downloadUrl is null or blank ${media.title}")
-            runOnIOScope { upsert(media) { it.setPlayState(EpisodeState.ERROR) } }
+            appIOScope.launch { upsert(media) { it.setPlayState(EpisodeState.ERROR) } }
             throw IllegalArgumentException("blank url")
         }
         val feed = media.feed
@@ -838,7 +839,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
         if (ext == "json") {
             val uf = mediaUrl.toUF()
             var dir = uf.parent()!!
-            runOnIOScope {
+            appIOScope.launch {
                 val json = uf.readString()
                 val pkg = Json.decodeFromString<AVJsonPkg>(json)
                 val audioUri = (dir / pkg.audio).toAndroidUri()
@@ -961,7 +962,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
     }
 
     override fun notifyWidget() {
-        CoroutineScope(Dispatchers.IO).launch {
+        appIOScope.launch {
             val manager = GlanceAppWidgetManager(getAppContext())
             val glanceId = manager.getGlanceIds(PodciniWidget::class.java).find { it.toString() == widgetId }
             glanceId?.let { id ->
@@ -1212,7 +1213,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
             return
         }
 
-        runOnIOScope {
+        appIOScope.launch {
             val clipname = "${durationStringShort(startPositionMs, false, "m")}-${durationStringShort(endPositionMs, false, "m")}.$ext"
             val outputFile = curMediaFlow.value!!.getClipFile(clipname)
             when {
@@ -1369,7 +1370,7 @@ class Media3Player(playerId: Int, val lr: Int) : BasePlayer() {
     }
 
     companion object {
-        private val TAG: String = Media3Player::class.simpleName ?: "Anonymous"
+        private const val TAG = "Media3Player"
 
 //        private const val ACTION_PLAYER_STATUS_CHANGED: String = "action.ac.mdiq.podcini.service.playerStatusChanged"
 //        private const val AVRCP_ACTION_PLAYER_STATUS_CHANGED = "com.android.music.playstatechanged"

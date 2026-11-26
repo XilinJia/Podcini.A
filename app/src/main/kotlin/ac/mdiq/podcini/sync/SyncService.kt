@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.sync
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.CHANNEL_ID
@@ -25,7 +26,7 @@ import ac.mdiq.podcini.storage.database.deleteFeed
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.removeFromQueue
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.feedById
 import ac.mdiq.podcini.storage.database.feedsMap
@@ -59,6 +60,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -289,7 +291,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
             updatedItems.add(result.second)
         }
 
-        runOnIOScope {
+        appIOScope.launch {
             removeFromQueue(actQueueFlow.value, updatedItems)
             for (episode in updatedItems) upsert(episode) {}
         }
@@ -347,7 +349,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
     }
 
     companion object {
-        private val TAG = SyncService::class.simpleName ?: "Anonymous"
+        private const val TAG = "SyncService"
 
         private const val REQUEST_CODE_SYNC_ERROR = 1001
 

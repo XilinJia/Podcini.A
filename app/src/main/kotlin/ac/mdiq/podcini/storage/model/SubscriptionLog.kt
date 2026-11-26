@@ -42,7 +42,7 @@ class SubscriptionLog: RealmObject {
     }
 
     companion object {
-        private const val TAG: String = "SubscriptionLog"
+        private const val TAG = "SubscriptionLog"
 
         fun String.takeCodePoints(maxCodePoints: Int): String {
             var end = 0

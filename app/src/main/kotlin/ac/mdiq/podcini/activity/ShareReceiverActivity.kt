@@ -1,11 +1,12 @@
 package ac.mdiq.podcini.activity
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
 import ac.mdiq.podcini.sourcing.handleShared
 import ac.mdiq.podcini.storage.database.addToFeed
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.ShareLog
@@ -45,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.ktor.http.decodeURLQueryComponent
+import kotlinx.coroutines.launch
 
 class ShareReceiverActivity : ComponentActivity() {
     private var sharedText: String? = null
@@ -107,9 +109,9 @@ class ShareReceiverActivity : ComponentActivity() {
             }
         } }
 
-        runOnIOScope {
+        appIOScope.launch {
             log = upsert(log) {}
-            handleShared(text, this, true, log) { e, ex ->
+            handleShared(text, this@ShareReceiverActivity, true, log) { e, ex ->
                 episode = e
                 existing = ex
             }
@@ -117,6 +119,6 @@ class ShareReceiverActivity : ComponentActivity() {
     }
 
     companion object {
-        private val TAG: String = ShareReceiverActivity::class.simpleName ?: "Anonymous"
+        private const val TAG = "ShareReceiverActivity"
     }
 }

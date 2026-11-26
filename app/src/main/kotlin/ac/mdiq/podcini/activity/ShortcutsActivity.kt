@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.activity
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.storage.database.getFeedList
@@ -48,8 +49,6 @@ import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class ShortcutsActivity : ComponentActivity() {
@@ -140,7 +139,7 @@ class ShortcutsActivity : ComponentActivity() {
                 action = Intent.ACTION_VIEW
                 putExtra(MainActivity.Extras.feed_id.name, feed.id)
             }
-            CoroutineScope(Dispatchers.IO).launch {
+            appIOScope.launch {
                 val request = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).allowHardware(false).build()
                 val result = (ImageLoader(context).execute(request) as? SuccessResult)
                 val bitmap = (result?.image as? BitmapDrawable)?.bitmap
@@ -187,6 +186,6 @@ class ShortcutsActivity : ComponentActivity() {
     }
 
     companion object {
-        private val TAG: String = ShortcutsActivity::class.simpleName ?: "Anonymous"
+        private const val TAG = "ShortcutsActivity"
     }
 }

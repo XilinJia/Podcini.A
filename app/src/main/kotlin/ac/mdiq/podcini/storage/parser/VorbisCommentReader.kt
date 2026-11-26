@@ -135,7 +135,7 @@ abstract class VorbisCommentReader internal constructor(private val source: Coun
     }
 
     companion object {
-        private val TAG: String = VorbisCommentReader::class.simpleName ?: "Anonymous"
+        private const val TAG = "VorbisCommentReader"
         private const val MAX_OGG_SCAN_BYTES = 256 * 1024
         private const val PACKET_TYPE_COMMENT = 3
     }

@@ -1,23 +1,21 @@
 package ac.mdiq.podcini.ui.screens.prefscreens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.forceRestart
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.settings.MediaFilesTransporter
 import ac.mdiq.podcini.shared.PodciniHttpClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
 import ac.mdiq.podcini.shared.PodciniHttpClient.resetClient
 import ac.mdiq.podcini.shared.ProxyConfig
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
-
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.checkAndScheduleUpdateTaskOnce
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.intervalInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.proxyConfig
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.syncPrefs
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.utils.deleteDirectoryRecursively
@@ -32,10 +30,8 @@ import ac.mdiq.podcini.sync.SynchronizationProviderViewData
 import ac.mdiq.podcini.sync.SynchronizationSettings
 import ac.mdiq.podcini.sync.SynchronizationSettings.isSyncProviderConnected
 import ac.mdiq.podcini.sync.SynchronizationSettings.setSelectedSyncProvider
-import ac.mdiq.podcini.sync.SynchronizationSettings.setWifiSyncEnabled
 import ac.mdiq.podcini.sync.nextcloud.NextcloudLoginFlow
 import ac.mdiq.podcini.sync.nextcloud.NextcloudLoginFlow.AuthenticationCallback
-import ac.mdiq.podcini.sync.wifi.WifiSyncService.Companion.startInstantSync
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
@@ -45,8 +41,6 @@ import ac.mdiq.podcini.ui.compose.TitleSummaryActionColumn
 import ac.mdiq.podcini.ui.compose.TitleSummarySwitchRow
 import ac.mdiq.podcini.ui.compose.textColor
 import ac.mdiq.podcini.ui.compose.trackAsTextField
-import ac.mdiq.podcini.utils.EventFlow
-import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logs
@@ -54,10 +48,8 @@ import ac.mdiq.podcini.utils.Logt
 import ac.mdiq.podcini.utils.MobileUpdateOptions
 import ac.mdiq.podcini.utils.fullDateTimeString
 import android.app.Activity.RESULT_OK
-import android.content.Context.WIFI_SERVICE
 import android.content.Intent
 import android.net.Uri
-import android.net.wifi.WifiManager
 import android.util.Patterns
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -68,13 +60,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -122,7 +114,6 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
@@ -151,11 +142,11 @@ fun NetworkStorageScreen() {
         var testSuccessful by remember { mutableStateOf(false) }
         var type by remember { mutableStateOf(proxyConfig.type.name) }
         var typePos by remember { mutableIntStateOf(0) }
-        var host by remember { mutableStateOf(proxyConfig.host?:"") }
-        var port by remember { mutableStateOf(if (proxyConfig.port > 0) proxyConfig.port.toString() else "") }
-        var portValue by remember { mutableIntStateOf(proxyConfig.port) }
-        var username by remember { mutableStateOf(proxyConfig.username) }
-        var password by remember { mutableStateOf(proxyConfig.password) }
+        val host = rememberTextFieldState(initialText = proxyConfig.host?:"")
+        val port = rememberTextFieldState(initialText = if (proxyConfig.port > 0) proxyConfig.port.toString() else "")
+        var portValue by remember(port.text) { mutableIntStateOf(port.text.toString().toIntOrNull()?:0) }
+        val username = rememberTextFieldState(initialText = proxyConfig.username?:"")
+        val password = rememberTextFieldState(initialText = proxyConfig.password?:"")
         var message by remember { mutableStateOf("") }
         var messageColor by remember { mutableStateOf(textColor) }
         var showOKButton by remember { mutableStateOf(false) }
@@ -163,10 +154,10 @@ fun NetworkStorageScreen() {
 
         fun configProxy() {
             val typeEnum = Proxy.Type.valueOf(type)
-            if (username.isNullOrEmpty()) username = null
-            if (password.isNullOrEmpty()) password = null
-            if (port.isNotEmpty()) portValue = port.toInt()
-            val config = ProxyConfig(typeEnum, host, portValue, username, password)
+            if (username.text.isEmpty()) username.edit { replace(0, length, "") }
+            if (password.text.isEmpty()) password.edit { replace(0, length, "")}
+            if (port.text.isNotEmpty()) portValue = port.text.toString().toInt()
+            val config = ProxyConfig(typeEnum, host.text.toString(), portValue, username.text.toString(), password.text.toString())
             proxyConfig = config
             PodciniHttpClient.configProxy(config)
         }
@@ -180,11 +171,12 @@ fun NetworkStorageScreen() {
             }
         }
         fun checkHost(): Boolean {
-            if (host.isEmpty()) {
+            val h = host.text.toString()
+            if (h.isEmpty()) {
                 Loge(TAG, context.getString(R.string.proxy_host_empty_error))
                 return false
             }
-            if ("localhost" != host && !Patterns.DOMAIN_NAME.matcher(host).matches()) {
+            if ("localhost" != h && !Patterns.DOMAIN_NAME.matcher(h).matches()) {
                 Loge(TAG, context.getString(R.string.proxy_host_invalid_error))
                 return false
             }
@@ -214,8 +206,8 @@ fun NetworkStorageScreen() {
             val coroutineScope = CoroutineScope(Dispatchers.Main)
             coroutineScope.launch(Dispatchers.IO) {
                 try {
-                    if (port.isNotEmpty()) portValue = port.toInt()
-                    val address: SocketAddress = InetSocketAddress.createUnresolved(host, portValue)
+                    if (port.text.isNotEmpty()) portValue = port.text.toString().toInt()
+                    val address: SocketAddress = InetSocketAddress.createUnresolved(host.text.toString(), portValue)
                     val proxyType = Proxy.Type.valueOf(type.uppercase())
                     HttpClient(OkHttp) {
                         install(HttpTimeout) { connectTimeoutMillis = 10_000 }
@@ -258,37 +250,26 @@ fun NetworkStorageScreen() {
                     if (typePos > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.host_label))
-                            TextField(value = host, label = { Text("www.example.com") }, isError = !checkHost(), modifier = Modifier.fillMaxWidth().trackAsTextField(),
-                                onValueChange = { host = it }
-                            )
+                            TextField(state = host, label = { Text("www.example.com") }, isError = !checkHost(), modifier = Modifier.fillMaxWidth().trackAsTextField())
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.port_label))
-                            TextField(value = port, label = { Text("8080") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = !checkPort(), modifier = Modifier.fillMaxWidth().trackAsTextField(),
-                                onValueChange = {
-                                    port = it
-                                    portValue = it.toIntOrNull() ?: -1
-                                }
-                            )
+                            TextField(state = port, label = { Text("8080") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = !checkPort(), modifier = Modifier.fillMaxWidth().trackAsTextField())
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.username_label))
-                            TextField(value = username ?: "", label = { Text(stringResource(R.string.optional_hint)) }, modifier = Modifier.fillMaxWidth().trackAsTextField(),
-                                onValueChange = { username = it }
-                            )
+                            TextField(state = username, label = { Text(stringResource(R.string.optional_hint)) }, modifier = Modifier.fillMaxWidth().trackAsTextField())
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.password_label))
-                            TextField(value = password ?: "", label = { Text(stringResource(R.string.optional_hint)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth().trackAsTextField(),
-                                onValueChange = { password = it }
-                            )
+                            TextField(state = password, label = { Text(stringResource(R.string.optional_hint)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth().trackAsTextField())
                         }
                     }
                     if (message.isNotBlank()) Text(message, color = messageColor)
                 }
             },
             confirmButton = {
-                if (showOKButton) TextButton(onClick = {
+                TextButton(enabled = showOKButton, onClick = {
                     if (!testSuccessful) {
                         test()
                         return@TextButton
@@ -324,7 +305,7 @@ fun NetworkStorageScreen() {
             Logd(TAG) { "selectCustomMediaDirLauncher the chosen uri: $uri" }
             if (uri != null) {
                 showProgress = true
-                CoroutineScope(Dispatchers.IO).launch {
+                appIOScope.launch {
                     getAppContext().contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                     persistedTrees.add(uri)
                     val dir = uri.toUF()
@@ -354,16 +335,13 @@ fun NetworkStorageScreen() {
             val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.identifier), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.wrapContentWidth())
-                var name by remember(appAttribs.name) { mutableStateOf(appAttribs.name) }
-                var showIcon by remember { mutableStateOf(false) }
-                TextField(value = name, modifier = Modifier.trackAsTextField().weight(1f).padding(start = 8.dp),
-                    onValueChange = {
-                        name = it
-                        showIcon = true
-                    },
+//                var name by remember(appAttribs.name) { mutableStateOf(appAttribs.name) }
+                val name = rememberTextFieldState(initialText = appAttribs.name)
+                var showIcon by remember(name.text) { mutableStateOf(name.text != appAttribs.name) }
+                TextField(state = name, modifier = Modifier.trackAsTextField().weight(1f).padding(start = 8.dp),
                     trailingIcon = {
                         if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings", modifier = Modifier.size(30.dp).clickable {
-                            runOnIOScope { upsert(appAttribs) { it.name = name } }
+                            appIOScope.launch { upsert(appAttribs) { it.name = name.text.toString() } }
                             focusManager.clearFocus()
                             showIcon =  false })
                 })
@@ -371,7 +349,7 @@ fun NetworkStorageScreen() {
             Text(stringResource(R.string.network_identifier_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
         }
         TitleSummarySwitchRow(R.string.pref_use_external_apps, R.string.pref_use_external_app_sum, appPrefs.loadExternalApp) {
-            runOnIOScope { upsert(appPrefs) { p-> p.loadExternalApp = it} }
+            appIOScope.launch { upsert(appPrefs) { p-> p.loadExternalApp = it} }
             if (!it) Logt(TAG, "external apps are being disconnected")
             AppGatewayRegistry.ensureSourceClients(it)
         }
@@ -381,7 +359,7 @@ fun NetworkStorageScreen() {
                 NumberEditor(refreshInterval.toInt(), stringResource(R.string.time_minutes), nz = false, modifier = Modifier.weight(0.6f)) {
                     refreshInterval = it.toString()
                     Logd("DownloadsSetting") { "refreshInterval: $refreshInterval" }
-                    runOnIOScope { upsert(appPrefs) { p-> p.autoUpdateInterval = it } }
+                    appIOScope.launch { upsert(appPrefs) { p-> p.autoUpdateInterval = it } }
                     checkAndScheduleUpdateTaskOnce(replace = true, force = it > 0)
                 }
             }
@@ -399,10 +377,10 @@ fun NetworkStorageScreen() {
             if (refreshInterval != "0") Text(stringResource(R.string.feed_next_refresh_time) + " " + nextRefreshTime, color = textColor, style = MaterialTheme.typography.bodySmall)
         }
         TitleSummarySwitchRow(R.string.pref_fetch_media_size, R.string.pref_fetch_media_size_sum, appPrefs.fetchmediaSizes) {
-            runOnIOScope {  upsert(appPrefs) { p-> p.fetchmediaSizes = it} }
+            appIOScope.launch {  upsert(appPrefs) { p-> p.fetchmediaSizes = it} }
         }
         TitleSummarySwitchRow(R.string.pref_watch_storage_title, R.string.pref_watch_storage_sum, appPrefs.checkAvailableSpace) {
-            runOnIOScope { upsert(appPrefs) { p-> p.checkAvailableSpace = it} }
+            appIOScope.launch { upsert(appPrefs) { p-> p.checkAvailableSpace = it} }
         }
         var showResetCustomFolderDialog by remember { mutableStateOf(false) }
         if (showResetCustomFolderDialog) {
@@ -412,7 +390,7 @@ fun NetworkStorageScreen() {
                 confirmButton = {
                     TextButton(onClick = {
                         showProgress = true
-                        CoroutineScope(Dispatchers.IO).launch {
+                        appIOScope.launch {
                             val uf = appPrefs.customMediaUri.toUF()
                             upsert(appPrefs) {
                                 it.useCustomMediaFolder = false
@@ -462,14 +440,14 @@ fun NetworkStorageScreen() {
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.onTertiaryContainer, thickness = 1.dp)
         TitleSummarySwitchRow(R.string.pref_automatic_download_title, R.string.pref_automatic_download_sum, appPrefs.enableAutoDl) {
-            runOnIOScope { upsert(appPrefs) { p -> p.enableAutoDl = it } }
+            appIOScope.launch { upsert(appPrefs) { p -> p.enableAutoDl = it } }
         }
         if (appPrefs.enableAutoDl) {
             Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.pref_episode_cache_title), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     NumberEditor(appPrefs.episodeCacheSize, label = "integer", nz = false, modifier = Modifier.weight(0.5f)) {
-                        runOnIOScope { upsert(appPrefs) { p-> p.episodeCacheSize = it} }
+                        appIOScope.launch { upsert(appPrefs) { p-> p.episodeCacheSize = it} }
                     }
                 }
                 Text(stringResource(R.string.pref_episode_cache_summary), color = textColor, style = MaterialTheme.typography.labelSmall)
@@ -500,7 +478,7 @@ fun NetworkStorageScreen() {
                         TextButton(onClick = {
                             var num = if (tempCleanupOption == EpisodeCleanupOptions.LimitBy.num.toString()) interval else tempCleanupOption
                             if (num.toIntOrNull() == null) num = EpisodeCleanupOptions.Never.num.toString()
-                            runOnIOScope { upsert(appPrefs) { it.episodeCleanup = num} }
+                            appIOScope.launch { upsert(appPrefs) { it.episodeCleanup = num} }
                             showCleanupOptions = false
                         }) { Text(text = "OK") }
                     },
@@ -508,7 +486,7 @@ fun NetworkStorageScreen() {
                 )
             }
             TitleSummarySwitchRow(R.string.pref_automatic_download_on_battery_title, R.string.pref_automatic_download_on_battery_sum, appPrefs.enableAutoDownloadOnBattery) {
-                runOnIOScope { upsert(appPrefs) { p-> p.enableAutoDownloadOnBattery = it} }
+                appIOScope.launch { upsert(appPrefs) { p-> p.enableAutoDownloadOnBattery = it} }
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.onTertiaryContainer, thickness = 1.dp)
@@ -543,7 +521,7 @@ fun NetworkStorageScreen() {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        runOnIOScope { upsert(appPrefs) { it.mobileUpdateTypes = tempSelectedOptions.toRealmSet() } }
+                        appIOScope.launch { upsert(appPrefs) { it.mobileUpdateTypes = tempSelectedOptions.toRealmSet() } }
                         val optionsDiff = (tempSelectedOptions - appPrefs.mobileUpdateTypes) + (appPrefs.mobileUpdateTypes - tempSelectedOptions)
                         if (optionsDiff.contains(MobileUpdateOptions.feed_refresh.name) || optionsDiff.contains(MobileUpdateOptions.auto_download.name))
                             checkAndScheduleUpdateTaskOnce(replace = true, force = true)
@@ -579,9 +557,10 @@ fun SynchronizationScreen() {
     fun NextcloudAuthenticationDialog(onDismiss: ()->Unit) {
         var nextcloudLoginFlow = remember<NextcloudLoginFlow?> { null }
         var showUrlEdit by remember { mutableStateOf(true) }
-        var serverUrlText by remember { mutableStateOf(appPrefsFlow!!.value.nextcloud_server_address) }
+        var url_ by remember { mutableStateOf(appPrefsFlow!!.value.nextcloud_server_address) }
+        val serverUrlText = rememberTextFieldState(initialText = url_)
         var errorText by remember { mutableStateOf("") }
-        var showChooseHost by remember { mutableStateOf(serverUrlText.isNotBlank()) }
+        var showChooseHost by remember(serverUrlText.text) { mutableStateOf(serverUrlText.text.isNotBlank()) }
 
         val nextCloudAuthCallback = object : AuthenticationCallback {
             override fun onNextcloudAuthenticated(server: String, username: String, password: String) {
@@ -614,20 +593,16 @@ fun SynchronizationScreen() {
             text = {
                 Column {
                     Text(stringResource(R.string.synchronization_host_explanation))
-                    if (showUrlEdit) TextField(value = serverUrlText, modifier = Modifier.fillMaxWidth().trackAsTextField(), label = { Text(stringResource(R.string.synchronization_host_label)) },
-                        onValueChange = {
-                            serverUrlText = it
-                            showChooseHost = serverUrlText.isNotBlank()
-                        }
-                    )
+                    if (showUrlEdit) TextField(state = serverUrlText, modifier = Modifier.fillMaxWidth().trackAsTextField(), label = { Text(stringResource(R.string.synchronization_host_label)) })
                     Text(stringResource(R.string.synchronization_nextcloud_authenticate_browser))
                     if (errorText.isNotBlank()) Text(errorText)
                 }
             },
             confirmButton = {
-                if (showChooseHost) TextButton(onClick = {
-                    runOnIOScope { upsert(appPrefsFlow!!.value) { it.nextcloud_server_address = serverUrlText} }
-                    nextcloudLoginFlow = NextcloudLoginFlow(documentKtor, serverUrlText, getAppContext(), nextCloudAuthCallback)
+                TextButton(enabled = showChooseHost, onClick = {
+                    val url_ = serverUrlText.text.toString()
+                    appIOScope.launch { upsert(appPrefsFlow!!.value) { it.nextcloud_server_address = url_} }
+                    nextcloudLoginFlow = NextcloudLoginFlow(documentKtor, url_, getAppContext(), nextCloudAuthCallback)
                     errorText = ""
                     showChooseHost = false
                     nextcloudLoginFlow.start()
@@ -668,104 +643,105 @@ fun SynchronizationScreen() {
         )
     }
 
-    @Composable
-    fun WifiAuthenticationDialog(onDismiss: ()->Unit) {
-        val TAG = "WifiAuthenticationDialog"
-
-        val context by rememberUpdatedState(LocalContext.current)
-        var progressMessage by remember { mutableStateOf("") }
-        var errorMessage by remember { mutableStateOf("") }
-        LaunchedEffect(Unit) {
-            EventFlow.events.collectLatest { event ->
-                Logd(TAG) { "Received event: ${event.TAG}" }
-                when (event) {
-                    is FlowEvent.SyncServiceEvent -> {
-                        when (event.messageResId) {
-                            R.string.sync_status_error -> {
-                                errorMessage = event.message
-                                Loge(TAG, errorMessage)
-                                onDismiss()
-                            }
-                            R.string.sync_status_success -> {
-                                Logt(TAG, context.getString(R.string.sync_status_success))
-                                onDismiss()
-                            }
-                            R.string.sync_status_in_progress -> progressMessage = event.message
-                            else -> Loge(TAG, "Sync result unknown ${event.messageResId}")
-                        }
-                    }
-                    else -> {}
-                }
-            }
-        }
-        var portNum by remember { mutableIntStateOf(SynchronizationSettings.hostport) }
-        var isGuest by remember { mutableStateOf<Boolean?>(null) }
-        var hostAddress by remember { mutableStateOf(SynchronizationSettings.hosturl?:"") }
-        var showHostAddress by remember { mutableStateOf(true)  }
-        var portString by remember { mutableStateOf(SynchronizationSettings.hostport.toString()) }
-        var showProgress by remember { mutableStateOf(false) }
-        var showConfirm by remember { mutableStateOf(true)  }
-        var showCancel by remember { mutableStateOf(true)  }
-        AlertDialog(modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { onDismiss() },
-            title = { Text(stringResource(R.string.connect_to_peer), style = CustomTextStyles.titleCustom) },
-            text = {
-                Column {
-                    Text(stringResource(R.string.wifisync_explanation_message), style = MaterialTheme.typography.labelSmall)
-                    Row {
-                        TextButton(onClick = {
-                            val wifiManager = context.getSystemService(WIFI_SERVICE) as WifiManager
-                            val ipAddress = wifiManager.connectionInfo.ipAddress
-                            val ipString = "${ipAddress and 0xff}.${ipAddress shr 8 and 0xff}.${ipAddress shr 16 and 0xff}.${ipAddress shr 24 and 0xff}"
-                            hostAddress = ipString
-                            showHostAddress = false
-                            portNum = portString.toInt()
-                            isGuest = false
-                            SynchronizationSettings.hostport = portNum
-                        }) { Text(stringResource(R.string.host_butLabel)) }
-                        Spacer(Modifier.weight(1f))
-                        TextButton(onClick = {
-                            SynchronizationSettings.hosturl = hostAddress
-                            showHostAddress = true
-                            portNum = portString.toInt()
-                            isGuest = true
-                            SynchronizationSettings.hostport = portNum
-                        }) { Text(stringResource(R.string.guest_butLabel)) }
-                    }
-                    Row {
-                        if (showHostAddress) TextField(value = hostAddress, modifier = Modifier.weight(0.6f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            onValueChange = { input -> hostAddress = input },
-                            label = { Text(stringResource(id = R.string.synchronization_host_address_label)) })
-                        TextField(value = portString, modifier = Modifier.trackAsTextField().weight(0.4f).padding(start = 3.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            onValueChange = { input ->
-                                portString = input
-                                portNum = input.toInt()
-                            },
-                            label = { Text(stringResource(id = R.string.synchronization_host_port_label)) })
-                    }
-                    if (showProgress)  {
-                        CircularProgressIndicator(strokeWidth = 10.dp, color = textColor, modifier = Modifier.size(50.dp))
-                        Text(stringResource(R.string.wifisync_progress_message) + " " + progressMessage, color = textColor)
-                    }
-                    Text(errorMessage, style = MaterialTheme.typography.bodyMedium)
-                }
-            },
-            confirmButton = {
-                if (showConfirm) TextButton(onClick = {
-                    Logd(TAG) { "confirm button pressed" }
-                    if (isGuest == null) {
-                        Logt(TAG, getAppContext().getString(R.string.host_or_guest))
-                        return@TextButton
-                    }
-                    showProgress = true
-                    showConfirm = false
-                    showCancel = false
-                    setWifiSyncEnabled(true)
-                    startInstantSync(portNum, hostAddress, isGuest!!)
-                }) { Text(stringResource(R.string.confirm_label)) }
-            },
-            dismissButton = { if (showCancel) TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.cancel_label)) } }
-        )
-    }
+//    @Composable
+//    fun WifiAuthenticationDialog(onDismiss: ()->Unit) {
+//        val TAG = "WifiAuthenticationDialog"
+//
+//        val context by rememberUpdatedState(LocalContext.current)
+//        var progressMessage by remember { mutableStateOf("") }
+//        var errorMessage by remember { mutableStateOf("") }
+//        LaunchedEffect(Unit) {
+//            EventFlow.events.collectLatest { event ->
+//                Logd(TAG) { "Received event: ${event.TAG}" }
+//                when (event) {
+//                    is FlowEvent.SyncServiceEvent -> {
+//                        when (event.messageResId) {
+//                            R.string.sync_status_error -> {
+//                                errorMessage = event.message
+//                                Loge(TAG, errorMessage)
+//                                onDismiss()
+//                            }
+//                            R.string.sync_status_success -> {
+//                                Logt(TAG, context.getString(R.string.sync_status_success))
+//                                onDismiss()
+//                            }
+//                            R.string.sync_status_in_progress -> progressMessage = event.message
+//                            else -> Loge(TAG, "Sync result unknown ${event.messageResId}")
+//                        }
+//                    }
+//                    else -> {}
+//                }
+//            }
+//        }
+//        var portNum by remember { mutableIntStateOf(SynchronizationSettings.hostport) }
+//        var isGuest by remember { mutableStateOf<Boolean?>(null) }
+//        var hostAddress by remember { mutableStateOf(SynchronizationSettings.hosturl?:"") }
+//
+//        var showHostAddress by remember { mutableStateOf(true)  }
+//        var portString by remember { mutableStateOf(SynchronizationSettings.hostport.toString()) }
+//        var showProgress by remember { mutableStateOf(false) }
+//        var showConfirm by remember { mutableStateOf(true)  }
+//        var showCancel by remember { mutableStateOf(true)  }
+//        AlertDialog(modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { onDismiss() },
+//            title = { Text(stringResource(R.string.connect_to_peer), style = CustomTextStyles.titleCustom) },
+//            text = {
+//                Column {
+//                    Text(stringResource(R.string.wifisync_explanation_message), style = MaterialTheme.typography.labelSmall)
+//                    Row {
+//                        TextButton(onClick = {
+//                            val wifiManager = context.getSystemService(WIFI_SERVICE) as WifiManager
+//                            val ipAddress = wifiManager.connectionInfo.ipAddress
+//                            val ipString = "${ipAddress and 0xff}.${ipAddress shr 8 and 0xff}.${ipAddress shr 16 and 0xff}.${ipAddress shr 24 and 0xff}"
+//                            hostAddress = ipString
+//                            showHostAddress = false
+//                            portNum = portString.toInt()
+//                            isGuest = false
+//                            SynchronizationSettings.hostport = portNum
+//                        }) { Text(stringResource(R.string.host_butLabel)) }
+//                        Spacer(Modifier.weight(1f))
+//                        TextButton(onClick = {
+//                            SynchronizationSettings.hosturl = hostAddress
+//                            showHostAddress = true
+//                            portNum = portString.toInt()
+//                            isGuest = true
+//                            SynchronizationSettings.hostport = portNum
+//                        }) { Text(stringResource(R.string.guest_butLabel)) }
+//                    }
+//                    Row {
+//                        if (showHostAddress) TextField(value = hostAddress, modifier = Modifier.weight(0.6f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                            onValueChange = { input -> hostAddress = input },
+//                            label = { Text(stringResource(id = R.string.synchronization_host_address_label)) })
+//                        TextField(value = portString, modifier = Modifier.trackAsTextField().weight(0.4f).padding(start = 3.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                            onValueChange = { input ->
+//                                portString = input
+//                                portNum = input.toInt()
+//                            },
+//                            label = { Text(stringResource(id = R.string.synchronization_host_port_label)) })
+//                    }
+//                    if (showProgress)  {
+//                        CircularProgressIndicator(strokeWidth = 10.dp, color = textColor, modifier = Modifier.size(50.dp))
+//                        Text(stringResource(R.string.wifisync_progress_message) + " " + progressMessage, color = textColor)
+//                    }
+//                    Text(errorMessage, style = MaterialTheme.typography.bodyMedium)
+//                }
+//            },
+//            confirmButton = {
+//                if (showConfirm) TextButton(onClick = {
+//                    Logd(TAG) { "confirm button pressed" }
+//                    if (isGuest == null) {
+//                        Logt(TAG, getAppContext().getString(R.string.host_or_guest))
+//                        return@TextButton
+//                    }
+//                    showProgress = true
+//                    showConfirm = false
+//                    showCancel = false
+//                    setWifiSyncEnabled(true)
+//                    startInstantSync(portNum, hostAddress, isGuest!!)
+//                }) { Text(stringResource(R.string.confirm_label)) }
+//            },
+//            dismissButton = { if (showCancel) TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.cancel_label)) } }
+//        )
+//    }
 
 //    var showWifiAuthenticationDialog by remember { mutableStateOf(false) }
 //    if (showWifiAuthenticationDialog) WifiAuthenticationDialog { showWifiAuthenticationDialog = false }

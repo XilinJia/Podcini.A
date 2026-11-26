@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.compose
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.playback.theatres
@@ -15,7 +16,6 @@ import ac.mdiq.podcini.storage.database.addToQueue
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
 import ac.mdiq.podcini.storage.database.inQueueEpisodeIdSet
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.smartRemoveFromQueues
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
@@ -71,6 +71,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Delete
@@ -107,7 +108,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -118,8 +118,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -221,18 +219,18 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                 Logd(TAG) { "addToFeed adding new episode: ${episode.title}" }
                 episode.id = getEntityId()
                 episode.feedId = toFeed.id
-                runOnIOScope { upsert(episode) {} }
+                appIOScope.launch { upsert(episode) {} }
             }
             EventFlow.postStickyEvent(FlowEvent.FeedUpdatingEvent(false))
         }
         if (showChooseRatingDialog) ChooseRatingDialog(selected) { showChooseRatingDialog = false }
         if (showAddCommentDialog) {
-            var editCommentText by remember { mutableStateOf(TextFieldValue("") ) }
-            CommentEditingDialog(textState = editCommentText, autoSave = false, onTextChange = { editCommentText = it }, onDismiss = { showAddCommentDialog = false },
-                onSave = { for (e in selected) upsert(e) { it.addComment(editCommentText.text) } })
+            val editCommentText = rememberTextFieldState(initialText = "")
+            CommentEditingDialog(textState = editCommentText, autoSave = false, onDismiss = { showAddCommentDialog = false },
+                onSave = { for (e in selected) upsert(e) { it.addComment(editCommentText.text.toString()) } })
         }
         if (showEditTagsDialog) TagSettingDialog(TagType.Episode, setOf(), multiples = true, onDismiss = { showEditTagsDialog = false }) { tags ->
-            runOnIOScope { for (e in selected) upsert(e) { it.tags.addAll(tags) }  }
+            appIOScope.launch { for (e in selected) upsert(e) { it.tags.addAll(tags) }  }
         }
         if (showPlayStateDialog) PlayStateDialog(selected, onDismiss = { showPlayStateDialog = false }, futureCB = { futureState = it }, ignoreCB = { showIgnoreDialog = true })
         if (showPutToQueueDialog) PutToQueueDialog(selected) { showPutToQueueDialog = false }
@@ -663,23 +661,23 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_download), contentDescription = "Download")
                             Text(stringResource(id = R.string.download_label)) } },
-                        { if (!isExternal && canAddToAssQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); runOnIOScope { selected.forEach { addToAssQueue(listOf(it)) } } }) {
+                        { if (!isExternal && canAddToAssQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); appIOScope.launch { selected.forEach { addToAssQueue(listOf(it)) } } }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_play), contentDescription = "Add to associated or active queue")
                             Text(stringResource(id = R.string.add_to_associated_queue)) } },
-                        { if (!isExternal && canAddToActQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); runOnIOScope { addToQueue(selected, actQueueFlow.value) } }) {
+                        { if (!isExternal && canAddToActQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); appIOScope.launch { addToQueue(selected, actQueueFlow.value) } }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_play), contentDescription = "Add to active queue")
                             Text(stringResource(id = R.string.add_to_active_queue)) } },
                         { if (!isExternal) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); showPutToQueueDialog = true }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_play), contentDescription = "Add to queue...")
                             Text(stringResource(id = R.string.add_to_queue)) } },
-                        { if (!isExternal && areInAnyQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); runOnIOScope { for (e in selected) smartRemoveFromQueues(e) } }) {
+                        { if (!isExternal && areInAnyQueue) Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); appIOScope.launch { for (e in selected) smartRemoveFromQueues(e) } }) {
                             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_remove), contentDescription = "Remove from active queue")
                             Text(stringResource(id = R.string.remove_from_all_queues)) } }
                     )
                     if (selected.isNotEmpty()) {
                         if (curQueue != null && !isExternal) {
                             options.add {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); runOnIOScope { for (e in selected) smartRemoveFromQueues(e, listOf(curQueue)) } }) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable { onOperation(); appIOScope.launch { for (e in selected) smartRemoveFromQueues(e, listOf(curQueue)) } }) {
                                     Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_playlist_remove), contentDescription = "Remove from active queue")
                                     Text(stringResource(id = R.string.remove_from_cur_queue))
                                 }
@@ -688,7 +686,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         if (!isExternal && selected.size > 1) options.add {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
                                 onOperation()
-                                runOnIOScope {
+                                appIOScope.launch {
                                     realm.write {
                                         val selected_ = query(Episode::class, "id IN $0", selected.map { it.id }.toList()).find()
                                         for (e in selected_) {
@@ -712,7 +710,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                             options.add {
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
                                     onOperation()
-                                    CoroutineScope(Dispatchers.IO).launch {
+                                    appIOScope.launch {
                                         clientEpisodes.clear()
                                         for (e in selected) {
                                             val client = clientByEpisode(e)
@@ -731,7 +729,7 @@ fun EpisodeLazyColumn(episodes: List<Episode>, feed: Feed? = null, isExternal: B
                         if (!isExternal && areDeletable) options.add {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.clickable {
                                 onOperation()
-                                runOnIOScope {
+                                appIOScope.launch {
                                     realm.write {
                                         for (e_ in selected) {
                                             val e = findLatest(e_)

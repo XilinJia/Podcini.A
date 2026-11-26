@@ -1,12 +1,12 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -114,7 +114,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -159,7 +158,7 @@ class StatisticsVM: ViewModel() {
     internal fun setTimeFilter(timeFilterFrom_: Long, timeFilterTo_: Long) {
         timeFilterFrom = timeFilterFrom_
         timeFilterTo = timeFilterTo_
-        runOnIOScope {
+        appIOScope.launch {
             upsert(appAttribsFlow!!.value) {
                 it.statisticsFrom = timeFilterFrom_
                 it.statisticsUntil = timeFilterTo_
@@ -556,7 +555,7 @@ fun StatisticsScreen() {
 
     ConfirmDialog(titleRes = R.string.statistics_reset_data, message = stringResource(R.string.statistics_reset_data_msg), showDialog = showResetDialog) {
         vm.setTimeFilter(0L, Long.MAX_VALUE)
-        CoroutineScope(Dispatchers.IO).launch {
+        appIOScope.launch {
             try {
                 while (realm.query(Episode::class).query("playedDuration != 0 || timeSpent != 0").count().find() > 0) {
                     realm.write {
@@ -836,7 +835,7 @@ private fun resultFrom(timeFrom: Long, timeTo: Long, feedId: Long = 0L, forDL: B
 fun FeedStatisticsDialog(title: String, feedId: Long, timeFrom: Long, timeTo: Long, showOpenFeed: Boolean = false, onDismiss: () -> Unit) {
     var fStat by remember { mutableStateOf(FeedStatistics()) }
     var episodes by remember { mutableStateOf<List<Episode>>(listOf())  }
-    suspend fun loadStatistics() {
+    fun loadStatistics() {
         try {
             val data = resultFrom(timeFrom, timeTo, feedId)
             if (data.feedStats.isNotEmpty()) {

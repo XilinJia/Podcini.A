@@ -1,6 +1,7 @@
 package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.BuildConfig
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.config.AppConfig.isInitialized
@@ -16,7 +17,6 @@ import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.migrationProg
 import ac.mdiq.podcini.storage.database.migrationStep
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
@@ -33,13 +33,13 @@ import ac.mdiq.podcini.ui.screens.FindFeeds
 import ac.mdiq.podcini.ui.screens.Library
 import ac.mdiq.podcini.ui.screens.MainScreen
 import ac.mdiq.podcini.ui.screens.OnlineFeed
-import ac.mdiq.podcini.ui.screens.PSState
+import androidx.compose.material3.SheetValue
 import ac.mdiq.podcini.ui.screens.Queues
 import ac.mdiq.podcini.ui.screens.QuickAccess
 import ac.mdiq.podcini.ui.screens.Search
 import ac.mdiq.podcini.ui.screens.Statistics
 import ac.mdiq.podcini.ui.screens.navTo
-import ac.mdiq.podcini.ui.screens.psState
+import ac.mdiq.podcini.ui.screens.sheetValue
 import ac.mdiq.podcini.ui.screens.searchFeedsOnline
 import ac.mdiq.podcini.ui.screens.setSearchTerms
 import ac.mdiq.podcini.utils.CrashReportWriter.Companion.crashLogFile
@@ -63,7 +63,6 @@ import android.os.StrictMode
 import android.provider.Settings
 import android.view.View
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.border
@@ -75,6 +74,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -199,7 +199,7 @@ class MainActivity : BaseActivity() {
                         timeIt("$TAG after checking permission")
                         val currentVersion = packageManager.getPackageInfo(packageName, 0).versionName ?: "0"
                         if (currentVersion != appPrefsFlow!!.value.lastVersion) {
-                            runOnIOScope {
+                            appIOScope.launch {
                                 upsert(appPrefsFlow!!.value) { it.lastVersion = currentVersion }
                                 crashLogFile.delete()
                             }
@@ -208,7 +208,7 @@ class MainActivity : BaseActivity() {
                         scheduleUpdateTaskOnce(replace = false)
                     }
 
-                    runOnIOScope { SynchronizationQueueSink.syncNowIfNotSyncedRecently() }
+                    appIOScope.launch { SynchronizationQueueSink.syncNowIfNotSyncedRecently() }
 
                     WorkManager.getInstance(this@MainActivity).getWorkInfosByTagLiveData(FeedUpdateManager.WORK_TAG_FEED_UPDATE).observe(this@MainActivity) { workInfos: List<WorkInfo> ->
                         if (!hasFeedUpdateObserverStarted) {
@@ -245,7 +245,7 @@ class MainActivity : BaseActivity() {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    if (dontAskAgain) runOnIOScope { upsertBlk(appPrefsFlow!!.value) { it.dont_ask_again_unrestricted_background = true } }
+                    if (dontAskAgain) appIOScope.launch { upsertBlk(appPrefsFlow!!.value) { it.dont_ask_again_unrestricted_background = true } }
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = "package:$packageName".toUri() }
                     this@MainActivity.startActivity(intent)
                     onDismiss()
@@ -301,7 +301,7 @@ class MainActivity : BaseActivity() {
         val curTime = nowInMillis()
         Logd(TAG) { "onResume curTime: $curTime postRepeatsTime: ${appPrefsFlow!!.value.postRepeatsTime}" }
         if ((curTime - appPrefsFlow!!.value.postRepeatsTime) > 3600000L * 24)
-            runOnIOScope {
+            appIOScope.launch {
                 val count = realm.query(Episode::class).query("playState == ${EpisodeState.AGAIN.code} OR playState == ${EpisodeState.FOREVER.code}").query("repeatTime <= $curTime").count().find()
                 upsert(appPrefsFlow!!.value) { it.postRepeatsTime = curTime }
                 if (count > 0) confirm(title = getString(R.string.repeats_past_due), message = getString(R.string.repeats_past_due_sum, count), confirmRes = R.string.OK, cancelRes = R.string.no,
@@ -325,10 +325,11 @@ class MainActivity : BaseActivity() {
         if (eventStickySink == null) eventStickySink = lifecycleScope.launch { EventFlow.stickyEvents.collectLatest { event -> Logd(TAG) { "Received sticky event: ${event.TAG}" } } }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     private fun handleNavIntent() {
         Logd(TAG) { "handleNavIntent()" }
         episodeForInfo = null
-        if (psState == PSState.Expanded) psState = PSState.PartiallyExpanded
+        if (sheetValue == SheetValue.Expanded) sheetValue = SheetValue.PartiallyExpanded
         when {
             intent.hasExtra(Extras.feed_id.name) -> {
                 val feedId = intent.getLongExtra(Extras.feed_id.name, 0)
@@ -356,7 +357,7 @@ class MainActivity : BaseActivity() {
                 searchFeedsOnline(query = intent.getStringExtra(Extras.search_string.name))
                 navTo(FindFeeds)
             }
-            intent.getBooleanExtra(Extras.open_player.name, false) -> psState = PSState.Expanded
+            intent.getBooleanExtra(Extras.open_player.name, false) -> sheetValue = SheetValue.Expanded
             intent.hasExtra("shortcut_route") -> {
                 val route = intent.getStringExtra("shortcut_route")
                 Logd(TAG) { "intent.hasExtra(shortcut_route) route $route" }
@@ -424,7 +425,8 @@ class MainActivity : BaseActivity() {
     }
 
     companion object {
-        private val TAG: String = MainActivity::class.simpleName ?: "Anonymous"  // have to keep, otherwise release build may fail?!
+        private const val TAG = "MainActivity"
+        // have to keep, otherwise release build may fail?!
 
 //        private const val INIT_KEY = "app_init_state"
 

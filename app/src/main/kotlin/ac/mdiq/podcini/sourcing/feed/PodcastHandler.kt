@@ -34,7 +34,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 object PodcastHandler {
-    private const val TAG: String = "PodcastHandler"
+    private const val TAG = "PodcastHandler"
     private const val ATOM_ROOT = "feed"
     private const val RSS_ROOT = "rss"
 
@@ -274,7 +274,7 @@ object PodcastHandler {
         }
 
         companion object {
-            private const val TAG: String = "SyndHandler"
+            private const val TAG = "SyndHandler"
             private const val DEFAULT_PREFIX = ""
         }
     }
@@ -472,7 +472,7 @@ object PodcastHandler {
         }
 
         companion object {
-            private const val TAG: String = "Atom"
+            private const val TAG = "Atom"
             const val NSTAG: String = "atom"
             const val NSURI: String = "http://www.w3.org/2005/Atom"
 
@@ -702,7 +702,7 @@ object PodcastHandler {
         }
 
         companion object {
-            private const val TAG: String = "Media"
+            private const val TAG = "Media"
 
             const val NSTAG: String = "media"
             const val NSURI: String = "http://search.yahoo.com/mrss/"
@@ -888,7 +888,7 @@ object PodcastHandler {
         }
 
         companion object {
-            private const val TAG: String = "Rss20"
+            private const val TAG = "Rss20"
 
             const val CHANNEL: String = "channel"
             const val ITEM: String = "item"
@@ -949,7 +949,7 @@ object PodcastHandler {
         override fun handleElementEnd(localName: String, state: HandlerState) {}
 
         companion object {
-            private const val TAG: String = "SimpleChapters"
+            private const val TAG = "SimpleChapters"
 
             const val NSTAG: String = "psc|sc"
             const val NSURI: String = "http://podlove.org/simple-chapters"

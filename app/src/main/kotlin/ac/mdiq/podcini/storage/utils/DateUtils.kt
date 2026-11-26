@@ -12,7 +12,7 @@ import kotlinx.datetime.format.optional
 import kotlinx.datetime.toInstant
 import kotlin.time.Instant
 
-private const val TAG: String = "DateUtils"
+private const val TAG = "DateUtils"
 
 private val StandardEnglishAbbrev = MonthNames.ENGLISH_ABBREVIATED
 

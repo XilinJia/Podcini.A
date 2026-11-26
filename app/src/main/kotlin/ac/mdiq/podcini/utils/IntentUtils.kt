@@ -14,7 +14,7 @@ import android.net.Uri
 import androidx.core.content.getSystemService
 
 
-private const val TAG: String = "IntentUtils"
+private const val TAG = "IntentUtils"
 
 fun isCallable(intent: Intent?): Boolean {
     if (intent == null) return false

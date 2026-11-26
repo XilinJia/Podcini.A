@@ -1,9 +1,10 @@
 package ac.mdiq.podcini.playback
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.storage.database.episodeById
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.CurrentState
 import ac.mdiq.podcini.storage.model.Episode
@@ -26,7 +27,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
-private const val TAG: String = "Theatres"
+private const val TAG = "Theatres"
 
 internal var aCtrlFuture: ListenableFuture<MediaController>? = null
 var aController: MediaController? = null
@@ -57,7 +58,7 @@ class Theatre(val id: Int) {
     var curStateMonitor: Job? = null
 
     fun monitorState() {
-        if (curStateMonitor == null) curStateMonitor = runOnIOScope {
+        if (curStateMonitor == null) curStateMonitor = appIOScope.launch {
             val stateFlow = realm.query(CurrentState::class).query("id == $id").first().asFlow()
             Logd(TAG) { "start monitoring curState: " }
             stateFlow.collect { changes: SingleQueryChange<CurrentState> ->
@@ -79,7 +80,7 @@ class Theatre(val id: Int) {
 
 internal fun startTheatres() {
     timeIt("$TAG start of init")
-    CoroutineScope(Dispatchers.IO).launch {
+    appIOScope.launch {
         for (i in 0..1) {
             val player = theatres[i].mPlayerFlow.value
             Logd(TAG) { "starting curState for player: ${player?.playerId}" }

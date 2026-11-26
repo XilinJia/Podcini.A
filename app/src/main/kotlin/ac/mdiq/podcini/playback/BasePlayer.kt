@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.playback
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
@@ -23,7 +24,7 @@ import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.removeFromAllQueues
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.CurrentState
@@ -38,7 +39,6 @@ import ac.mdiq.podcini.storage.specs.Rating
 import ac.mdiq.podcini.storage.specs.VideoMode
 import ac.mdiq.podcini.storage.utils.loadChapters
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
-import ac.mdiq.podcini.ui.screens.curVideoMode
 import ac.mdiq.podcini.utils.FlowEvent
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
@@ -205,7 +205,7 @@ abstract class BasePlayer {
                 playingMuxedVideo = false
                 streamsManager = StreamsManager(episode_)
                 curMediaFlow.value = episode_
-                playingVideoFlow.value = !isAutoController && (episode_.forceVideo || (episode_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && episode_.mediaType == MediaType.VIDEO))
+                playingVideoFlow.value = !isAutoController && (episode_.forceVideo || (episode_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && episode_.mediaType == MediaType.VIDEO))
                 skipSilence = null
                 shouldRepeatFlow.value = false
                 curSpeed = SPEED_USE_GLOBAL
@@ -240,7 +240,7 @@ abstract class BasePlayer {
             isInitialized -> saveCurState(media, newStatus)
             isPrepared -> {
                 saveCurState(media, newStatus)
-                if (media != null) runOnIOScope { try { loadChapters(media, false) } catch (e: Throwable) { LogsFor(TAG, media.id, e, "Error loading chapters for: ${media.title}") } }
+                if (media != null) appIOScope.launch { try { loadChapters(media, false) } catch (e: Throwable) { LogsFor(TAG, media.id, e, "Error loading chapters for: ${media.title}") } }
             }
             isPaused -> saveCurState(status_ = newStatus)
             isStopped -> pause(reprepare = false)
@@ -256,10 +256,10 @@ abstract class BasePlayer {
         Logd(TAG) { "saveCurState episode ${episode?.id} status ${status_?.name}" }
         when {
             episode == null && status_ != null -> {}
-            episode == null || status_ == null -> runOnIOScope { upsert(curState) { it.curMediaId = 0L } }
+            episode == null || status_ == null -> appIOScope.launch { upsert(curState) { it.curMediaId = 0L } }
             else -> {
                 if (curState.curMediaId != episode.id || curState.curIsVideo != (episode.mediaType == MediaType.VIDEO))
-                    runOnIOScope {
+                    appIOScope.launch {
                         upsert(curState) {
                             it.curIsVideo = episode.mediaType == MediaType.VIDEO
                             it.curMediaId = episode.id
@@ -403,7 +403,7 @@ abstract class BasePlayer {
 
         if (isCasting) setCastPlayImmediately()
         Logd(TAG) { "prepareMedia preparing for playable:${playable.id} ${playable.titleOrIdv()}" }
-        if (playable.playState < EpisodeState.PROGRESS.code) runOnIOScope { upsert(playable) { it.setPlayState(EpisodeState.PROGRESS) } }
+        if (playable.playState < EpisodeState.PROGRESS.code) appIOScope.launch { upsert(playable) { it.setPlayState(EpisodeState.PROGRESS) } }
 //        val sameMedia = playable.id == curMediaFlow.value?.id
         setAsCurMedia(playable)
         if (forceReset) {
@@ -420,7 +420,7 @@ abstract class BasePlayer {
         prefSpeedPitchOf(curMediaFlow.value!!).let { (sp, pi)-> setPlaybackParams(sp, pi) }
         setRepeat(shouldRepeatFlow.value)
         setSkipSilence()
-        dataSourceJob = CoroutineScope(Dispatchers.IO).launch {
+        dataSourceJob = appIOScope.launch {
             try {
                 when {
                     streaming -> {
@@ -499,10 +499,10 @@ abstract class BasePlayer {
             isPlaying || isPaused || isPrepared -> {
                 Logd(TAG) { "seekTo t: $t statusFlow: $status" }
                 castPlayer?.seekTo(t.toLong())
-                curMediaFlow.value?.let { m-> runOnIOScope { upsert(m) { it.position = t } } }
+                curMediaFlow.value?.let { m-> appIOScope.launch { upsert(m) { it.position = t } } }
             }
             isInitialized -> {
-                curMediaFlow.value?.let { m-> runOnIOScope { upsert(m) { it.position = t } } }
+                curMediaFlow.value?.let { m-> appIOScope.launch { upsert(m) { it.position = t } } }
                 isStartWhenPrepared = false
                 prepareInitialized()
             }
@@ -668,7 +668,7 @@ abstract class BasePlayer {
         Logd(TAG) { "onPlaybackStart ${playable.title}" }
         Logd(TAG) { "onPlaybackStart position: $position delayInterval: $positionSaverInterval" }
         if (position > 0) {
-            runOnIOScope {
+            appIOScope.launch {
                 upsert(playable) {
                     it.position = position
                     it.setPlaybackStart()
@@ -685,7 +685,7 @@ abstract class BasePlayer {
                     LogtFor(TAG, curMediaFlow.value?.id, context.getString(R.string.pref_feed_skip_intro_toast, skipIntro))
                 }
             }
-            runOnIOScope { upsert(playable) { it.setPlaybackStart() } }
+            appIOScope.launch { upsert(playable) { it.setPlaybackStart() } }
         }
         startPositionSaver()
     }
@@ -719,7 +719,7 @@ abstract class BasePlayer {
                 else -> true
             }
         }
-        runOnIOScope {
+        appIOScope.launch {
             item = upsert(item) {
                 if (it.playState == EpisodeState.FOREVER.code) it.repeatTime = it.repeatInterval + nowInMillis()
                 upsertDB(it, item.position)
@@ -816,7 +816,7 @@ abstract class BasePlayer {
     }
 
     companion object {
-        private val TAG: String = BasePlayer::class.simpleName ?: "Anonymous"
+        private const val TAG = "BasePlayer"
 
         private const val MIN_POSITION_SAVER_INTERVAL: Int = 5000   // in millisoconds
 

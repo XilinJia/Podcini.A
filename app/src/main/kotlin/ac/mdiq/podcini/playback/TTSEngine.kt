@@ -1,10 +1,11 @@
 package ac.mdiq.podcini.playback
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.utils.NetworkUtils
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
@@ -86,7 +87,7 @@ object TTSEngine {
 
     fun doTTSNow(item_: Episode, textSourceIndex: Int, speakCB: (Boolean)->Unit) {
         var item = item_
-        runOnIOScope {
+        appIOScope.launch {
             var readerText: String? = null
             when (textSourceIndex) {
                 1 -> readerText = item.description?.parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT).toString()
@@ -141,7 +142,7 @@ object TTSEngine {
         item = upsertBlk(item) { it.setPlayState(EpisodeState.BUILDING) }
         ttsTmpFiles.clear()
         ensureTTS()
-        ttsJob = runOnIOScope {
+        ttsJob = appIOScope.launch {
             var readerText: String? = null
             processCB(1)
             when (textSourceIndex) {

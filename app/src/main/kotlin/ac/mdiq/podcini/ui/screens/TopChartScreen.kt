@@ -1,11 +1,11 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.PodciniHttpClient.documentKtor
 import ac.mdiq.podcini.storage.database.appAttribsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.OnlineFeedItem
@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -45,7 +46,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.FilterChip
@@ -77,7 +78,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
@@ -109,7 +109,8 @@ class DiscoveryVM: ViewModel() {
     val countryCodeNameMap: MutableMap<String?, String> = hashMapOf()
     var countryNamesSort by  mutableStateOf<List<String>>(listOf())
     var selectedCountry by mutableStateOf("")
-    var textInput by mutableStateOf("")
+//    var textInput by mutableStateOf("")
+    val textInput = TextFieldState("")
 
     var countryCode by mutableStateOf("US")
     var curGenre by mutableIntStateOf(0)
@@ -136,7 +137,7 @@ class DiscoveryVM: ViewModel() {
         }
         countryNamesSort = countryCodeNameMap.values.sorted()
         selectedCountry = countryCodeNameMap[countryCode] ?: ""
-        textInput = selectedCountry
+        textInput.edit { replace(0, length, selectedCountry) }
 
         loadToplist(countryCode)
         timeIt("$TAG end of init")
@@ -227,7 +228,6 @@ class DiscoveryVM: ViewModel() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopChartScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -262,24 +262,22 @@ fun TopChartScreen() {
 
             LaunchedEffect(key1 = vm.textInput) {
                 snapshotFlow { vm.textInput }.debounce(500L.milliseconds).distinctUntilChanged().collectLatest { query ->
-                    if (query.length > 1 && debouncedText != query) {
-                        debouncedText = query
-                        filteredCountries = vm.countryNamesSort.filter { it.contains(query, ignoreCase = true) }.take(5)
+                    if (query.text.length > 1 && debouncedText != query.text) {
+                        debouncedText = query.text.toString()
+                        filteredCountries = vm.countryNamesSort.filter { it.contains(query.text, ignoreCase = true) }.take(5)
                         Logd(TAG) { "input: $query filteredCountries: ${filteredCountries.size}" }
                         expanded = filteredCountries.isNotEmpty()
                     }
                 }
             }
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-                TextField(value = vm.textInput, modifier = Modifier.fillMaxWidth().trackAsTextField().padding(20.dp).menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, false), readOnly = false,
-                    onValueChange = { input -> vm.textInput = input },
-                    label = { Text(stringResource(id = R.string.select_country)) })
+                TextField(state = vm.textInput, modifier = Modifier.fillMaxWidth().trackAsTextField().padding(20.dp).menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, false), label = { Text(stringResource(id = R.string.select_country)) })
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     filteredCountries.forEach { country ->
                         DropdownMenuItem(text = { Text(text = country) }, onClick = {
                             vm.selectedCountry = country
                             debouncedText = country
-                            vm.textInput = country
+                            vm.textInput.edit { replace(0, length, country) }
                             expanded = false
                         })
                     }
@@ -292,7 +290,7 @@ fun TopChartScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     if (vm.countryNameCodeMap.containsKey(vm.selectedCountry)) vm.countryCode = vm.countryNameCodeMap[vm.selectedCountry]!!
-                    runOnIOScope { upsert(appAttribsFlow!!.value) { it.topChartCountryCode = vm.countryCode } }
+                    appIOScope.launch { upsert(appAttribsFlow!!.value) { it.topChartCountryCode = vm.countryCode } }
 //                    EventFlow.postEvent(FlowEvent.DiscoveryDefaultUpdateEvent())
                     vm.loadToplist(vm.countryCode)
                     onDismiss()
@@ -343,27 +341,16 @@ fun TopChartScreen() {
     }
     
     Scaffold(topBar = { MyTopAppBar() }) { innerPadding ->
-        ConstraintLayout(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-            val (gridView, progressBar, empty, txtvError, butRetry, powered) = createRefs()
-            if (vm.showProgress) CircularProgressIndicator(strokeWidth = 10.dp, modifier = Modifier.size(50.dp).constrainAs(progressBar) { centerTo(parent) })
+        Box(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
+            if (vm.showProgress) CircularProgressIndicator(strokeWidth = 10.dp, modifier = Modifier.size(50.dp))
             val lazyListState = rememberLazyListState()
-            if (vm.searchResults.isNotEmpty()) LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 10.dp)
-                .constrainAs(gridView) {
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                    start.linkTo(parent.start)
-                },
-                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (vm.searchResults.isNotEmpty()) LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(vm.searchResults) { result -> OnlineFeedItem(result) }
             }
-            if (vm.searchResults.isEmpty()) Text(vm.noResultText, color = textColor, modifier = Modifier.constrainAs(empty) { centerTo(parent) })
-            if (vm.errorText.isNotEmpty()) Text(vm.errorText, color = textColor, modifier = Modifier.constrainAs(txtvError) { centerTo(parent) })
-            if (vm.retryQerry.isNotEmpty()) Button(modifier = Modifier.padding(16.dp).constrainAs(butRetry) { top.linkTo(txtvError.bottom) }, onClick = { vm.loadToplist(vm.countryCode) } ) { Text(vm.retryQerry) }
-            Text(context.getString(R.string.search_powered_by, "Apple"), color = Color.Black, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.LightGray)
-                .constrainAs(powered) {
-                    bottom.linkTo(parent.bottom)
-                    end.linkTo(parent.end)
-                })
+            if (vm.searchResults.isEmpty()) Text(vm.noResultText, color = textColor, modifier = Modifier)
+            if (vm.errorText.isNotEmpty()) Text(vm.errorText, color = textColor, modifier = Modifier)
+            if (vm.retryQerry.isNotEmpty()) Button(modifier = Modifier.padding(16.dp), onClick = { vm.loadToplist(vm.countryCode) } ) { Text(vm.retryQerry) }
+            Text(context.getString(R.string.search_powered_by, "Apple"), color = Color.Black, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.LightGray).align(Alignment.BottomEnd))
         }
     }
 }

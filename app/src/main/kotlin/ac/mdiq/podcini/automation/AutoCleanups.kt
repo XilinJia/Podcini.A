@@ -19,7 +19,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
-private const val TAG: String = "AutoCleanups"
+private const val TAG = "AutoCleanups"
 
 fun cleanupAlgorithm(): EpisodeCleanupAlgorithm {
     if (!appPrefsFlow!!.value.enableAutoDl) return APNullCleanupAlgorithm()

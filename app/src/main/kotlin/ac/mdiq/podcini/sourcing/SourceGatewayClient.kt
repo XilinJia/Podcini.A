@@ -1,6 +1,7 @@
 package ac.mdiq.podcini.sourcing
 
 import ac.mdiq.podcini.PodciniApp
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.sourcing.searcher.PodcastSearcherRegistry
 import ac.mdiq.podcini.shared.EpisodeIPC
@@ -205,7 +206,7 @@ object AppGatewayRegistry {
                 sourceClients.remove(client_)
                 typeClientMap.values.remove(client_)
                 clients.remove(client_)
-                PodciniApp.appIOScope.launch { client_.disconnect() }
+                appIOScope.launch { client_.disconnect() }
             }
             fun reconnectClient(client: SourceGatewayClient, intent: Intent) {
                 val component = intent.component ?: return
@@ -214,7 +215,7 @@ object AppGatewayRegistry {
                         Logd(TAG) { "Reconnect already in progress for $component" }
                         return
                     }
-                    reconnectJobs[component] = PodciniApp.appIOScope.launch {
+                    reconnectJobs[component] = appIOScope.launch {
                         try {
                             mutex.withLock {
                                 if (!sourceClients.remove(client)) {

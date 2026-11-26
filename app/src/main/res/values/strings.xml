@@ -16,6 +16,8 @@
     <string name="preferred_languages">Preferred languages</string>
     <string name="preferred_languages_sum">When media contains multiple language tracks, the player uses this setting to select proper tracks. The player checks on feed setting first, if not set, uses the global setting, case insensitive, if still not set, default to [en-US, en-GB, en].</string>
 
+    <string name="receive_shared">Receive shared</string>
+
     <string name="statistics_label">Statistics</string>
     <string name="add_feed_label">Add feeds</string>
     <string name="online_episodes_label">Online episodes</string>

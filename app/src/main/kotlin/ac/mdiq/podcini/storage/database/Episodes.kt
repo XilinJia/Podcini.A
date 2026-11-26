@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.storage.database
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.NotificationIds
@@ -36,10 +37,11 @@ import io.github.xilinjia.krdb.notifications.ResultsChange
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.min
 
-private const val TAG: String = "Episodes"
+private const val TAG = "Episodes"
 
 // TODO: some filters and sorings don't work in this
 fun getEpisodes(filter: EpisodeFilter?, sortOrder: EpisodeSortOrder?, feedId: Long = -1, offset: Int = 0, limit: Int = Int.MAX_VALUE, copy: Boolean = true): List<Episode> {
@@ -149,7 +151,7 @@ suspend fun deleteEpisodesWarnLocalRepeat(items: Iterable<Episode>) {
             confirmRes = R.string.delete_label,
             cancelRes = R.string.cancel_label,
             onConfirm = {
-                runOnIOScope {
+                appIOScope.launch {
                     deleteItems(localItems)
                     userDone.complete(Unit)
                 }
@@ -163,7 +165,7 @@ suspend fun deleteEpisodesWarnLocalRepeat(items: Iterable<Episode>) {
             message = context.getString(R.string.delete_repeat_warning_msg),
             confirmRes = R.string.delete_label,
             cancelRes = R.string.cancel_label,
-            onConfirm = { runOnIOScope { deleteItems(repeatItems) } })
+            onConfirm = { appIOScope.launch { deleteItems(repeatItems) } })
     }
 }
 

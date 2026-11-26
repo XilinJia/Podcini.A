@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.config.settings
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.storage.model.Feed
@@ -128,7 +129,7 @@ class OpmlTransporter {
         }
 
         companion object {
-            private val TAG: String = OpmlWriter::class.simpleName ?: "Anonymous"
+            private const val TAG = "OpmlWriter"
             private const val ENCODING = "UTF-8"
             private const val OPML_VERSION = "2.0"
             private const val OPML_TITLE = "Podcini Subscriptions"
@@ -164,14 +165,14 @@ class OpmlTransporter {
         }
 
         companion object {
-            private val TAG: String = OpmlReader::class.simpleName ?: "Anonymous"
+            private const val TAG = "OpmlReader"
         }
     }
 
     companion object {
         fun startImport(uri: Uri, CB: (List<OpmlElement>)->Unit) {
             val TAG = "OpmlTransporter"
-            CoroutineScope(Dispatchers.IO).launch {
+            appIOScope.launch {
                 try {
                     val docFile = uri.toUF()
                     if (docFile.exists()) {

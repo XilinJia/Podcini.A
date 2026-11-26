@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import io.github.xilinjia.krdb.ext.query
 
-private const val TAG: String = "EpisodeInfoScreen"
+private const val TAG = "EpisodeInfoScreen"
 
 @Composable
 fun EpisodeInfoScreen(episodeId: Long = 0L) {

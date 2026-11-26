@@ -1,20 +1,20 @@
 package ac.mdiq.podcini.ui.compose
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.settings.OpmlTransporter
-import ac.mdiq.podcini.sourcing.feed.FeedBuilder
-import ac.mdiq.podcini.sourcing.feed.subscribe
-import ac.mdiq.podcini.sourcing.listenForUDPBroadcasts
 import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.FeedSearchResult
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.EPISODE_BATCH_SIZE
 import ac.mdiq.podcini.sourcing.clientBySearcher
+import ac.mdiq.podcini.sourcing.feed.FeedBuilder
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
+import ac.mdiq.podcini.sourcing.feed.subscribe
+import ac.mdiq.podcini.sourcing.listenForUDPBroadcasts
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.createSynthetic
 import ac.mdiq.podcini.storage.database.deleteFeed
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Feed
@@ -61,6 +61,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -97,16 +99,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -120,7 +119,7 @@ fun ChooseRatingDialog(selected: List<Feed>, onDismiss: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             for (rating in Rating.entries.reversed()) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp).clickable {
-                    runOnIOScope { for (item in selected) upsert(item) { it.rating = rating.code } }
+                    appIOScope.launch { for (item in selected) upsert(item) { it.rating = rating.code } }
                     onDismiss()
                 }) {
                     Icon(imageVector = ImageVector.vectorResource(id = rating.res), "")
@@ -137,9 +136,6 @@ fun RemoveFeedDialog(feeds: List<Feed>, onDismiss: () -> Unit, callback: ()->Uni
         if (feeds[0].isLocal) stringResource(R.string.feed_delete_confirmation_local_msg, feeds[0].title?:"No title")
         else stringResource(R.string.feed_delete_confirmation_msg, feeds[0].title?:"No title")
     } else stringResource(R.string.feed_delete_confirmation_msg_batch)
-    
-    var textState by remember { mutableStateOf(TextFieldValue("")) }
-
     CommonDialogWide(onDismiss = onDismiss) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(message)
@@ -149,10 +145,11 @@ fun RemoveFeedDialog(feeds: List<Feed>, onDismiss: () -> Unit, callback: ()->Uni
                 Text(text = stringResource(R.string.shelve_important), style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
             }
             Text(stringResource(R.string.reason_to_delete_msg))
-            BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).height(100.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
+            val textState = rememberTextFieldState(initialText = "")
+            BasicTextField(state = textState, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).height(100.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             val reasonText = stringResource(R.string.reason_to_remove)
             Button(onClick = {
-                CoroutineScope(Dispatchers.IO).launch {
+                appIOScope.launch {
                     try {
                         for (f in feeds) {
                             if (!f.isSynthetic()) {
@@ -209,7 +206,7 @@ fun OnlineFeedItem(result: FeedSearchResult, log: SubscriptionLog? = null) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) {
             Text("Subscribe: \"${result.title}\" ?", color = textColor, modifier = Modifier.padding(bottom = 10.dp))
             Button(onClick = {
-                runOnIOScope { subscribeFeed(result) }
+                appIOScope.launch { subscribeFeed(result) }
                 showSubscribeDialog.value = false
             }) { Text(stringResource(R.string.confirm_label)) }
         }
@@ -254,8 +251,8 @@ fun AmendSyntheticFeed(feed_: Feed? = null, name_: String? = null, volume: Volum
     CommonPopupCard(onDismiss = { onDismiss() }) {
         Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
             Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
-            var name by remember { mutableStateOf(feed_?.title ?: name_ ?: "") }
-            TextField(value = name,  singleLine = true, onValueChange = { name = it }, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_namee)) })
+            val name = rememberTextFieldState(initialText = feed_?.title ?: name_ ?: "")
+            TextField(state = name,  lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_namee)) })
             var hasVideo by remember { mutableStateOf(true) }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = hasVideo, onCheckedChange = { hasVideo = it })
@@ -279,12 +276,12 @@ fun AmendSyntheticFeed(feed_: Feed? = null, name_: String? = null, volume: Volum
                 Button({ onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
                 Spacer(Modifier.weight(1f))
                 Button({
-                    var feed = feed_ ?: createSynthetic(0, name, hasVideo)
+                    var feed = feed_ ?: createSynthetic(0, name.text.toString(), hasVideo)
                     feed = upsertBlk(feed) {
                         it.type = feedType?.name
                         if (hasVideo) it.videoModePolicy = VideoMode.WINDOW
                         if (volume != null) it.volumeId = volume.id
-                        if (feed_ != null) it.customTitle = if (name == it.eigenTitle) null else name
+                        if (feed_ != null) it.customTitle = if (name.text.toString() == it.eigenTitle) null else name.text.toString()
                     }
                     cb(feed)
                     onDismiss()
@@ -322,7 +319,7 @@ fun OpmlImportSelectionDialog(readElements: List<OpmlTransporter.OpmlElement>, o
         confirmButton = {
             Button(onClick = {
                 Logd("OpmlImportSelectionDialog") { "checked: $selectedItems" }
-                CoroutineScope(Dispatchers.IO).launch {
+                appIOScope.launch {
                     try {
                         withContext(Dispatchers.IO) {
                             if (readElements.isNotEmpty()) {
@@ -382,35 +379,16 @@ fun VideoModeDialog(initMode: VideoMode?, isDemuxed: Boolean? = null, muxed: Boo
 fun AssociatedFeedsGrid(feedsAssociated: List<Feed>) {
     val TAG = "AssociatedFeedsGrid"
     val context = LocalContext.current
-    LazyVerticalGrid(state = rememberLazyGridState(), columns = GridCells.Adaptive(80.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp)) {
+    LazyVerticalGrid(state = rememberLazyGridState(), columns = GridCells.Adaptive(80.dp), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp)) {
         items(feedsAssociated, key = {it.id}) { feed ->
-            ConstraintLayout {
-                val (coverImage, episodeCount, rating, _) = createRefs()
-                AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "coverImage",
-                    colorFilter = if (!feed.inNormalVolume) ColorFilter.tint(color = Color.Gray.copy(alpha = 0.5f), blendMode = BlendMode.SrcAtop) else null,
-                    modifier = Modifier.height(100.dp).aspectRatio(1f)
-                        .constrainAs(coverImage) {
-                            top.linkTo(parent.top)
-                            bottom.linkTo(parent.bottom)
-                            start.linkTo(parent.start)
-                        }.combinedClickable(
-                            onClick = { navTo(FeedDetails(feedId = feed.id)) },
-                            onLongClick = { Logd(TAG) { "long clicked: ${feed.title}" } })
-                )
-                val numEpisodes by remember(feed.episodesCount) { mutableIntStateOf(feed.episodesCount) }
-                Text(formatWithGrouping(numEpisodes.toLong()), color = Color.Green,
-                    modifier = Modifier.background(Color.Gray).constrainAs(episodeCount) {
-                        end.linkTo(parent.end)
-                        top.linkTo(coverImage.top)
-                    })
-                if (feed.rating != Rating.UNRATED.code)
-                    Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(feed.rating).res), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating",
-                        modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).constrainAs(rating) {
-                            start.linkTo(parent.start)
-                            centerVerticallyTo(coverImage)
-                        })
+            Box(Modifier.fillMaxSize()) {
+                AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "coverImage", colorFilter = if (!feed.inNormalVolume) ColorFilter.tint(color = Color.Gray.copy(alpha = 0.5f), blendMode = BlendMode.SrcAtop) else null,
+                    modifier = Modifier.height(100.dp).aspectRatio(1f).combinedClickable(
+                        onClick = { navTo(FeedDetails(feedId = feed.id)) },
+                        onLongClick = { Logd(TAG) { "long clicked: ${feed.title}" } }))
+                val numEpisodes = remember(feed.episodesCount) { formatWithGrouping(feed.episodesCount.toLong()) }
+                Text(numEpisodes, color = Color.Green, modifier = Modifier.background(Color.Gray).align(Alignment.TopEnd))
+                if (feed.rating != Rating.UNRATED.code) Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(feed.rating).res), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).align(Alignment.CenterStart))
             }
         }
     }
@@ -423,10 +401,11 @@ fun SendToDevice(onDismiss: ()->Unit, cb: (String, Int)->Job?) {
     var port by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf("") }
     var uid by remember { mutableStateOf("") }
-    var udpPort by remember(appAttribs.udpPort) { mutableIntStateOf(appAttribs.udpPort) }
+    val udpPort = rememberTextFieldState(initialText = appAttribs.udpPort.toString())
     var sendJob by remember { mutableStateOf<Job?>(null) }
-    LaunchedEffect(Unit) {
-        listenForUDPBroadcasts(udpPort) { list ->
+    val portN = remember(udpPort.text) { udpPort.text.toString().toIntOrNull()?:0 }
+    LaunchedEffect(portN) {
+        listenForUDPBroadcasts(portN) { list ->
             if (list.isNotEmpty()) {
                 host = list[0].ip
                 port = list[0].port
@@ -447,13 +426,13 @@ fun SendToDevice(onDismiss: ()->Unit, cb: (String, Int)->Job?) {
         text = {
             Column {
                 Text(stringResource(R.string.send_to_device_sum))
-                TextField(value = udpPort.toString(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.broadcast_port)) }, singleLine = true, modifier = Modifier.trackAsTextField().padding(end = 8.dp), onValueChange = { udpPort = it.toIntOrNull() ?: 0 })
+                TextField(state = udpPort, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.broadcast_port)) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField().padding(end = 8.dp))
                 Text(stringResource(R.string.receiver_tag, "$name:$host:$port"))
             }
         },
         confirmButton = {
-            if (sendJob == null && host.isNotEmpty()) TextButton(onClick = {
-                if (udpPort != appAttribs.udpPort) runOnIOScope { upsert(appAttribs) { it.udpPort = udpPort } }
+            TextButton(enabled = sendJob == null && host.isNotEmpty(), onClick = {
+                if (portN != appAttribs.udpPort) appIOScope.launch { upsert(appAttribs) { it.udpPort = portN } }
                 sendJob = cb(host, port)
             }) { Text(stringResource(R.string.send)) }
         },

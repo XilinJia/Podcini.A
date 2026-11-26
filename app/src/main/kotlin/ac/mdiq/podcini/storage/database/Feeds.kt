@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.storage.database
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
@@ -27,14 +28,12 @@ import io.github.xilinjia.krdb.MutableRealm
 import io.github.xilinjia.krdb.ext.isManaged
 import io.github.xilinjia.krdb.notifications.ResultsChange
 import io.github.xilinjia.krdb.notifications.UpdatedResults
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlin.collections.set
 
-private const val TAG: String = "Feeds"
+private const val TAG = "Feeds"
 
 var feedsMap: Map<Long, Feed> = realm.query(Feed::class).find().associateBy { it.id }
 
@@ -54,13 +53,13 @@ fun compileLanguages() {
         else langsSet.add("")
     }
     Logd(TAG) { "langsSet: ${langsSet.size} appAttribs.langSet: ${appAttribsFlow!!.value.langSet.size}" }
-    runOnIOScope { if (!appAttribsFlow!!.value.langSet.containsAll(langsSet)) upsert(appAttribsFlow!!.value) { it.langSet.addAll(langsSet) } }
+    appIOScope.launch { if (!appAttribsFlow!!.value.langSet.containsAll(langsSet)) upsert(appAttribsFlow!!.value) { it.langSet.addAll(langsSet) } }
 }
 
 fun compileTags() {
     val tagsSet = mutableSetOf<String>()
     for (feed in feedsMap.values) tagsSet.addAll(feed.tags.filter { it != TAG_ROOT })
-    runOnIOScope { if (!appAttribsFlow!!.value.feedTagSet.containsAll(tagsSet)) upsert(appAttribsFlow!!.value) { it.feedTagSet.addAll(tagsSet) } }
+    appIOScope.launch { if (!appAttribsFlow!!.value.feedTagSet.containsAll(tagsSet)) upsert(appAttribsFlow!!.value) { it.feedTagSet.addAll(tagsSet) } }
 }
 
 private var feedMonitorJob: Job? = null
@@ -71,7 +70,7 @@ fun cancelMonitorFeeds() {
 
 fun monitorFeeds() {
     if (feedMonitorJob != null) return
-    feedMonitorJob = CoroutineScope(Dispatchers.IO).launch {
+    feedMonitorJob = appIOScope.launch {
         realm.query(Feed::class).asFlow().collect { changes: ResultsChange<Feed> ->
             feedsMap = changes.list.associateBy { it.id }
             Logd(TAG) { "monitorFeedList feeds updated size: ${feedsMap.size}" }

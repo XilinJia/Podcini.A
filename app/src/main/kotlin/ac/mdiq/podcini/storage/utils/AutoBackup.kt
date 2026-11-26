@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.storage.utils
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.settings.ClipsTransporter
@@ -46,7 +47,7 @@ fun autoBackup() {
 
     val curTime = nowInMillis()
     if ((curTime - appPrefsFlow!!.value.autoBackupTimeStamp) > 3600000L * appPrefsFlow!!.value.autoBackupIntervall)
-        CoroutineScope(Dispatchers.IO).launch {
+        appIOScope.launch {
             val uri = uriString.toSafeUri()
             val permissions = context.contentResolver.persistedUriPermissions.find { it.uri == uri }
             if (permissions != null && permissions.isReadPermission && permissions.isWritePermission) {

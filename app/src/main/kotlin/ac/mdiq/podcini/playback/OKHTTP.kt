@@ -174,7 +174,7 @@ object OKHTTP {
         }
 
         companion object {
-            private val TAG: String = BasicAuthorizationInterceptor::class.simpleName ?: "Anonymous"
+            private const val TAG = "BasicAuthorizationInterceptor"
             private const val HEADER_AUTHORIZATION = "Authorization"
         }
     }

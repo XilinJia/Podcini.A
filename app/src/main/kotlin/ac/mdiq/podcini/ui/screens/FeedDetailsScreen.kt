@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.theatres
@@ -18,7 +19,7 @@ import ac.mdiq.podcini.storage.database.getEpisodesAsListFlow
 import ac.mdiq.podcini.storage.database.getHistoryAsFlow
 import ac.mdiq.podcini.storage.database.queueToVirtual
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.Episode
@@ -98,6 +99,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -105,10 +107,12 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -140,7 +144,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -248,6 +251,7 @@ class FeedDetailsVM(feedId: Long = 0L, modeName: String = FeedScreenMode.List.na
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.name) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -272,7 +276,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
             if (!feed?.downloadUrl.isNullOrBlank()) feedLogsMap?.get(feed!!.downloadUrl)?.apply { logs.add(this) }
             feed?.description?.takeCodePoints(100).takeIf { !it.isNullOrBlank() }.apply { feedLogsMap?.get(this)?.apply { logs.add(this) } }
             if (logs.isNotEmpty()) deletionLogs.addAll(logs)
-            runOnIOScope { upsert(feed!!) { it.lastVisited = nowInMillis() } }
+            appIOScope.launch { upsert(feed!!) { it.lastVisited = nowInMillis() } }
         }
     }
 
@@ -283,7 +287,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
         val context = getAppContext()
         persistedTrees.add(uri)
         context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        runOnIOScope {
+        appIOScope.launch {
             try {
                 if (feed != null) {
                     val feed_ = upsert(feed!!) {
@@ -356,7 +360,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                 showFilterDialog = false
             }) { filter ->
                 Logd(TAG) { "persist Episode Filter(): feedId = [${feed?.id}], andOr = ${filter.andOr}, ${filter.propertySet.size} filterValues = ${filter.propertySet}" }
-                runOnIOScope { upsert(feed!!) { it.episodeFilter = filter } }
+                appIOScope.launch { upsert(feed!!) { it.episodeFilter = filter } }
             }
         }
         if (feed != null && showSortDialog) {
@@ -366,12 +370,12 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                 showSortDialog = false
             }) { order ->
                 Logd(TAG) { "persist Episode SortOrder_" }
-                runOnIOScope { upsert(feed!!) { it.episodeSortOrder = order ?: EpisodeSortOrder.DATE_DESC } }
+                appIOScope.launch { upsert(feed!!) { it.episodeSortOrder = order ?: EpisodeSortOrder.DATE_DESC } }
             }
         }
         swipeActions.ActionOptionsDialog()
         if (showTagsSettingDialog && feed != null) TagSettingDialog(TagType.Feed, feed!!.tags, onDismiss = { showTagsSettingDialog = false }) { tags ->
-            runOnIOScope {
+            appIOScope.launch {
                 upsert(feed!!) {
                     it.tags.clear()
                     it.tags.addAll(tags)
@@ -379,7 +383,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
             }
         }
         if (showToDeviceDialog) SendToDevice(onDismiss = { showToDeviceDialog = false}) { host, port ->
-            runOnIOScope { sendFeed(host, port, feed!!.id) { showToDeviceDialog =  false } }
+            appIOScope.launch { sendFeed(host, port, feed!!.id) { showToDeviceDialog =  false } }
         }
     }
 
@@ -448,7 +452,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                     }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_history), tint = histColor, contentDescription = "history") }
                     if (feed?.queue != null) IconButton(onClick = {
                         navTo(Queues(id=feed?.queue?.id ?: -1L))
-                        psState = PSState.PartiallyExpanded
+                        sheetValue = SheetValue.PartiallyExpanded
                     }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.playlist_play), contentDescription = "queue") }
                     IconButton(onClick = { navTo(Search) }) { Icon(imageVector = Icons.Filled.Search, contentDescription = "search") }
                     if (feed != null) {
@@ -490,7 +494,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                                 })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.clean_up)) }, onClick = {
                                     feedOperationText = context.getString(R.string.clean_up)
-                                    runOnIOScope {
+                                    appIOScope.launch {
                                         val f = realm.copyFromRealm(feed!!)
                                         cleanUp(f)
                                         withContext(Dispatchers.Main) { feedOperationText = "" }
@@ -498,11 +502,11 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                                     expanded = false
                                 })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.refresh_label)) }, onClick = {
-                                    runOnIOScope { FeedUpdater(listOf(feed!!), doItAnyway = true).start() }
+                                    appIOScope.launch { FeedUpdater(listOf(feed!!), doItAnyway = true).start() }
                                     expanded = false
                                 })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.refresh_complete_feed)) }, onClick = {
-                                    runOnIOScope { FeedUpdater(listOf(feed!!), fullUpdate = true, doItAnyway = true, removeUnlisted = true).start() }
+                                    appIOScope.launch { FeedUpdater(listOf(feed!!), fullUpdate = true, doItAnyway = true, removeUnlisted = true).start() }
                                     expanded = false
                                 })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.remove_feed)) }, onClick = {
@@ -541,13 +545,13 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
     fun InfoUI() {
         var showEditComment by remember { mutableStateOf(false) }
         val localTime = remember { nowInMillis() }
-        var editCommentText by remember { mutableStateOf(TextFieldValue(feed?.comment ?: "")) }
-        if (feed != null && showEditComment) CommentEditingDialog(textState = editCommentText, onTextChange = { editCommentText = it }, onDismiss = {showEditComment = false},
+        val editCommentText = rememberTextFieldState(initialText = feed?.comment ?: "")
+        if (feed != null && showEditComment) CommentEditingDialog(textState = editCommentText, onDismiss = {showEditComment = false},
             onSave = {
-                    upsert(feed!!) {
-                        it.comment = editCommentText.text
-                        it.commentTime = localTime
-                    }
+                upsert(feed!!) {
+                    it.comment = editCommentText.text.toString()
+                    it.commentTime = localTime
+                }
             })
         var showFeedStats by remember { mutableStateOf(false) }
         if (showFeedStats) FeedStatisticsDialog(feed?.title?: "No title", feed?.id?:0, 0, Long.MAX_VALUE) { showFeedStats = false }
@@ -586,13 +590,12 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
 
             val curVolumeName = remember(feed?.volumeId) { if (feed?.volumeId == -1L) "None" else allVolumes.find { it.id == feed?.volumeId }?.name ?: "None" }
             Text("Parent volume: $curVolumeName", color = textColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 10.dp, bottom = 5.dp))
-
             Text("Associated queue: ${feed?.queue?.name?:"None"}", color = textColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 10.dp, bottom = 5.dp))
-
             Text("Tags: ${feed?.tagsAsString?:""}", color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(top = 10.dp, bottom = 5.dp).clickable { showTagsSettingDialog = true })
             Text(stringResource(R.string.comments) + if (feed?.comment.isNullOrBlank()) " (Add)" else "", color = buttonColor, style = CustomTextStyles.titleCustom,
                 modifier = Modifier.padding(top = 10.dp, bottom = 5.dp).clickable {
-                    editCommentText = TextFieldValue((if (feed?.comment.isNullOrBlank()) "" else feed!!.comment + "\n") + fullDateTimeString(localTime) + ":\n")
+//                    editCommentText = TextFieldValue((if (feed?.comment.isNullOrBlank()) "" else feed!!.comment + "\n") + fullDateTimeString(localTime) + ":\n")
+                    editCommentText.edit { replace(0, length, (if (feed?.comment.isNullOrBlank()) "" else feed!!.comment + "\n") + fullDateTimeString(localTime) + ":\n") }
                     showEditComment = true
                 })
             if (!feed?.comment.isNullOrBlank()) SelectionContainer { Text(feed?.comment ?: "", color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 15.dp, bottom = 10.dp)) }
@@ -697,7 +700,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                                     val eps = realm.query(Episode::class).query("feedId == ${feed!!.id}").find()
                                     val count = eps.size
                                     val dur = eps.sumOf { it.duration }
-                                    runOnIOScope {
+                                    appIOScope.launch {
                                         upsert(feed!!) {
                                             it.episodesCount = count
                                             it.totleDuration = dur.toLong()
@@ -715,8 +718,8 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                         actionButtonCB = { e, type ->
                             Logd(TAG) { "actionButtonCB type: $type ${e.feed?.id} ${feed?.id}" }
                             if (e.feed?.id == feed?.id) {
-                                if (type in streamActions + playActions + listOf(ButtonTypes.PLAY_LOCAL)) runOnIOScope { upsert(feed!!) { it.lastPlayed = nowInMillis() } }
-                                if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) runOnIOScope { queueToVirtual(e, episodes, vm.listIdentity, feed!!.episodeSortOrder, true) }
+                                if (type in streamActions + playActions + listOf(ButtonTypes.PLAY_LOCAL)) appIOScope.launch { upsert(feed!!) { it.lastPlayed = nowInMillis() } }
+                                if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) appIOScope.launch { queueToVirtual(e, episodes, vm.listIdentity, feed!!.episodeSortOrder, true) }
                             }
                         },
                     )

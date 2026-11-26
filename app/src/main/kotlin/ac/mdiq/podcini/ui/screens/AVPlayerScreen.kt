@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.activity.MainActivity.Companion.findActivity
@@ -18,7 +21,6 @@ import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.fallbackSpeed
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.rewindSecs
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.skipforwardSpeed
 import ac.mdiq.podcini.storage.database.speedforwardSpeed
 import ac.mdiq.podcini.storage.database.upsert
@@ -108,11 +110,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.computedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -184,26 +189,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "AudioPlayerScreen"
 
-enum class PSState {
-    Hidden, PartiallyExpanded, Expanded;
-    companion object {
-        @OptIn(ExperimentalMaterial3Api::class)
-        fun fromSheet(value:  SheetValue): PSState {
-            return when (value) {
-                SheetValue.Hidden -> Hidden
-                SheetValue.PartiallyExpanded -> PartiallyExpanded
-                SheetValue.Expanded -> Expanded
-            }
-        }
-    }
-}
-
 private var actPlayerId by mutableIntStateOf(0)
 
-var allowSheetHide by mutableStateOf(false)
-var psState by mutableStateOf(PSState.PartiallyExpanded)
-
-var curVideoMode by mutableStateOf(VideoMode.DEFAULT)
+var sheetValue by mutableStateOf(SheetValue.PartiallyExpanded)
 
 class AVPlayerVM0: ViewModel() {
     var landscape by mutableStateOf(false)
@@ -216,15 +204,6 @@ class AVPlayerVM0: ViewModel() {
             EventFlow.events.collectLatest { event ->
                 Logd(TAG) { "Received event: ${event.TAG}" }
                 when (event) {
-//                    is FlowEvent.PlaybackServiceEvent -> {
-//                        //                        if (event.action == FlowEvent.PlaybackServiceEvent.Action.SERVICE_SHUT_DOWN)
-//                        //                            (context as? MainActivity)?.bottomSheet?.state = BottomSheetBehavior.STATE_EXPANDED
-//                        //                        when (event.action) {
-//                        //                            FlowEvent.PlaybackServiceEvent.Action.SERVICE_SHUT_DOWN -> actMain?.setPlayerVisible(false)
-//                        //                            FlowEvent.PlaybackServiceEvent.Action.SERVICE_STARTED -> if (curEpisode != null) actMain?.setPlayerVisible(true)
-//                        //                PlaybackServiceEvent.Action.SERVICE_RESTARTED -> (context as MainActivity).setPlayerVisible(true)
-//                        //                        }
-//                    }
                     is FlowEvent.SleepTimerUpdatedEvent -> sleepTimerActive = isSleepTimerActive()
                     else -> {}
                 }
@@ -334,7 +313,7 @@ fun VolumeDialog(vm: AVPlayerVM, onDismiss: () -> Unit) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = (setting == vm.volumeAdaption),
                         onCheckedChange = { _ ->
-                            if (forPodcast && vm.episodeFeed != null) runOnIOScope { upsert(vm.episodeFeed!!) { it.volumeAdaptionSetting = setting} }
+                            if (forPodcast && vm.episodeFeed != null) appIOScope.launch { upsert(vm.episodeFeed!!) { it.volumeAdaptionSetting = setting} }
                             if (setting != vm.volumeAdaption) {
                                 vm.volumeAdaption = setting
                                 theatres[vm.playerId].mPlayerFlow.value?.setVolume(1.0f, 1.0f, adaptionFactor())
@@ -413,10 +392,7 @@ fun ControlUI(vm: AVPlayerVM) {
                     Logd(TAG) { "detectHorizontalDragGestures velocity: $velocity distance: $distance" }
                     val shouldSwipe = abs(distance) > swipeDistanceThreshold && abs(velocity) > swipeVelocityThreshold
                     if (shouldSwipe) {
-                        if (distance < 0) {
-                            allowSheetHide = true
-                            psState = PSState.Hidden
-                        }
+                        if (distance < 0) sheetValue = SheetValue.Hidden
                         else showSleepTimeDialog = true
                     }
 //                    offsetX.animateTo(targetValue = 0f, animationSpec = tween(300))
@@ -426,19 +402,19 @@ fun ControlUI(vm: AVPlayerVM) {
     }) {
         AsyncImage(model = ImageRequest.Builder(context).data(episode?.images?.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), imageLoader = imageLoader, placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "imgvCover", modifier = Modifier.width(50.dp).height(50.dp).border(border = BorderStroke(1.dp, borderColor)).padding(start = 5.dp).combinedClickable(
             onClick = {
-                Logd(TAG) { "playerUi icon was clicked $psState" }
+                Logd(TAG) { "playerUi icon was clicked $sheetValue" }
                 actPlayerId = vm.playerId
-                if (psState == PSState.PartiallyExpanded) {
+                if (sheetValue == SheetValue.PartiallyExpanded) {
                     episode?.let {
                         if (playbackService == null) PlaybackStarter(it).start(vm.playerId)
-                        psState = PSState.Expanded
+                        sheetValue = SheetValue.Expanded
                     }
-                } else psState = PSState.PartiallyExpanded
+                } else sheetValue = SheetValue.PartiallyExpanded
             },
             onLongClick = {
                 vm.episodeFeed?.let {
                     navTo(FeedDetails(it.id))
-                    psState = PSState.PartiallyExpanded
+                    sheetValue = SheetValue.PartiallyExpanded
                 }
             }))
         val buttonSize = 46.dp
@@ -456,7 +432,7 @@ fun ControlUI(vm: AVPlayerVM) {
                 onClick = {
                     if (episode != null && player?.isPlaying == true) {
                         val pos = player.getPosition().toLong()
-                        runOnIOScope { upsert(episode!!) { it.marks.add(pos) } }
+                        appIOScope.launch { upsert(episode!!) { it.marks.add(pos) } }
                         Logt(TAG, "position $pos marked for ${episode?.title}")
                     } else Loge(TAG, "Marking position only works during playback.") },
                 onLongClick = {
@@ -488,7 +464,7 @@ fun ControlUI(vm: AVPlayerVM) {
                     }
                     Logd(TAG) { "Play button clicked: playing: ${player?.playWhenReadyFlow?.value} is ready: ${playbackService?.isServiceReady()}" }
 //                    if (episode!!.mediaType == MediaType.VIDEO && (player?.isPlaying != true || episode?.id != player.curMediaFlow.value?.id) && (vm.episodeFeed?.videoModePolicy != VideoMode.AUDIO_ONLY)) {
-//                        if (!vm.showPlayButton && psState != PSState.Expanded) psState = PSState.Expanded
+//                        if (!vm.showPlayButton && psState != SheetValue.Expanded) psState = SheetValue.Expanded
 //                    }
                     PlaybackStarter(episode!!).shouldStreamThisTime(null).start(vm.playerId)
                 }
@@ -539,15 +515,30 @@ fun ProgressBar(vm: AVPlayerVM) {
     val episode by player_?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
     val bufferValue by player?.bufferedPercentFlow?.collectAsStateWithLifecycle() ?: remember { mutableIntStateOf(0) }
     Box(modifier = Modifier.fillMaxWidth()) {
-        var sliderValue by remember(episode?.position) { mutableFloatStateOf((episode?.position?:0).toFloat()) }
+        val range = 0f..(episode?.duration ?: 0).coerceAtLeast(30_000).toFloat()
+        val targetPosition = (episode?.position ?: 0).toFloat().coerceIn(range.start, range.endInclusive)
+        val sliderState = remember(range) { SliderState(value = targetPosition, steps = 0, trackRange = range) }
+        LaunchedEffect(episode?.position, sliderState.isDragging) { if (!sliderState.isDragging && sliderState.value != targetPosition) sliderState.value = targetPosition }
         val actColor = MaterialTheme.colorScheme.tertiary
         val inActColor = MaterialTheme.colorScheme.secondaryFixedDim
         val distColor = remember { distinctColorOf(actColor, inActColor) }
-        Slider(colors = SliderDefaults.colors(activeTrackColor = actColor,  inactiveTrackColor = inActColor), modifier = Modifier.padding(top = 2.dp).height(12.dp),
-            value = sliderValue, valueRange = 0f..( if ((episode?.duration?:0) > 0) episode?.duration?:0 else 30000).toFloat(),
-            onValueChange = { sliderValue = it }, onValueChangeFinished = { player?.seekTo(sliderValue.toInt()) })
+        Slider(state = sliderState, modifier = Modifier.padding(top = 2.dp).height(12.dp), colors = SliderDefaults.colors(activeTrackColor = actColor, inactiveTrackColor = inActColor),
+            onValueChange = { sliderState.value = it },
+            onValueChangeFinished = {
+                Logd(TAG) { " sliderState: ${sliderState.value}"}
+                player?.seekTo(sliderState.value.toInt())
+            })
         LinearProgressIndicator(progress = { 0.01f*bufferValue }, color = distColor.copy(alpha = 0.3f), trackColor = inActColor, modifier = Modifier.height(4.dp).fillMaxWidth().align(Alignment.BottomStart))
-        Text(durationStringFull(episode?.duration?:0), color = distColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomCenter))
+        if (sliderState.isDragging) {
+            val progressFraction by remember(sliderState, range) {
+                computedStateOf {
+                    val span = range.endInclusive - range.start
+                    if (span <= 0f) 0f
+                    else ((sliderState.value - range.start) / span).coerceIn(0f, 1f)
+                }
+            }
+            Text(durationStringFull(sliderState.value.toInt()), color = distColor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.align(if (progressFraction < 0.5f) Alignment.CenterEnd else Alignment.CenterStart))
+        } else Text(durationStringFull(episode?.duration?:0), color = distColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomCenter))
     }
     Row {
         val pastText = remember(episode?.position) { if (episode == null) "" else durationStringAdapt(episode!!.position) + " *" + durationStringAdapt(episode!!.timeSpent.toInt()) }
@@ -641,24 +632,24 @@ fun AVPlayerScreen() {
         Logd(TAG) { "LaunchedEffect curMediaId: ${curMedia0?.title}" }
         displayedChapterIndex = -1
         vms[0].episodeFeed = curMedia0?.feed
-        if (psState == PSState.Hidden && vms[0].episodeFeed != null) psState = PSState.PartiallyExpanded
+        if (sheetValue == SheetValue.Hidden && vms[0].episodeFeed != null) sheetValue = SheetValue.PartiallyExpanded
     }
 
     LaunchedEffect(key1 = curMedia1?.id) {
         Logd(TAG) { "LaunchedEffect curMediaId: ${curMedia1?.title}" }
         displayedChapterIndex = -1
         vms[1].episodeFeed = curMedia1?.feed
-        if (psState == PSState.Hidden && vms[1].episodeFeed != null) psState = PSState.PartiallyExpanded
+        if (sheetValue == SheetValue.Hidden && vms[1].episodeFeed != null) sheetValue = SheetValue.PartiallyExpanded
     }
 
-    LaunchedEffect(psState, actPlayerId, curMedia?.id) {
-        Logd(TAG) { "LaunchedEffect(isBSExpanded, curItem?.id) isBSExpanded: $psState" }
-        if (psState == PSState.Expanded) vm0.sleepTimerActive = isSleepTimerActive()
+    LaunchedEffect(sheetValue, actPlayerId, curMedia?.id) {
+        Logd(TAG) { "LaunchedEffect(isBSExpanded, curItem?.id) isBSExpanded: $sheetValue" }
+        if (sheetValue == SheetValue.Expanded) vm0.sleepTimerActive = isSleepTimerActive()
     }
 
     LaunchedEffect(actPlayerId, curMedia?.position) {
         curMedia?.let {
-            if (psState == PSState.Expanded) {
+            if (sheetValue == SheetValue.Expanded) {
                 chapterIndex = it.chapterIndexAt(it.position)
                 displayedChapterIndex = if (it.position > it.duration || chapterIndex >= it.chapters.size - 1) it.chapters.size - 1 else chapterIndex
                 Logd(TAG) { "LaunchedEffect(curEpisode?.position) chapterIndex $chapterIndex $displayedChapterIndex" }
@@ -751,7 +742,7 @@ fun AVPlayerScreen() {
         val episode = episode_ ?: return
         val client = remember(episode.id) { clientByEpisode(episode) }
         if (vm.showActionBar) Row(modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = Icons.Filled.ArrowDropDown, tint = textColor, contentDescription = "Collapse", modifier = Modifier.clickable { psState = PSState.PartiallyExpanded })
+            Icon(imageVector = Icons.Filled.ArrowDropDown, tint = textColor, contentDescription = "Collapse", modifier = Modifier.clickable { sheetValue = SheetValue.PartiallyExpanded })
             if (vm0.landscape) Column {
                 Text(text = episode.title?:"", fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(text = episode.feed?.title?:"", fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -829,7 +820,7 @@ fun AVPlayerScreen() {
         val mediaType = remember(episode.id) { episode.mediaType }
         val client = remember(episode.id) { clientByEpisode(episode) }
         Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = Icons.Filled.ArrowDropDown, tint = textColor, contentDescription = "Collapse", modifier = Modifier.clickable { psState = PSState.PartiallyExpanded })
+            Icon(imageVector = Icons.Filled.ArrowDropDown, tint = textColor, contentDescription = "Collapse", modifier = Modifier.clickable { sheetValue = SheetValue.PartiallyExpanded })
             if (episode.captionCues.isNotEmpty()) Icon(imageVector = ImageVector.vectorResource(R.drawable.outline_description_24), contentDescription = "transcript", modifier = Modifier.clickable { showTransDialog = true })
             if (mediaType == MediaType.VIDEO && client?.attributes?.hasSeparateAVs == true) Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_fullscreen_24), tint = textColor, contentDescription = "Play video",
                 modifier = Modifier.clickable {
@@ -888,7 +879,6 @@ fun AVPlayerScreen() {
         val player = player_
         val episode_ by player?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
         val episode = episode_ ?: return
-//        val client = remember(episode.id) { clientByEpisode(episode) }
 
         DisposableEffect(lifecycleOwner) {
             val observer = LifecycleEventObserver { _, event ->
@@ -955,7 +945,7 @@ fun AVPlayerScreen() {
                                     else Logt(TAG, "curEpisode is not set, no navigation options")
                                 }
                             }
-                            psState = PSState.PartiallyExpanded
+                            sheetValue = SheetValue.PartiallyExpanded
                         }
                         offsetX.animateTo(targetValue = 0f, animationSpec = tween(300))
                     }
@@ -973,7 +963,7 @@ fun AVPlayerScreen() {
                         },
                         onLongClick = {
                             val pos = player?.getPosition()?:0
-                            runOnIOScope { upsert(episode) { it.transcriptStartPos = pos } }
+                            appIOScope.launch { upsert(episode) { it.transcriptStartPos = pos } }
                             Logt(TAG, "transcript start position is offset to ${durationStringAdapt(pos)}")
                         }
                     ) )
@@ -990,7 +980,7 @@ fun AVPlayerScreen() {
             SelectionContainer { Text((vm.episodeFeed?.title?:"").trim(), textAlign = TextAlign.Center, color = buttonColor, style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 5.dp).clickable {
                 navTo(FeedDetails(feedId = vm.episodeFeed?.id?:-1L))
                 episodeForInfo = null
-                psState = PSState.PartiallyExpanded
+                sheetValue = SheetValue.PartiallyExpanded
             }) }
             if (episode.captionCues.isNotEmpty()) {
                 val captionPrev = remember(cueIndex) { if (cueIndex>0) episode.captionCues[cueIndex-1] else null }
@@ -1010,7 +1000,7 @@ fun AVPlayerScreen() {
                     })
                 }
             }
-            EpisodeDetails(episode, fetchWebdata = psState == PSState.Expanded, fetchChapters = true)
+            EpisodeDetails(episode, fetchWebdata = sheetValue == SheetValue.Expanded, fetchChapters = true)
             val imgLarge = remember(episode.id, displayedChapterIndex) {
                 if (displayedChapterIndex == -1 || episode.chapters.isEmpty() || episode.chapters[displayedChapterIndex].imageUrl.isNullOrEmpty()) (episode.images.firstOrNull() ?: episode.feed?.images?.firstOrNull())?.href
                 else EmbeddedChapterImage.getModelFor(episode, displayedChapterIndex)?.toString()
@@ -1081,28 +1071,26 @@ fun AVPlayerScreen() {
     }
 
 //    Logd(TAG) { "landscape: ${vm.landscape}" }
-//    if ((landscape || curVideoMode == VideoMode.FULL_SCREEN || (curVideoMode == VideoMode.DEFAULT && appPrefs.videoPlaybackMode == VideoMode.FULL_SCREEN.code)) && playVideo && bsState == BSState.Expanded) {
-    if (vm0.landscape && playingVideo && psState == PSState.Expanded) {
-        Box {
-            FullScreenVideoPlayer(vms[actPlayerId])
-            VideoToolBar(vms[actPlayerId], modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
-        }
-    } else Box(modifier = Modifier.fillMaxWidth().then(if (psState == PSState.PartiallyExpanded) Modifier.windowInsetsPadding(WindowInsets.navigationBars) else { Modifier.windowInsetsPadding(WindowInsets.systemBars) })) {
-        Column(Modifier.align(if (psState == PSState.PartiallyExpanded) Alignment.TopCenter else Alignment.BottomCenter).zIndex(1f)) {
+    if (vm0.landscape && playingVideo && sheetValue == SheetValue.Expanded) Box {
+        FullScreenVideoPlayer(vms[actPlayerId])
+        VideoToolBar(vms[actPlayerId], modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
+    } else Box(modifier = Modifier.fillMaxWidth().then(if (sheetValue == SheetValue.PartiallyExpanded) Modifier.windowInsetsPadding(WindowInsets.navigationBars) else { Modifier.windowInsetsPadding(WindowInsets.systemBars) })) {
+        Column(Modifier.align(if (sheetValue == SheetValue.PartiallyExpanded) Alignment.TopCenter else Alignment.BottomCenter).zIndex(1f)) {
 //            Logd(TAG) { "activeTheatres: $theatresCount playerMinHeight: $playerMinHeight" }
             if (theatresCount == 2) {
                 PlayerUI(vms[1], Modifier)
-                var sliderValue by remember { mutableFloatStateOf(0.5f) }
-                Slider(modifier = Modifier.padding(top = 2.dp).height(12.dp), value = sliderValue, onValueChange = { sliderValue = it },
+                val sliderState = rememberSliderState(value = 0.5f)
+                Slider(state = sliderState, onValueChange = { sliderState.value = it }, modifier = Modifier.padding(top = 2.dp).height(12.dp),
                     onValueChangeFinished = {
+                        val value = sliderState.value
                         when {
-                            sliderValue > 0.51 -> {
-                                val v = ((1f - sliderValue) / 0.5f).pow(2)
+                            value > 0.51 -> {
+                                val v = ((1f - value) / 0.5f).pow(2)
                                 player1?.setVolume(1f, 1f)
                                 player0?.setVolume(v, v)
                             }
-                            sliderValue < 0.49 -> {
-                                val v = (sliderValue / 0.5f).pow(2)
+                            value < 0.49 -> {
+                                val v = (value / 0.5f).pow(2)
                                 player1?.setVolume(v, v)
                                 player0?.setVolume(1f, 1f)
                             }
@@ -1115,7 +1103,7 @@ fun AVPlayerScreen() {
             }
             PlayerUI(vms[0], Modifier)
         }
-        if (psState == PSState.Expanded) {
+        if (sheetValue == SheetValue.Expanded) {
             Column(Modifier.padding(bottom = playerMinHeight.dp)) {
                 if (playingVideo) {
                     VideoToolBar(vms[actPlayerId])

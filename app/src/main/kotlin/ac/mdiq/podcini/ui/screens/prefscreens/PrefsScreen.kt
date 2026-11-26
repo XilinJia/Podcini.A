@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -94,7 +93,6 @@ fun pfNavBack(): Boolean {
     return false
 }
 
-
 @Serializable
 sealed class PFNavKey
 
@@ -139,7 +137,6 @@ val pfAnyEntryProvider: (Any) -> NavEntry<Any> = { key ->
     pfEntryProvider(key as PFNavKey) as NavEntry<Any>
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrefsScreen() {
     var topAppBarTitle by remember { mutableStateOf("Settings") }

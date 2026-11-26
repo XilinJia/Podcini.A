@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.compose
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.automation.cancel
@@ -17,7 +18,6 @@ import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.clientByFeed
 import ac.mdiq.podcini.sourcing.clientsHaveLikeCounts
 import ac.mdiq.podcini.sourcing.clientsHaveViewCounts
-import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.sourcing.download.RequestType
 import ac.mdiq.podcini.sourcing.download.transcodeProgFlow
 import ac.mdiq.podcini.sourcing.isExtFeed
@@ -35,7 +35,6 @@ import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.removeFromAllQueues
 import ac.mdiq.podcini.storage.database.removeFromAllQueuesQuiet
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.shelveToFeed
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
@@ -116,8 +115,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -154,6 +154,7 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -170,7 +171,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -188,9 +188,10 @@ import androidx.media3.exoplayer.ExoPlayer
 import io.github.xilinjia.krdb.ext.realmListOf
 import io.github.xilinjia.krdb.query.Sort
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -208,6 +209,7 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 
 private const val TAG = "ComposeEpisodes"
@@ -317,7 +319,8 @@ fun ShareDialog(item: Episode, onDismiss: () -> Unit) {
     )
 }
 
-val webDataCache = LruCache<Long, String>(10)
+data class WebViewContent(var scrollPos: Int, val webData: String)
+val webDataCache = LruCache<Long, WebViewContent>(10)
 
 fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -361,7 +364,7 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
                     },
                     onLongClick = {
                         val pos = player.getPosition()
-                        runOnIOScope { upsert(episode) { it.transcriptStartPos = pos } }
+                        appIOScope.launch { upsert(episode) { it.transcriptStartPos = pos } }
                         Logt(TAG, "transcript start position is offset to ${durationStringAdapt(pos)}")
                     }
                 ))
@@ -424,15 +427,15 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
                         Logt(TAG, "Text $str not found in captions")
                     }
                     val focusManager = LocalFocusManager.current
-                    var queryText by remember { mutableStateOf("") }
-                    TextField(value = queryText, singleLine = true, textStyle = TextStyle(fontSize = 14.sp), label = { Text(stringResource(R.string.search_case_insensitive), style = MaterialTheme.typography.labelSmall) }, modifier = Modifier.trackAsTextField().fillMaxWidth(), keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done), onValueChange = { queryText = it },
-                        keyboardActions = KeyboardActions(onDone = { search(queryText); focusManager.clearFocus() }),
+                    val queryText = rememberTextFieldState(initialText = "")
+                    TextField(state = queryText, lineLimits = TextFieldLineLimits.SingleLine, textStyle = TextStyle(fontSize = 14.sp), label = { Text(stringResource(R.string.search_case_insensitive), style = MaterialTheme.typography.labelSmall) }, modifier = Modifier.trackAsTextField().fillMaxWidth(), keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        onKeyboardAction = { search(queryText.text.toString()); focusManager.clearFocus() },
                         trailingIcon = { Row {
                             Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_upward_24), tint = buttonColor, contentDescription = "search back", modifier = Modifier.width(40.dp).height(40.dp).clickable {
-                                search(queryText, false); focusManager.clearFocus()
+                                search(queryText.text.toString(), false); focusManager.clearFocus()
                             })
                             Icon(imageVector = ImageVector.vectorResource(R.drawable.baseline_arrow_downward_24), tint = buttonColor, contentDescription = "search forward", modifier = Modifier.padding(horizontal = 5.dp).width(40.dp).height(40.dp).clickable {
-                                search(queryText); focusManager.clearFocus()
+                                search(queryText.text.toString()); focusManager.clearFocus()
                             }) }
                     })
                 }
@@ -462,7 +465,7 @@ fun TranscriptOverlay(episode: Episode, player:  BasePlayer? = null, cueIndex: I
                     HorizontalDivider()
                     TextButton(modifier = Modifier.align(Alignment.End), onClick = {
                         val selList = selected.sortedBy { it.startMs }
-                        runOnIOScope {
+                        appIOScope.launch {
                             val commentText = buildString {
                                 for (t in selList) {
                                     if (isNotEmpty()) append('\n')
@@ -499,7 +502,7 @@ fun TranscriptMeta(episode: Episode) {
             if (!t.url.isNullOrBlank()) Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_download), tint = textColor, contentDescription = "download", modifier = Modifier.padding(end = 10.dp).clickable {
                     transIndex = i
-                    if (transIndex != episode.transcriptIndex || episode.captionCues.isEmpty()) runOnIOScope { episode.fetchCaption(transIndex) }
+                    if (transIndex != episode.transcriptIndex || episode.captionCues.isEmpty()) appIOScope.launch { episode.fetchCaption(transIndex) }
                     Logt(TAG, context.getString(R.string.transcript_fetched))
                 })
                 Spacer(Modifier.width(10.dp))
@@ -520,9 +523,8 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
     val context by rememberUpdatedState(LocalContext.current)
     val activity = context.findActivity() ?: error("WebView requires an Activity context")
 
-    var webviewData by remember { mutableStateOf<String?>("") }
+    var webviewContent by remember { mutableStateOf<WebViewContent?>(null) }
     var playerLocal: ExoPlayer? by remember { mutableStateOf(null) }
-
     var showEditComment by remember { mutableStateOf(false) }
     var showTagsSettingDialog by remember { mutableStateOf(false) }
     var showTodoDialog by remember { mutableStateOf(false) }
@@ -531,12 +533,12 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
     LaunchedEffect(Unit) { if (fetchChapters) withContext(Dispatchers.IO) { loadChapters(episode, false) }}
 
     if (showEditComment) {
-        var commentText by remember { mutableStateOf(TextFieldValue(episode.compileCommentText())) }
-        CommentEditingDialog(textState = commentText, onTextChange = { commentText = it }, onDismiss = { showEditComment = false},
-            onSave = { upsert(episode) { it.addComment(commentText.text, addition = false) } })
+        val commentText = rememberTextFieldState(initialText = episode.compileCommentText())
+        CommentEditingDialog(textState = commentText, onDismiss = { showEditComment = false},
+            onSave = { upsert(episode) { it.addComment(commentText.text.toString(), addition = false) } })
     }
     if (showTagsSettingDialog) TagSettingDialog(TagType.Episode, episode.tags, onDismiss = { showTagsSettingDialog = false }) { tags ->
-        runOnIOScope { upsert(episode) {
+        appIOScope.launch { upsert(episode) {
             it.tags.clear()
             it.tags.addAll(tags)
         } }
@@ -568,11 +570,14 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             return Pair(curItem_, cleanedNotes)
         }
         if (fetchWebdata) {
-            webviewData = webDataCache[episode.id]
-            if (webviewData.isNullOrBlank()) {
+            webviewContent = webDataCache[episode.id]
+            if (webviewContent == null) {
 //                Logd(TAG) { "description: ${episode.description}" }
-                webviewData = withContext(Dispatchers.IO) { buildCleanedNotes(episode, ShownotesCleaner()).second }
-                if (!webviewData.isNullOrBlank()) webDataCache.put(episode.id, webviewData!!)
+                val data = withContext(Dispatchers.IO) { buildCleanedNotes(episode, ShownotesCleaner()).second }
+                if (data != null) {
+                    webviewContent = WebViewContent(0, data)
+                    webDataCache.put(episode.id,  webviewContent!!)
+                }
             }
         }
     }
@@ -647,14 +652,14 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = done, onCheckedChange = {
                                 done = it
-                                runOnIOScope { upsertBlkEmb(todo) { todo -> todo.completed = done } }
+                                appIOScope.launch { upsertBlkEmb(todo) { todo -> todo.completed = done } }
                             })
                             Text(text = todo.note, color = buttonColor, maxLines = 1, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.clickable {
                                 onTodo = todo
                                 showTodoDialog = true
                             })
                             Spacer(Modifier.weight(1f))
-                            Icon(Icons.Filled.Delete, contentDescription = "delete", modifier = Modifier.padding(end = 15.dp).clickable { runOnIOScope { upsert(episode) { it.todos.remove(todo) } } })
+                            Icon(Icons.Filled.Delete, contentDescription = "delete", modifier = Modifier.padding(end = 15.dp).clickable { appIOScope.launch { upsert(episode) { it.todos.remove(todo) } } })
                         }
                         Row {
                             if (todo.dueTime > 0) {
@@ -679,7 +684,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { markToRemove = 0L }, text = { Text(stringResource(R.string.ask_remove_mark, markToRemove)) }, confirmButton = {
                     TextButton(onClick = {
                         val m = markToRemove
-                        runOnIOScope { upsert(episode) { it.marks.remove(m) } }
+                        appIOScope.launch { upsert(episode) { it.marks.remove(m) } }
                         markToRemove = 0L
                     }) { Text(stringResource(R.string.confirm_label)) }
                 }, dismissButton = { TextButton(onClick = { markToRemove = 0L }) { Text(stringResource(R.string.cancel_label)) } })
@@ -704,7 +709,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             if (cliptToRemove.isNotBlank()) {
                 AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { cliptToRemove = "" }, text = { Text(stringResource(R.string.ask_remove_clip, cliptToRemove.substringBefore("."))) }, confirmButton = {
                     TextButton(onClick = {
-                        runOnIOScope {
+                        appIOScope.launch {
                             episode.getClipFile(cliptToRemove).delete()
                             upsert(episode) { it.clips.remove(cliptToRemove) }
                             withContext(Dispatchers.Main) { cliptToRemove = "" }
@@ -738,7 +743,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                 val related = remember(episode.related.size) { episode.related.toList() }
                 Box(modifier = Modifier.fillMaxWidth().requiredHeightIn(max = 300.dp)) {
                     EpisodeLazyColumn(related, layoutMode = LayoutMode.FeedTitle.code, forceFeedImage = true, showActionButtons = false, actionButtonCB = { e1, _ ->
-                        runOnIOScope {
+                        appIOScope.launch {
                             realm.write {
                                 val es = query(Episode::class, "id IN $0", listOf(episode.id, e1.id)).find()
                                 if (es.size == 2) {
@@ -752,7 +757,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
             }
             Text(stringResource(R.string.related), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 10.dp, bottom = 10.dp).clickable { showRelated = true })
         }
-        if (episode.chapters.isEmpty() && !episode.podcastIndexChapterUrl.isNullOrBlank()) Text(stringResource(id = R.string.download_chapters), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable(onClick = { runOnIOScope { loadChapters(episode = episode, false) } }))
+        if (episode.chapters.isEmpty() && !episode.podcastIndexChapterUrl.isNullOrBlank()) Text(stringResource(id = R.string.download_chapters), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp).clickable(onClick = { appIOScope.launch { loadChapters(episode = episode, false) } }))
         if (episode.chapters.isNotEmpty()) {
             val chapters = remember { episode.chapters }
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)) {
@@ -789,7 +794,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
         AndroidView(modifier = Modifier.fillMaxSize(),
             factory = {
                 ShownotesWebView(activity).apply {
-                    setTimecodeSelectedListener { time: Int ->
+                    timecodeSelectedListener = { time: Int ->
                         Logd(TAG) { "setTimecodeSelectedListener time=:$time"}
                         when {
                             theatres[0].mPlayerFlow.value?.curMediaFlow?.value?.id == episode.id -> {
@@ -807,25 +812,36 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                             }
                         }
                     }
-                    setPageFinishedListener { postDelayed({ }, 50) }
+                    pageFinishedListener = {
+//                        postDelayed({ }, 50)
+                        val y = webviewContent?.scrollPos ?: 0
+                        Logd(TAG) { "setPageFinishedListener y: $y"}
+                        if (y > 0) postDelayed({ scrollTo(0, y) }, 50)
+                    }
                 } },
             update = { view ->
                 val currentTag = view.tag as? String
-                if (currentTag != webviewData) {
-                    view.tag = webviewData
-                    view.loadDataWithBaseURL("about:blank", if (webviewData.isNullOrBlank()) "No notes" else webviewData!!, "text/html", "utf-8", "about:blank")
+                if (currentTag != webviewContent?.webData) {
+                    view.tag = webviewContent
+                    view.loadDataWithBaseURL("about:blank", if (webviewContent?.webData.isNullOrBlank()) "No notes" else webviewContent!!.webData, "text/html", "utf-8", "about:blank")
+                    val y = webviewContent?.scrollPos ?: 0
+                    Logd(TAG) { "update y: $y"}
+                    if (y > 0) view.postDelayed({ view.scrollTo(0, y) }, 300)
                 }
-        })
+            },
+            onRelease = { view ->
+                Logd(TAG) {"onRelease scrollY: ${view.scrollY}" }
+                webviewContent?.scrollPos = view.scrollY
+                webDataCache.put(episode.id,  webviewContent!!)
+                view.destroy()
+            }
+        )
         if (dlLogs.isNotEmpty() || playerLogs.isNotEmpty()) {
             var showLogs by remember { mutableStateOf(false) }
             Text(stringResource(R.string.logs), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(start = 15.dp, top = 16.dp, bottom = 4.dp).clickable { showLogs = !showLogs})
             if (showLogs) Column(modifier = Modifier.padding(10.dp)) {
                 for (log in dlLogs) {
-                    val message = stringResource(if (!log.isSuccessful) R.string.failed else R.string.download_successful)
-                    Row {
-                        Text(formatDateTimeFlex(log.completionTime))
-                        Text(": $message", color = textColor)
-                    }
+                    Text("${formatDateTimeFlex(log.completionTime)}: ${stringResource(if (!log.isSuccessful) R.string.failed else R.string.download_successful)}", color = textColor)
                     if (!log.isSuccessful) {
                         Column(modifier = Modifier.padding(start = 10.dp)) {
                             Text(log.reasonDetailed)
@@ -847,7 +863,7 @@ fun ChooseRatingDialog(selected: List<Episode>, onDismiss: () -> Unit) {
             for (rating in Rating.entries.reversed()) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)
                     .clickable {
-                        runOnIOScope { for (e in selected) upsert(e) { it.setRating(rating) } }
+                        appIOScope.launch { for (e in selected) upsert(e) { it.setRating(rating) } }
                         onDismiss()
                     }) {
                     Icon(imageVector = ImageVector.vectorResource(id = rating.res), "")
@@ -869,7 +885,7 @@ fun PlayStateDialog(selected: List<Episode>, onDismiss: () -> Unit, futureCB: (E
                         when (state) {
                             EpisodeState.IGNORED -> ignoreCB()
                             EpisodeState.AGAIN, EpisodeState.LATER -> futureCB(state)
-                            else -> runOnIOScope {
+                            else -> appIOScope.launch {
                                 for (e in selected) {
                                     val hasAlmostEnded = e.hasAlmostEnded()
                                     var item_ = upsert(e) { it.setPlayState(state, hasAlmostEnded) }
@@ -938,7 +954,7 @@ fun PutToQueueDialog(selected: List<Episode>, onDismiss: () -> Unit) {
             Row {
                 Spacer(Modifier.weight(1f))
                 Button(onClick = {
-                    runOnIOScope {
+                    appIOScope.launch {
                         if (removeChecked) {
                             val toRemove = mutableSetOf<Long>()
                             val toRemoveCur = mutableListOf<Episode>()
@@ -985,7 +1001,7 @@ fun ShelveDialog(selected: List<Episode>, onDismiss: () -> Unit) {
             if (toFeed != null) Row {
                 Spacer(Modifier.weight(1f))
                 Button(onClick = {
-                    runOnIOScope { shelveToFeed(selected, toFeed!!, removeChecked) }
+                    appIOScope.launch { shelveToFeed(selected, toFeed!!, removeChecked) }
                     onDismiss()
                 }) { Text(stringResource(R.string.confirm_label)) }
             }
@@ -997,14 +1013,14 @@ fun ShelveDialog(selected: List<Episode>, onDismiss: () -> Unit) {
 fun EraseEpisodesDialog(selected: List<Episode>, feed: Feed?, onDismiss: () -> Unit) {
     CommonPopupCard(onDismiss = onDismiss) {
         val message = stringResource(R.string.erase_episodes_confirmation_msg)
-        var textState by remember { mutableStateOf(TextFieldValue("")) }
         if (feed == null) Text(stringResource(R.string.not_erase_message), modifier = Modifier.padding(10.dp))
         else Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(message + ": ${selected.size}")
             Text(stringResource(R.string.reason_to_delete_msg))
-            BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).height(100.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
+            val textState = rememberTextFieldState(initialText = "")
+            BasicTextField(state = textState,  textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).height(100.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             Button(onClick = {
-                CoroutineScope(Dispatchers.IO).launch { eraseEpisodes(selected, textState.text) }
+                appIOScope.launch { eraseEpisodes(selected, textState.text.toString()) }
                 onDismiss()
             }) { Text(stringResource(R.string.confirm_label)) }
         }
@@ -1015,11 +1031,10 @@ fun EraseEpisodesDialog(selected: List<Episode>, feed: Feed?, onDismiss: () -> U
 fun DeleteCaptionsDialog(selected: List<Episode>, onDismiss: () -> Unit) {
     CommonPopupCard(onDismiss = onDismiss) {
         val message = stringResource(R.string.delete_captions_confirmation)
-        var textState by remember { mutableStateOf(TextFieldValue("")) }
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(message + ": ${selected.size}")
             Button(onClick = {
-                CoroutineScope(Dispatchers.IO).launch { realm.write { for (e in selected) findLatest(e)?.let { it.captionCues = realmListOf() } } }
+                appIOScope.launch { realm.write { for (e in selected) findLatest(e)?.let { it.captionCues = realmListOf() } } }
                 onDismiss()
             }) { Text(stringResource(R.string.confirm_label)) }
         }
@@ -1030,8 +1045,8 @@ fun DeleteCaptionsDialog(selected: List<Episode>, onDismiss: () -> Unit) {
 fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
     CommonDialogWide(onDismiss = onDismiss) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            var note by remember { mutableStateOf(TextFieldValue(todo?.note ?: "")) }
-            BasicTextField(value = note, onValueChange = { note = it }, textStyle = TextStyle(fontSize = 14.sp, color = textColor), minLines = 2, maxLines = 8, modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
+            val noteState = rememberTextFieldState(initialText = todo?.note ?: "")
+            BasicTextField(state = noteState, textStyle = TextStyle(fontSize = 14.sp, color = textColor), lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 2, maxHeightInLines = 8), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             val sysTime = remember { nowInMillis() }
             var dueTime by remember { mutableLongStateOf(sysTime) }
             var editDueTime by remember { mutableStateOf((todo?.dueTime ?: 0) > 0) }
@@ -1043,22 +1058,21 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
                 }
             } else sysTime
             val zdt = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
-            var ymdhm by remember { mutableStateOf("${zdt.year}.${zdt.month.number}.${zdt.day}.${zdt.hour}.${zdt.minute}") }
+            val ymdhm = rememberTextFieldState(initialText = "${zdt.year}.${zdt.month.number}.${zdt.day}.${zdt.hour}.${zdt.minute}")
             var setDueTime by remember { mutableStateOf(editDueTime) }
             Row {
                 Text(text = stringResource(R.string.set_due_time), color = buttonColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 10.dp).clickable(onClick = {
                     editDueTime = !editDueTime
                     //                    if (todo != null) dueTime = if (editDueTime) todo.dueTime else 0
                 }))
-                Text(if (setDueTime) ymdhm else "")
+                Text(if (setDueTime) ymdhm.text.toString() else "")
             }
             var notify by remember { mutableStateOf(false) }
             if (editDueTime) {
-                TextField(value = ymdhm,  singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth().trackAsTextField(), label = { Text("${stringResource(R.string.year)}.${stringResource(R.string.month)}.${stringResource(R.string.date)}.${stringResource(R.string.hour)}.${stringResource(R.string.minute)}") },
-                    onValueChange = {
-                        ymdhm = it
-                        setDueTime = false
-                    },
+                LaunchedEffect(ymdhm) {
+                    snapshotFlow { ymdhm.text.toString() }.drop(1).debounce(300.milliseconds).collect { setDueTime = false }
+                }
+                TextField(state = ymdhm,  lineLimits = TextFieldLineLimits.SingleLine, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth().trackAsTextField(), label = { Text("${stringResource(R.string.year)}.${stringResource(R.string.month)}.${stringResource(R.string.date)}.${stringResource(R.string.hour)}.${stringResource(R.string.minute)}") },
                     trailingIcon = { Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable { setDueTime = !setDueTime }) })
                 if (setDueTime) Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = notify, onCheckedChange = { notify = it })
@@ -1066,8 +1080,8 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
                 }
             }
             Button(onClick = {
-                val notetext = note.text
-                runOnIOScope {
+                val notetext = noteState.text.toString()
+                appIOScope.launch {
                     val priorDueTime = todo?.dueTime ?: 0L
                     try {
                         if (setDueTime) {
@@ -1082,7 +1096,7 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
                                 char('.')
                                 minute(padding = Padding.NONE)
                             }
-                            dueTime = format.parse(ymdhm).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                            dueTime = format.parse(ymdhm.text).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
                         }
                         if (todo == null) {
                             val todo_ = todo ?: Todo()
@@ -1126,7 +1140,7 @@ fun EpisodeTimersDialog(episode: Episode, onDismiss: () -> Unit, cb: (Timer)->Un
                     Spacer(Modifier.width(100.dp))
                     Icon(imageVector = Icons.Filled.Delete, contentDescription = "delete", modifier = Modifier.clickable {
                         cancel(timer)
-                        runOnIOScope { upsert(appAttribsFlow!!.value) { it.timetable.remove(timer) } }
+                        appIOScope.launch { upsert(appAttribsFlow!!.value) { it.timetable.remove(timer) } }
                         onDismiss()
                     })
                 }
@@ -1141,9 +1155,9 @@ fun EditTimerDialog(timer: Timer? = null, episode: Episode? = null, cb: (Timer)-
     val context = LocalContext.current
     CommonPopupCard(onDismiss = onDismiss) {
         val zdt = remember(timer?.triggerTime) { Instant.fromEpochMilliseconds(timer?.triggerTime ?: nowInMillis()).toLocalDateTime(TimeZone.currentSystemDefault()) }
-        var ymdhm by remember { mutableStateOf("${zdt.year}.${zdt.month.number}.${zdt.day}.${zdt.hour}.${zdt.minute}") }
+        val ymdhm = rememberTextFieldState(initialText = "${zdt.year}.${zdt.month.number}.${zdt.day}.${zdt.hour}.${zdt.minute}")
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            TextField(value = ymdhm,  onValueChange = { ymdhm = it }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth().trackAsTextField(), label = { Text("${stringResource(R.string.year)}.${stringResource(R.string.month)}.${stringResource(R.string.date)}.${stringResource(R.string.hour)}.${stringResource(R.string.minute)}") } )
+            TextField(state = ymdhm, lineLimits = TextFieldLineLimits.SingleLine, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth().trackAsTextField(), label = { Text("${stringResource(R.string.year)}.${stringResource(R.string.month)}.${stringResource(R.string.date)}.${stringResource(R.string.hour)}.${stringResource(R.string.minute)}") } )
             var isRepeat by remember { mutableStateOf(false) }
             if (episode != null) Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = isRepeat, onCheckedChange = { isChecked -> isRepeat = isChecked })
@@ -1164,7 +1178,7 @@ fun EditTimerDialog(timer: Timer? = null, episode: Episode? = null, cb: (Timer)-
                         char('.')
                         minute(padding = Padding.NONE)
                     }
-                    val triggerTime = format.parse(ymdhm).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                    val triggerTime = format.parse(ymdhm.text.toString()).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
                     Logd(TAG) { "triggerTime: $triggerTime" }
                     if (triggerTime < nowInMillis()) wantText = context.getString(R.string.warn_time_past)
                     else {
@@ -1190,13 +1204,12 @@ fun IgnoreEpisodesDialog(selected: List<Episode>, onDismiss: () -> Unit) {
     CommonPopupCard(onDismiss = onDismiss) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             val message = stringResource(R.string.ignore_episodes_confirmation_msg)
-
-            var textState by remember { mutableStateOf(TextFieldValue("")) }
             Text(message + ": ${selected.size}")
             Text(stringResource(R.string.reason_to_delete_msg))
-            BasicTextField(value = textState, onValueChange = { textState = it }, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).height(100.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
+            val textState = rememberTextFieldState(initialText = "")
+            BasicTextField(state = textState, textStyle = TextStyle(fontSize = 16.sp, color = textColor), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(start = 10.dp, end = 10.dp, bottom = 10.dp).height(100.dp).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small))
             Button(onClick = {
-                CoroutineScope(Dispatchers.IO).launch {
+                appIOScope.launch {
                     try {
                         realm.write {
                             for (e in selected) {
@@ -1239,7 +1252,7 @@ fun FutureStateDialog(selected: List<Episode>, state: EpisodeState, onDismiss: (
                 }
             }
             Button(onClick = {
-                CoroutineScope(Dispatchers.IO).launch {
+                appIOScope.launch {
                     try {
                         val interval = intervalMillis(intervals[sel], sel)
                         val dueTime = interval + nowInMillis()
@@ -1480,15 +1493,14 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                 EpisodesFilterGroup.TITLE_TEXT -> {
                                     Text(stringResource(group.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = buttonColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                     if (expandRow) {
-                                        var showIcon by remember { mutableStateOf(false) }
-                                        var titleText by remember { mutableStateOf((filter.titleText)) }
+                                        val titleText = rememberTextFieldState(initialText = filter.titleText)
+                                        var showIcon by remember(titleText) { mutableStateOf(titleText.text.toString() != filter.titleText) }
                                         val focusManager = LocalFocusManager.current
-                                        TextField(value = titleText, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), label = { Text("Text in titles") }, singleLine = true, modifier = Modifier.trackAsTextField(),
-                                            onValueChange = { titleText = it; showIcon = true },
+                                        TextField(state = titleText, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), label = { Text("Text in titles") }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(),
                                             trailingIcon = {
                                                 if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon",
                                                     modifier = Modifier.size(30.dp).clickable {
-                                                        filter.titleText = titleText
+                                                        filter.titleText = titleText.text.toString()
                                                         focusManager.clearFocus()
                                                         onFilterChanged(filter)
                                                         showIcon = false
@@ -1594,22 +1606,20 @@ fun MonthYearInput(default: String, modifier: Modifier = Modifier, onError: (Str
         val regex = Regex("^(0[1-9]|1[0-2])/\\d{4}$")
         return regex.matches(input)
     }
-    var monthYear by remember(default) { mutableStateOf(TextFieldValue(default)) }
-    var isValid by remember(monthYear) { mutableStateOf(isValidMonthYear(monthYear.text)) }
-    TextField(value = monthYear, singleLine = true, label = { Text(stringResource(R.string.mm_yyyy)) },
-        onValueChange = { input ->
-            monthYear = input
-            val sanitized = monthYear.text.replace(Regex("[^0-9/]"), "")
-            val formattedInput = when {
-                sanitized.length > 7 -> sanitized.take(7)
-                else -> sanitized
+    val monthYear = rememberTextFieldState(initialText = default)
+    var isValid by remember(monthYear.text) { mutableStateOf(isValidMonthYear(monthYear.text.toString())) }
+    LaunchedEffect(monthYear) {
+        snapshotFlow { monthYear.text }.drop(1).collect {
+                val sanitized = it.toString().replace(Regex("[^0-9/]"), "")
+                val formattedInput = when {
+                    sanitized.length > 7 -> sanitized.take(7)
+                    else -> sanitized
+                }
+                isValid = isValidMonthYear(formattedInput)
+                if (isValid) onMonthYearChange(formattedInput)
             }
-            isValid = isValidMonthYear(formattedInput)
-            if (isValid) onMonthYearChange(formattedInput)
-        },
-        isError = !isValidMonthYear(monthYear.text),
-        modifier = modifier.trackAsTextField()
-    )
+    }
+    TextField(state = monthYear, lineLimits = TextFieldLineLimits.SingleLine, label = { Text(stringResource(R.string.mm_yyyy)) }, isError = !isValidMonthYear(monthYear.text.toString()), modifier = modifier.trackAsTextField())
     if (!isValid) onError("Invalid format. Please use MM/YYYY.")
 }
 
@@ -1686,18 +1696,18 @@ fun DatesFilterDialog(from: Long? = null, to: Long? = null, oldestDate: Long, on
 @Composable
 fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
     val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
-    var udpPort by remember(appAttribs.udpPort) { mutableIntStateOf(appAttribs.udpPort) }
-    var synthName by remember { mutableStateOf("") }
+    val udpPort = rememberTextFieldState(initialText = appAttribs.udpPort.toString())
+    val synthName = rememberTextFieldState(initialText = "")
     var receivers by remember { mutableStateOf<List<DiscoveredReceiver>>(listOf()) }
     val sendJobs = remember { mutableStateMapOf<String, Job>() }
     var started by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            listenForUDPBroadcasts(udpPort) { list ->
-                if (list.isNotEmpty()) {
-                    receivers = list
-                    Logd("MulticastDialog") { "number of receivers: ${list.size}" }
-                }
+    val port = remember(udpPort.text) { udpPort.text.toString().toIntOrNull()?:0 }
+    LaunchedEffect(port) {
+        receivers = emptyList()
+        listenForUDPBroadcasts(port) { list ->
+            if (list.isNotEmpty()) {
+                receivers = list
+                Logd("MulticastDialog") { "number of receivers: ${list.size}" }
             }
         }
     }
@@ -1717,18 +1727,19 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
         text = {
             Column {
                 Text(stringResource(R.string.send_to_device_sum))
-                TextField(value = udpPort.toString(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.broadcast_port)) }, singleLine = true, modifier = Modifier.trackAsTextField().padding(end = 8.dp), onValueChange = { udpPort = it.toIntOrNull() ?: 0 })
+                TextField(state = udpPort, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.broadcast_port)) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField().padding(end = 8.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(10.dp)) {
                     for ((_, _, name) in receivers) FilterChip(label = { Text(name) }, selected = false, onClick = {})
                 }
-                TextField(value = synthName, label = { Text("in " + stringResource(R.string.synthetic)) }, singleLine = true, modifier = Modifier.trackAsTextField().padding(end = 8.dp), onValueChange = { synthName = it })
+                TextField(state = synthName, label = { Text("in " + stringResource(R.string.synthetic)) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField().padding(end = 8.dp))
             }
         },
         confirmButton = {
-            if (sendJobs.isEmpty() && receivers.isNotEmpty()) TextButton(onClick = {
-                if (udpPort != appAttribs.udpPort) runOnIOScope { upsert(appAttribs) { it.udpPort = udpPort } }
+            TextButton(enabled = sendJobs.isEmpty() && receivers.isNotEmpty(), onClick = {
+                val port = udpPort.text.toString().toIntOrNull()?:0
+                if (port != appAttribs.udpPort) appIOScope.launch { upsert(appAttribs) { it.udpPort = port } }
                 for ((ip, port) in receivers) {
-                    val job = sendEpisodes(ip, port, synthName, selected) {
+                    val job = sendEpisodes(ip, port, synthName.text.toString(), selected) {
                         sendJobs[ip]?.let { j ->
                             Logd(TAG) { "closing job: $ip ${sendJobs.size}" }
                             j.cancel()
@@ -1771,7 +1782,7 @@ fun ConfirmAddToFeed(onDismiss: () -> Unit, cb: suspend (Feed)-> Unit) {
                     Button(onClick = {
                         showComfirmButton = false
                         showProgress = true
-                        CoroutineScope(Dispatchers.IO).launch { cb(toFeed!!) }
+                        appIOScope.launch { cb(toFeed!!) }
                         onDismiss()
                     }) { Text(stringResource(R.string.confirm_label)) }
                 }

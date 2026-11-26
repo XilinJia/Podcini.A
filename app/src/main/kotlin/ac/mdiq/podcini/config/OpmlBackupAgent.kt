@@ -1,10 +1,11 @@
 package ac.mdiq.podcini.config
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.config.settings.OpmlTransporter
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getFeedList
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Feed
@@ -20,6 +21,7 @@ import android.app.backup.BackupDataInputStream
 import android.app.backup.BackupDataOutput
 import android.app.backup.BackupHelper
 import android.os.ParcelFileDescriptor
+import kotlinx.coroutines.launch
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.io.readByteArray
@@ -45,7 +47,7 @@ class OpmlBackupAgent : BackupAgentHelper() {
         private var mChecksum: ByteArray = byteArrayOf()
 
         override fun performBackup(oldState: ParcelFileDescriptor?, data: BackupDataOutput, newState: ParcelFileDescriptor) {
-            runOnIOScope {
+            appIOScope.launch {
                 Logd(TAG) { "Performing backup" }
                 val digester: MessageDigest = MessageDigest.getInstance("MD5")
                 val file = getOpmlFile()
@@ -67,7 +69,7 @@ class OpmlBackupAgent : BackupAgentHelper() {
                                 val oldChecksum = input.readByteArray(len)
                                 if (oldChecksum.contentEquals(mChecksum)) {
                                     Logd(TAG) { "Checksums are same; skipping backup" }
-                                    return@runOnIOScope
+                                    return@launch
                                 }
                             }
                         }
@@ -90,11 +92,11 @@ class OpmlBackupAgent : BackupAgentHelper() {
         }
 
         override fun restoreEntity(data: BackupDataInputStream) {
-            runOnIOScope {
+            appIOScope.launch {
                 Logd(TAG) { "Backup restore" }
                 if (OPML_ENTITY_KEY != data.key) {
                     Logd(TAG) { "Unknown entity key: " + data.key}
-                    return@runOnIOScope
+                    return@launch
                 }
                 val digester = MessageDigest.getInstance("MD5")
                 var linesRead = 0
@@ -126,7 +128,7 @@ class OpmlBackupAgent : BackupAgentHelper() {
                     mChecksum = digester.digest() ?: byteArrayOf()
                     if (linesRead > 0) {
                         Logd(TAG) { "restoreEntity finally $feedCount" }
-                        runOnIOScope {
+                        appIOScope.launch {
                             upsert(appPrefsFlow!!.value) {
                                 it.OPMLRestored = true
                                 it.OPMLFeedsToRestore = feedCount
@@ -153,13 +155,13 @@ class OpmlBackupAgent : BackupAgentHelper() {
         }
 
         companion object {
-            private val TAG: String = OpmlBackupHelper::class.simpleName ?: "Anonymous"
+            private const val TAG = "OpmlBackupHelper"
             private const val OPML_ENTITY_KEY = "podcini-feeds.opml"
         }
     }
 
     companion object {
-        private val TAG: String = OpmlBackupAgent::class.simpleName ?: "Anonymous"
+        private const val TAG = "OpmlBackupAgent"
         private const val OPML_BACKUP_KEY = "opml"
 
         private fun getOpmlFile(): UnifiedFile {
@@ -167,7 +169,7 @@ class OpmlBackupAgent : BackupAgentHelper() {
         }
 
         fun performRestore() {
-            runOnIOScope {
+            appIOScope.launch {
                 Logd(TAG) { "performRestore" }
                 val tempFile = getOpmlFile()
                 if (tempFile.exists()) {

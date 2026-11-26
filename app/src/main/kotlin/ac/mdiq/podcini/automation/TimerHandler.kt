@@ -1,9 +1,10 @@
 package ac.mdiq.podcini.automation
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.receiver.TimerReceiver
 import ac.mdiq.podcini.storage.database.appAttribsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Timer
 import ac.mdiq.podcini.utils.Logd
@@ -16,6 +17,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 
@@ -99,7 +101,7 @@ fun playEpisodeAtTime(triggerTime: Long, episodeId: Long, repeat: Boolean = fals
     timer.triggerTime = triggerTime
     timer.alarmId = idFromTriggerTime(triggerTime)
 
-    runOnIOScope { upsert(appAttribsFlow!!.value) { it.timetable.add(timer)} }
+    appIOScope.launch { upsert(appAttribsFlow!!.value) { it.timetable.add(timer)} }
 
     val pendingIntent = PendingIntent.getBroadcast(context, timer.alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 

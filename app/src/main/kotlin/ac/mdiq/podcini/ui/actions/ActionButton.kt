@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.actions
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.BasePlayer.Companion.handleAudioFocus
@@ -28,7 +29,7 @@ import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
 import ac.mdiq.podcini.storage.database.deleteMedia
 import ac.mdiq.podcini.storage.database.isDownloadable
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
@@ -71,6 +72,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -166,10 +168,10 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 if (typeToCancel == ButtonTypes.DOWNLOAD || typeToCancel == ButtonTypes.DOWNLOAD_DIY) {
                     downloadJob?.cancel()
                     runBlocking { EpisodeDLManager.manager.cancel(item, delete = true) }
-                    if (appPrefsFlow!!.value.enableAutoDl) runOnIOScope { upsert(item) { it.isAutoDownloadEnabled = false } }
+                    if (appPrefsFlow!!.value.enableAutoDl) appIOScope.launch { upsert(item) { it.isAutoDownloadEnabled = false } }
                     type = ButtonTypes.DOWNLOAD
                 } else if (typeToCancel == ButtonTypes.TTS) {
-                    runOnIOScope { for (p in ttsTmpFiles) p.toUF().delete() }
+                    appIOScope.launch { for (p in ttsTmpFiles) p.toUF().delete() }
                     TTSEngine.ttsWorking = false
                     processing.intValue = -1
                     ttsJob?.cancel()
@@ -245,7 +247,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                 }
             }
             ButtonTypes.DELETE -> {
-                runOnIOScope { deleteEpisodesWarnLocalRepeat(listOf(item)) }
+                appIOScope.launch { deleteEpisodesWarnLocalRepeat(listOf(item)) }
                 update(item)
             }
             ButtonTypes.PAUSE -> {
@@ -266,8 +268,8 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     return
                 }
                 fun downloadNow() {
-                    downloadJob = runOnIOScope {
-                        val request = requestFor(item)?: return@runOnIOScope
+                    downloadJob = appIOScope.launch {
+                        val request = requestFor(item)?: return@launch
                         val downloader = Downloader(request)
                         try {
                             downloader.downloadMedia()
@@ -305,8 +307,8 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
 //                val client = clientByEpisode(item) ?: return
                 val sm = StreamsManager(item)
                 fun downloadSpecial() {
-                    downloadJob = runOnIOScope {
-                        val request = requestFor(item, sm)?: return@runOnIOScope
+                    downloadJob = appIOScope.launch {
+                        val request = requestFor(item, sm)?: return@launch
                         val downloader = Downloader(request)
                         try {
                             downloader.downloadMedia()
@@ -324,7 +326,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     type = ButtonTypes.CANCEL
                 }
                 if (mobileAllowEpisodeDownload || !networkMonitor.isNetworkRestricted) {
-                    runOnIOScope { sm.getAVSpecs() }
+                    appIOScope.launch { sm.getAVSpecs() }
                     AnyDialog = { sm.StreamChanger(onDismiss={ AnyDialog = null }) { _, _ -> downloadSpecial() } }
                     return
                 }
@@ -333,7 +335,7 @@ class ActionButton(var item: Episode, val feed: Feed? = null, val preferSingle: 
                     confirmRes = R.string.confirm_mobile_download_dialog_allow_this_time,
                     cancelRes = R.string.cancel_label,
                     onConfirm = {
-                        runOnIOScope { sm.getAVSpecs() }
+                        appIOScope.launch { sm.getAVSpecs() }
                         AnyDialog = { sm.StreamChanger(onDismiss={ AnyDialog = null }) { _, _ -> downloadSpecial() } }
                     },
                 )

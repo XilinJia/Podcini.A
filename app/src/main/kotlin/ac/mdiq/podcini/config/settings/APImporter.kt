@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.config.settings
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -134,7 +135,7 @@ fun importAP(uri: Uri, onDismiss: ()->Unit) {
     }
 
     Logd(TAG) { "chooseAPImportPathLauncher: uri: $uri" }
-    CoroutineScope(Dispatchers.IO).launch {
+    appIOScope.launch {
         val dbFile = internalDir / "temp.db"
         val sourcePath = uri.toUF()
 

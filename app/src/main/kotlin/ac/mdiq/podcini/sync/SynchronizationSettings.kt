@@ -1,41 +1,43 @@
 package ac.mdiq.podcini.sync
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.syncPrefs
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.sync.queue.SynchronizationQueueSink
+import kotlinx.coroutines.launch
 
 object SynchronizationSettings {
     var username: String?
         get() = syncPrefs.PREF_USERNAME
         set(username) {
-            runOnIOScope { upsert(syncPrefs) { it.PREF_USERNAME = username } }
+            appIOScope.launch { upsert(syncPrefs) { it.PREF_USERNAME = username } }
         }
 
     var password: String?
         get() = syncPrefs.PREF_PASSWORD
         set(password) {
-            runOnIOScope { upsert(syncPrefs) { it.PREF_PASSWORD = password } }
+            appIOScope.launch { upsert(syncPrefs) { it.PREF_PASSWORD = password } }
         }
 
     var deviceID: String?
         get() = syncPrefs.PREF_DEVICEID
         set(deviceID) {
-            runOnIOScope { upsert(syncPrefs) { it.PREF_DEVICEID = deviceID } }
+            appIOScope.launch { upsert(syncPrefs) { it.PREF_DEVICEID = deviceID } }
         }
 
     var hosturl: String?
         get() = syncPrefs.PREF_HOSTNAME
         set(value) {
-            runOnIOScope { upsert(syncPrefs) { it.PREF_HOSTNAME = value } }
+            appIOScope.launch { upsert(syncPrefs) { it.PREF_HOSTNAME = value } }
         }
 
     var hostport: Int
         get() = syncPrefs.PREF_HOSTPORT
         set(value) {
-            runOnIOScope { upsert(syncPrefs) { it.PREF_HOSTPORT = value } }
+            appIOScope.launch { upsert(syncPrefs) { it.PREF_HOSTPORT = value } }
         }
 
     @Synchronized
@@ -44,14 +46,14 @@ object SynchronizationSettings {
         password = null
         deviceID = null
         SynchronizationQueueSink.clearQueue()
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.gpodnet_notifications = true } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.gpodnet_notifications = true } }
     }
 
     val isSyncProviderConnected: Boolean
         get() = syncPrefs.SELECTED_SYNC_PROVIDER != null
 
     fun resetTimestamps() {
-        runOnIOScope {
+        appIOScope.launch {
             upsert(syncPrefs) {
                 it.LAST_SUBSCRIPTION_SYNC_TIMESTAMP = 0L
                 it.LAST_EPISODE_ACTIONS_SYNC_TIMESTAMP = 0L
@@ -61,26 +63,26 @@ object SynchronizationSettings {
     }
 
     fun setSelectedSyncProvider(provider: SynchronizationProviderViewData?) {
-        runOnIOScope { upsert(syncPrefs) { it.SELECTED_SYNC_PROVIDER = provider?.identifier } }
+        appIOScope.launch { upsert(syncPrefs) { it.SELECTED_SYNC_PROVIDER = provider?.identifier } }
     }
 
     fun setWifiSyncEnabled(stat: Boolean) {
-        runOnIOScope { upsert(syncPrefs) { it.WIFI_SYNC_ENABLED = stat } }
+        appIOScope.launch { upsert(syncPrefs) { it.WIFI_SYNC_ENABLED = stat } }
     }
 
     fun updateLastSynchronizationAttempt() {
-        runOnIOScope {  upsert(syncPrefs) { it.LAST_SYNC_ATTEMPT_TIMESTAMP = nowInMillis() } }
+        appIOScope.launch {  upsert(syncPrefs) { it.LAST_SYNC_ATTEMPT_TIMESTAMP = nowInMillis() } }
     }
 
     fun setLastSynchronizationAttemptSuccess(isSuccess: Boolean) {
-        runOnIOScope { upsert(syncPrefs) { it.LAST_SYNC_ATTEMPT_SUCCESS = isSuccess } }
+        appIOScope.launch { upsert(syncPrefs) { it.LAST_SYNC_ATTEMPT_SUCCESS = isSuccess } }
     }
 
     fun setLastSubscriptionSynchronizationAttemptTimestamp(newTimeStamp: Long) {
-        runOnIOScope { upsert(syncPrefs) { it.LAST_SUBSCRIPTION_SYNC_TIMESTAMP = newTimeStamp } }
+        appIOScope.launch { upsert(syncPrefs) { it.LAST_SUBSCRIPTION_SYNC_TIMESTAMP = newTimeStamp } }
     }
 
     fun setLastEpisodeActionSynchronizationAttemptTimestamp(timestamp: Long) {
-        runOnIOScope { upsert(syncPrefs) { it.LAST_EPISODE_ACTIONS_SYNC_TIMESTAMP = timestamp } }
+        appIOScope.launch { upsert(syncPrefs) { it.LAST_EPISODE_ACTIONS_SYNC_TIMESTAMP = timestamp } }
     }
 }

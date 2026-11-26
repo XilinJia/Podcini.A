@@ -174,7 +174,7 @@ class SleepManager {
     }
 
     companion object {
-        private val TAG: String = SleepManager::class.simpleName ?: "Anonymous"
+        private const val TAG = "SleepManager"
 
         private const val SLEEP_TIMER_UPDATE_INTERVAL = 10000L  // in millisoconds
         const val SLEEP_TIMER_ENDING_THRESHOLD: Long = 20000  // in millisoconds

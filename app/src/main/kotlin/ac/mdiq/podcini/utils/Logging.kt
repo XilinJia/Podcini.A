@@ -4,13 +4,14 @@ package ac.mdiq.podcini.utils
 
 import ac.mdiq.podcini.BuildConfig
 import ac.mdiq.podcini.PodciniApp
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.appMainScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.download.DownloadError
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.model.DownloadResult
 import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Feed
@@ -134,7 +135,7 @@ fun LogtFor(t: String, episodeId: Long?, m: String) {
 }
 
 fun LogFor(t: String, feed: Feed, success: Boolean, message: String, reason:  DownloadError? = null, toastAnyway: Boolean = false) {
-    runOnIOScope { logDownloadResult(DownloadResult(feed, reason, success, message)) }
+    appIOScope.launch { logDownloadResult(DownloadResult(feed, reason, success, message)) }
     if (toastAnyway && success) Logt(t, "Feed operation: success=$success, $message: ${feed.title}")
     if (!success) Loge(t, "Feed operation: success=$success, $message: ${feed.title}")
 }

@@ -1,3 +1,14 @@
+# 12.23.0
+
+* migrated some Compose deprecations
+	* updated Slider, removed ConstraintLayout
+	* updated all BasicTextField and TextField, please report issues if you notice
+* in Slider of PlayUI, show drag position when dragging
+* amended expansion and collapse of bottomsheet
+* in AlergDialogs, changed conditional showing of Confirm button to conditional enabling
+* bumped gradle, AGP, Compose and some other dependencies
+* some code refactoring
+
 # 12.22.2
 
 * amended Stream changer, fixed video not shown in PlayerDetailed

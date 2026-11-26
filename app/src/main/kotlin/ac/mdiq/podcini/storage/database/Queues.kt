@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.storage.database
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.getEntityId
@@ -20,10 +21,11 @@ import ac.mdiq.podcini.utils.timeIt
 import io.github.xilinjia.krdb.notifications.ResultsChange
 import io.github.xilinjia.krdb.notifications.UpdatedResults
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.math.min
 import kotlin.random.Random
 
-private const val TAG: String = "Queues"
+private const val TAG = "Queues"
 
 const val QUEUE_POSITION_DELTA = 10000L
 const val VIRTUAL_QUEUE_SIZE = 50
@@ -38,7 +40,7 @@ fun initQueues() {
     Logd(TAG) { "initQueues called " }
     timeIt("$TAG start of initQueues")
 
-    runOnIOScope {
+    appIOScope.launch {
         Logd(TAG) { "starting queues queuesLive: ${queuesLive.size}" }
         if (queuesLive.isEmpty()) {
             realm.write {
@@ -66,7 +68,7 @@ fun initQueues() {
 
 fun monitorQueues() {
     if (queuesMonitorJob != null) return
-    queuesMonitorJob = runOnIOScope {
+    queuesMonitorJob = appIOScope.launch {
         queuesFlow.collect { changes: ResultsChange<PlayQueue> ->
             queuesLive = changes.list
             queuesLive.find { it.id == actQueueFlow.value.id }?.let { actQueueFlow.value = it }

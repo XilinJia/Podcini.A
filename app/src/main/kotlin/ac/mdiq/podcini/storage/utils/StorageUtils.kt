@@ -1,8 +1,9 @@
 package ac.mdiq.podcini.storage.utils
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
@@ -34,7 +35,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 
-private const val TAG: String = "StorageUtils"
+private const val TAG = "StorageUtils"
 
 const val MAX_FILENAME_LENGTH: Int = 242 // limited by CircleCI
 
@@ -59,7 +60,7 @@ val mediaDir: UnifiedFile
                 return d
             } else {
                 Loge(TAG, "The chosen custom media folder is not valid: ${appPrefsFlow!!.value.customMediaUri}. Reset!")
-                runOnIOScope {
+                appIOScope.launch {
                     upsert(appPrefsFlow!!.value) {
                         it.useCustomMediaFolder = false
                         it.customMediaUri = ""
@@ -98,7 +99,7 @@ val freeSpaceAvailable: Long
 val cacheDir: UnifiedFile = internalDir / "cache"
 
 fun setupStorage() {
-    CoroutineScope(Dispatchers.IO).launch {
+    appIOScope.launch {
         if (!cacheDir.exists()) internalDir.createDirectory("cache")
         // Create a .nomedia file to prevent scanning by the media scanner.
         val nomediaFile = mediaDir / ".nomedia"

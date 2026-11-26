@@ -125,7 +125,7 @@ class ShownotesCleaner {
     }
 
     companion object {
-        private val TAG: String = ShownotesCleaner::class.simpleName ?: "Anonymous"
+        private const val TAG = "ShownotesCleaner"
 
         private val TIMECODE_LINK_REGEX = Regex("podcini://timecode/(\\d+)")
 

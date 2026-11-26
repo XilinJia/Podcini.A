@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.settings.MediaFilesTransporter
 import ac.mdiq.podcini.shared.nowInMillis
@@ -14,7 +15,7 @@ import ac.mdiq.podcini.storage.database.getHistoryAsFlow
 import ac.mdiq.podcini.storage.database.inQueueEpisodeIdSet
 import ac.mdiq.podcini.storage.database.queueToVirtual
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.ARCHIVED_VOLUME_ID
@@ -128,6 +129,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -265,7 +267,7 @@ class FacetsVM(modeName_: String): ViewModel() {
                 listIdentity += ".${sortOrder.name}"
                 val time = nowInMillis()
                 val ids = appAttribsFlow!!.value.timetable.filter { it.triggerTime > time }.map { it.episodeId }
-                runOnIOScope { upsert(appAttribsFlow!!.value) { it.timetable.removeAll { timer -> timer.triggerTime < time } } }
+                appIOScope.launch { upsert(appAttribsFlow!!.value) { it.timetable.removeAll { timer -> timer.triggerTime < time } } }
                 incSortConds = listOf(EpisodeSortOrder.FEED_TITLE_ASC, EpisodeSortOrder.FEED_TITLE_DESC, EpisodeSortOrder.FEED_SCORE_ASC, EpisodeSortOrder.FEED_SCORE_DESC, EpisodeSortOrder.FEED_SCORE_COUNT_ASC, EpisodeSortOrder.FEED_SCORE_COUNT_DESC)
                 realm.query(Episode::class).query("id IN $0", ids).asFlow().map { result ->
                     val list = result.list.toMutableList()
@@ -376,13 +378,13 @@ class FacetsVM(modeName_: String): ViewModel() {
                 if (episode == null) {
                     Logd(TAG) { "traverse: error: episode not exist in map: $filename" }
                     filesRemoved.add(filename)
-                    runOnIOScope { srcFile.delete() }
+                    appIOScope.launch { srcFile.delete() }
                     return
                 }
                 Logd(TAG) { "traverse found episode: ${episode.title}" }
             }
         }
-        runOnIOScope {
+        appIOScope.launch {
             progressing = true
             nameEpisodeMap.clear()
             MediaFilesTransporter("").updateDB()    // TODO: check out, may run out of memory?
@@ -555,7 +557,7 @@ fun FacetsScreen(modeName: String = "") {
                         })
                         if (episodes.isNotEmpty() && facetsMode == QuickAccess.New) DropdownMenuItem(text = { Text(stringResource(R.string.clear_new_label)) }, onClick = {
                             vm.progressing = true
-                            runOnIOScope {
+                            appIOScope.launch {
                                 realm.write { for (e in episodes) if (e.playState == EpisodeState.NEW.code) findLatest(e)?.setPlayState(EpisodeState.UNPLAYED) }
                                 Logt(TAG, "New items cleared")
                                 withContext(Dispatchers.Main) { vm.progressing = false }
@@ -671,7 +673,7 @@ fun FacetsScreen(modeName: String = "") {
                     if (vm.date!!.plus(6, DateTimeUnit.DAY) < curDate) IconButton(onClick = { vm.date = vm.date!!.plus(7, DateTimeUnit.DAY); vm.filterChanged++ }) { Text("+7", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
                     Spacer(Modifier.weight(1f))
                 }
-                EpisodeLazyColumn(episodes, statusRowMode = statusMode, showActionButtons = facetsMode != QuickAccess.Commented, swipeActions = swipeActions, actionButtonType = actionButtonType, lazyListState = lazyListState, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) runOnIOScope { queueToVirtual(e, episodes, vm.listIdentity, vm.sortOrder) } })
+                EpisodeLazyColumn(episodes, statusRowMode = statusMode, showActionButtons = facetsMode != QuickAccess.Commented, swipeActions = swipeActions, actionButtonType = actionButtonType, lazyListState = lazyListState, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) appIOScope.launch { queueToVirtual(e, episodes, vm.listIdentity, vm.sortOrder) } })
             }
         }
         if (episodeForInfo != null) EpisodeScreen(episodeForInfo!!, listFlow = vm.episodesFlow, allowOpenFeed = true)

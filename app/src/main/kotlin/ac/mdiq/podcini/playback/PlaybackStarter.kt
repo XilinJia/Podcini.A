@@ -10,12 +10,12 @@ import ac.mdiq.podcini.storage.database.prefStreamOverDownload
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.specs.MediaType
 import ac.mdiq.podcini.storage.specs.VideoMode
-import ac.mdiq.podcini.ui.screens.PSState
-import ac.mdiq.podcini.ui.screens.curVideoMode
-import ac.mdiq.podcini.ui.screens.psState
+import androidx.compose.material3.SheetValue
+import ac.mdiq.podcini.ui.screens.sheetValue
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
 import ac.mdiq.podcini.utils.Logt
+import androidx.compose.material3.ExperimentalMaterial3Api
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -61,6 +61,7 @@ class PlaybackStarter(private val media: Episode) {
         return this
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     fun start(playerId: Int = 0) {
         Logd(TAG) { "start PlaybackService.isRunning: ${PlaybackService.isRunning}" }
 //        showStackTrace()
@@ -87,9 +88,9 @@ class PlaybackStarter(private val media: Episode) {
                 Logd(TAG) { "start: statusFlow: ${player.status} sameMedia: $sameMedia" }
                 player.isStreaming = shouldStreamThisTime
                 player.widgetId = widgetId
-                if (!isAutoController && (!player.isPlaying || media_.id != player.curMediaFlow.value?.id) && (media_.forceVideo || (media_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && curVideoMode != VideoMode.AUDIO_ONLY && media_.mediaType == MediaType.VIDEO))) {
+                if (!isAutoController && (!player.isPlaying || media_.id != player.curMediaFlow.value?.id) && (media_.forceVideo || (media_.feed?.videoModePolicy != VideoMode.AUDIO_ONLY && appPrefsFlow!!.value.videoPlaybackMode != VideoMode.AUDIO_ONLY.code && media_.mediaType == MediaType.VIDEO))) {
 //                    player.playingVideoFlow.value = true
-                    psState = PSState.Expanded
+                    sheetValue = SheetValue.Expanded
                 }
 //                else player.playingVideoFlow.value = false
                 when {

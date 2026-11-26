@@ -37,10 +37,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DrawerState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -79,6 +81,7 @@ data class FeedBrief(val id: Long, val title: String?, val imageUrl: String?)
 val LocalDrawerController = staticCompositionLocalOf<DrawerController?> { null }
 val LocalDrawerState = staticCompositionLocalOf<DrawerState> { error("DrawerState not provided") }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavDrawerScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -200,14 +203,14 @@ fun NavDrawerScreen() {
                     Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp).clickable {
                         navTo(FeedDetails(feedId = id))
                         drawerCtrl?.close()
-                        psState = PSState.PartiallyExpanded
+                        sheetValue = SheetValue.PartiallyExpanded
                     }) {
                         AsyncImage(model = imageUrl, imageLoader = imageLoader, contentDescription = "imgvCover", placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), modifier = Modifier.width(40.dp).height(40.dp))
                         Text(title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 10.dp))
                     }
                 }
             }
-            if (psState == PSState.Hidden) AsyncImage(model = R.drawable.teaser, contentDescription = "PlayerUI", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxWidth().height(60.dp).clickable { psState = PSState.PartiallyExpanded })
+            if (sheetValue == SheetValue.Hidden) AsyncImage(model = R.drawable.teaser, contentDescription = "PlayerUI", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxWidth().height(60.dp).clickable { sheetValue = SheetValue.PartiallyExpanded })
         }
     }
 }

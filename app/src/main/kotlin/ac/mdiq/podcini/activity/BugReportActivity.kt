@@ -1,11 +1,11 @@
 package ac.mdiq.podcini.activity
 
 import ac.mdiq.podcini.BuildConfig
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.config.settings.developerEmail
 import ac.mdiq.podcini.config.settings.githubAddress
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.utils.div
 import ac.mdiq.podcini.storage.utils.internalDir
 import ac.mdiq.podcini.ui.compose.CommonToast
@@ -25,7 +25,6 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -42,7 +41,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,10 +59,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3Api::class)
 class BugReportActivity : ComponentActivity() {
     private var crashDetailsTextView by mutableStateOf("")
     private var showConfirmExport = mutableStateOf(false)
@@ -104,7 +102,7 @@ class BugReportActivity : ComponentActivity() {
             Column(modifier = Modifier.padding(innerPadding).fillMaxSize().padding(horizontal = 5.dp).verticalScroll(rememberScrollState())) {
                 CommonToast(onDismiss = { })
                 ConfirmDialog(0, stringResource(R.string.confirm_export_log_dialog_message), showConfirmExport) {
-                    runOnIOScope { exportLog() }
+                    appIOScope.launch { exportLog() }
                     showConfirmExport.value = false
                 }
                 Button(modifier = Modifier.fillMaxWidth(), onClick = { openInSystemDefault("${githubAddress}/issues") }) { Text(stringResource(R.string.open_bug_tracker)) }
@@ -159,6 +157,6 @@ class BugReportActivity : ComponentActivity() {
         else Logt(TAG, getString(R.string.need_email_client))
     }
     companion object {
-        private val TAG: String = BugReportActivity::class.simpleName ?: "Anonymous"
+        private const val TAG = "BugReportActivity"
     }
 }

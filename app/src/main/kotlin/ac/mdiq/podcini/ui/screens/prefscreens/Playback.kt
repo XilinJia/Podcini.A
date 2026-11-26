@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens.prefscreens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.forceRestart
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.forcePlaybackReset
@@ -7,7 +8,7 @@ import ac.mdiq.podcini.sourcing.clientsHaveMultiQ
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.streamingCacheSizeMB
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.specs.AVQuality
@@ -43,6 +44,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -72,6 +75,7 @@ import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 enum class PrefHardwareButton(val res: Int, val res1: Int) {
@@ -98,7 +102,7 @@ fun PlaybackScreen() {
 //            context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             selectedRingtoneUri = uri
             ringtoneName = RingtoneManager.getRingtone(context, uri).getTitle(context) ?: "Silent"
-            runOnIOScope {
+            appIOScope.launch {
                 upsert(appPrefs) {
                     it.ringToneName = ringtoneName
                     it.ringToneUriString = uri.toString()
@@ -116,14 +120,14 @@ fun PlaybackScreen() {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp).verticalScroll(rememberScrollState()).background(MaterialTheme.colorScheme.surface)) {
         Text(stringResource(R.string.interruptions), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         TitleSummarySwitchRow(R.string.pref_pauseOnHeadsetDisconnect_title, R.string.pref_pauseOnDisconnect_sum, appPrefs.pauseOnHeadsetDisconnect) {
-            runOnIOScope { upsert(appPrefs) { p-> p.pauseOnHeadsetDisconnect = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.pauseOnHeadsetDisconnect = it } }
         }
         if (appPrefs.pauseOnHeadsetDisconnect) {
             TitleSummarySwitchRow(R.string.pref_unpauseOnHeadsetReconnect_title, R.string.pref_unpauseOnHeadsetReconnect_sum, appPrefs.unpauseOnHeadsetReconnect) {
-                runOnIOScope { upsert(appPrefs) { p-> p.unpauseOnHeadsetReconnect = it } }
+                appIOScope.launch { upsert(appPrefs) { p-> p.unpauseOnHeadsetReconnect = it } }
             }
             TitleSummarySwitchRow(R.string.pref_unpauseOnBluetoothReconnect_title, R.string.pref_unpauseOnBluetoothReconnect_sum, appPrefs.unpauseOnBluetoothReconnect) {
-                runOnIOScope { upsert(appPrefs) { p-> p.unpauseOnBluetoothReconnect = it } }
+                appIOScope.launch { upsert(appPrefs) { p-> p.unpauseOnBluetoothReconnect = it } }
             }
         }
         HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 5.dp))
@@ -131,21 +135,18 @@ fun PlaybackScreen() {
         if (appAttribs.langSet.size > 1) {
             Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Text(stringResource(R.string.preferred_languages), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-                var showIcon by remember { mutableStateOf(false) }
-                var newName by remember { mutableStateOf(appAttribs.langsPreferred.joinToString(", ")) }
+                val name = remember { appAttribs.langsPreferred.joinToString(", ") }
+                val newName = rememberTextFieldState(initialText = name)
+                var showIcon by remember(newName.text) { mutableStateOf(newName.text != name) }
                 val focusManager = LocalFocusManager.current
-                TextField(value = newName, singleLine = true, modifier = Modifier.trackAsTextField(), label = { Text("Case sensitive. Separate with ,", style = MaterialTheme.typography.labelSmall) },
-                    onValueChange = {
-                        newName = it
-                        showIcon =  true
-                    },
+                TextField(state = newName, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(), label = { Text("Case sensitive. Separate with ,", style = MaterialTheme.typography.labelSmall) },
                     trailingIcon = {
                         if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable(
                             onClick = {
-                                runOnIOScope {
+                                appIOScope.launch {
                                     upsert(appAttribs) { att->
                                         att.langsPreferred.clear()
-                                        att.langsPreferred.addAll(newName.split(',').map { it.trim() }.filter { it.isNotEmpty() })
+                                        att.langsPreferred.addAll(newName.text.toString().split(',').map { it.trim() }.filter { it.isNotEmpty() })
                                     }
                                     withContext(Dispatchers.Main) { forcePlaybackReset = true }
                                 }
@@ -160,7 +161,7 @@ fun PlaybackScreen() {
         }
 
         TitleSummarySwitchRow(R.string.use_ring_tone, R.string.use_ring_tone_sum, appPrefs.useRingTone) {
-            runOnIOScope { upsert(appPrefs) { p-> p.useRingTone = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.useRingTone = it } }
         }
         if (appPrefs.useRingTone) {
             Column(Modifier.padding(start = 10.dp)) {
@@ -176,7 +177,7 @@ fun PlaybackScreen() {
                     ringtonePickerLauncher.launch(intent)
                 }
                 TitleSummarySwitchRow(R.string.disable_ring_tone_on_music, R.string.disable_ring_tone_on_music_sum, appPrefs.disableRingToneOnMusic) {
-                    runOnIOScope { upsert(appPrefs) { p-> p.disableRingToneOnMusic = it } }
+                    appIOScope.launch { upsert(appPrefs) { p-> p.disableRingToneOnMusic = it } }
                 }
             }
         }
@@ -184,7 +185,7 @@ fun PlaybackScreen() {
         var prefStreaming by remember { mutableStateOf(prefStreamOverDownload) }
         TitleSummarySwitchRow(R.string.pref_stream_over_download_title, R.string.pref_stream_over_download_sum, appPrefs.streamOverDownload) {
             prefStreaming = it
-            runOnIOScope { upsert(appPrefs) { p-> p.streamOverDownload = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.streamOverDownload = it } }
         }
         if (prefStreaming) Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -204,7 +205,7 @@ fun PlaybackScreen() {
             var showAudioDialog by remember { mutableStateOf(false) }
             if (showAudioDialog) SetAVQuality(selectedOption = audioQuality.tag, showGlobal = false, onDismiss = { showAudioDialog = false }) { type ->
                 audioQuality = type
-                runOnIOScope { upsert(appPrefs) { it.audioQuality  = audioQuality.code } }
+                appIOScope.launch { upsert(appPrefs) { it.audioQuality  = audioQuality.code } }
             }
             Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Row(Modifier.fillMaxWidth()) {
@@ -217,7 +218,7 @@ fun PlaybackScreen() {
             var showVideoDialog by remember { mutableStateOf(false) }
             if (showVideoDialog) SetAVQuality(selectedOption = videoQuality.tag, showGlobal = false, onDismiss = { showVideoDialog = false }) { type->
                 videoQuality = type
-                runOnIOScope { upsert(appPrefs) { it.videoQuality  = videoQuality.code } }
+                appIOScope.launch { upsert(appPrefs) { it.videoQuality  = videoQuality.code } }
             }
             Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Row(Modifier.fillMaxWidth()) {
@@ -228,15 +229,15 @@ fun PlaybackScreen() {
                 Text(text = stringResource(R.string.pref_video_quality_sum), style = MaterialTheme.typography.bodyMedium, color = textColor)
             }
             TitleSummarySwitchRow(R.string.pref_low_quality_on_mobile_title, R.string.pref_low_quality_on_mobile_sum, appPrefs.lowQualityOnMobile) {
-                runOnIOScope { upsert(appPrefs) { p-> p.lowQualityOnMobile = it } }
+                appIOScope.launch { upsert(appPrefs) { p-> p.lowQualityOnMobile = it } }
             }
         }
         TitleSummarySwitchRow(R.string.pref_use_adaptive_progress_title, R.string.pref_use_adaptive_progress_sum, appPrefs.useAdaptiveProgressUpdate) {
-            runOnIOScope { upsert(appPrefs) { p-> p.useAdaptiveProgressUpdate = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.useAdaptiveProgressUpdate = it } }
         }
         var showVideoModeDialog by remember { mutableStateOf(false) }
         if (showVideoModeDialog) VideoModeDialog(initMode =  VideoMode.fromCode(appPrefs.videoPlaybackMode), isDemuxed = false, muxed = appPrefs.useMuxedVideo, onDismiss = { showVideoModeDialog = false }) { mode, muxed ->
-            runOnIOScope {
+            appIOScope.launch {
                 upsert(appPrefs) {
                     it.videoPlaybackMode = mode.code
                 //                it.useMuxedVideo = muxed  // not used now
@@ -265,7 +266,7 @@ fun PlaybackScreen() {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        runOnIOScope { upsert(appPrefs) { it.hardwareForwardButton = tempFFSelectedOption.toString() } }
+                        appIOScope.launch { upsert(appPrefs) { it.hardwareForwardButton = tempFFSelectedOption.toString() } }
                         showHardwareForwardButtonOptions = false
                     }) { Text(text = "OK") }
                 },
@@ -290,7 +291,7 @@ fun PlaybackScreen() {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        runOnIOScope { upsert(appPrefs) { it.hardwarePreviousButton = tempPRSelectedOption.toString()} }
+                        appIOScope.launch { upsert(appPrefs) { it.hardwarePreviousButton = tempPRSelectedOption.toString()} }
                         showHardwarePreviousButtonOptions = false
                     }) { Text(text = "OK") }
                 },
@@ -300,18 +301,18 @@ fun PlaybackScreen() {
         HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 5.dp))
         Text(stringResource(R.string.queue_label) + "/" + stringResource(R.string.episodes_label), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 15.dp))
         TitleSummarySwitchRow(R.string.pref_enqueue_downloaded_title, R.string.pref_enqueue_downloaded_summary, appPrefs.enqueueDownloaded) {
-            runOnIOScope { upsert(appPrefs) { p-> p.enqueueDownloaded = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.enqueueDownloaded = it } }
         }
 
         TitleSummarySwitchRow(R.string.pref_skip_keeps_episodes_title, R.string.pref_skip_keeps_episodes_sum, appPrefs.skipKeepsEpisode) {
-            runOnIOScope { upsert(appPrefs) { p-> p.skipKeepsEpisode = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.skipKeepsEpisode = it } }
         }
         TitleSummarySwitchRow(R.string.pref_mark_played_removes_from_queue_title, R.string.pref_mark_played_removes_from_queue_sum, appPrefs.removeFromQueueMarkPlayed) {
-            runOnIOScope { upsert(appPrefs) { p-> p.removeFromQueueMarkPlayed = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.removeFromQueueMarkPlayed = it } }
         }
 
         TitleSummarySwitchRow(R.string.auto_delete, R.string.pref_auto_delete_sum, appPrefs.autoDelete) {
-            runOnIOScope { upsert(appPrefs) { p-> p.autoDelete = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.autoDelete = it } }
         }
         var blockAutoDeleteLocal by remember { mutableStateOf(true) }
         TitleSummarySwitchRow(R.string.pref_auto_local_delete_title, R.string.pref_auto_local_delete_sum, appPrefs.autoDeleteLocal) {
@@ -322,16 +323,16 @@ fun PlaybackScreen() {
                     cancelRes = R.string.cancel_label,
                     onConfirm = {
                         blockAutoDeleteLocal = false
-                        runOnIOScope { upsert(appPrefs) { p-> p.autoDeleteLocal = it } }
+                        appIOScope.launch { upsert(appPrefs) { p-> p.autoDeleteLocal = it } }
                         blockAutoDeleteLocal = true
                     })
             }
         }
         TitleSummarySwitchRow(R.string.pref_keeps_important_episodes_title, R.string.pref_keeps_important_episodes_sum, appPrefs.favoriteKeepsEpisode) {
-            runOnIOScope { upsert(appPrefs) { p-> p.favoriteKeepsEpisode = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.favoriteKeepsEpisode = it } }
         }
         TitleSummarySwitchRow(R.string.pref_delete_removes_from_queue_title, R.string.pref_delete_removes_from_queue_sum, appPrefs.deleteRemovesFromQueue) {
-            runOnIOScope { upsert(appPrefs) { p-> p.deleteRemovesFromQueue = it } }
+            appIOScope.launch { upsert(appPrefs) { p-> p.deleteRemovesFromQueue = it } }
         }
     }
 }

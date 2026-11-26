@@ -203,7 +203,7 @@ class EpisodeAction private constructor(builder: Builder) {
     }
 
     companion object {
-        private val TAG: String = EpisodeAction::class.simpleName ?: "Anonymous"
+        private const val TAG = "EpisodeAction"
         private const val PATTERN_ISO_DATEFORMAT = "yyyy-MM-dd'T'HH:mm:ss"
         val NEW: Action = Action.NEW
         val DOWNLOAD: Action = Action.DOWNLOAD

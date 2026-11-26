@@ -1,7 +1,6 @@
 package ac.mdiq.podcini.storage.database
 
 import ac.mdiq.podcini.BuildConfig
-import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.storage.model.AppAttribs
 import ac.mdiq.podcini.storage.model.AppPrefs
 import ac.mdiq.podcini.storage.model.AutoDLEQ
@@ -42,17 +41,12 @@ import io.github.xilinjia.krdb.ext.realmListOf
 import io.github.xilinjia.krdb.types.EmbeddedRealmObject
 import io.github.xilinjia.krdb.types.RealmObject
 import io.github.xilinjia.krdb.types.TypedRealmObject
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.coroutines.ContinuationInterceptor
 
 val migrationStep = MutableStateFlow("")
 val migrationProg = MutableStateFlow("")
 
-private const val TAG: String = "RealmDB"
+private const val TAG = "RealmDB"
 
 val config: RealmConfiguration by lazy {
     RealmConfiguration.Builder(schema = setOf(
@@ -307,13 +301,5 @@ fun <T : EmbeddedRealmObject> upsertBlkEmb(entity: T, block: MutableRealm.(T) ->
                 it
             } ?: entity
         result
-    }
-}
-
-
-fun runOnIOScope(block: suspend () -> Unit) : Job {
-    return appIOScope.launch {
-        if (Dispatchers.IO == coroutineContext[ContinuationInterceptor]) block()
-        else withContext(Dispatchers.IO) { block() }
     }
 }

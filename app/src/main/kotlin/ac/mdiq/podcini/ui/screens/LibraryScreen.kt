@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.activity.MainActivity
@@ -25,7 +26,7 @@ import ac.mdiq.podcini.storage.database.feedCountFlow
 import ac.mdiq.podcini.storage.database.queuesFlow
 import ac.mdiq.podcini.storage.database.queuesLive
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -116,6 +117,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -178,7 +181,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
@@ -403,7 +405,7 @@ class LibraryVM : ViewModel() {
     fun persistPropertySort(feeds: List<Feed>, subIndex: FeedPropertySortIndex? = null) {
         val subIndexOrdinal = subIndex?.code ?: prefsFlow.value.propertySortIndex
         Logd(TAG) { "preparePropertySort subIndexOrdinal: $subIndexOrdinal" }
-        runOnIOScope {
+        appIOScope.launch {
             realm.write {
                 for (f_ in feeds) {
                     val f = findLatest(f_) ?: continue
@@ -455,7 +457,7 @@ class LibraryVM : ViewModel() {
                 it.feedsSortedInc()
             }
         }
-        runOnIOScope {
+        appIOScope.launch {
             when (subIndexOrdinal) {
                 FeedDateSortIndex.Publish.code -> {  // date publish
                     var queryString = "feedId == $0"
@@ -541,7 +543,7 @@ class LibraryVM : ViewModel() {
                 it.feedsSortedInc()
             }
         }
-        runOnIOScope {
+        appIOScope.launch {
             when (subIndexOrdinal) {
                 FeedTimeSortIndex.Total.code -> { // total duration
                     realm.write {
@@ -598,7 +600,7 @@ class LibraryVM : ViewModel() {
 
     fun persistCountSort(feeds: List<Feed>) {
         Logd(TAG) { "prepareCountSort" }
-        runOnIOScope {
+        appIOScope.launch {
             val sb = StringBuilder("feedId == $0")
             if (playStateQueries.isNotEmpty()) sb.append(" AND ($playStateQueries)")
             if (ratingQueries.isNotEmpty()) sb.append(" AND ($ratingQueries)")
@@ -740,7 +742,7 @@ fun LibraryScreen() {
                 actMain?.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
                     if (result.resultCode != RESULT_OK || result.data == null) return@registerForActivityResult
                     val uri = result.data!!.data
-                    runOnIOScope {
+                    appIOScope.launch {
                         try {
                             Logd(TAG) { "selectedFeeds: ${feedsSelected.size}" }
                             if (uri == null) ExportWorker(OpmlWriter()).exportFile(feedsSelected)
@@ -823,7 +825,7 @@ fun LibraryScreen() {
                 IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                 DropdownMenu(expanded = expanded, border = BorderStroke(1.dp, borderColor), onDismissRequest = { expanded = false }) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.toggle_grid_list)) }, onClick = {
-                        runOnIOScope { upsert(subPrefs) { it.prefFeedGridLayout = !it.prefFeedGridLayout } }
+                        appIOScope.launch { upsert(subPrefs) { it.prefFeedGridLayout = !it.prefFeedGridLayout } }
                         expanded = false
                     })
                     if (!vm.isViewGarden) {
@@ -859,7 +861,7 @@ fun LibraryScreen() {
                         }
                         else {
                             if (vm.curVolume!!.isLocal) {
-                                runOnIOScope {
+                                appIOScope.launch {
                                     var uri = vm.curVolume!!.uriString.toSafeUri()
                                     val rootUri =  findRootForUri(uri)
                                     if (rootUri != null && uri != rootUri) {
@@ -889,7 +891,7 @@ fun LibraryScreen() {
                             }
                         }, onClick = { toggleAllFeeds() })
                         fun toggleArchived() {
-                            runOnIOScope { upsert(subPrefs) { it.showArchived = !it.showArchived } }
+                            appIOScope.launch { upsert(subPrefs) { it.showArchived = !it.showArchived } }
                             expanded = false
                         }
                         DropdownMenuItem(text = {
@@ -917,7 +919,7 @@ fun LibraryScreen() {
                             OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Feed.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Feed.code)
-                                        runOnIOScope {
+                                        appIOScope.launch {
                                             upsert(subPrefs) {
                                                 if (it.sortIndex == FeedSortIndex.Feed.code) {
                                                     it.propertyAscending = !it.propertyAscending
@@ -935,7 +937,7 @@ fun LibraryScreen() {
                             OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Date.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Date.code)
-                                        runOnIOScope {
+                                        appIOScope.launch {
                                             upsert(subPrefs) {
                                                 it.dateAscending = !it.dateAscending
                                                 it.sortDirCode = if (it.dateAscending) 0 else 1
@@ -948,7 +950,7 @@ fun LibraryScreen() {
                             OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Time.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Time.code)
-                                        runOnIOScope {
+                                        appIOScope.launch {
                                             upsert(subPrefs) {
                                                 it.timeAscending = !it.timeAscending
                                                 it.sortDirCode = if (it.timeAscending) 0 else 1
@@ -961,7 +963,7 @@ fun LibraryScreen() {
                             OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), elevation = null, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (subPrefs.sortIndex != FeedSortIndex.Count.code) borderColor else buttonAltColor),
                                 onClick = {
                                     if (subPrefs.sortIndex == FeedSortIndex.Count.code)
-                                        runOnIOScope {
+                                        appIOScope.launch {
                                             upsert(subPrefs) {
                                                 it.countAscending = !it.countAscending
                                                 it.sortDirCode = if (it.countAscending) 0 else 1
@@ -1007,7 +1009,7 @@ fun LibraryScreen() {
                                             Text(stringResource(item.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall, color = textColor, modifier = Modifier.padding(end = 10.dp))
                                             Spacer(Modifier.weight(0.3f))
                                             fun persistDLSort(i: Int) {
-                                                runOnIOScope {
+                                                appIOScope.launch {
                                                     val downlaodedSortIndex = if (subPrefs.downlaodedSortIndex != i) i else -1
                                                     upsert(subPrefs) { it.downlaodedSortIndex = downlaodedSortIndex }
                                                     vm.downloadedQuery = when (downlaodedSortIndex) {
@@ -1028,7 +1030,7 @@ fun LibraryScreen() {
                                             Text(stringResource(item.nameRes) + " :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall, color = textColor, modifier = Modifier.padding(end = 10.dp))
                                             Spacer(Modifier.weight(0.3f))
                                             fun persistCommentSort(i: Int) {
-                                                runOnIOScope {
+                                                appIOScope.launch {
                                                     val commentedSortIndex = if (subPrefs.commentedSortIndex != i) i else -1
                                                     upsert(subPrefs) { it.commentedSortIndex = commentedSortIndex }
                                                     vm.commentedQuery = when (subPrefs.commentedSortIndex) {
@@ -1086,9 +1088,9 @@ fun LibraryScreen() {
                                                 var higherSelected by remember { mutableStateOf(false) }
                                                 Spacer(Modifier.weight(1f))
                                                 Text("<<<", color = if (lowerSelected) buttonAltColor else buttonColor, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.clickable {
-                                                    runOnIOScope {
+                                                    appIOScope.launch {
                                                         val hIndex = episodeStateSort.indexOfLast { it.value }
-                                                        if (hIndex < 0) return@runOnIOScope
+                                                        if (hIndex < 0) return@launch
                                                         if (!lowerSelected) {
                                                             for (i in 0..hIndex) episodeStateSort[i].value = true
                                                         } else {
@@ -1103,7 +1105,7 @@ fun LibraryScreen() {
                                                 })
                                                 Spacer(Modifier.weight(1f))
                                                 Text("A", color = buttonColor, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.clickable {
-                                                    runOnIOScope {
+                                                    appIOScope.launch {
                                                         val selectAll = !(lowerSelected && higherSelected)
                                                         lowerSelected = selectAll
                                                         higherSelected = selectAll
@@ -1115,9 +1117,9 @@ fun LibraryScreen() {
                                                 })
                                                 Spacer(Modifier.weight(1f))
                                                 Text(">>>", color = if (higherSelected) buttonAltColor else buttonColor, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.clickable {
-                                                    runOnIOScope {
+                                                    appIOScope.launch {
                                                         val lIndex = episodeStateSort.indexOfFirst { it.value }
-                                                        if (lIndex < 0) return@runOnIOScope
+                                                        if (lIndex < 0) return@launch
                                                         if (!higherSelected) {
                                                             for (i in lIndex..<item.properties.size) episodeStateSort[i].value = true
                                                         } else {
@@ -1140,7 +1142,7 @@ fun LibraryScreen() {
                                                         episodeStateSort[index].value = !episodeStateSort[index].value
                                                         val c = episodeStateSort.count { it.value }
                                                         allOrNone = c == 0 || c == episodeStateSort.size
-                                                        runOnIOScope { persistStateSort() }
+                                                        appIOScope.launch { persistStateSort() }
                                                     },
                                                 ) { Text(text = stringResource(item.properties[index].displayName), maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             }
@@ -1185,9 +1187,9 @@ fun LibraryScreen() {
                                                 var higherSelected by remember { mutableStateOf(false) }
                                                 Spacer(Modifier.weight(1f))
                                                 Text("<<<", color = if (lowerSelected) buttonAltColor else buttonColor, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.clickable {
-                                                    runOnIOScope {
+                                                    appIOScope.launch {
                                                         val hIndex = ratingSort.indexOfLast { it.value }
-                                                        if (hIndex < 0) return@runOnIOScope
+                                                        if (hIndex < 0) return@launch
                                                         if (!lowerSelected) {
                                                             for (i in 0..hIndex) ratingSort[i].value = true
                                                         } else {
@@ -1202,7 +1204,7 @@ fun LibraryScreen() {
                                                 })
                                                 Spacer(Modifier.weight(1f))
                                                 Text("A", color = buttonColor, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.clickable {
-                                                    runOnIOScope {
+                                                    appIOScope.launch {
                                                         val selectAll = !(lowerSelected && higherSelected)
                                                         lowerSelected = selectAll
                                                         higherSelected = selectAll
@@ -1214,7 +1216,7 @@ fun LibraryScreen() {
                                                 })
                                                 Spacer(Modifier.weight(1f))
                                                 Text(">>>", color = if (higherSelected) buttonAltColor else buttonColor, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.clickable {
-                                                    runOnIOScope {
+                                                    appIOScope.launch {
                                                         val lIndex = ratingSort.indexOfFirst { it.value }
                                                         if (lIndex >= 0) {
                                                             if (!higherSelected) {
@@ -1240,7 +1242,7 @@ fun LibraryScreen() {
                                                         ratingSort[index].value = !ratingSort[index].value
                                                         val c = ratingSort.count { it.value }
                                                         allOrNone = c == 0 || c == ratingSort.size
-                                                        runOnIOScope { persistRatingSort() }
+                                                        appIOScope.launch { persistRatingSort() }
                                                     },
                                                 ) { Text(text = stringResource(item.properties[index].displayName), maxLines = 1, color = textColor, style = MaterialTheme.typography.bodySmall) }
                                             }
@@ -1262,7 +1264,7 @@ fun LibraryScreen() {
             var tagsFull by remember(subPrefs.tagsSel.size) { mutableStateOf(subPrefs.tagsSel.size == appAttribs.feedTagSet.size) }
             var queuesFull by remember(subPrefs.queueSelIds.size) { mutableStateOf(subPrefs.queueSelIds.size == vm.queueNames.size) }
             fun onFilterChanged(newFilterValues: Set<String>) {
-                runOnIOScope {
+                appIOScope.launch {
                     upsert(subPrefs) {
                         it.feedsFilter = newFilterValues.joinToString(",")
                         it.feedsFilteredInc()
@@ -1292,7 +1294,7 @@ fun LibraryScreen() {
                                     Text(stringResource(R.string.languages) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = if (langFull) buttonColor else buttonAltColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                     if (expandRow) {
                                         val cb = {
-                                            runOnIOScope {
+                                            appIOScope.launch {
                                                 val langsSel = mutableSetOf<String>()
                                                 for (i in langs.indices) if (selectedList[i].value) langsSel.add(langs[i])
                                                 upsert(subPrefs) {
@@ -1310,7 +1312,7 @@ fun LibraryScreen() {
                                         OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                             onClick = {
                                                 selectedList[index].value = !selectedList[index].value
-                                                runOnIOScope {
+                                                appIOScope.launch {
                                                     val langsSel = subPrefs.langsSel.toMutableSet()
                                                     if (selectedList[index].value) langsSel.add(langs[index])
                                                     else langsSel.remove(langs[index])
@@ -1339,7 +1341,7 @@ fun LibraryScreen() {
                                 Text(stringResource(R.string.queue_label) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = if (queuesFull) buttonColor else buttonAltColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                 if (expandRow) {
                                     val cb = {
-                                        runOnIOScope {
+                                        appIOScope.launch {
                                             val qSelIds = mutableSetOf<Long>()
                                             for (i in vm.queueNames.indices) if (selectedList[i].value) qSelIds.add(vm.queueIds[i])
                                             upsert(subPrefs) {
@@ -1357,7 +1359,7 @@ fun LibraryScreen() {
                                     OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                         onClick = {
                                             selectedList[index].value = !selectedList[index].value
-                                            runOnIOScope {
+                                            appIOScope.launch {
                                                 val qSelIds = subPrefs.queueSelIds.toMutableSet()
                                                 if (selectedList[index].value) qSelIds.add(vm.queueIds[index])
                                                 else qSelIds.remove(vm.queueIds[index])
@@ -1387,7 +1389,7 @@ fun LibraryScreen() {
                                     Text(stringResource(R.string.tags_label) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = if (tagsFull) buttonColor else buttonAltColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                     if (expandRow) {
                                         val cb = {
-                                            runOnIOScope {
+                                            appIOScope.launch {
                                                 val tagsSel = mutableSetOf<String>()
                                                 for (i in tagList.indices) if (selectedList[i].value) tagsSel.add(tagList[i])
                                                 upsert(subPrefs) {
@@ -1405,7 +1407,7 @@ fun LibraryScreen() {
                                         OutlinedButton(modifier = Modifier.padding(horizontal = 3.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), border = BorderStroke(2.dp, if (selectedList[index].value) buttonAltColor else borderColor),
                                             onClick = {
                                                 selectedList[index].value = !selectedList[index].value
-                                                runOnIOScope {
+                                                appIOScope.launch {
                                                     val tagsSel = subPrefs.tagsSel.toMutableSet()
                                                     if (selectedList[index].value) tagsSel.add(tagList[index])
                                                     else tagsSel.remove(tagList[index])
@@ -1511,7 +1513,7 @@ fun LibraryScreen() {
                         Row(modifier = Modifier.fillMaxWidth()) {
                             Spacer(Modifier.weight(0.3f))
                             Button(onClick = {
-                                runOnIOScope {
+                                appIOScope.launch {
                                     upsert(subPrefs) {
                                         it.tagsSel = appAttribs.feedTagSet.toRealmSet()
                                         it.queueSelIds = vm.queueIds.toRealmSet()
@@ -1537,17 +1539,17 @@ fun LibraryScreen() {
             CommonPopupCard(onDismiss = { onDismiss() }) {
                 Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                     Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
-                    var name by remember { mutableStateOf("") }
-                    TextField(value = name, singleLine = true, onValueChange = { name = it }, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_namee)) })
+                    val name = rememberTextFieldState(initialText = "")
+                    TextField(state = name, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_namee)) })
                     Row {
                         Button({ onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
                         Spacer(Modifier.weight(1f))
                         Button({
                             val v = Volume()
                             v.id = getEntityId()
-                            runOnIOScope {
+                            appIOScope.launch {
                                 upsert(v) {
-                                    it.name = name
+                                    it.name = name.text.toString()
                                     it.parentId = parent?.id ?: -1L
                                 }
                             }
@@ -1560,8 +1562,10 @@ fun LibraryScreen() {
 
         @Composable
         fun ReceiveContentDialog() {
-            var tcpPort by remember(appAttribs.transceivePort) { mutableIntStateOf(appAttribs.transceivePort) }
-            var udpPort by remember(appAttribs.udpPort) { mutableIntStateOf(appAttribs.udpPort) }
+//            var tcpPort by remember(appAttribs.transceivePort) { mutableIntStateOf(appAttribs.transceivePort) }
+            val tcpPort = rememberTextFieldState(initialText = appAttribs.transceivePort.toString())
+//            var udpPort by remember(appAttribs.udpPort) { mutableIntStateOf(appAttribs.udpPort) }
+            val udpPort = rememberTextFieldState(initialText = appAttribs.udpPort.toString())
             val ip = remember { getLocalIpAddress() }
             var contentType by remember { mutableStateOf(ContentType.Feed) }
             var receiver by remember { mutableStateOf<Receiver?>(null) }
@@ -1582,8 +1586,8 @@ fun LibraryScreen() {
                         Text(appAttribs.name + " at: " + (ip ?: "address unknown"))
                         Text(stringResource(R.string.ports_sum), style = MaterialTheme.typography.labelSmall)
                         if (receiveJob == null) Row(modifier = Modifier.fillMaxWidth().padding(5.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                            TextField(value = udpPort.toString(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.broadcast_port)) }, singleLine = true, modifier = Modifier.trackAsTextField().weight(1f), onValueChange = { udpPort = it.toIntOrNull() ?: 0 })
-                            TextField(value = tcpPort.toString(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.port_label)) }, singleLine = true, modifier = Modifier.trackAsTextField().weight(1f), onValueChange = { tcpPort = it.toIntOrNull() ?: 0 })
+                            TextField(state = udpPort, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.broadcast_port)) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField().weight(1f))
+                            TextField(state = tcpPort, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.port_label)) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField().weight(1f))
                         } else Text("Receiving at port $tcpPort")
                         if (receiveJob == null) Row {
                             Text(stringResource(R.string.content_type), modifier = Modifier.padding(end = 5.dp))
@@ -1592,18 +1596,21 @@ fun LibraryScreen() {
                     }
                 },
                 confirmButton = {
-                    if (receiveJob == null && !ip.isNullOrBlank()) TextButton(onClick = {
-                        broadcastJob = scope.launch { broadcastPresence(udpPort, tcpPort) }
-                        runOnIOScope {
+                    TextButton(enabled = receiveJob == null && !ip.isNullOrBlank(), onClick = {
+                        val tp = tcpPort.text.toString().toIntOrNull()
+                        val up = udpPort.text.toString().toIntOrNull()
+                        if (tp == null || up == null) return@TextButton
+                        broadcastJob = scope.launch { broadcastPresence(up, tp) }
+                        appIOScope.launch {
                             upsert(appAttribs) {
-                                if (udpPort != it.udpPort) it.udpPort = udpPort
-                                if (tcpPort != it.transceivePort) it.transceivePort = tcpPort
+                                if (up != it.udpPort) it.udpPort = up
+                                if (tp != it.transceivePort) it.transceivePort = tp
                             }
                         }
                         receiver = when (contentType) {
-                            ContentType.Feed -> FeedReceiver(tcpPort, vm.curVolume?.id ?: -1L)
-                            ContentType.Catalog -> CatalogReceiver(tcpPort) { onDismiss() }
-                            ContentType.Episodes -> EpisodesReceiver(tcpPort) { onDismiss() }
+                            ContentType.Feed -> FeedReceiver(tp, vm.curVolume?.id ?: -1L)
+                            ContentType.Catalog -> CatalogReceiver(tp) { onDismiss() }
+                            ContentType.Episodes -> EpisodesReceiver(tp) { onDismiss() }
                         }
                         receiveJob = scope.launch(Dispatchers.IO) { receiver!!.start() }
                     }) { Text(stringResource(R.string.start)) }
@@ -1621,7 +1628,7 @@ fun LibraryScreen() {
 
         @SuppressLint("LocalContextResourcesRead")
         fun saveSelectedFeeds(cbBlock: (Feed)->Unit) {
-            runOnIOScope { realm.write { for (f_ in feedsSelected) findLatest(f_)?.let { cbBlock(it) } } }
+            appIOScope.launch { realm.write { for (f_ in feedsSelected) findLatest(f_)?.let { cbBlock(it) } } }
             val numItems = feedsSelected.size
             Logt(TAG, context.resources.getQuantityString(R.plurals.updated_feeds_batch_label, numItems, numItems))
         }
@@ -1700,7 +1707,7 @@ fun LibraryScreen() {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     for (rating in Rating.entries.reversed()) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp).clickable {
-                            runOnIOScope { realm.write { for (f_ in selected) findLatest(f_)?.let { it.rating = rating.code } } }; onDismiss()
+                            appIOScope.launch { realm.write { for (f_ in selected) findLatest(f_)?.let { it.rating = rating.code } } }; onDismiss()
                         }) {
                             Icon(imageVector = ImageVector.vectorResource(id = rating.res), "")
                             Text(rating.name, Modifier.padding(start = 4.dp))
@@ -1726,7 +1733,7 @@ fun LibraryScreen() {
                             cancelRes = R.string.cancel_label,
                             onConfirm = {
                                 Logd(TAG) { "removing volume: ${volumeToOperate?.name}" }
-                                runOnIOScope {
+                                appIOScope.launch {
                                     feedOperationText = "Processing"
                                     deleteVolumeTree(volumeToOperate!!)
                                     feedOperationText = ""
@@ -1751,7 +1758,7 @@ fun LibraryScreen() {
         if (volumeToOperate != null) VolumeOptionsMenu { volumeToOperate = null }
 
         if (showToDeviceDialog) SendToDevice(onDismiss = { showToDeviceDialog = false }) { host, port ->
-            runOnIOScope {
+            appIOScope.launch {
                 var i = 0
                 val num = feedsSelected.size
                 for (feed in feedsSelected) {
@@ -1769,15 +1776,15 @@ fun LibraryScreen() {
         if (showAssociateDialog) SetAssociateQueueDialog {showAssociateDialog = false}
         if (showToVolumeDialog) SetToVolumeDialog {showToVolumeDialog = false}
         if (showTagsSettingDialog) TagSettingDialog(TagType.Feed, setOf(), multiples = true, { showTagsSettingDialog = false } ) { tags ->
-            runOnIOScope { realm.write { for (f_ in feedsSelected) findLatest(f_)?.tags?.addAll(tags) } }
+            appIOScope.launch { realm.write { for (f_ in feedsSelected) findLatest(f_)?.tags?.addAll(tags) } }
         }
         @Composable
         fun EditVolume(volume: Volume, onDismiss: () -> Unit) {
             CommonPopupCard(onDismiss = { onDismiss() }) {
                 Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                     Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
-                    var name by remember { mutableStateOf(volume.name) }
-                    TextField(value = name, singleLine = true, onValueChange = { name = it }, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.rename)) })
+                    val name = rememberTextFieldState(initialText = volume.name)
+                    TextField(state = name, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.rename)) })
                     var parent by remember { mutableStateOf<Volume?>(null) }
                     val custom = "Custom"
                     val none = "None"
@@ -1805,9 +1812,9 @@ fun LibraryScreen() {
                         Button({ onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
                         Spacer(Modifier.weight(1f))
                         Button({
-                            runOnIOScope {
+                            appIOScope.launch {
                                 upsert(volume) {
-                                    it.name = name
+                                    it.name = name.text.toString()
                                     it.parentId = parent?.id ?: -1L
                                 }
                             }
@@ -1883,30 +1890,14 @@ fun LibraryScreen() {
                                 }
                                 Logd(TAG) { "long clicked: ${feed.title}" }
                             })) {
-                            ConstraintLayout(Modifier.fillMaxSize()) {
-                                val (coverImage, episodeCount, rating, error) = createRefs()
-                                AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), imageLoader = imageLoader, contentDescription = "coverImage",
-                                    colorFilter = if (!feed.inNormalVolume) ColorFilter.tint(color = Color.Gray.copy(alpha = 0.5f), blendMode = BlendMode.SrcAtop) else null,
-                                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).constrainAs(coverImage) {
-                                        top.linkTo(parent.top)
-                                        bottom.linkTo(parent.bottom)
-                                        start.linkTo(parent.start)
-                                    })
+                            Box(Modifier.fillMaxSize()) {
+                                AsyncImage(model = ImageRequest.Builder(context).data(feed.images.firstOrNull()?.href).memoryCachePolicy(CachePolicy.ENABLED).build(), placeholder = painterResource(R.drawable.ic_launcher_foreground), error = painterResource(R.drawable.ic_launcher_foreground), imageLoader = imageLoader, contentDescription = "coverImage", colorFilter = if (!feed.inNormalVolume) ColorFilter.tint(color = Color.Gray.copy(alpha = 0.5f), blendMode = BlendMode.SrcAtop) else null, modifier = Modifier.fillMaxWidth().aspectRatio(1f))
                                 val measureString = remember(feed.episodesCount) { formatWithGrouping(feed.episodesCount.toLong()) }
-                                if (measureString.isNotBlank()) Text(measureString, color = buttonAltColor, modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer.copy(0.8f)).constrainAs(episodeCount) {
-                                    end.linkTo(parent.end)
-                                    top.linkTo(coverImage.top)
-                                })
+                                if (measureString.isNotBlank()) Text(measureString, color = buttonAltColor, modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer.copy(0.8f)).align(Alignment.TopEnd))
                                 if (feed.rating != Rating.UNRATED.code) Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(feed.rating).res), tint = buttonColor, contentDescription = "rating",
-                                        modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer.copy(0.8f)).constrainAs(rating) {
-                                            start.linkTo(coverImage.start)
-                                            bottom.linkTo(coverImage.bottom)
-                                        })
+                                    modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer.copy(0.8f)).align(Alignment.BottomStart))
                                 if (feed.lastUpdateFailed) Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_error), tint = Color.Red, contentDescription = "error",
-                                    modifier = Modifier.background(Color.Gray).constrainAs(error) {
-                                        end.linkTo(parent.end)
-                                        bottom.linkTo(coverImage.bottom)
-                                    })
+                                    modifier = Modifier.background(Color.Gray).align(Alignment.BottomEnd))
                             }
                             Text(feed.title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
@@ -1919,7 +1910,7 @@ fun LibraryScreen() {
                         val index = listState.firstVisibleItemIndex
                         val offset = listState.firstVisibleItemScrollOffset
                         Logd(TAG) { "DisposableEffect onDispose save positions: $index $offset" }
-                        runOnIOScope {
+                        appIOScope.launch {
                             upsert(subPrefs) {
                                 it.positionIndex = index
                                 it.positionOffset = offset

@@ -1,12 +1,13 @@
 package ac.mdiq.podcini.sourcing
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.createSynthetic
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.CATALOG_VOLUME_ID_START
 import ac.mdiq.podcini.storage.model.Episode
@@ -362,7 +363,7 @@ fun sendEpisodes(host: String, port: Int, syntheticName: String, episodes: List<
     val clipsInfo = mutableListOf<ClipInfo>()
 
     var socket: Socket? = null
-    return runOnIOScope {
+    return appIOScope.launch {
         episodes.forEach {
             episodesDTO.add(it.toBasicDTO())
             it.clips.forEach { clip ->
@@ -467,7 +468,7 @@ fun sendCatalog(host: String, port: Int, onEnd: ()->Unit): Job {
     Logd(TAG) { "sendCatalog built package: ${feedsDTO.size} feeds" }
 
     var socket: Socket? = null
-    return runOnIOScope {
+    return appIOScope.launch {
         try {
             socket = aSocket(socketSelector).tcp().connect(host, port)
             Logd(TAG) { "sendCatalog got socket" }

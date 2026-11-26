@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.sourcing.download
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.AppConfig.initialize
@@ -16,7 +17,7 @@ import ac.mdiq.podcini.storage.database.deleteMedia
 import ac.mdiq.podcini.storage.database.realm
 import ac.mdiq.podcini.storage.database.removeFromAllQueues
 import ac.mdiq.podcini.storage.database.removeFromQueue
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.DownloadResult.Companion.logDownloadResult
 import ac.mdiq.podcini.storage.model.Episode
@@ -93,7 +94,7 @@ class EpisodeDLManager {
         val tag = WORK_TAG_EPISODE_URL + media.downloadUrl
         val future: Future<List<WorkInfo>> = WorkManager.getInstance(getAppContext()).getWorkInfosByTag(tag)
 
-        CoroutineScope(Dispatchers.IO).launch {
+        appIOScope.launch {
             try {
                 val workInfoList = future.get() // Wait for the completion of the future operation and retrieve the result
                 workInfoList.forEach { workInfo -> if (workInfo.tags.contains(WORK_DATA_WAS_QUEUED)) removeFromQueue(actQueueFlow.value, listOf(media), playState = EpisodeState.UNSPECIFIED) }
@@ -107,7 +108,7 @@ class EpisodeDLManager {
         val workRequest: OneTimeWorkRequest.Builder = OneTimeWorkRequest.Builder(EpisodesDownloadWorker::class.java)
             .setInitialDelay(0L, TimeUnit.MILLISECONDS)
             .addTag(EpisodesDownload)
-        runOnIOScope {
+        appIOScope.launch {
             upsert(appAttribsFlow!!.value) {
                 episodes.forEach { episode ->
                     if (episode.suitableForDownload()) {
@@ -161,7 +162,7 @@ class EpisodesDownloadWorker(context: Context, params: WorkerParameters) : Corou
         }
         for (media in medias) {
             val request = requestFor(media) ?: continue
-            val progressUpdaterJob = CoroutineScope(Dispatchers.IO).launch {
+            val progressUpdaterJob = appIOScope.launch {
                 val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 while (isActive) {
                     try {

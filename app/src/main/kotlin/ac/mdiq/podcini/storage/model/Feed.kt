@@ -610,7 +610,7 @@ class Feed : RealmObject {
     }
 
     companion object {
-        private val TAG: String = Feed::class.simpleName ?: "Anonymous"
+        private const val TAG = "Feed"
 
         const val EPISODES_LIMIT = 5000
 

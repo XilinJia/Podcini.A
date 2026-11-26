@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.actQueueFlow
 import ac.mdiq.podcini.shared.EpisodeIPC
@@ -11,7 +12,7 @@ import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.queueToVirtual
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -144,7 +145,7 @@ fun setSearchTerms(query: String? = null) {
 }
 
 private fun saveToSearchHistory() {
-    runOnIOScope {
+    appIOScope.launch {
         upsert(appAttribsFlow!!.value) {
             if (curSearchString in it.searchHistory) it.searchHistory.remove(curSearchString)
             it.searchHistory.add(0, curSearchString)
@@ -331,7 +332,7 @@ fun SearchScreen() {
     }
     var showReserveAllDialog by remember { mutableStateOf(false) }
     if (showReserveAllDialog) AmendSyntheticFeed(name_ = "$curSearchString. By ${vm.searchers.joinToString { it.name }}", onDismiss = { showReserveAllDialog = false }) { feed->
-        runOnIOScope {
+        appIOScope.launch {
             realm.write {
                 for (e in vm.remoteMedia) {
                     e.feedId = feed.id
@@ -472,7 +473,7 @@ fun SearchScreen() {
                             Spacer(modifier = Modifier.weight(0.1f))
                             PlayRandom(episodes)
                         }
-                        EpisodeLazyColumn(episodes, swipeActions = swipeActions, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) runOnIOScope { queueToVirtual(e, episodes, vm.listIdentity, EpisodeSortOrder.DATE_DESC) } })
+                        EpisodeLazyColumn(episodes, swipeActions = swipeActions, actionButtonCB = { e, type -> if (type in listOf(ButtonTypes.PLAY, ButtonTypes.PLAY_LOCAL, ButtonTypes.STREAM)) appIOScope.launch { queueToVirtual(e, episodes, vm.listIdentity, EpisodeSortOrder.DATE_DESC) } })
                     }
                     SearchTabs.Feeds -> FeedsColumn()
                     SearchTabs.Remote -> {
@@ -505,4 +506,4 @@ enum class SearchBy(val nameRes: Int) {
 //        imm.showSoftInput(view, 0)
 //    }
 
-private const val TAG: String = "SearchScreen"
+private const val TAG = "SearchScreen"

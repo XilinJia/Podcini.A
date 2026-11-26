@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.OpmlBackupAgent.Companion.performRestore
@@ -15,7 +16,7 @@ import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.feedCountFlow
 import ac.mdiq.podcini.storage.database.feedsMap
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.SearchHistorySize
 import ac.mdiq.podcini.storage.model.SubscriptionLog.Companion.feedLogsMap
@@ -38,6 +39,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -50,7 +52,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -77,7 +78,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
@@ -193,7 +193,7 @@ fun FindFeedsScreen() {
         if (uri == null) return@rememberLauncherForActivityResult
         getAppContext().contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         persistedTrees.add(uri)
-        runOnIOScope { loadLocalFolder(uri) }
+        appIOScope.launch { loadLocalFolder(uri) }
     }
 
     if (vm.showOpmlImportSelectionDialog) OpmlImportSelectionDialog(vm.readElements) { vm.showOpmlImportSelectionDialog = false }
@@ -236,7 +236,7 @@ fun FindFeedsScreen() {
                 SearchBarRow(R.string.search_podcast_hint, modifier = Modifier.weight(1f), defaultText = searchText, history = appAttribs.onlineSearchHistory) { str ->
                     if (str.isBlank()) return@SearchBarRow
                     searchText = str
-                    runOnIOScope {
+                    appIOScope.launch {
                         upsert(appAttribs) {
                             if (str in it.onlineSearchHistory) it.onlineSearchHistory.remove(str)
                             it.onlineSearchHistory.add(0, str)
@@ -253,9 +253,8 @@ fun FindFeedsScreen() {
     }
 
     Scaffold(topBar = { TopBar() } ) { innerPadding ->
-        ConstraintLayout(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-            val (controlRow, gridView, progressBar, empty, txtvError, butRetry, powered) = createRefs()
-            Row(modifier = Modifier.padding(vertical = 8.dp, horizontal = 20.dp).fillMaxWidth().constrainAs(controlRow) { top.linkTo(parent.top) }) {
+        Column(modifier = Modifier.padding(innerPadding).fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+            Row(modifier = Modifier.padding(vertical = 8.dp, horizontal = 20.dp).fillMaxWidth()) {
                 Text(stringResource(R.string.top_chart), color = buttonColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { navTo(TopChart) })
                 Spacer(Modifier.weight(1f))
                 Text(searchResults.size.toString(), color = textColor, style = MaterialTheme.typography.titleMedium)
@@ -264,29 +263,22 @@ fun FindFeedsScreen() {
                     try { addLocalFolderLauncher.launch(null) } catch (e: ActivityNotFoundException) { Logs(TAG, e, context.getString(R.string.unable_to_start_system_file_manager)) }
                 })
             }
-
-            if (vm.showProgress) CircularProgressIndicator(strokeWidth = 10.dp, modifier = Modifier.size(50.dp).constrainAs(progressBar) { centerTo(parent) })
-            if (searchResults.isNotEmpty()) LazyColumn(state = rememberLazyListState(), verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 10.dp).constrainAs(gridView) {
-                    top.linkTo(controlRow.bottom)
-                    bottom.linkTo(parent.bottom)
-                    start.linkTo(parent.start)
-                }) {
-                items(searchResults) { result ->
-                    val urlPrepared = remember(result.feedUrl) { prepareUrl(result.feedUrl!!) }
-                    val sLog = remember(urlPrepared, result.title, feedLogsMap) { feedLogsMap?.get(urlPrepared) ?: feedLogsMap?.get(result.title) }
-                    OnlineFeedItem(result, sLog)
-                }
-            } else Text(stringResource(R.string.no_results_for_query, searchText), color = textColor, modifier = Modifier.constrainAs(empty) { centerTo(parent) })
-            if (vm.errorText.isNotEmpty()) Text(vm.errorText, color = textColor, modifier = Modifier.constrainAs(txtvError) { centerTo(parent) })
-            if (vm.retryQerry.isNotEmpty()) Button(modifier = Modifier.padding(16.dp).constrainAs(butRetry) { top.linkTo(txtvError.bottom) }, onClick = { vm.search(vm.retryQerry) }) { Text(stringResource(id = R.string.retry)) }
-            Text(context.getString(R.string.search_powered_by, searchProvider.name), color = Color.Black, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.LightGray)
-                .constrainAs(powered) {
-                    bottom.linkTo(parent.bottom)
-                    end.linkTo(parent.end)
-                })
+            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                if (vm.showProgress) CircularProgressIndicator(strokeWidth = 10.dp, modifier = Modifier.size(50.dp))
+                if (searchResults.isNotEmpty()) LazyColumn(state = rememberLazyListState(), verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 10.dp)) {
+                    items(searchResults) { result ->
+                        val urlPrepared = remember(result.feedUrl) { prepareUrl(result.feedUrl!!) }
+                        val sLog = remember(urlPrepared, result.title, feedLogsMap) { feedLogsMap?.get(urlPrepared) ?: feedLogsMap?.get(result.title) }
+                        OnlineFeedItem(result, sLog)
+                    }
+                } else Text(stringResource(R.string.no_results_for_query, searchText), color = textColor, modifier = Modifier)
+                if (vm.errorText.isNotEmpty()) Text(vm.errorText, color = textColor, modifier = Modifier)
+                if (vm.retryQerry.isNotEmpty()) Button(modifier = Modifier.padding(16.dp), onClick = { vm.search(vm.retryQerry) }) { Text(stringResource(id = R.string.retry)) }
+                Text(context.getString(R.string.search_powered_by, searchProvider.name), color = Color.Black, style = MaterialTheme.typography.labelSmall, modifier = Modifier.background(Color.LightGray).align(Alignment.BottomEnd))
+            }
         }
     }
 }
 
-private val TAG: String = Screens.FindFeeds.name
+private const val TAG = "FindFeeds"

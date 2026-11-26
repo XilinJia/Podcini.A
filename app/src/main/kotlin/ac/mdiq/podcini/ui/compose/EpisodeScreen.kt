@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.compose
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.isPlaying
@@ -13,7 +14,7 @@ import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.canCheckMediaSize
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Timer
@@ -30,11 +31,11 @@ import ac.mdiq.podcini.ui.actions.ActionButton
 import ac.mdiq.podcini.ui.actions.ButtonTypes
 import ac.mdiq.podcini.ui.actions.Combo
 import ac.mdiq.podcini.ui.screens.FeedDetails
-import ac.mdiq.podcini.ui.screens.PSState
+import androidx.compose.material3.SheetValue
 import ac.mdiq.podcini.ui.screens.handleBackSubScreens
 import ac.mdiq.podcini.ui.screens.navBack
 import ac.mdiq.podcini.ui.screens.navTo
-import ac.mdiq.podcini.ui.screens.psState
+import ac.mdiq.podcini.ui.screens.sheetValue
 import ac.mdiq.podcini.ui.utils.ShownotesCleaner
 import ac.mdiq.podcini.utils.Logd
 import ac.mdiq.podcini.utils.Loge
@@ -88,6 +89,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -137,19 +139,21 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.dankito.readability4j.extended.Readability4JExtended
 import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
-private const val TAG: String = "EpisodeScreen"
+private const val TAG = "EpisodeScreen"
 
 private const val MAX_CHUNK_LENGTH = 2000
 
-private val notesCache = LruCache<Long, String>(10)
+private val readerNoteCache = LruCache<Long, String>(10)
 
 var episodeForInfo by mutableStateOf<Episode?>(null)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = MutableStateFlow(emptyList()), isExternal: Boolean = false, allowOpenFeed: Boolean = false, showClose: Boolean = true) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -224,7 +228,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
         persistedTrees.add(uri)
 //        val flags = result.data!!.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         getAppContext().contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        runOnIOScope { exportMediaFiles(episode, uri.toUF()) }
+        appIOScope.launch { exportMediaFiles(episode, uri.toUF()) }
     }
 
     @Composable
@@ -279,7 +283,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                     if (episode.transcriptMetas.isEmpty() && client?.attributes?.hasTranscripts == true) {
                         IconButton(onClick = {
                             showTransMetaDialog = true
-                            runOnIOScope {
+                            appIOScope.launch {
                                 val captions = client.withProvider { it.getCaptionSpecs(episode.downloadUrl) }
                                 if (!captions.isNullOrEmpty()) {
                                     val tm = captions.map { it.toTranscriptMeta() }.toRealmList()
@@ -297,7 +301,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
 //                        IconButton(onClick = {
 //                            navTo(FeedDetails(feedId = episodeFeed.id))
 //                            episodeForInfo = null
-//                            psState = PSState.PartiallyExpanded
+//                            psState = SheetValue.PartiallyExpanded
 //                        }) { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_feed), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "Open podcast", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer)) }
 //                        Spacer(Modifier.weight(1f))
 //                    }
@@ -335,7 +339,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                         if (episode.rating != Rating.UNRATED.code) Icon(imageVector = ImageVector.vectorResource(Rating.fromCode(episode.rating).res), tint = MaterialTheme.colorScheme.tertiary, contentDescription = "rating", modifier = Modifier.background(MaterialTheme.colorScheme.tertiaryContainer).size(16.dp))
                         val pubTimeText = remember(episode.id) { formatDateTimeFlex(episode.pubDate) }
                         val txtvDuration = remember(episode.id) { if (episode.duration > 0) durationStringFull(episode.duration) else "" }
-                        var txtvSize by remember(episode.id) { mutableStateOf("") }
+                        var txtvSize by remember { mutableStateOf("") }
                         LaunchedEffect(episode.id) {
                             Logd(TAG) { "LaunchedEffect(episode.id)" }
                             when {
@@ -375,7 +379,7 @@ fun EpisodeScreen(episode_: Episode, listFlow: StateFlow<List<Episode>> = Mutabl
                         if (allowOpenFeed) {
                             navTo(FeedDetails(feedId = episodeFeed?.id ?: -1L))
                             episodeForInfo = null
-                            psState = PSState.PartiallyExpanded
+                            sheetValue = SheetValue.PartiallyExpanded
                         }
                     }) }
                 }
@@ -426,9 +430,9 @@ fun EpisodeWebView(episode: Episode) {
     fun prepareContent() {
         when {
             readMode -> {
-                runOnIOScope {
+                appIOScope.launch {
                     if (!episode.link.isNullOrEmpty()) {
-                        cleanedNotes = notesCache[episode.id]
+                        cleanedNotes = readerNoteCache[episode.id]
                         if (cleanedNotes == null) {
                             if (episode.transcript == null) {
 //                                val client = clientByEpisode(episode)
@@ -448,8 +452,8 @@ fun EpisodeWebView(episode: Episode) {
                             if (!readerhtml.isNullOrEmpty()) {
                                 val shownotesCleaner = ShownotesCleaner()
                                 cleanedNotes = shownotesCleaner.processShownotes(readerhtml!!, 0)
-                                runOnIOScope { upsert(episode) { it.setTranscriptIfLonger(readerhtml) } }
-                                notesCache.put(episode.id, cleanedNotes!!)
+                                appIOScope.launch { upsert(episode) { it.setTranscriptIfLonger(readerhtml) } }
+                                readerNoteCache.put(episode.id, cleanedNotes!!)
                             }
                         }
                     }

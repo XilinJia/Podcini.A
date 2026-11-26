@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.screens.prefscreens
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.forceRestart
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
@@ -18,12 +19,8 @@ import ac.mdiq.podcini.config.settings.OpmlTransporter.OpmlElement
 import ac.mdiq.podcini.config.settings.OpmlTransporter.OpmlWriter
 import ac.mdiq.podcini.config.settings.importAP
 import ac.mdiq.podcini.config.settings.importPA
-import ac.mdiq.podcini.sync.SyncService.Companion.isValidGuid
-import ac.mdiq.podcini.sync.model.EpisodeAction
-import ac.mdiq.podcini.sync.model.EpisodeAction.Companion.readFromJsonObject
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.database.upsertBlk
 import ac.mdiq.podcini.storage.model.Episode
@@ -35,8 +32,11 @@ import ac.mdiq.podcini.storage.utils.tempRoottree
 import ac.mdiq.podcini.storage.utils.toAndroidUri
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.storage.utils.toUF
-import ac.mdiq.podcini.ui.compose.ConfirmDialog
+import ac.mdiq.podcini.sync.SyncService.Companion.isValidGuid
+import ac.mdiq.podcini.sync.model.EpisodeAction
+import ac.mdiq.podcini.sync.model.EpisodeAction.Companion.readFromJsonObject
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
+import ac.mdiq.podcini.ui.compose.ConfirmDialog
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.NumberEditor
 import ac.mdiq.podcini.ui.compose.OpmlImportSelectionDialog
@@ -69,6 +69,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -83,12 +85,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -102,8 +106,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -161,7 +165,7 @@ fun ImportExportScreen() {
     fun exportWithWriter(exportWriter: ExportWriter, uri: Uri?, exportType: ExportTypes) {
         processingText = "Exporting ..."
         if (uri == null) {
-            CoroutineScope(Dispatchers.IO).launch {
+            appIOScope.launch {
                 try {
                     val output = ExportWorker(exportWriter).exportFile()
                     withContext(Dispatchers.Main) { showExportSuccess(output.toAndroidUri(), exportType.contentType) }
@@ -173,7 +177,7 @@ fun ImportExportScreen() {
                 } finally { processingText = "" }
             }
         } else {
-            CoroutineScope(Dispatchers.IO).launch {
+            appIOScope.launch {
                 val worker = DocumentFileExportWorker(exportWriter, uri)
                 try {
                     val output = worker.exportFile()
@@ -214,7 +218,7 @@ fun ImportExportScreen() {
         uri?.let {
             if (isJsonFile(uri)) {
                 processingText = "Restoring..."
-                CoroutineScope(Dispatchers.IO).launch {
+                appIOScope.launch {
                     try {
                         EpisodeProgressReader().readDocument(uri.toUF().source().buffer())
                         withContext(Dispatchers.Main) {
@@ -274,12 +278,9 @@ fun ImportExportScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     val uri = tempRoottree
-                    if (uri == null) {
-                        Loge(TAG, "Import uri is null")
-                        return@TextButton
-                    }
+                    if (uri == null) { Loge(TAG, "Import uri is null"); return@TextButton }
                     processingText = "Importing..."
-                    CoroutineScope(Dispatchers.IO).launch {
+                    appIOScope.launch {
                         try {
                             withContext(Dispatchers.IO) {
                                 val rootFile = uri.toUF()
@@ -332,7 +333,7 @@ fun ImportExportScreen() {
                         return@TextButton
                     }
                     processingText = "Exporting..."
-                    CoroutineScope(Dispatchers.IO).launch {
+                    appIOScope.launch {
                         val chosenDir = uri.toUF()
                         val exportSubDir = chosenDir.createDirectory(dateStampFilename("$backupDirName-%s"))
                         if (comboDic[ComboIEOptions.MeidaFiles.name] == true) MediaFilesTransporter(mediaFilesDirName).fromMediaDirToUF(exportSubDir)
@@ -356,7 +357,7 @@ fun ImportExportScreen() {
             if (uri != null) {
                 persistedTrees.add(uri)
                 getAppContext().contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                runOnIOScope { upsert(appPrefs) { p-> p.autoBackupFolder = uri.toString() } }
+                appIOScope.launch { upsert(appPrefs) { p-> p.autoBackupFolder = uri.toString() } }
             }
         }
     }
@@ -414,7 +415,7 @@ fun ImportExportScreen() {
     val choosePAImportPathLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             processingText = "Importing PA..."
-            CoroutineScope(Dispatchers.IO).launch {
+            appIOScope.launch {
                 if (importPADB) importPA(uri, true, importPADirectory) {}
                 showImporSuccessDialog.value = true
                 processingText = ""
@@ -462,10 +463,10 @@ fun ImportExportScreen() {
 
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp).verticalScroll(rememberScrollState()).background(MaterialTheme.colorScheme.surface)) {
         TitleSummarySwitchRow(R.string.pref_backup_on_google_title, R.string.pref_backup_on_google_sum, appPrefs.OPMLBackup) {
-            runOnIOScope { upsert(appPrefs) { p -> p.OPMLBackup = it} }
+            appIOScope.launch { upsert(appPrefs) { p -> p.OPMLBackup = it} }
         }
         TitleSummarySwitchRow(R.string.pref_auto_backup_title, R.string.pref_auto_backup_sum, appPrefs.autoBackup) {
-            runOnIOScope { upsert(appPrefs) { p -> p.autoBackup = it} }
+            appIOScope.launch { upsert(appPrefs) { p -> p.autoBackup = it} }
             appPrefs.autoBackupFolder?.toSafeUri()?.let { uri->
                 try { getAppContext().contentResolver.releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) } catch (e: Exception) { Logd(TAG) { "uri can not be released: $uri" }}
             }
@@ -474,28 +475,26 @@ fun ImportExportScreen() {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Text(stringResource(R.string.pref_auto_backup_interval), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 NumberEditor(appPrefs.autoBackupIntervall, label = "hours", nz = false, modifier = Modifier.weight(0.5f)) {
-                    runOnIOScope {  upsert(appPrefs) { p-> p.autoBackupIntervall = it } }
+                    appIOScope.launch {  upsert(appPrefs) { p-> p.autoBackupIntervall = it } }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
                 Text(stringResource(R.string.pref_auto_backup_limit), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                var count by remember { mutableStateOf(appPrefs.autoBackupLimit.toString()) }
+                val count = rememberTextFieldState(initialText = appPrefs.autoBackupLimit.toString())
                 var showIcon by remember { mutableStateOf(false) }
                 val focusManager = LocalFocusManager.current
-                TextField(value = count, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true, modifier = Modifier.trackAsTextField().weight(0.4f),  label = { Text("1:9", style = MaterialTheme.typography.labelSmall) },
-                    onValueChange = {
-                        val intVal = it.toIntOrNull()
-                        if (it.isEmpty() || (intVal != null && intVal>0 && intVal<10)) {
-                            count = it
-                            showIcon = true
-                        }
-                    },
+                LaunchedEffect(count) {
+                    snapshotFlow { count.text }.drop(1).collect {
+                        val intVal = it.toString().toIntOrNull()
+                        if (it.isEmpty() || (intVal != null && intVal>0 && intVal<10)) showIcon = true
+                    }
+                }
+                TextField(state = count, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField().weight(0.4f),  label = { Text("1:9", style = MaterialTheme.typography.labelSmall) },
                     trailingIcon = {
                         if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon",
                             modifier = Modifier.size(30.dp).clickable {
-                                if (count.isEmpty()) count = "0"
-                                runOnIOScope { upsert(appPrefs) { p-> p.autoBackupLimit = count.toIntOrNull()?:0 } }
+                                if (count.text.isEmpty()) count.edit {  replace(0, length, "0")}
+                                appIOScope.launch { upsert(appPrefs) { p-> p.autoBackupLimit = count.text.toString().toIntOrNull()?:0 } }
                                 focusManager.clearFocus()
                                 showIcon = false
                             })

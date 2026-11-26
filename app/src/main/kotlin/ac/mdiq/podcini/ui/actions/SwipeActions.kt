@@ -1,8 +1,9 @@
 package ac.mdiq.podcini.ui.actions
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.storage.database.appAttribsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.textColor
@@ -37,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 class SwipeActions(private val tag: String, private val isSubscribed: Boolean = true) {
     var right by mutableStateOf<EpisodeAction>(NoAction())
@@ -124,7 +126,7 @@ class SwipeActions(private val tag: String, private val isSubscribed: Boolean = 
                 }
                 Button(onClick = {
                     initActions("${rightAction.value.id},${leftAction.value.id}")
-                    runOnIOScope { upsert(appAttribsFlow!!.value) { it.swipeActionsMap[tag] = "${rightAction.value.id},${leftAction.value.id}" } }
+                    appIOScope.launch { upsert(appAttribsFlow!!.value) { it.swipeActionsMap[tag] = "${rightAction.value.id},${leftAction.value.id}" } }
                     onDismiss()
                 }) { Text(stringResource(R.string.confirm_label)) }
             }

@@ -554,7 +554,7 @@ class Downloader(val request: DownloadRequest) {
     }
 
     companion object {
-        private val TAG: String = Downloader::class.simpleName ?: "Anonymous"
+        private const val TAG = "Downloader"
 
         val downloadStatesFlow = MutableStateFlow<Map<String, DownloadStatus>>(emptyMap())
 

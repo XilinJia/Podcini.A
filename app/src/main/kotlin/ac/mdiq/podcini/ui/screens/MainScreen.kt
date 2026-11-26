@@ -35,8 +35,8 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -109,28 +109,23 @@ fun MainScreen() {
         onDispose {}
     }
 
-    val sheetState = rememberBottomSheetScaffoldState(bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded,
-        confirmValueChange = { targetValue -> targetValue != SheetValue.Hidden || allowSheetHide }, skipHiddenState = false))
+    val sheetState = rememberBottomSheetScaffoldState(bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.PartiallyExpanded))
+
     val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
     val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 
-    LaunchedEffect(Unit) { snapshotFlow { sheetState.bottomSheetState.targetValue }.distinctUntilChanged().collect { targetValue ->
-        val state = PSState.fromSheet(targetValue)
-        if (psState != state) psState = state
-    } }
+    LaunchedEffect(Unit) { snapshotFlow { sheetState.bottomSheetState.currentValue }.distinctUntilChanged().collect { sc -> sheetValue = sc } }
 
-    LaunchedEffect(curMedia0?.id, psState) {
-        Logd(TAG) { "LaunchedEffect(curMedia0?.id, psState) curMedia0: ${curMedia0?.id} ${psState.name}" }
+    LaunchedEffect(curMedia0?.id, sheetValue) {
+        Logd(TAG) { "LaunchedEffect(curMedia0?.id, psState) curMedia0: ${curMedia0?.id} ${sheetValue.name}" }
         if ((curMedia0?.id ?: -1L) <= 0) {
-            allowSheetHide = true
             if (sheetState.bottomSheetState.targetValue != SheetValue.Hidden) sheetState.bottomSheetState.hide()
-            allowSheetHide = false
             return@LaunchedEffect
         }
-        val targetSheetValue = when (psState) {
-            PSState.Expanded -> SheetValue.Expanded
-            PSState.PartiallyExpanded -> SheetValue.PartiallyExpanded
-            PSState.Hidden -> SheetValue.Hidden
+        val targetSheetValue = when (sheetValue) {
+            SheetValue.Expanded -> SheetValue.Expanded
+            SheetValue.PartiallyExpanded -> SheetValue.PartiallyExpanded
+            SheetValue.Hidden -> SheetValue.Hidden
         }
         if (sheetState.bottomSheetState.targetValue != targetSheetValue) {
             when (targetSheetValue) {
@@ -138,7 +133,6 @@ fun MainScreen() {
                 SheetValue.PartiallyExpanded -> sheetState.bottomSheetState.partialExpand()
                 SheetValue.Hidden -> sheetState.bottomSheetState.hide()
             }
-            allowSheetHide = false
         }
     }
 
@@ -204,7 +198,7 @@ fun MainScreen() {
                 }
                 Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface).fillMaxSize().padding(top = paddingValues.calculateTopPadding(), bottom = dynamicBottomPadding)) {
                     NavDisplay(backStack = backStack, onBack = { navBack() }, entryProvider = myEntryProvider, entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()))
-                    if ((curMedia0?.id ?: -1L) > 0 && psState == PSState.Hidden) Text(stringResource(R.string.player_in_drawer), color = Color.Yellow, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = navigationBarBottom).background(Color.DarkGray).clickable { psState = PSState.PartiallyExpanded })
+                    if ((curMedia0?.id ?: -1L) > 0 && sheetValue == SheetValue.Hidden) Text(stringResource(R.string.player_in_drawer), color = Color.Yellow, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = navigationBarBottom).background(Color.DarkGray).clickable { sheetValue = SheetValue.PartiallyExpanded })
                 }
             }
         }
@@ -216,13 +210,13 @@ fun MainScreen() {
     if (commonMessage != null) LargePoster(commonMessage!!)
 
     BackHandler(enabled = handleBackSubScreens.isEmpty()) {
-        Logd(TAG) { "BackHandler isBSExpanded: $psState" }
+        Logd(TAG) { "BackHandler isBSExpanded: $sheetValue" }
         val openDrawer = appPrefs.backButtonOpensDrawer
         val defPage = defaultNavKey
         Logd(TAG) { "BackHandler curruntRoute0: defPage: $defPage" }
         when {
             drawerState.isOpen -> drawerCtrl.close()
-            psState == PSState.Expanded -> psState = PSState.PartiallyExpanded
+            sheetValue == SheetValue.Expanded -> sheetValue = SheetValue.PartiallyExpanded
             backStack.size > 1 -> navBack()
             backStack.size == 1 && defPage != backStack[0] -> navTo(defPage)
             openDrawer -> drawerCtrl.open()

@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.actions
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.actQueueFlow
@@ -10,7 +11,6 @@ import ac.mdiq.podcini.storage.database.addToQueue
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.deleteEpisodesWarnLocalRepeat
 import ac.mdiq.podcini.storage.database.queuesLive
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.smartRemoveFromQueues
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
@@ -42,6 +42,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -60,10 +62,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import kotlinx.coroutines.launch
 
 abstract class EpisodeAction {
     abstract val id: String
@@ -228,7 +229,7 @@ class AddToAssociatedQueue : EpisodeAction() {
 
     override fun performAction(e: Episode) {
         super.performAction(e)
-        if (e.feed?.queue != null) runOnIOScope { addToAssQueue(listOf(e)) }
+        if (e.feed?.queue != null) appIOScope.launch { addToAssQueue(listOf(e)) }
     }
 }
 
@@ -247,7 +248,7 @@ class AddToActiveQueue : EpisodeAction() {
 
     override fun performAction(e: Episode) {
         super.performAction(e)
-        runOnIOScope { addToQueue(listOf(e), actQueueFlow.value) }
+        appIOScope.launch { addToQueue(listOf(e), actQueueFlow.value) }
     }
 }
 
@@ -293,7 +294,7 @@ class RemoveFromAllQueues : EpisodeAction() {
 
     override fun performAction(e: Episode) {
         super.performAction(e)
-        runOnIOScope { smartRemoveFromQueues(e) }
+        appIOScope.launch { smartRemoveFromQueues(e) }
     }
 }
 
@@ -314,7 +315,7 @@ class RemoveFromCurQueue : EpisodeAction() {
 
     override fun performAction(e: Episode) {
         super.performAction(e)
-        runOnIOScope {
+        appIOScope.launch {
             val curQueue = queuesLive.find { it.id == appAttribsFlow!!.value.curQueueId }
             if (curQueue != null) smartRemoveFromQueues(e, listOf(curQueue))
         }
@@ -334,7 +335,7 @@ class ResetPlayedPosition : EpisodeAction() {
 
     override fun performAction(e: Episode) {
         super.performAction(e)
-        runOnIOScope { upsert(e) { it.position = 0 } }
+        appIOScope.launch { upsert(e) { it.position = 0 } }
     }
 }
 
@@ -362,7 +363,9 @@ class AddComment : EpisodeAction() {
     override val id: String
         get() = "COMMENT"
     private var showEditComment by mutableStateOf(false)
-    private var editCommentText by mutableStateOf(TextFieldValue(""))
+//    private var editCommentText by mutableStateOf(TextFieldValue(""))
+    private val editCommentText = TextFieldState(initialText = "")
+
     override val title: String
         get() = getAppContext().getString(R.string.add_comments)
 
@@ -372,14 +375,15 @@ class AddComment : EpisodeAction() {
     override fun performAction(e: Episode) {
         //            val e_ = (if (isCurMedia(e)) curEpisode else realm.query(Episode::class).query("id == ${e.id}").first().find()) ?: return
         onEpisode = e
-        editCommentText = TextFieldValue(onEpisode?.compileCommentText() ?: "")
+//        editCommentText = TextFieldValue(onEpisode?.compileCommentText() ?: "")
+        editCommentText.edit { replace(0, length, onEpisode?.compileCommentText() ?: "") }
         showEditComment = true
     }
     @Composable
     override fun ActionOptions() {
         if (showEditComment) {
-            CommentEditingDialog(textState = editCommentText, onTextChange = { editCommentText = it }, onDismiss = { showEditComment = false },
-                onSave = { if (onEpisode != null) onEpisode = upsert(onEpisode!!) { it.addComment(editCommentText.text, addition = false) } })
+            CommentEditingDialog(textState = editCommentText, onDismiss = { showEditComment = false },
+                onSave = { if (onEpisode != null) onEpisode = upsert(onEpisode!!) { it.addComment(editCommentText.text.toString(), addition = false) } })
         }
     }
 }
@@ -422,7 +426,7 @@ class AddTag : EpisodeAction() {
     override fun ActionOptions() {
         if (showTagDialog) {
             TagSettingDialog(TagType.Episode, onEpisode!!.tags, onDismiss = { showTagDialog = false }) { tags ->
-                runOnIOScope {
+                appIOScope.launch {
                     upsert(onEpisode!!) {
                         it.tags.clear()
                         it.tags.addAll(tags)
@@ -453,25 +457,23 @@ class SearchSelected : EpisodeAction() {
     override fun ActionOptions() {
         Logd("SearchSelected") { "ActionOptions $showSearchDialog ${onEpisode?.title}" }
         if (showSearchDialog && onEpisode?.title != null) {
-            var textFieldValue by remember { mutableStateOf(TextFieldValue(onEpisode!!.title!!)) }
-            val selectedText = remember(textFieldValue.selection.collapsed, textFieldValue.selection.start, textFieldValue.selection.end) {
-                if (textFieldValue.selection.collapsed) ""
+            val textFieldState = rememberTextFieldState(initialText = onEpisode!!.title!!)
+            val selectedText = remember(textFieldState.selection.collapsed, textFieldState.selection.start, textFieldState.selection.end) {
+                if (textFieldState.selection.collapsed) ""
                 else {
-                    val start = textFieldValue.selection.start.coerceIn(0, textFieldValue.text.length)
-                    val end = textFieldValue.selection.end.coerceIn(start, textFieldValue.text.length)
-                    textFieldValue.text.substring(startIndex = start, endIndex = end)
+                    val start = textFieldState.selection.start.coerceIn(0, textFieldState.text.length)
+                    val end = textFieldState.selection.end.coerceIn(start, textFieldState.text.length)
+                    textFieldState.text.substring(startIndex = start, endIndex = end)
                 } }
             AlertDialog(modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.tertiary, MaterialTheme.shapes.extraLarge), onDismissRequest = { showSearchDialog = false },
                 title = { Text(stringResource(R.string.select_text_to_search), style = CustomTextStyles.titleCustom) },
-                text = { TextField(value = textFieldValue, onValueChange = { textFieldValue = it }, readOnly = true, textStyle = TextStyle(fontSize = 18.sp), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(16.dp).border(1.dp, MaterialTheme.colorScheme.primary)) },
+                text = { TextField(state = textFieldState, readOnly = true, textStyle = TextStyle(fontSize = 18.sp), modifier = Modifier.fillMaxWidth().trackAsTextField().padding(16.dp).border(1.dp, MaterialTheme.colorScheme.primary)) },
                 confirmButton = {
-                    if (selectedText.isNotEmpty()) {
-                        Button(modifier = Modifier.padding(top = 8.dp), onClick = {
-                            setSearchTerms("$selectedText,")
-                            navTo(Search)
-                            showSearchDialog = false
-                        }) { Text(stringResource(R.string.search_label)) }
-                    }
+                    Button(modifier = Modifier.padding(top = 8.dp), enabled = selectedText.isNotEmpty(), onClick = {
+                        setSearchTerms("$selectedText,")
+                        navTo(Search)
+                        showSearchDialog = false
+                    }) { Text(stringResource(R.string.search_label)) }
                 })
         }
     }
@@ -489,7 +491,7 @@ class Download : EpisodeAction() {
     override fun enabled(): Boolean {
         val media = onEpisode ?: return false
         val client = clientByEpisode(media) ?: return !media.downloaded && media.feed != null && media.feed?.isLocal != true
-        return client.supportDownload == true
+        return client.supportDownload
     }
 
     override fun performAction(e: Episode) {
@@ -533,7 +535,7 @@ class Delete : EpisodeAction() {
         var item_ = e
         super.performAction(e)
         if (!item_.downloaded && item_.feed?.isLocal != true) return
-        runOnIOScope {
+        appIOScope.launch {
             val almostEnded = item_.hasAlmostEnded()
             if (almostEnded) {
                 item_ = upsert(item_) {

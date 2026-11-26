@@ -38,7 +38,7 @@ class ExportWorker private constructor(private val exportWriter: ExportWriter, p
     }
     companion object {
         private const val EXPORT_DIR = "export/"
-        private val TAG: String = ExportWorker::class.simpleName ?: "Anonymous"
+        private const val TAG = "ExportWorker"
         private const val DEFAULT_OUTPUT_NAME = "podcini-feeds"
     }
 }

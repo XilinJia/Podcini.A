@@ -280,7 +280,7 @@ class CombinedSearcher : FeedSearcher {
         }
 
     companion object {
-        private val TAG: String = CombinedSearcher::class.simpleName ?: "Anonymous"
+        private const val TAG = "CombinedSearcher"
     }
 }
 

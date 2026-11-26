@@ -38,7 +38,7 @@ class CrashReportWriter : Thread.UncaughtExceptionHandler {
     }
 
     companion object {
-        private val TAG: String = CrashReportWriter::class.simpleName ?: "Anonymous"
+        private const val TAG = "CrashReportWriter"
 
         val crashLogFile: UnifiedFile
             get() = internalDir / "crash-report.log"

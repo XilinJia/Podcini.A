@@ -1,8 +1,9 @@
 package ac.mdiq.podcini.sourcing.download
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.utils.UnifiedFile
 import ac.mdiq.podcini.storage.utils.cacheDir
@@ -39,6 +40,7 @@ import androidx.media3.transformer.Transformer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -75,7 +77,7 @@ suspend fun exportMediaFiles(media: Episode, outputDir: UnifiedFile) {
                             Spacer(Modifier.weight(0.2f))
                             TextButton(onClick = {
                                 val out = outputDir / ("${name.substringBeforeLast(".")}.${pkg.audio}")
-                                runOnIOScope {
+                                appIOScope.launch {
                                     audioUF.copyTo(out)
                                     Logt(TAG, "audio file exported: ${media.title}")
                                 }
@@ -84,7 +86,7 @@ suspend fun exportMediaFiles(media: Episode, outputDir: UnifiedFile) {
                             Spacer(Modifier.weight(0.2f))
                             TextButton(onClick = {
                                 val out = outputDir / ("${name.substringBeforeLast(".")}.${pkg.video}")
-                                runOnIOScope {
+                                appIOScope.launch {
                                     videoUF.copyTo(out)
                                     Logt(TAG, "video file exported: ${media.title}")
                                 }
@@ -92,7 +94,7 @@ suspend fun exportMediaFiles(media: Episode, outputDir: UnifiedFile) {
                             }) { Text(stringResource(R.string.video_only)) }
                             Spacer(Modifier.weight(0.2f))
                             TextButton(onClick = {
-                                runOnIOScope {
+                                appIOScope.launch {
                                     val vout = outputDir / ("${name.substringBeforeLast(".")}.${pkg.video}")
                                     videoUF.copyTo(vout)
                                     val aout = outputDir / ("${name.substringBeforeLast(".")}.${pkg.audio}")
@@ -106,7 +108,7 @@ suspend fun exportMediaFiles(media: Episode, outputDir: UnifiedFile) {
                     },
                     onConfirm = {
                         val outputPath = (outputDir / name).absPath
-                        runOnIOScope {
+                        appIOScope.launch {
                             exportMuxed(audioUF, videoUF, outputPath) { prog-> transcodeProgFlow.update { it + (media.id to prog) } }
                             Logt(TAG, "audio/video container file exported: ${media.title}")
                         }

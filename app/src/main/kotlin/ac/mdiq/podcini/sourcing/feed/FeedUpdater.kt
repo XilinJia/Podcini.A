@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.sourcing.feed
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.automation.AutoDownloadAlgorithm
@@ -28,7 +29,7 @@ import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.guessDuplicates
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.sumup
 import ac.mdiq.podcini.storage.database.trimEpisodes
 import ac.mdiq.podcini.storage.database.unmanaged
@@ -69,6 +70,7 @@ import androidx.core.app.NotificationManagerCompat
 import io.github.xilinjia.krdb.ext.toRealmSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
@@ -113,10 +115,10 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
                     confirmRes = R.string.confirm_mobile_streaming_button_once,
                     cancelRes = R.string.no,
                     neutralRes = R.string.confirm_mobile_streaming_button_always,
-                    onConfirm = { runOnIOScope { refresh() }  },
+                    onConfirm = { appIOScope.launch { refresh() }  },
                     onNeutral = {
                         mobileAllowFeedRefresh = true
-                        runOnIOScope { refresh() }
+                        appIOScope.launch { refresh() }
                     })
             }
         }

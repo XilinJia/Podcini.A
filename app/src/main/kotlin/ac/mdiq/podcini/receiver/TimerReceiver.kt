@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.receiver
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.automation.ALARM_TYPE
 import ac.mdiq.podcini.automation.AlarmTypes
 import ac.mdiq.podcini.config.AppConfig.initialize
@@ -31,7 +32,7 @@ class TimerReceiver : BroadcastReceiver() {
 
         Logd(TAG) { "onReceive: message $message" }
         if (message.startsWith(AlarmTypes.PLAY_EPISODE.name)) {
-            CoroutineScope(Dispatchers.IO).launch {
+            appIOScope.launch {
                 if (appPrefsFlow!!.value.loadExternalApp)  AppGatewayRegistry.awaitReady()
                 delay(5.seconds)
                 val msgs = message.split(':')

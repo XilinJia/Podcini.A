@@ -1,6 +1,7 @@
 package ac.mdiq.podcini.sourcing.feed
 
 import ac.mdiq.podcini.BuildConfig
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.AppConfig.initialize
@@ -11,7 +12,7 @@ import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.createNotification
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.ui.compose.confirm
@@ -42,13 +43,14 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 object FeedUpdateManager {
-    private val TAG: String = FeedUpdateManager::class.simpleName ?: "Anonymous"
+    private const val TAG = "FeedUpdateManager"
     val feedUpdateOnceWorkId = getAppContext().packageName + "FeedUpdateOnceWorker"
 
     const val WORK_TAG_FEED_UPDATE: String = "feedUpdate"
@@ -91,7 +93,7 @@ object FeedUpdateManager {
         }
         var policy = ExistingWorkPolicy.KEEP
         if (replace) {
-            runOnIOScope { upsert(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() } }
+            appIOScope.launch { upsert(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() } }
             policy = ExistingWorkPolicy.REPLACE
         }
         if (!mobileAllowFeedRefresh && !force) {
@@ -203,7 +205,7 @@ object FeedUpdateManager {
             if (attemptCount > 0) Logt(TAG, "Running backoff refresh due to prior errors")
 
             val isPeriodic = inputData.getBoolean(KEY_IS_PERIODIC, false)
-            if (isPeriodic) runOnIOScope { upsert(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() } }
+            if (isPeriodic) appIOScope.launch { upsert(appAttribsFlow!!.value) { it.prefLastFullUpdateTime = nowInMillis() } }
             when {
                 !networkMonitor.isConnected -> {
                     Logm(TAG, applicationContext.getString(R.string.download_error_no_connection))
@@ -238,7 +240,7 @@ object FeedUpdateManager {
                 Logs(TAG, e,"Some errors occurred during refresh, will retry")
                 if (isPeriodic) {
                     if (attemptCount >= MAX_BACKOFF_ATTEMPTS) {
-                        runOnIOScope { upsert(appAttribsFlow!!.value) { it.feedIdsToRefresh.clear() } }
+                        appIOScope.launch { upsert(appAttribsFlow!!.value) { it.feedIdsToRefresh.clear() } }
                         rescheduleUpdateTaskOnce()
                         return Result.success()
                     }

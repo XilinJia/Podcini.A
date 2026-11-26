@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.ui.compose
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.playback.PlaybackService
 import ac.mdiq.podcini.playback.PlaybackService.Companion.playbackService
@@ -15,7 +16,6 @@ import ac.mdiq.podcini.storage.database.fallbackSpeed
 import ac.mdiq.podcini.storage.database.fastForwardSecs
 import ac.mdiq.podcini.storage.database.isSkipSilence
 import ac.mdiq.podcini.storage.database.rewindSecs
-import ac.mdiq.podcini.storage.database.runOnIOScope
 import ac.mdiq.podcini.storage.database.skipforwardSpeed
 import ac.mdiq.podcini.storage.database.sleepPrefs
 import ac.mdiq.podcini.storage.database.speedforwardSpeed
@@ -51,6 +51,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -66,11 +68,13 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -79,6 +83,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,6 +102,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONException
 import kotlin.math.max
@@ -106,47 +113,45 @@ import kotlin.time.Duration.Companion.minutes
 
 private const val TAG = "Playback"
 
-private fun speed2Slider(speed: Float, maxSpeed: Float): Float {
-    return if (speed < 1) (speed - 0.1f) / 1.8f else (speed - 2f + maxSpeed) / 2 / (maxSpeed - 1f)
-}
-private fun slider2Speed(slider: Float, maxSpeed: Float): Float {
-    return if (slider < 0.5) 1.8f * slider + 0.1f else 2 * (maxSpeed - 1f) * slider + 2f - maxSpeed
-}
 @Composable
-private fun SpeedSetter(initSpeed: Float, maxSpeed: Float, speedCB: (Float) -> Unit) {
+private fun SpeedSetterRow(initSpeed: Float, maxSpeed: Float, speedCB: (Float) -> Unit) {
+    fun speed2Slider(speed: Float): Float {
+        return if (speed < 1) (speed - 0.1f) / 1.8f else (speed - 2f + maxSpeed) / 2 / (maxSpeed - 1f)
+    }
+    fun slider2Speed(slider: Float): Float {
+        return if (slider < 0.5) 1.8f * slider + 0.1f else 2 * (maxSpeed - 1f) * slider + 2f - maxSpeed
+    }
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         var speed by remember { mutableFloatStateOf(initSpeed) }
-        var sliderPosition by remember { mutableFloatStateOf(speed2Slider(if (speed == SPEED_USE_GLOBAL) 1f else speed, maxSpeed)) }
         val stepSize = 0.05f
+        val sliderState = rememberSliderState(value = speed2Slider(if (speed == SPEED_USE_GLOBAL) 1f else speed), steps = 0, trackRange = 0f..1f)
         Text("-", color = buttonColor, fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
             modifier = Modifier.clickable {
                 val speed_ = round(speed / stepSize) * stepSize - stepSize
                 if (speed_ >= 0.1f) {
                     speed = speed_
-                    sliderPosition = speed2Slider(speed, maxSpeed)
+                    sliderState.value = speed2Slider(speed)
                     speedCB(speed)
                 }
             })
-        Slider(value = sliderPosition, modifier = Modifier.weight(1f).height(5.dp).padding(start = 20.dp, end = 20.dp),
+        Slider(state = sliderState, modifier = Modifier.weight(1f).height(5.dp).padding(start = 20.dp, end = 20.dp),
             onValueChange = {
-                sliderPosition = it
-                speed = slider2Speed(sliderPosition, maxSpeed)
+                sliderState.value = it
+                speed = slider2Speed(it)
                 speedCB(speed)
-            })
+            } )
         Text("+", color = buttonColor, fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
             modifier = Modifier.clickable {
                 val speed_ = round(speed / stepSize) * stepSize + stepSize
                 if (speed_ <= maxSpeed) {
                     speed = speed_
-                    sliderPosition = speed2Slider(speed, maxSpeed)
+                    sliderState.value = speed2Slider(speed)
                     speedCB(speed)
                 }
             })
-        Spacer(Modifier.width(40.dp))
-        Text(text = speed.format(2)+"x")
+        Text(text = "${speed.format(2)}x", style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"), textAlign = TextAlign.End, maxLines = 1, softWrap = false, modifier = Modifier.width(70.dp))
     }
 }
-
 
 @Composable
 fun PlaybackSpeedDialog(feeds: List<Feed>, initSpeed: Float, maxSpeed: Float, isGlobal: Boolean = false, onDismiss: () -> Unit, speedCB: (Float) -> Unit) {
@@ -173,7 +178,7 @@ fun PlaybackSpeedDialog(feeds: List<Feed>, initSpeed: Float, maxSpeed: Float, is
                     })
                     Text(stringResource(R.string.global_default))
                 }
-                if (!useGlobal) SpeedSetter(initSpeed, maxSpeed) { speed = it }
+                if (!useGlobal) SpeedSetterRow(initSpeed, maxSpeed) { speed = it }
                 Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp)) {
                     Button(onClick = { onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
                     Spacer(Modifier.weight(1f))
@@ -205,7 +210,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
     fun setPlaybackSpeedArray(speeds: List<Float>) {
         val jsonArray = JSONArray()
         for (speed in speeds) jsonArray.put(formatNumberKmp(speed.toDouble()))
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.playbackSpeedArray = jsonArray.toString()} }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.playbackSpeedArray = jsonArray.toString()} }
     }
     val player_ by theatres[playerId].mPlayerFlow.collectAsStateWithLifecycle()
     val player = player_ ?: return
@@ -233,32 +238,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                     else IconButton(onClick = { showEdit = true }) { Icon(Icons.Default.Edit, contentDescription = "Edit preset") }
                 }
                 Text(stringResource(R.string.pref_playback_speed_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
-                if (showEdit) Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    var sliderPosition by remember { mutableFloatStateOf(speed2Slider(if (speed == SPEED_USE_GLOBAL) 1f else speed, maxSpeed)) }
-                    val stepSize = 0.05f
-                    Text("-", color = buttonColor, fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable {
-                            val speed_ = round(speed / stepSize) * stepSize - stepSize
-                            if (speed_ >= 0.1f) {
-                                speed = speed_
-                                sliderPosition = speed2Slider(speed, maxSpeed)
-                            }
-                        })
-                    Slider(value = sliderPosition, modifier = Modifier.weight(1f).height(10.dp).padding(start = 20.dp, end = 20.dp),
-                        onValueChange = {
-                            sliderPosition = it
-                            speed = slider2Speed(sliderPosition, maxSpeed)
-                            Logd("PlaybackSpeedDialog") { "slider value: $it $speed}" }
-                        })
-                    Text("+", color = buttonColor, fontSize = MaterialTheme.typography.headlineLarge.fontSize, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable {
-                            val speed_ = round(speed / stepSize) * stepSize + stepSize
-                            if (speed_ <= maxSpeed) {
-                                speed = speed_
-                                sliderPosition = speed2Slider(speed, maxSpeed)
-                            }
-                        })
-                }
+                if (showEdit) SpeedSetterRow(speed, maxSpeed) { speed = it }
                 var forCurrent by remember { mutableStateOf(indexDefault == 0) }
                 var forPodcast by remember { mutableStateOf(indexDefault == 1) }
                 var forGlobal by remember { mutableStateOf(indexDefault == 2) }
@@ -281,7 +261,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                 if (playbackService != null) {
                                     player.isSpeedForward = false
                                     player.isFallbackSpeed = false
-                                    runOnIOScope {
+                                    appIOScope.launch {
                                         if (forGlobal) upsert(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed }
                                         if (forPodcast && player.curMediaFlow.value?.feed != null) upsert(player.curMediaFlow.value!!.feed!!) { it.playSpeed = chipSpeed }
                                     }
@@ -289,7 +269,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                                         player.curSpeed = chipSpeed
                                         player.setPlaybackParams(chipSpeed)
                                     }
-                                } else runOnIOScope { upsert(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed } }
+                                } else appIOScope.launch { upsert(appPrefsFlow!!.value) { it.playbackSpeed = chipSpeed } }
                                 onDismiss()
                             },
                             trailingIcon = { Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon", modifier = Modifier.padding(start = 3.dp).size(30.dp).clickable {
@@ -317,27 +297,28 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         Text(stringResource(R.string.global))
                         Spacer(Modifier.weight(1f))
                     }
-                    var pitchStr by remember { mutableStateOf((player.curPitch).toString()) }
+                    val pitchStr = rememberTextFieldState(initialText = (player.curPitch).toString())
                     var showSet by remember { mutableStateOf(false) }
                     var unit by remember { mutableStateOf("Ratio") }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val focusManager = LocalFocusManager.current
-                        TextField(value = pitchStr, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("float", style = MaterialTheme.typography.labelSmall) }, singleLine = true, modifier = Modifier.trackAsTextField().width(100.dp),
-                            onValueChange = {
-                                val value = it.toFloatOrNull()
-                                if (it.isEmpty() || value != null) pitchStr = it
+                        LaunchedEffect(pitchStr) {
+                            snapshotFlow { pitchStr.text }.drop(1).collect {
+                                val value = it.toString().toFloatOrNull()
                                 if (value != null && value > 0f) {
                                     if ((unit == "Hz" && value > 50) || (unit == "Ratio" && value < 10)) showSet = true
                                 }
-                            },
+                            }
+                        }
+                        TextField(state = pitchStr, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("float", style = MaterialTheme.typography.labelSmall) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField().width(100.dp),
                             trailingIcon = { if (showSet) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable {
-                                val pitch = if (unit == "Ratio") pitchStr.toFloat() else pitchStr.toFloat() / 440f
+                                val pitch = if (unit == "Ratio") pitchStr.text.toString().toFloat() else pitchStr.text.toString().toFloat() / 440f
                                 Logd(TAG) { "pitch set to $pitch" }
                                 if (tmpPitch) {
                                     player.curPitch = pitch
                                     player.setPlaybackParams(player.curSpeed, pitch)
                                 }
-                                runOnIOScope {
+                                appIOScope.launch {
                                     if (feedPitch) upsert(player.curMediaFlow.value!!.feed!!) { it.playPitch = pitch }
                                     if (glPitch) upsert(appPrefsFlow!!.value) { it.playbackPitch = pitch }
                                 }
@@ -365,7 +346,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                         Spacer(Modifier.weight(1f))
                         Checkbox(checked = feedChecked, onCheckedChange = { isChecked ->
                             feedChecked = isChecked
-                            if (player.curMediaFlow.value?.feed != null) runOnIOScope { upsert(player.curMediaFlow.value!!.feed!!) { it.skipSilence = isChecked } }
+                            if (player.curMediaFlow.value?.feed != null) appIOScope.launch { upsert(player.curMediaFlow.value!!.feed!!) { it.skipSilence = isChecked } }
                         })
                         Text(stringResource(R.string.current_podcast))
                         Spacer(Modifier.weight(1f))
@@ -392,7 +373,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                     Text(stringResource(R.string.pref_fast_forward_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                     HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Text(stringResource(R.string.pref_fallback_speed), style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-                    SpeedSetter(fallbackSpeed, maxSpeed = 3f) {
+                    SpeedSetterRow(fallbackSpeed, maxSpeed = 3f) {
                         val speed_ = when {
                             it < 0.0f -> 0.0f
                             it > 3.0f -> 3.0f
@@ -403,7 +384,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                     Text(stringResource(R.string.pref_fallback_speed_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                     HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Text(stringResource(R.string.pref_speed_forward), style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-                    SpeedSetter(speedforwardSpeed, maxSpeed = 10f) {
+                    SpeedSetterRow(speedforwardSpeed, maxSpeed = 10f) {
                         val speed_ = when {
                             it < 0.0f -> 0.0f
                             it > 10.0f -> 10.0f
@@ -414,7 +395,7 @@ fun PlaybackSpeedFullDialog(playerId: Int, indexDefault: Int, maxSpeed: Float, o
                     Text(stringResource(R.string.pref_forward_speed_sum), color = textColor, style = MaterialTheme.typography.labelSmall)
                     HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp))
                     Text(stringResource(R.string.pref_speed_skip), style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
-                    SpeedSetter(skipforwardSpeed, maxSpeed = 10f) {
+                    SpeedSetterRow(skipforwardSpeed, maxSpeed = 10f) {
                         val speed_ = when {
                             it < 0.0f -> 0.0f
                             it > 10.0f -> 10.0f
@@ -452,8 +433,6 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
         }
     }
 
-    var toEnd by remember { mutableStateOf(false) }
-    var etxtTime by remember { mutableStateOf(lastTimerValue.toString()) }
     fun extendSleepTimer(extendTime: Long) {
         val timeLeft = sleepManager?.timeLeft ?: Episode.INVALID_TIME.toLong()
         if (timeLeft != Episode.INVALID_TIME.toLong()) sleepManager?.setTimer(timeLeft + extendTime)
@@ -463,23 +442,26 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
         text = {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 if (showTimeSetup) {
+                    var toEnd by remember { mutableStateOf(false) }
+                    val etxtTime = rememberTextFieldState(initialText = lastTimerValue.toString())
                     val player0 by theatres[0].mPlayerFlow.collectAsStateWithLifecycle()
                     val curMedia0 by player0?.curMediaFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp)) {
                         Checkbox(checked = toEnd, onCheckedChange = { toEnd = it })
                         Text(stringResource(R.string.end_episode), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 10.dp))
                     }
-                    if (!toEnd) TextField(value = etxtTime, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.time_minutes)) }, singleLine = true, modifier = Modifier.trackAsTextField(),
-                        onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) etxtTime = it })
+                    if (!toEnd) TextField(state = etxtTime, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(stringResource(R.string.time_minutes)) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(),
+//                        onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) etxtTime = it }
+                    )
                     if (curMedia0 != null) Button(modifier = Modifier.fillMaxWidth(), onClick = {
                         if (!PlaybackService.isRunning) {
                             Logt(TAG, "Can't set sleep timer: service has not started")
                             return@Button
                         }
-                        val time = if (!toEnd) etxtTime.toLong() else (max(((player0!!.curMediaFlow.value!!.duration) - (player0!!.curMediaFlow.value!!.position)), 0) / player0!!.curPlayerSpeedFlow.value).toLong().milliseconds.inWholeMinutes // ms to minutes
+                        val time = if (!toEnd) (etxtTime.text.toString().toLongOrNull() ?: 0 ) else (max(((player0!!.curMediaFlow.value!!.duration) - (player0!!.curMediaFlow.value!!.position)), 0) / player0!!.curPlayerSpeedFlow.value).toLong().milliseconds.inWholeMinutes // ms to minutes
                         Logd("SleepTimerDialog") { "Sleep timer set: $time" }
                         if (time > 0L) {
-                            runOnIOScope { upsert(sleepPrefs) { it.LastValue = time } }
+                            appIOScope.launch { upsert(sleepPrefs) { it.LastValue = time } }
                             sleepManager?.setTimer(time.minutes.inWholeMilliseconds)
                             showTimeSetup = false
                             showTimeDisplay = true
@@ -499,7 +481,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp)) {
                     Checkbox(checked = cbShakeToReset, onCheckedChange = { it0 ->
                         cbShakeToReset = it0
-                        runOnIOScope { upsert(sleepPrefs) { it.ShakeToReset = it0 } }
+                        appIOScope.launch { upsert(sleepPrefs) { it.ShakeToReset = it0 } }
                     })
                     Text(stringResource(R.string.shake_to_reset_label), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 10.dp))
                 }
@@ -507,7 +489,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp)) {
                     Checkbox(checked = cbVibrate, onCheckedChange = { it0 ->
                         cbVibrate = it0
-                        runOnIOScope { upsert(sleepPrefs) { it.Vibrate = it0 } }
+                        appIOScope.launch { upsert(sleepPrefs) { it.Vibrate = it0 } }
                     })
                     Text(stringResource(R.string.timer_vibration_label), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 10.dp))
                 }
@@ -516,25 +498,25 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp)) {
                     Checkbox(checked = chAutoEnable, onCheckedChange = { it0 ->
                         chAutoEnable = it0
-                        runOnIOScope { upsert(sleepPrefs) { it.AutoEnable = it0 } }
+                        appIOScope.launch { upsert(sleepPrefs) { it.AutoEnable = it0 } }
                         enableChangeTime = it0
                     })
                     Text(stringResource(R.string.auto_enable_label), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 10.dp))
                 }
                 if (enableChangeTime) {
-                    var from by remember { mutableStateOf(autoEnableFrom.toString()) }
-                    var to by remember { mutableStateOf(autoEnableTo.toString()) }
+                    val from = rememberTextFieldState(initialText = autoEnableFrom.toString())
+                    val to = rememberTextFieldState(initialText = autoEnableTo.toString())
                     Text(stringResource(R.string.auto_enable_sum), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 10.dp))
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp).fillMaxWidth()) {
-                        TextField(value = from, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("From") }, singleLine = true, modifier = Modifier.trackAsTextField().weight(1f).padding(end = 8.dp),
-                            onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) from = it })
-                        TextField(value = to, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("To") }, singleLine = true, modifier = Modifier.trackAsTextField().weight(1f).padding(end = 8.dp),
-                            onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) to = it })
+                        TextField(state = from, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("From") }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField().weight(1f).padding(end = 8.dp))
+                        TextField(state = to, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("To") }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField().weight(1f).padding(end = 8.dp))
                         IconButton(onClick = {
-                            runOnIOScope {
+                            val fv = from.text.toString().toIntOrNull()
+                            val tv = to.text.toString().toIntOrNull()
+                            if (fv != null && tv != null) appIOScope.launch {
                                 upsert(sleepPrefs) {
-                                    it.AutoEnableFrom = from.toInt()
-                                    it.AutoEnableTo = to.toInt()
+                                    it.AutoEnableFrom = fv
+                                    it.AutoEnableTo = tv
                                 }
                             }
                         }) { Icon(imageVector = Icons.Filled.Settings, contentDescription = "setting") }

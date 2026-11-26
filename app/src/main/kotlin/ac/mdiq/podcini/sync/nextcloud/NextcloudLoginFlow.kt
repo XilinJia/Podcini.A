@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.sync.nextcloud
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.sync.HostnameParser
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.utils.Logd
@@ -100,7 +101,7 @@ class NextcloudLoginFlow(
     }
 
     fun poll() {
-        job2 = CoroutineScope(Dispatchers.IO).launch {
+        job2 = appIOScope.launch {
             try {
                 // time out in 5 minutes, retry 5 times
                 val result = withTimeout(5 * 60 * 1000) { retryIO(5) { doRequest(URI.create(endpoint).toURL(), "token=$token") } }
@@ -142,7 +143,7 @@ class NextcloudLoginFlow(
     }
 
     companion object {
-        private val TAG: String = NextcloudLoginFlow::class.simpleName ?: "Anonymous"
+        private const val TAG = "NextcloudLoginFlow"
 
         fun fromInstanceState(httpClient: HttpClient, context: Context, callback: AuthenticationCallback, instanceState: MutableList<String>): NextcloudLoginFlow {
             val flow = NextcloudLoginFlow(httpClient, instanceState[0], context, callback)

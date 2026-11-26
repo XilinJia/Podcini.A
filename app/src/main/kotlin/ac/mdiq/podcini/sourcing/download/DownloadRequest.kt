@@ -1,5 +1,6 @@
 package ac.mdiq.podcini.sourcing.download
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.shared.HTTPAttribs
 import ac.mdiq.podcini.shared.HasCredentials
 import ac.mdiq.podcini.shared.prepareUrl
@@ -7,7 +8,7 @@ import ac.mdiq.podcini.sourcing.StreamsManager
 import ac.mdiq.podcini.sourcing.clientByEpisode
 import ac.mdiq.podcini.sourcing.download.Downloader.Companion.downloadStatesFlow
 import ac.mdiq.podcini.storage.database.realm
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
@@ -29,6 +30,7 @@ import ac.mdiq.podcini.utils.PODCINI_USER_AGENT
 import android.os.Bundle
 import io.ktor.util.AttributeKey
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.collections.forEach
 import kotlin.collections.plus
@@ -133,7 +135,7 @@ class DownloadRequest: HasCredentials {
 
     constructor(feed: Feed): super("", "") {
         val dest = cacheDir / feed.getFeedfileName()
-        runOnIOScope { if (dest.exists()) dest.delete() }
+        appIOScope.launch { if (dest.exists()) dest.delete() }
         this.destination = dest.absPath
         this.urlOrig = when {
             feed.isLocal -> feed.downloadUrl

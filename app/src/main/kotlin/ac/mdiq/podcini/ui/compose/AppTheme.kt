@@ -1,8 +1,9 @@
 package ac.mdiq.podcini.ui.compose
 
+import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.PodciniApp.Companion.getAppContext
 import ac.mdiq.podcini.storage.database.appPrefsFlow
-import ac.mdiq.podcini.storage.database.runOnIOScope
+
 import ac.mdiq.podcini.storage.database.upsert
 import android.app.Activity
 import android.content.res.Configuration
@@ -52,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 
 private const val TAG = "AppTheme"
 
@@ -113,7 +115,7 @@ var appTheme: AppThemes
             AppThemes.DARK -> "1"
             else -> "system"
         }
-        runOnIOScope { upsert(appPrefsFlow!!.value) { it.theme = t } }
+        appIOScope.launch { upsert(appPrefsFlow!!.value) { it.theme = t } }
     }
 
 class FieldBoundsTracker {
