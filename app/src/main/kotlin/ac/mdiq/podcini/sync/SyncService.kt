@@ -6,8 +6,7 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.config.CHANNEL_ID
 import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.config.NotificationIds
-import ac.mdiq.podcini.shared.PodciniHttpClient.getKtorClient
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater
+import ac.mdiq.podcini.sourcing.feed.Updater
 import ac.mdiq.podcini.sync.SynchronizationSettings.hosturl
 import ac.mdiq.podcini.sync.SynchronizationSettings.password
 import ac.mdiq.podcini.sync.SynchronizationSettings.username
@@ -27,8 +26,7 @@ import ac.mdiq.podcini.storage.database.episodeByGuidOrUrl
 import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.removeFromQueue
 
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
-import ac.mdiq.podcini.storage.database.feedById
+import ac.mdiq.podcini.sourcing.feed.Updater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.feedsMap
 import ac.mdiq.podcini.storage.database.syncPrefs
 import ac.mdiq.podcini.storage.database.upsert
@@ -148,7 +146,7 @@ open class SyncService(context: Context, params: WorkerParameters) : CoroutineWo
                     feed.episodes.clear()
                     updateFeedFull(feed, removeUnlistedItems = false)
                     val f = feedsMap[feed.id]
-                    if (f != null) FeedUpdater(listOf(f)).start()
+                    if (f != null) Updater(listOf(f)).start()
                 }
             }
 

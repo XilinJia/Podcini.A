@@ -103,6 +103,10 @@ fun clientsHaveLikeCounts(): Boolean {
     return false
 }
 
+fun feedTypeOf(s: MediaSearcher): String? {
+    return if (s.name in listOf("Apple")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
+}
+
 object AppGatewayRegistry {
     sealed interface GatewayState {
         object Initializing : GatewayState

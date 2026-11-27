@@ -45,6 +45,7 @@ import ac.mdiq.podcini.storage.utils.findRootForUri
 import ac.mdiq.podcini.storage.utils.persistedTrees
 import ac.mdiq.podcini.storage.utils.toSafeUri
 import ac.mdiq.podcini.ui.compose.AmendSyntheticFeed
+
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.PutToQueueDialog
@@ -833,7 +834,7 @@ fun LibraryScreen() {
                             showNewVolume = true
                             expanded = false
                         })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.new_synth_label)) }, onClick = {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.new_synthetic_feed)) }, onClick = {
                             showNewSynthetic = true
                             expanded = false
                         })
@@ -1540,7 +1541,7 @@ fun LibraryScreen() {
                 Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                     Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
                     val name = rememberTextFieldState(initialText = "")
-                    TextField(state = name, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_namee)) })
+                    TextField(state = name, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_name)) })
                     Row {
                         Button({ onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
                         Spacer(Modifier.weight(1f))
@@ -1623,7 +1624,7 @@ fun LibraryScreen() {
         if (showSendCatalogDialog) SendToDevice(onDismiss = { showSendCatalogDialog = false}) { host, port -> sendCatalog(host, port) { showSendCatalogDialog =  false } }
         if (showFilterDialog) FilterDialog(FeedFilter(subPrefs.feedsFilter)) { showFilterDialog = false }
         if (showSortDialog) SortDialog { showSortDialog = false }
-        if (showNewSynthetic) AmendSyntheticFeed(volume = vm.curVolume, onDismiss = { showNewSynthetic = false }) {}
+        if (showNewSynthetic) CommonPopupCard(onDismiss = { showNewSynthetic = false }) { AmendSyntheticFeed(volume = vm.curVolume, onDismiss = { showNewSynthetic = false }) {} }
         if (showNewVolume) CreateVolume(parent = vm.curVolume) { showNewVolume = false }
 
         @SuppressLint("LocalContextResourcesRead")

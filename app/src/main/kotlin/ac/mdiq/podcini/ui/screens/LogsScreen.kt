@@ -5,7 +5,7 @@ import ac.mdiq.podcini.R
 import ac.mdiq.podcini.activity.MainActivity
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.download.RequestType
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater
+import ac.mdiq.podcini.sourcing.feed.Updater
 import ac.mdiq.podcini.sourcing.handleShared
 import ac.mdiq.podcini.storage.database.addToFeed
 import ac.mdiq.podcini.storage.database.feedsMap
@@ -443,7 +443,7 @@ fun LogsScreen() {
                     Text(stringResource(R.string.copy_to_clipboard), color = buttonColor, modifier = Modifier.clickable { copyToClipboard(context.getString(R.string.download_error_details), message) })
                     Spacer(Modifier.weight(0.3f))
                     if (!status.isSuccessful) Text(stringResource(R.string.retry), color = buttonColor, modifier = Modifier.clickable {
-                        if (feed != null) appIOScope.launch { FeedUpdater(listOf(feed!!)).start() }
+                        if (feed != null) appIOScope.launch { Updater(listOf(feed!!)).start() }
                         else if (media != null) {
                             ActionButton(media!!, typeInit = ButtonTypes.DOWNLOAD).onClick()
                             Logt(TAG, context.getString(R.string.status_downloading_label))
@@ -524,7 +524,7 @@ fun LogsScreen() {
                                         }
                                         RequestType.FEED.code -> {
                                             val feed = feedsMap[status.feedfileId]
-                                            if (feed != null) FeedUpdater(listOf(feed)).start()
+                                            if (feed != null) Updater(listOf(feed)).start()
                                         }
                                     }
                                 }

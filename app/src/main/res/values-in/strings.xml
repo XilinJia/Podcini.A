@@ -69,7 +69,7 @@
     <string name="error_label">Kesalahan</string>
     <string name="error_msg_prefix">Sebuah kesalahan terjadi</string>
     <string name="refresh_label">Segarkan</string>
-    <string name="new_synth_label">New synthetic feed</string>
+    <string name="new_synthetic_feed">New synthetic feed</string>
     <string name="toggle_grid_list">Toggle grid list</string>
     <string name="refreshing_label">Refreshing</string>
     <string name="clear_new_label">Clear new</string>
@@ -110,7 +110,7 @@
     <string name="episode_cleanup_not_in_queue">Ketika tidak dalam antrian</string>
     <!-- Actions on feeds -->
     <string name="max_episodes_cache">Max episodes allowed</string>
-    <string name="new_namee">New name</string>
+    <string name="new_name">New name</string>
     <string name="feed_settings_label">Pengaturan podcast</string>
 
 

@@ -69,7 +69,7 @@
     <string name="error_label">Eroare</string>
     <string name="error_msg_prefix">A avut loc o eroare:</string>
     <string name="refresh_label">Reîncarcă</string>
-    <string name="new_synth_label">Flux sintetic nou</string>
+    <string name="new_synthetic_feed">Flux sintetic nou</string>
     <string name="toggle_grid_list">Comutare listă grilă</string>
     <string name="refreshing_label">Împrospătare</string>
     <string name="clear_new_label">Curăță nou</string>
@@ -110,7 +110,7 @@
     <string name="episode_cleanup_not_in_queue">Când nu e în coadă</string>
     <!-- Actions on feeds -->
     <string name="max_episodes_cache">Episoade maxime permise</string>
-    <string name="new_namee">Nume nou</string>
+    <string name="new_name">Nume nou</string>
     <string name="feed_settings_label">Setări podcast</string>
 
 

@@ -11,10 +11,14 @@ import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.EPISODE_BATCH_SIZE
+import ac.mdiq.podcini.sourcing.clientBySearcher
 import ac.mdiq.podcini.sourcing.download.DownloadError
 import ac.mdiq.podcini.sourcing.download.DownloadRequest
 import ac.mdiq.podcini.sourcing.download.Downloader
 import ac.mdiq.podcini.sourcing.feed.PodcastHandler.FeedHandlerResult
+import ac.mdiq.podcini.sourcing.feedTypeOf
+import ac.mdiq.podcini.sourcing.searcher.AppleMediaSearcher
+import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.sourcing.typeClientMap
 import ac.mdiq.podcini.storage.database.addNewFeed
 import ac.mdiq.podcini.storage.database.appAttribsFlow
@@ -29,7 +33,6 @@ import ac.mdiq.podcini.storage.database.getEpisodes
 import ac.mdiq.podcini.storage.database.getFeedList
 import ac.mdiq.podcini.storage.database.guessDuplicates
 import ac.mdiq.podcini.storage.database.realm
-
 import ac.mdiq.podcini.storage.database.sumup
 import ac.mdiq.podcini.storage.database.trimEpisodes
 import ac.mdiq.podcini.storage.database.unmanaged
@@ -40,8 +43,10 @@ import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.Feed.Companion.EPISODES_LIMIT
 import ac.mdiq.podcini.storage.model.Image
+import ac.mdiq.podcini.storage.model.toEpisode
 import ac.mdiq.podcini.storage.model.toFeed
 import ac.mdiq.podcini.storage.specs.EpisodeSortOrder
+import ac.mdiq.podcini.storage.specs.EpisodeSortOrder.Companion.reorderWith
 import ac.mdiq.podcini.storage.specs.EpisodeState
 import ac.mdiq.podcini.storage.specs.FeedType
 import ac.mdiq.podcini.storage.specs.MediaType
@@ -77,7 +82,7 @@ import kotlinx.io.IOException
 import org.xml.sax.SAXException
 import javax.xml.parsers.ParserConfigurationException
 
-class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val doItAnyway: Boolean = false, val removeUnlisted: Boolean = false) {
+class Updater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val doItAnyway: Boolean = false, val removeUnlisted: Boolean = false) {
     private val context = getAppContext()
     private val notificationManager = NotificationManagerCompat.from(context)
 
@@ -291,8 +296,34 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
     }
 
     suspend fun updateFeed(feed: Feed) {
-        if (feed.downloadUrl.isNullOrBlank()) return
+        if (feed.downloadUrl.isNullOrBlank() && feed.liveSearchString.isBlank()) return
         val feed_ = when {
+            feed.isSynthetic() && feed.liveSearchString.isNotBlank() && !feed.liveSearchername.isNullOrBlank() -> {
+                ((sourceClients.mapNotNull { it.mediaSearcher }) + AppleMediaSearcher()).find { it.name == feed.liveSearchername }?.let { s->
+                    val remoteMediaLimit = 1000
+                    val episodeSortOrder = EpisodeSortOrder.DATE_DESC
+                    val results = mutableListOf<Episode>()
+                    fun addItems(items: List<EpisodeIPC>, type: String?) {
+                        val list = items.filter { fullUpdate || it.pubDate > feed.lastUpdateTime }.map { it.toEpisode().apply { feedType = type } }
+                        if (list.isNotEmpty()) results.addAll(list)
+                    }
+                    val type = feedTypeOf(s)
+                    val items = s.searchQuick(feed.liveSearchString)
+                    Logd(TAG) { "updateFeed searchQuick ${s.name} items: ${items.size}" }
+                    addItems(items, type)
+                    var counter = results.size
+                    while (results.size < remoteMediaLimit) {
+                        val items = s.getMoreItems()
+                        Logd(TAG) { "updateFeed searchRemoteMedia ${s.name} more items: ${items.size}" }
+                        addItems(items, type)
+                        if (counter >= results.size) break
+                        counter = results.size
+                    }
+                    results.reorderWith(episodeSortOrder)
+                    feed.episodes = results.toMutableList()
+                }
+                feed
+            }
             feed.type in listOf(null, FeedType.Unknown.name, FeedType.RSS.name, FeedType.ATOM.name) -> {
                 var f = downloadPodcast(feed)
                 while (f != null && !f.nextPageLink.isNullOrBlank()) f = downloadPodcast(f, nextPage = true)
@@ -358,7 +389,7 @@ class FeedUpdater(val feeds: List<Feed>, val fullUpdate: Boolean = false, val do
     class InvalidFeedException(message: String?) : Exception(message)
 
     companion object {
-        private const val TAG = "FeedUpdater"
+        private const val TAG = "Updater"
 
         suspend fun updateFeedFull(newFeed: Feed, removeUnlistedItems: Boolean = false, overwriteStates: Boolean = false, downloadStatus: DownloadResult? = null) {
             Logd(TAG) { "updateFeedFull feed: ${newFeed.title}" }

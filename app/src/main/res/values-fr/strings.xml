@@ -72,7 +72,7 @@
     <string name="error_label">Erreur</string>
     <string name="error_msg_prefix">Une erreur a eu lieu :</string>
     <string name="refresh_label">Rafraîchir</string>
-    <string name="new_synth_label">Nouveau flux synthétique</string>
+    <string name="new_synthetic_feed">Nouveau flux synthétique</string>
     <string name="toggle_grid_list">Activer/désactiver la liste des grilles</string>
     <string name="refreshing_label">Actualisation en cours</string>
     <string name="clear_new_label">Nettoyer les nouveaux</string>
@@ -113,7 +113,7 @@
     <string name="episode_cleanup_not_in_queue">Quand pas dans la liste de lecture</string>
     <!-- Actions on feeds -->
     <string name="max_episodes_cache">Nombre maximum d\'épisodes autorisés</string>
-    <string name="new_namee">Nouveau nom</string>
+    <string name="new_name">Nouveau nom</string>
     <string name="feed_settings_label">Paramètres du podcast</string>
 
 

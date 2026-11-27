@@ -9,7 +9,7 @@ import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.EPISODE_BATCH_SIZE
 import ac.mdiq.podcini.sourcing.clientBySearcher
 import ac.mdiq.podcini.sourcing.feed.FeedBuilder
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
+import ac.mdiq.podcini.sourcing.feed.Updater.Companion.updateFeedFull
 import ac.mdiq.podcini.sourcing.feed.subscribe
 import ac.mdiq.podcini.sourcing.listenForUDPBroadcasts
 import ac.mdiq.podcini.storage.database.appAttribsFlow
@@ -247,46 +247,44 @@ fun OnlineFeedItem(result: FeedSearchResult, log: SubscriptionLog? = null) {
 }
 
 @Composable
-fun AmendSyntheticFeed(feed_: Feed? = null, name_: String? = null, volume: Volume? = null, onDismiss: () -> Unit, cb: (Feed)->Unit) {
-    CommonPopupCard(onDismiss = { onDismiss() }) {
-        Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
-            Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
-            val name = rememberTextFieldState(initialText = feed_?.title ?: name_ ?: "")
-            TextField(state = name,  lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_namee)) })
-            var hasVideo by remember { mutableStateOf(true) }
+fun AmendSyntheticFeed(feed_: Feed? = null, feedType: String? = null, name_: String? = null, volume: Volume? = null, onDismiss: () -> Unit, cb: (Feed)->Unit) {
+    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
+        Text(stringResource(R.string.rename_feed), color = textColor, style = MaterialTheme.typography.bodyLarge)
+        val name = rememberTextFieldState(initialText = feed_?.title ?: name_ ?: "")
+        TextField(state = name,  lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(), label = { Text(stringResource(R.string.new_name)) })
+        var hasVideo by remember { mutableStateOf(true) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = hasVideo, onCheckedChange = { hasVideo = it })
+            Text(text = stringResource(R.string.has_video), style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
+        }
+        HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
+        var showFeedType by remember { mutableStateOf(false) }
+        var feedType by remember { mutableStateOf(FeedType.fromName(feed_?.type ?: feedType)) }
+        Text(text = stringResource(R.string.synthetic_feed_type_sum), style = MaterialTheme.typography.labelSmall, color = textColor)
+        Row(modifier = Modifier.padding(top = 10.dp)) {
+            Text(text = stringResource(R.string.pref_feed_type), style = MaterialTheme.typography.bodyMedium, color = buttonColor, modifier = Modifier.clickable { showFeedType = !showFeedType })
+            Text(text = feedType?.name?:"null", style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
+        }
+        if (showFeedType) for (type in FeedType.entries + listOf(null)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = hasVideo, onCheckedChange = { hasVideo = it })
-                Text(text = stringResource(R.string.has_video), style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
+                Checkbox(checked = type == feedType, onCheckedChange = { feedType = type })
+                Text(text = type?.name?:"null", style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
             }
-            HorizontalDivider(modifier = Modifier.fillMaxWidth(), thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outlineVariant)
-            var showFeedType by remember { mutableStateOf(false) }
-            var feedType by remember { mutableStateOf(FeedType.fromName(feed_?.type)) }
-            Text(text = stringResource(R.string.synthetic_feed_type_sum), style = MaterialTheme.typography.labelSmall, color = textColor)
-            Row(modifier = Modifier.padding(top = 10.dp)) {
-                Text(text = stringResource(R.string.pref_feed_type), style = MaterialTheme.typography.bodyMedium, color = buttonColor, modifier = Modifier.clickable { showFeedType = !showFeedType })
-                Text(text = feedType?.name?:"null", style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
-            }
-            if (showFeedType) for (type in FeedType.entries + listOf(null)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = type == feedType, onCheckedChange = { feedType = type })
-                    Text(text = type?.name?:"null", style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.padding(start = 10.dp))
+        }
+        Row(Modifier.padding(top = 10.dp)) {
+            Button({ onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
+            Spacer(Modifier.weight(1f))
+            if (name.text.isNotBlank()) Button({
+                var feed = feed_ ?: createSynthetic(0, name.text.toString(), hasVideo)
+                feed = upsertBlk(feed) {
+                    it.type = feedType?.name
+                    if (hasVideo) it.videoModePolicy = VideoMode.WINDOW
+                    if (volume != null) it.volumeId = volume.id
+                    if (feed_ != null) it.customTitle = if (name.text.toString() == it.eigenTitle) null else name.text.toString()
                 }
-            }
-            Row {
-                Button({ onDismiss() }) { Text(stringResource(R.string.cancel_label)) }
-                Spacer(Modifier.weight(1f))
-                Button({
-                    var feed = feed_ ?: createSynthetic(0, name.text.toString(), hasVideo)
-                    feed = upsertBlk(feed) {
-                        it.type = feedType?.name
-                        if (hasVideo) it.videoModePolicy = VideoMode.WINDOW
-                        if (volume != null) it.volumeId = volume.id
-                        if (feed_ != null) it.customTitle = if (name.text.toString() == it.eigenTitle) null else name.text.toString()
-                    }
-                    cb(feed)
-                    onDismiss()
-                }) { Text(stringResource(R.string.confirm_label)) }
-            }
+                cb(feed)
+                onDismiss()
+            }) { Text(stringResource(R.string.confirm_label)) }
         }
     }
 }

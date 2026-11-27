@@ -71,7 +71,7 @@
     <string name="error_label">Fehler</string>
     <string name="error_msg_prefix">Ein Fehler ist aufgetreten:</string>
     <string name="refresh_label">Aktualisieren</string>
-    <string name="new_synth_label">Neuer synthetischer Feed</string>
+    <string name="new_synthetic_feed">Neuer synthetischer Feed</string>
     <string name="toggle_grid_list">Rasterliste umschalten</string>
     <string name="refreshing_label">Aktualisieren</string>
     <string name="clear_new_label">Neu löschen</string>
@@ -112,7 +112,7 @@
     <string name="episode_cleanup_not_in_queue">Wenn nicht in der Warteschlange</string>
     <!-- Actions on feeds -->
     <string name="max_episodes_cache">Max. erlaubte Episoden</string>
-    <string name="new_namee">Neuer Name</string>
+    <string name="new_name">Neuer Name</string>
     <string name="feed_settings_label">Podcast-Einstellungen</string>
 
 

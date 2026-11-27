@@ -142,7 +142,6 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
     internal var showTabsDialog by mutableStateOf(false)
 
     internal var showEpisodes by mutableStateOf(false)
-//    internal var showFeedDisplay by mutableStateOf(false)
     internal var progressing by mutableStateOf(true)
     internal var autoDownloadChecked by mutableStateOf(false)
     internal var limitEpisodesCount by mutableIntStateOf(0)
@@ -305,7 +304,6 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
         feed = exist
         numEpisodes = getEpisodesCount(null, feedId)
         progressing = false
-//        showFeedDisplay = true
         enableSubscribe = true
         subButTextRes = textRes
     }
@@ -370,7 +368,6 @@ class OnlineFeedVM(url: String = "", source: String = "", shared: Boolean = fals
             withContext(Dispatchers.Main) { if (fl.isNotEmpty()) relatedResults = fl }
         }
         progressing = false
-//        showFeedDisplay = true
         if (isFeedFoundBySearch) Loge(TAG, getAppContext().getString(R.string.no_feed_url_podcast_found_by_search))
         handleSubscribeStatus()
     }

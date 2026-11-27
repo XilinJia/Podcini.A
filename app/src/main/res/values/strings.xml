@@ -126,7 +126,7 @@
     <string name="fetch_size">Fetch size</string>
     <string name="clear_cache">Clear from cache</string>
     <string name="clear_all_cache">Clear all caches</string>
-    <string name="new_synth_label">New synthetic feed</string>
+    <string name="new_synthetic_feed">New synthetic feed</string>
     <string name="new_volume_label">New volume</string>
     <string name="toggle_grid_list">Toggle grid list</string>
     <string name="preparing">Preparing</string>
@@ -155,6 +155,7 @@
     <string name="by">By</string>
     <string name="medium">Medium</string>
     <string name="is_ai_content">Is AI content</string>
+    <string name="live_synthetic">Live synthetic</string>
 
     <string name="archived_feed">Feed is archived</string>
 
@@ -240,7 +241,7 @@
 
     <!-- Actions on feeds -->
     <string name="max_episodes_cache">Max episodes allowed</string>
-    <string name="new_namee">New name</string>
+    <string name="new_name">New name</string>
     <string name="feed_settings_label">Podcast settings</string>
     <string name="full_settings">Full settings</string>
     <string name="rename_feed">Rename feed</string>
@@ -908,7 +909,7 @@
     <string name="hour">Hour</string>
     <string name="minute">Minute</string>
     <string name="second">Second</string>
-    <string name="set_due_time">Set due time</string>
+    <string name="due_time">Due time</string>
     <string name="notify">Notify</string>
 
     <string name="show_done">Show done</string>

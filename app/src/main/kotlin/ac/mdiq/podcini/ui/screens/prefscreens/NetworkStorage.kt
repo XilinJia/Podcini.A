@@ -328,7 +328,7 @@ fun NetworkStorageScreen() {
         } else Logt(TAG, "custom dir not chosen")
     }
 
-    var refreshInterval by remember { mutableStateOf(appPrefs.autoUpdateInterval.toString()) }
+    var refreshInterval by remember { mutableIntStateOf(appPrefs.autoUpdateInterval) }
     val focusManager = LocalFocusManager.current
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp).verticalScroll(rememberScrollState()).background(MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
@@ -356,8 +356,8 @@ fun NetworkStorageScreen() {
         Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.feed_refresh_title), color = textColor, style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                NumberEditor(refreshInterval.toInt(), stringResource(R.string.time_minutes), nz = false, modifier = Modifier.weight(0.6f)) {
-                    refreshInterval = it.toString()
+                NumberEditor(refreshInterval, stringResource(R.string.time_minutes), nz = false, modifier = Modifier.weight(0.6f)) {
+                    refreshInterval = it
                     Logd("DownloadsSetting") { "refreshInterval: $refreshInterval" }
                     appIOScope.launch { upsert(appPrefs) { p-> p.autoUpdateInterval = it } }
                     checkAndScheduleUpdateTaskOnce(replace = true, force = it > 0)
@@ -374,7 +374,7 @@ fun NetworkStorageScreen() {
                 } else fullDateTimeString(lastUpdateTime + intervalInMillis)
             }
             val nextRefreshTime = remember { getRefreshTime() }
-            if (refreshInterval != "0") Text(stringResource(R.string.feed_next_refresh_time) + " " + nextRefreshTime, color = textColor, style = MaterialTheme.typography.bodySmall)
+            if (refreshInterval != 0) Text(stringResource(R.string.feed_next_refresh_time) + " " + nextRefreshTime, color = textColor, style = MaterialTheme.typography.bodySmall)
         }
         TitleSummarySwitchRow(R.string.pref_fetch_media_size, R.string.pref_fetch_media_size_sum, appPrefs.fetchmediaSizes) {
             appIOScope.launch {  upsert(appPrefs) { p-> p.fetchmediaSizes = it} }

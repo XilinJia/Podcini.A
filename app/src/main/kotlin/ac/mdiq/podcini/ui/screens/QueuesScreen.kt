@@ -590,10 +590,10 @@ fun QueuesScreen(id: Long = -1L) {
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 10.dp, end = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.bin_limit) + ": ${curQueue.binLimit}", style = CustomTextStyles.titleCustom, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                var limitString by remember { mutableIntStateOf((curQueue.binLimit)) }
-                NumberEditor(limitString, stringResource(R.string.bin_limit), nz = true, modifier = Modifier.width(150.dp)) { v ->
-                    limitString = v
-                    appIOScope.launch { upsert(curQueue) { it.binLimit = limitString } }
+                var limit by remember { mutableIntStateOf((curQueue.binLimit)) }
+                NumberEditor(limit, stringResource(R.string.bin_limit), nz = true, modifier = Modifier.width(150.dp)) { v ->
+                    limit = v
+                    appIOScope.launch { upsert(curQueue) { it.binLimit = limit } }
                 }
             }
             var autoSort by remember { mutableStateOf(curQueue.autoSort) }

@@ -6,7 +6,7 @@ import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.getFeedList
 
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
+import ac.mdiq.podcini.sourcing.feed.Updater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.upsert
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.utils.UnifiedFile

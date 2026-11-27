@@ -425,8 +425,7 @@ fun SearchBarRow(hintTextRes: Int, defaultText: String, modifier: Modifier = Mod
 
 @Composable
 fun NumberEditor(initVal: Int, label: String = "seconds", nz: Boolean = true, instant: Boolean = false, modifier: Modifier, cb: (Int)->Unit) {
-//    var inputVal by remember(initVal) { mutableStateOf(initVal.toString()) }
-    val inputVal = rememberTextFieldState(initialText = initVal.toString())
+    val inputVal = remember(initVal) { TextFieldState(initVal.toString()) }
     val value = remember(inputVal.text) {  inputVal.text.toString().toIntOrNull() }
     var showSet by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -443,15 +442,16 @@ fun NumberEditor(initVal: Int, label: String = "seconds", nz: Boolean = true, in
         }
     }
     if (instant) {
-        LaunchedEffect(Unit) {
-            snapshotFlow { inputVal.text }.drop(1).collect {
-                if (it.toString().toIntOrNull() != null) showSet = true
-                if (showSet) set()
-            }
-        }
+        LaunchedEffect(inputVal) { snapshotFlow { inputVal.text }.drop(1).collect {
+            showSet = it.toString().toIntOrNull() != null
+            if (showSet) set()
+        } }
         TextField(state = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.labelSmall) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = modifier.trackAsTextField())
     } else {
-        LaunchedEffect(Unit) { snapshotFlow { inputVal.text }.drop(1).collect { if (it.toString().toIntOrNull() != null) showSet = true } }
+        LaunchedEffect(inputVal) { snapshotFlow { inputVal.text }.drop(1).collect {
+            Logd("NumberEditor") { "snapshotFlow { inputVal.text } it: $it"}
+            showSet = it.toString().toIntOrNull() != null
+        } }
         TextField(state = inputVal, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text(label, style = MaterialTheme.typography.labelSmall) }, lineLimits = TextFieldLineLimits.SingleLine, modifier = modifier.trackAsTextField(),
             trailingIcon = { if (showSet) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable { set(); focusManager.clearFocus() }) })
     }

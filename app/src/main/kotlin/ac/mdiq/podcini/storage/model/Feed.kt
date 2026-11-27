@@ -309,6 +309,9 @@ class Feed : RealmObject {
         private set
     // ============= Queue ==============
 
+    var liveSearchString: String = ""
+    var liveSearchername: String? = null
+
     // ============ auto-download/enqueue ==============
     var autoDownload: Boolean = false
     var autoEnqueue: Boolean = false

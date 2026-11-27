@@ -8,7 +8,7 @@ import ac.mdiq.podcini.playback.forcePlaybackReset
 import ac.mdiq.podcini.sourcing.SourceGatewayClient
 import ac.mdiq.podcini.sourcing.clientByFeed
 import ac.mdiq.podcini.sourcing.clientsHaveMultiQ
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater
+import ac.mdiq.podcini.sourcing.feed.Updater
 import ac.mdiq.podcini.sourcing.typeClientMap
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.prefStreamOverDownload
@@ -36,6 +36,7 @@ import ac.mdiq.podcini.ui.actions.ButtonTypes
 import ac.mdiq.podcini.ui.actions.playActions
 import ac.mdiq.podcini.ui.actions.streamActions
 import ac.mdiq.podcini.ui.compose.AmendSyntheticFeed
+
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.CustomTextStyles
 import ac.mdiq.podcini.ui.compose.EpisodeSortDialog
@@ -70,7 +71,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -256,7 +256,7 @@ fun FeedsSettingsScreen() {
                         Text(text = stringResource(R.string.title), style = CustomTextStyles.titleCustom)
                         Spacer(Modifier.weight(1f))
                         var showDialog by remember { mutableStateOf(false) }
-                        if (showDialog) AmendSyntheticFeed(feedToSet, onDismiss = { showDialog = false }) {}
+                        if (showDialog) CommonPopupCard(onDismiss = { showDialog = false }) { AmendSyntheticFeed(feedToSet, onDismiss = { showDialog = false }) {} }
                         IconButton(onClick = { showDialog = true }) { Icon(Icons.Default.Edit, contentDescription = "Edit title") }
                     }
                     Text(text = feedToSet.title?: "No title", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 15.dp))
@@ -1338,7 +1338,7 @@ fun FeedsSettingsScreen() {
                                                     it.username = newName.text.toString()
                                                     it.password = newPW.text.toString()
                                                 } } }
-                                                FeedUpdater(feedsToSet).start()
+                                                Updater(feedsToSet).start()
                                             }
                                             onDismiss()
                                         }
@@ -1374,7 +1374,7 @@ fun FeedsSettingsScreen() {
                                     TextButton(onClick = {
                                         appIOScope.launch {
                                             feedToSet = upsert(feedToSet) { it.downloadUrl = url.text.toString() }
-                                            FeedUpdater(listOf(feedToSet)).start()
+                                            Updater(listOf(feedToSet)).start()
                                         }
                                         onDismiss()
                                     }) { Text("OK") }

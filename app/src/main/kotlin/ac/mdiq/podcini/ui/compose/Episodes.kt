@@ -319,8 +319,7 @@ fun ShareDialog(item: Episode, onDismiss: () -> Unit) {
     )
 }
 
-data class WebViewContent(var scrollPos: Int, val webData: String)
-val webDataCache = LruCache<Long, WebViewContent>(10)
+val webDataCache = LruCache<Long, String>(10)
 
 fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -523,7 +522,7 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
     val context by rememberUpdatedState(LocalContext.current)
     val activity = context.findActivity() ?: error("WebView requires an Activity context")
 
-    var webviewContent by remember { mutableStateOf<WebViewContent?>(null) }
+    var webviewContent by remember { mutableStateOf<String?>(null) }
     var playerLocal: ExoPlayer? by remember { mutableStateOf(null) }
     var showEditComment by remember { mutableStateOf(false) }
     var showTagsSettingDialog by remember { mutableStateOf(false) }
@@ -575,8 +574,8 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
 //                Logd(TAG) { "description: ${episode.description}" }
                 val data = withContext(Dispatchers.IO) { buildCleanedNotes(episode, ShownotesCleaner()).second }
                 if (data != null) {
-                    webviewContent = WebViewContent(0, data)
-                    webDataCache.put(episode.id,  webviewContent!!)
+                    webviewContent = data
+                    webDataCache.put(episode.id,  data)
                 }
             }
         }
@@ -812,27 +811,17 @@ fun EpisodeDetails(episode: Episode, fetchWebdata: Boolean = true, fetchChapters
                             }
                         }
                     }
-                    pageFinishedListener = {
-//                        postDelayed({ }, 50)
-                        val y = webviewContent?.scrollPos ?: 0
-                        Logd(TAG) { "setPageFinishedListener y: $y"}
-                        if (y > 0) postDelayed({ scrollTo(0, y) }, 50)
-                    }
+                    pageFinishedListener = { postDelayed({ }, 50) }
                 } },
             update = { view ->
                 val currentTag = view.tag as? String
-                if (currentTag != webviewContent?.webData) {
+                if (currentTag != webviewContent) {
                     view.tag = webviewContent
-                    view.loadDataWithBaseURL("about:blank", if (webviewContent?.webData.isNullOrBlank()) "No notes" else webviewContent!!.webData, "text/html", "utf-8", "about:blank")
-                    val y = webviewContent?.scrollPos ?: 0
-                    Logd(TAG) { "update y: $y"}
-                    if (y > 0) view.postDelayed({ view.scrollTo(0, y) }, 300)
+                    view.loadDataWithBaseURL("about:blank", if (webviewContent.isNullOrBlank()) "No notes" else webviewContent!!, "text/html", "utf-8", "about:blank")
                 }
             },
             onRelease = { view ->
                 Logd(TAG) {"onRelease scrollY: ${view.scrollY}" }
-                webviewContent?.scrollPos = view.scrollY
-                webDataCache.put(episode.id,  webviewContent!!)
                 view.destroy()
             }
         )
@@ -1061,7 +1050,7 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
             val ymdhm = rememberTextFieldState(initialText = "${zdt.year}.${zdt.month.number}.${zdt.day}.${zdt.hour}.${zdt.minute}")
             var setDueTime by remember { mutableStateOf(editDueTime) }
             Row {
-                Text(text = stringResource(R.string.set_due_time), color = buttonColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 10.dp).clickable(onClick = {
+                Text(text = stringResource(R.string.due_time), color = buttonColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 10.dp).clickable(onClick = {
                     editDueTime = !editDueTime
                     //                    if (todo != null) dueTime = if (editDueTime) todo.dueTime else 0
                 }))
@@ -1073,7 +1062,7 @@ fun TodoDialog(episode: Episode, todo: Todo? = null, onDismiss: () -> Unit) {
                     snapshotFlow { ymdhm.text.toString() }.drop(1).debounce(300.milliseconds).collect { setDueTime = false }
                 }
                 TextField(state = ymdhm,  lineLimits = TextFieldLineLimits.SingleLine, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth().trackAsTextField(), label = { Text("${stringResource(R.string.year)}.${stringResource(R.string.month)}.${stringResource(R.string.date)}.${stringResource(R.string.hour)}.${stringResource(R.string.minute)}") },
-                    trailingIcon = { Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable { setDueTime = !setDueTime }) })
+                    trailingIcon = { Icon(imageVector = if (setDueTime) Icons.Filled.Close else Icons.Filled.AddCircle, contentDescription = "Settings icon", modifier = Modifier.size(30.dp).clickable { setDueTime = !setDueTime }) })
                 if (setDueTime) Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = notify, onCheckedChange = { notify = it })
                     Text(stringResource(R.string.notify))
@@ -1493,14 +1482,14 @@ fun EpisodesFilterDialog(filter_: EpisodeFilter, disabledSet: MutableSet<Episode
                                 EpisodesFilterGroup.TITLE_TEXT -> {
                                     Text(stringResource(group.nameRes) + "… :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = buttonColor, modifier = Modifier.clickable { expandRow = !expandRow })
                                     if (expandRow) {
-                                        val titleText = rememberTextFieldState(initialText = filter.titleText)
-                                        var showIcon by remember(titleText) { mutableStateOf(titleText.text.toString() != filter.titleText) }
+                                        val titleState = rememberTextFieldState(initialText = filter.titleText)
+                                        var showIcon by remember(titleState.text) { mutableStateOf(titleState.text.toString() != filter.titleText) }
                                         val focusManager = LocalFocusManager.current
-                                        TextField(state = titleText, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), label = { Text("Text in titles") }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(),
+                                        TextField(state = titleState, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), label = { Text("Text in titles") }, lineLimits = TextFieldLineLimits.SingleLine, modifier = Modifier.trackAsTextField(),
                                             trailingIcon = {
                                                 if (showIcon) Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings icon",
                                                     modifier = Modifier.size(30.dp).clickable {
-                                                        filter.titleText = titleText.text.toString()
+                                                        filter.titleText = titleState.text.toString()
                                                         focusManager.clearFocus()
                                                         onFilterChanged(filter)
                                                         showIcon = false
@@ -1705,10 +1694,8 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
     LaunchedEffect(port) {
         receivers = emptyList()
         listenForUDPBroadcasts(port) { list ->
-            if (list.isNotEmpty()) {
-                receivers = list
-                Logd("MulticastDialog") { "number of receivers: ${list.size}" }
-            }
+            if (list.isNotEmpty()) receivers = list
+            Logd("MulticastDialog") { "number of receivers: ${list.size}" }
         }
     }
     fun cleanup() {
@@ -1756,27 +1743,29 @@ fun MulticastDialog(selected: List<Episode>, onDismiss: ()->Unit) {
 
 @Composable
 fun ConfirmAddToFeed(onDismiss: () -> Unit, cb: suspend (Feed)-> Unit) {
-    val synthetics = remember { feedsMap.values.filter { it.id in 1..1000 } }
+    var synthetics by remember { mutableStateOf(feedsMap.values.filter { it.id in 1..1000 }) }
     Dialog(onDismissRequest = { onDismiss() }) {
         Card(modifier = Modifier.padding(16.dp).height(350.dp), shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, borderColor)) {
             var toFeed by remember { mutableStateOf<Feed?>(null) }
             var showComfirmButton by remember { mutableStateOf(toFeed != null) }
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.add_to_feed), color = textColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                if (synthetics.isNotEmpty()) {
-                    Text(text = stringResource(R.string.add_to_synthetic_note), style = MaterialTheme.typography.labelSmall, color = textColor)
-                    LazyColumn(modifier = Modifier.weight(1f).padding(start = 10.dp, end = 10.dp), verticalArrangement = Arrangement.Top) {
-                        items(synthetics, key = { it.id }) { f ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                RadioButton(selected = toFeed == f, onClick = {
-                                    toFeed = f
-                                    showComfirmButton = true
-                                })
-                                Text(f.title ?: "No title", color = textColor)
-                            }
+                Text(text = stringResource(R.string.add_to_synthetic_note), style = MaterialTheme.typography.labelSmall, color = textColor)
+                var showNewFeedField by remember { mutableStateOf(false) }
+                if (!showNewFeedField) LazyColumn(modifier = Modifier.weight(1f).padding(start = 10.dp, end = 10.dp), verticalArrangement = Arrangement.Top) {
+                    if (synthetics.isNotEmpty()) items(synthetics, key = { it.id }) { f ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = toFeed == f, onClick = { toFeed = f; showComfirmButton = true })
+                            Text(f.title ?: "No title", color = textColor)
                         }
                     }
-                } else Text(text = stringResource(R.string.create_synthetic_first_note), color = textColor)
+                    item(key = "show_new_feed") { Text(stringResource(R.string.new_synthetic_feed), color = buttonColor, modifier = Modifier.clickable { showNewFeedField = !showNewFeedField}) }
+                } else AmendSyntheticFeed(name_ = "", onDismiss = { showNewFeedField = false }) {
+                    toFeed = it
+                    synthetics += it
+                    showNewFeedField = false
+                    showComfirmButton = true
+                }
                 var showProgress by remember { mutableStateOf(false) }
                 if (showComfirmButton) {
                     Button(onClick = {

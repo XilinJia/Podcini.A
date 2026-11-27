@@ -68,7 +68,7 @@
     <string name="error_label">Chyba</string>
     <string name="error_msg_prefix">Došlo k chybě:</string>
     <string name="refresh_label">Obnovit</string>
-    <string name="new_synth_label">Nové syntetické krmivo</string>
+    <string name="new_synthetic_feed">Nové syntetické krmivo</string>
     <string name="toggle_grid_list">Přepnout seznam mřížek</string>
     <string name="refreshing_label">Obnovuji</string>
     <string name="clear_new_label">Vyčistit nový</string>
@@ -109,7 +109,7 @@
     <string name="episode_cleanup_not_in_queue">Pokud není ve frontě</string>
     <!-- Actions on feeds -->
     <string name="max_episodes_cache">Maximální povolený počet epizod</string>
-    <string name="new_namee">Nové jméno</string>
+    <string name="new_name">Nové jméno</string>
     <string name="feed_settings_label">Nastavení podcastu</string>
 
 

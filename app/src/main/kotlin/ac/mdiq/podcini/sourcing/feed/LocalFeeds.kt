@@ -5,7 +5,7 @@ import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
 import ac.mdiq.podcini.R
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.sourcing.download.DownloadError
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
+import ac.mdiq.podcini.sourcing.feed.Updater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.database.addNewFeed
 
 import ac.mdiq.podcini.storage.database.deleteFeed
@@ -122,7 +122,7 @@ suspend fun loadLocalFolder(uri: Uri, feedsExist: List<Feed> = listOf()) {
             allVolumes += volumes
             realm.write { for (v in volumes) copyToRealm(v) }
         }
-        if (feeds.isNotEmpty()) FeedUpdater(feeds, doItAnyway = true).start()
+        if (feeds.isNotEmpty()) Updater(feeds, doItAnyway = true).start()
         Logt(TAG, "loadLocalFolder Imported ${feeds.size} local feeds in ${volumes.size} volumes")
         for (f in feedsMap.values) Logd(TAG) { "loadLocalFolder feed: ${f.id} ${f.title} episodesCount: ${f.episodesCount}" }
     } catch (e: Throwable) {

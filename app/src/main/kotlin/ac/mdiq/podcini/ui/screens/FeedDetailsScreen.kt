@@ -7,8 +7,8 @@ import ac.mdiq.podcini.playback.theatres
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.download.RequestType
 import ac.mdiq.podcini.sourcing.feed.FeedUpdateManager.runOnceOrAsk
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
+import ac.mdiq.podcini.sourcing.feed.Updater
+import ac.mdiq.podcini.sourcing.feed.Updater.Companion.updateFeedFull
 import ac.mdiq.podcini.sourcing.isExtFeed
 import ac.mdiq.podcini.sourcing.sendFeed
 import ac.mdiq.podcini.sourcing.typeClientMap
@@ -502,11 +502,11 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                                     expanded = false
                                 })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.refresh_label)) }, onClick = {
-                                    appIOScope.launch { FeedUpdater(listOf(feed!!), doItAnyway = true).start() }
+                                    appIOScope.launch { Updater(listOf(feed!!), doItAnyway = true).start() }
                                     expanded = false
                                 })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.refresh_complete_feed)) }, onClick = {
-                                    appIOScope.launch { FeedUpdater(listOf(feed!!), fullUpdate = true, doItAnyway = true, removeUnlisted = true).start() }
+                                    appIOScope.launch { Updater(listOf(feed!!), fullUpdate = true, doItAnyway = true, removeUnlisted = true).start() }
                                     expanded = false
                                 })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.remove_feed)) }, onClick = {
@@ -562,6 +562,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                     Text(feed?.title ?: "No title", color = textColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 16.dp))
                     Text(stringResource(R.string.by) + ": " + (feed?.author?.ifBlank { "Anonymous" } ?: "Anonymous"), color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                     if (!feed?.medium.isNullOrBlank()) Text(stringResource(R.string.medium) + ": " + feed!!.medium!!, color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                    if (!feed?.liveSearchString.isNullOrBlank()) Text(stringResource(R.string.live_synthetic), modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
                     if (feed?.aiContent == true) Text(stringResource(R.string.is_ai_content), color = textColor, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)) {
                         Text(stringResource(R.string.score) + ": " + (feed?.score).toString() + " (" + feed?.scoreCount + ")", textAlign = TextAlign.End, color = textColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
@@ -603,15 +604,16 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
             Text(stringResource(R.string.statistics_label), color = buttonColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp, bottom = 4.dp).clickable { showFeedStats = true } )
 
             if (feed?.isSynthetic() == false) {
-                if (!feed?.author.isNullOrBlank()) Text(stringResource(R.string.feeds_related_to_author), color = buttonColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 10.dp).clickable {
-                        searchFeedsOnline(query = "${feed?.author} podcasts")
-                        navTo(FindFeeds)
-                    })
-                Text(stringResource(R.string.full_update) + ": ${formatDateTimeFlex(feed?.lastFullUpdateTime?:0L)}", modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
+                if (!feed?.author.isNullOrBlank()) Text(stringResource(R.string.feeds_related_to_author), color = buttonColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp).clickable {
+                    searchFeedsOnline(query = "${feed?.author} podcasts")
+                    navTo(FindFeeds)
+                })
+            }
+            if (feed?.isSynthetic() == false || !feed?.liveSearchString.isNullOrBlank()) {
+                Text(stringResource(R.string.full_update) + ": ${formatDateTimeFlex(feed?.lastFullUpdateTime ?: 0L)}", modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
                 if (vm.logs.isNotEmpty()) {
                     var showLogs by remember { mutableStateOf(false) }
-                    Text(stringResource(R.string.logs), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp).clickable { showLogs = !showLogs})
+                    Text(stringResource(R.string.logs), color = buttonColor, style = CustomTextStyles.titleCustom, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp).clickable { showLogs = !showLogs })
                     if (showLogs) Column(modifier = Modifier.padding(10.dp)) {
                         for (log in vm.logs) {
                             val message = stringResource(if (!log.isSuccessful) R.string.failed else R.string.download_successful)
@@ -627,19 +629,19 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                         }
                     }
                 }
-                AsyncImage(model = feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
-                Text(text = feed?.downloadUrl ?: "", color = buttonColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 15.dp).combinedClickable(
-                    onClick = { feed?.downloadUrl.takeIf { !it.isNullOrBlank() }?.let { openInSystemDefault(it) } },
-                    onLongClick = { feed?.downloadUrl.takeIf { !it.isNullOrBlank() }?.let { copyToClipboard(it, it) } }
-                ))
-                if (!feed?.fundings.isNullOrEmpty()) {
-                    for (fund in feed!!.fundings) {
-                        val url = fund.url.takeIf { !it.isNullOrBlank() } ?: continue
-                        Text("${fund.content?:""} $url", color = buttonColor, modifier = Modifier.clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                            try { context.startActivity(intent) } catch (e: ActivityNotFoundException) { Loge(TAG, e,"No app found to handle this link") }
-                        })
-                    }
+            }
+            if (feed?.isSynthetic() == false) AsyncImage(model = feed?.images?.firstOrNull()?.href, imageLoader = imageLoader, contentDescription = "imgvCover", contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().padding(10.dp))
+            if (feed?.isSynthetic() != true) Text(text = feed?.downloadUrl ?: "", color = buttonColor, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 15.dp).combinedClickable(
+                onClick = { feed?.downloadUrl.takeIf { !it.isNullOrBlank() }?.let { openInSystemDefault(it) } },
+                onLongClick = { feed?.downloadUrl.takeIf { !it.isNullOrBlank() }?.let { copyToClipboard(it, it) } }
+            ))
+            if (feed?.isSynthetic() == false && !feed?.fundings.isNullOrEmpty()) {
+                for (fund in feed!!.fundings) {
+                    val url = fund.url.takeIf { !it.isNullOrBlank() } ?: continue
+                    Text("${fund.content?:""} $url", color = buttonColor, modifier = Modifier.clickable {
+                        val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                        try { context.startActivity(intent) } catch (e: ActivityNotFoundException) { Loge(TAG, e,"No app found to handle this link") }
+                    })
                 }
             }
         }
@@ -696,6 +698,7 @@ fun FeedDetailsScreen(feedId: Long = 0L, modeName: String = FeedScreenMode.List.
                         refreshCB = {
                             when {
                                 feed == null -> Logt(TAG, "feed is null, can not refresh")
+                                feed!!.isSynthetic() && feed!!.liveSearchString.isNotBlank() && !feed!!.liveSearchername.isNullOrBlank() -> runOnceOrAsk(feeds = listOf(feed!!))
                                 feed!!.isSynthetic() -> {
                                     val eps = realm.query(Episode::class).query("feedId == ${feed!!.id}").find()
                                     val count = eps.size

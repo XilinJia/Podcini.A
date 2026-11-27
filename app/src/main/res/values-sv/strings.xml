@@ -69,7 +69,7 @@
     <string name="error_label">Fel</string>
     <string name="error_msg_prefix">Ett fel inträffade:</string>
     <string name="refresh_label">Uppdatera</string>
-    <string name="new_synth_label">Nytt syntetiskt flöde</string>
+    <string name="new_synthetic_feed">Nytt syntetiskt flöde</string>
     <string name="toggle_grid_list">Växla rutnätslista</string>
     <string name="refreshing_label">Uppdaterar</string>
     <string name="clear_new_label">Rensa ny</string>
@@ -110,7 +110,7 @@
     <string name="episode_cleanup_not_in_queue">Om inte köad</string>
     <!-- Actions on feeds -->
     <string name="max_episodes_cache">Max antal avsnitt tillåtna</string>
-    <string name="new_namee">Nytt namn</string>
+    <string name="new_name">Nytt namn</string>
     <string name="feed_settings_label">Podcastinställningar</string>
 
 

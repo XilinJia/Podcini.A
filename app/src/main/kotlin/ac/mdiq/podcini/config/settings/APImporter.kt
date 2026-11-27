@@ -1,7 +1,7 @@
 package ac.mdiq.podcini.config.settings
 
 import ac.mdiq.podcini.PodciniApp.Companion.appIOScope
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.updateFeedFull
+import ac.mdiq.podcini.sourcing.feed.Updater.Companion.updateFeedFull
 import ac.mdiq.podcini.storage.model.Episode
 import ac.mdiq.podcini.storage.model.Feed
 import ac.mdiq.podcini.storage.model.Feed.Companion.TAG_SEPARATOR
@@ -19,8 +19,6 @@ import androidx.core.database.getIntOrNull
 import androidx.core.database.getStringOrNull
 import io.github.xilinjia.krdb.ext.realmSetOf
 import io.github.xilinjia.krdb.ext.toRealmSet
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okio.buffer
 

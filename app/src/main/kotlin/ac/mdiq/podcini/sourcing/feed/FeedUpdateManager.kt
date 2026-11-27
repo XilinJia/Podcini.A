@@ -8,7 +8,7 @@ import ac.mdiq.podcini.config.AppConfig.initialize
 import ac.mdiq.podcini.config.NotificationIds
 import ac.mdiq.podcini.shared.nowInMillis
 import ac.mdiq.podcini.sourcing.AppGatewayRegistry
-import ac.mdiq.podcini.sourcing.feed.FeedUpdater.Companion.createNotification
+import ac.mdiq.podcini.sourcing.feed.Updater.Companion.createNotification
 import ac.mdiq.podcini.storage.database.appAttribsFlow
 import ac.mdiq.podcini.storage.database.appPrefsFlow
 import ac.mdiq.podcini.storage.database.realm
@@ -226,7 +226,7 @@ object FeedUpdateManager {
                     if (isPeriodic) rescheduleUpdateTaskOnce()
                     return Result.success()
                 }
-                val updater = FeedUpdater(feeds, fullUpdate = fullUpdate, doItAnyway = doItAnyway, removeUnlisted = eraseUnlisted)
+                val updater = Updater(feeds, fullUpdate = fullUpdate, doItAnyway = doItAnyway, removeUnlisted = eraseUnlisted)
                 updater.prepare()
                 if (!networkMonitor.isConnected) {
                     Loge(TAG, "Refresh not performed: network unavailable, will retry")

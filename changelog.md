@@ -1,3 +1,16 @@
+# 12.23.1
+
+* further amended some TextField input behavior
+* amended due time setting for Todos
+* in AddToFeed dialog, there is an option to create a new synthetic feed
+* introducing Live synthetic feed, updatable
+* in Remote tab of Search screen
+	* try to not get duplicates
+	* show "Reserve all" only with a single searcher
+	* "Reserve all" creates a live synthetic feed, with suggested feed type
+* in FeedDetails Info view, show proper info for live synthetic feed
+* some code refactoring
+
 # 12.23.0
 
 * migrated some Compose deprecations

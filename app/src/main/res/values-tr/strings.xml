@@ -96,7 +96,7 @@
     <string name="refresh_label">Yenile</string>
     <string name="fetch_size">Getirme boyutu</string>
     <string name="clear_cache">Önbellekten temizle</string>
-    <string name="new_synth_label">Yeni sentetik besleme</string>
+    <string name="new_synthetic_feed">Yeni sentetik besleme</string>
     <string name="toggle_grid_list">Izgara/liste geçişi</string>
     <string name="refreshing_label">Yenileniyor</string>
     <string name="clear_new_label">Yeni\'yi temizle</string>
@@ -161,7 +161,7 @@
 
     <!-- Actions on feeds -->
     <string name="max_episodes_cache">İzin verilen maksimum bölüm sayısı</string>
-    <string name="new_namee">Yeni isim</string>
+    <string name="new_name">Yeni isim</string>
     <string name="feed_settings_label">Podcast ayarları</string>
 
 

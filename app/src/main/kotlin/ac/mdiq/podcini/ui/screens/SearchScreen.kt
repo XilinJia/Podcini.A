@@ -7,6 +7,7 @@ import ac.mdiq.podcini.shared.EpisodeIPC
 import ac.mdiq.podcini.shared.MediaSearcher
 import ac.mdiq.podcini.shared.getEntityId
 import ac.mdiq.podcini.sourcing.clientBySearcher
+import ac.mdiq.podcini.sourcing.feedTypeOf
 import ac.mdiq.podcini.sourcing.searcher.AppleMediaSearcher
 import ac.mdiq.podcini.sourcing.sourceClients
 import ac.mdiq.podcini.storage.database.appAttribsFlow
@@ -28,6 +29,7 @@ import ac.mdiq.podcini.storage.utils.durationInHours
 import ac.mdiq.podcini.ui.actions.ButtonTypes
 import ac.mdiq.podcini.ui.actions.SwipeActions
 import ac.mdiq.podcini.ui.compose.AmendSyntheticFeed
+
 import ac.mdiq.podcini.ui.compose.CommonPopupCard
 import ac.mdiq.podcini.ui.compose.EpisodeLazyColumn
 import ac.mdiq.podcini.ui.compose.EpisodeScreen
@@ -171,7 +173,7 @@ class SearchVM: ViewModel() {
 
     val searchersAll = mutableStateListOf<MediaSearcher>()
 
-    var searchers = mutableStateListOf<MediaSearcher>()
+    val searchers = mutableStateListOf<MediaSearcher>()
 
     var searchingRemote by mutableStateOf(false)
     internal var remoteMedia by mutableStateOf<List<Episode>>(listOf())
@@ -211,17 +213,14 @@ class SearchVM: ViewModel() {
     suspend fun searchRemoteMedia() {
         val remoteMediaLimit = 1000
         searchingRemote = true
-        val results = mutableListOf<Episode>()
+        val results = mutableSetOf<Episode>()
         fun addItems(items: List<EpisodeIPC>, type: String?) {
-            val list = items.map { it.toEpisode().apply {
-                id = getEntityId()
-                feedType = type
-            } }
+            val list = items.toSet().map { it.toEpisode().apply { id = getEntityId(); feedType = type } }
             if (list.isNotEmpty()) results.addAll(list)
         }
         Logd(TAG) { "searchRemoteMedia searchers ${searchers.size}" }
         for (s in searchers) {
-            val type = if (s.name in listOf("Apple")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
+            val type = feedTypeOf(s)
             val items = s.searchQuick(curSearchString)
             Logd(TAG) { "searchQuick ${s.name} items: ${items.size}" }
             addItems(items, type)
@@ -230,7 +229,7 @@ class SearchVM: ViewModel() {
         var counter = results.size
         while (results.size < remoteMediaLimit) {
             for (s in searchers) {
-                val type = if (s.name in listOf("Apple")) FeedType.RSS.name else clientBySearcher(s.name)?.attributes?.feedType
+                val type = feedTypeOf(s)
                 val items = s.getMoreItems()
                 Logd(TAG) { "searchRemoteMedia ${s.name} more items: ${items.size}" }
                 addItems(items, type)
@@ -240,8 +239,10 @@ class SearchVM: ViewModel() {
             counter = results.size
         }
         Logd(TAG) { "searchRemoteMedia found items: $counter" }
-        results.reorderWith(episodeSortOrder)
-        remoteMedia = results.toList()
+        results.forEach { it.id = 0L }
+        val list = results.toSet().toMutableList()
+        list.reorderWith(episodeSortOrder)
+        remoteMedia = list.map { it.apply { id = getEntityId() } }
         remoteMediaCache.put(curSearchString, remoteMedia)
         searchingRemote = false
     }
@@ -331,7 +332,7 @@ fun SearchScreen() {
         }
     }
     var showReserveAllDialog by remember { mutableStateOf(false) }
-    if (showReserveAllDialog) AmendSyntheticFeed(name_ = "$curSearchString. By ${vm.searchers.joinToString { it.name }}", onDismiss = { showReserveAllDialog = false }) { feed->
+    if (showReserveAllDialog) CommonPopupCard(onDismiss = { showReserveAllDialog = false }) { AmendSyntheticFeed(name_ = "$curSearchString. By ${vm.searchers.joinToString { it.name }}", feedType = vm.remoteMedia[0].feedType, onDismiss = { showReserveAllDialog = false }) { feed->
         appIOScope.launch {
             realm.write {
                 for (e in vm.remoteMedia) {
@@ -343,16 +344,18 @@ fun SearchScreen() {
                 findLatest(feed)?.let {
                     it.episodesCount = eps.size
                     it.totleDuration = dur.toLong()
+                    it.liveSearchString = curSearchString
+                    it.liveSearchername = vm.searchers[0].name
                 }
             }
         }
-    }
+    } }
 
     @Composable
     fun TopBar() {
         val appAttribs by appAttribsFlow!!.collectAsStateWithLifecycle()
         Box {
-            TopAppBar(
+            TopAppBar(navigationIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back or drawer", modifier = Modifier.padding(horizontal = 7.dp).clickable { if (!navBack()) drawerController?.open()  }) },
                 title = { Row(verticalAlignment = Alignment.CenterVertically) {
                     SearchBarRow(R.string.search_hint, defaultText = curSearchString, modifier = Modifier.weight(1f) , history = appAttribs.searchHistory) { str ->
                         if (str.isBlank()) { Logt(TAG, "A query string is needed."); return@SearchBarRow }
@@ -362,7 +365,6 @@ fun SearchScreen() {
                     }
                     if (vm.selectedTab in listOf(SearchTabs.Episodes, SearchTabs.Remote)) Icon(imageVector = ImageVector.vectorResource(R.drawable.arrows_sort), contentDescription = "butSort", modifier = Modifier.padding(start = 7.dp).clickable { showSortDialog = true })
                 } },
-                navigationIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back or drawer", modifier = Modifier.padding(horizontal = 7.dp).clickable { if (!navBack()) drawerController?.open()  }) },
                 actions = {
                     var expanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
@@ -377,7 +379,7 @@ fun SearchScreen() {
                         })
                         if (vm.selectedTab == SearchTabs.Remote) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.remote_searchers)) }, onClick = { showRemoteSearchers = true; expanded = false })
-                            if (!vm.searchingRemote && vm.remoteMedia.isNotEmpty()) DropdownMenuItem(text = { Text(stringResource(R.string.reserve_all)) }, onClick = { showReserveAllDialog = true; expanded = false })
+                            if (vm.searchers.size == 1 &&!vm.searchingRemote && vm.remoteMedia.isNotEmpty()) DropdownMenuItem(text = { Text(stringResource(R.string.reserve_all)) }, onClick = { showReserveAllDialog = true; expanded = false })
                         }
                     }
                 })
